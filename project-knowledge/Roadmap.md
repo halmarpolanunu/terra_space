@@ -12,6 +12,7 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Phase 1: Application Foundation
 
+- [x] **Verify local foundation runtime** - Docker Compose, offline browser behavior, and SQLite persistence have been checked. Status: completed.
 - [x] **Inspect current codebase and stack** - confirmed that the repository has Project Knowledge and setup files but no existing application implementation to reuse. Status: completed.
 - [x] **Create basic navigation** - Dashboard, Documents, Event Review, Events, and Settings entry points are available in the neutral application shell. Status: completed.
 - [x] **Set up local database foundation** - SQLite schema and reversible migration now define local storage for documents, events, locations, actors, event types, sources, attachments, and event relationships. Status: completed.

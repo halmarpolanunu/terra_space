@@ -44,6 +44,16 @@ First stop Terra Space. Then copy the whole `data` folder somewhere safe. That o
 
 To restore a backup, stop Terra Space, replace the current `data` folder with your backup copy, then start Terra Space again.
 
+## Verify the foundation
+
+To run the automated browser check, use:
+
+```powershell
+npm.cmd run test:e2e
+```
+
+It starts the local application, checks the five pages and offline behavior, then stops it again.
+
 This folder uses a lean Project Knowledge setup so coding agents can share the same project memory.
 
 ## Start here

@@ -12,6 +12,11 @@ Thumbs.db
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 
+# Root-level JavaScript test tooling
+node_modules/
+test-results/
+playwright-report/
+
 # Temporary validation artifacts
 *.tmp
 

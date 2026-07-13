@@ -8,6 +8,11 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-13 — Phase 1 foundation checkpoint verified
+
+- Browser verification confirmed all five English routes, the local map canvas, LM Studio offline behavior, and the absence of external browser network requests.
+- The next planned collaboration point is the separate visual-design session; no final visual decisions were made during implementation.
+
 ## 2026-07-13 — Docker Compose runtime verified
 
 - Added the local two-service Docker Compose runtime and PowerShell start/stop helpers.
