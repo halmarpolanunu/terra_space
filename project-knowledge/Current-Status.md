@@ -10,12 +10,16 @@ status: active
 
 ## Current focus
 
-The Phase 1 foundation checkpoint is complete. The next step is the dedicated visual-design session; final visual direction is intentionally not chosen yet.
-
-A Claude Code continuation handoff is available at `docs/continuation/claude-code-handoff.md`.
+The visual-design session is complete and the direction is locked. See the
+[Visual Design Direction](decisions/Visual-Design-Direction.md) decision. The next step is to
+design the detailed document and event data model before Phase 2 implementation.
 
 ## Recent progress
 
+- Held the dedicated visual-design session and locked the visual direction: a calm "mission
+  brief" tactical look on pure black, with a 3D globe, amber accent, serif source documents,
+  and one-thing-at-a-time dense screens. Recorded as the Visual Design Direction decision.
+- Validated two screens (Dashboard and Event Review) as concept mockups during the session.
 - Created the isolated `phase-1-foundation` branch and worktree for implementation.
 - Built the Next.js frontend and FastAPI backend skeleton with locked dependencies and automated tests.
 - Implemented safe local data-directory initialization and a health endpoint that reports offline LM Studio without blocking application startup.
@@ -29,8 +33,7 @@ A Claude Code continuation handoff is available at `docs/continuation/claude-cod
 - Verified that the SQLite database retains a sentinel record after containers are stopped and started again.
 - Added a browser end-to-end test that confirms all five English routes, local map rendering, LM Studio offline usability, and no external browser network requests.
 - Merged and pushed the completed Phase 1 foundation to `main` (`7fe43a7`).
-- Prepared a Claude Code handoff with the continuation point, safe commands, verification steps, and design-session boundary.
-- Approved the written Phase 1 foundation design.
+- Approved the Phase 1 foundation design.
 - Prepared a task-by-task implementation plan covering Docker, storage, SQLite, navigation, service health, the offline world map, and verification.
 - Inspected the repository and confirmed it currently contains Project Knowledge and setup files, but no application implementation.
 - Agreed on a local browser application started with Docker Compose.
@@ -45,12 +48,13 @@ A Claude Code continuation handoff is available at `docs/continuation/claude-cod
 
 ## Blockers
 
-- Detailed visual direction remains intentionally undecided until the dedicated design session.
+- None at this checkpoint.
 
 ## Next actions
 
-- Hold the dedicated visual-design session before final interface styling.
 - Design the detailed document and event data model before Phase 2 implementation.
+- During implementation, apply the locked Visual Design Direction and verify MapLibre globe
+  support and color-contrast accessibility.
 
 ## Related knowledge
 
@@ -58,3 +62,4 @@ A Claude Code continuation handoff is available at `docs/continuation/claude-cod
 - [North Star](North-Star.md)
 - [Roadmap](Roadmap.md)
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
+- [Visual Design Direction](decisions/Visual-Design-Direction.md)

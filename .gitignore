@@ -23,6 +23,9 @@ playwright-report/
 # Isolated implementation workspaces
 .worktrees/
 
+# Visual brainstorming companion mockups
+.superpowers/
+
 # Python build and test state
 backend/.venv/
 backend/.pytest_cache/

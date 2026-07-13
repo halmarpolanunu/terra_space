@@ -8,13 +8,27 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-13 — Visual design direction locked
+
+- Held the dedicated visual-design session and recorded the Visual Design Direction decision.
+- Chose a calm "mission brief" tactical look on pure black: amber accent, 3D globe map,
+  serif source documents vs mono/sans system chrome, calm motion, and one-thing-at-a-time
+  dense screens (Dashboard and Event Review validated as concept mockups).
+- Moved the continuation point from the visual-design checkpoint to the document/event
+  data-model design before Phase 2.
+
 ## 2026-07-13 — Claude Code continuation handoff prepared
 
 - Documented the completed and merged Phase 1 foundation, local run commands, verification commands, and the next visual-design checkpoint for Claude Code.
 
 ## 2026-07-13 — Phase 1 foundation checkpoint verified
 
-- Browser verification confirmed all five English routes, the local map canvas, LM Studio offline behavior, and the absence of external browser network requests.
+- Verified in the `phase-1-foundation` worktree: 14 backend tests, 6 frontend tests, frontend
+  lint and production build, and the browser end-to-end check all passed.
+- The end-to-end run (`npm.cmd run test:e2e`) confirmed all five English routes, the local map
+  canvas, LM Studio offline behavior, and no external browser network requests.
+- Persistence confirmed: a SQLite sentinel record survived a `docker compose down` and restart.
+- Project Knowledge validation passed with 0 errors and 0 warnings.
 - The next planned collaboration point is the separate visual-design session; no final visual decisions were made during implementation.
 
 ## 2026-07-13 — Docker Compose runtime verified

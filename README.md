@@ -1,10 +1,16 @@
 # Terra Space
 
-Terra Space is a local web application for building an intelligence workspace. It runs on your own computer: your database, attachments, map package, and local AI processing stay local.
+Terra Space is a local web application for building an intelligence workspace. You add documents, batch-process them through a local AI model, review and approve the events it extracts, then explore approved events through a dashboard, map, timeline, and list. It runs on your own computer: your database, attachments, map package, and local AI processing stay local.
+
+## Current status
+
+Phase 1 (application foundation) is complete: navigation, local database, offline map, and the Docker runtime all work. Document upload, AI processing, event review, and the dashboard are not built yet, so the five pages you see after starting the app are currently empty shells. See `project-knowledge/Current-Status.md` for what's being worked on next.
 
 ## Before you start
 
 Install and open Docker Desktop. You also need PowerShell, which is already included with Windows.
+
+Normal use only needs Docker. Node.js on your computer is only required for the optional verification script (`npm run test:e2e`) further down.
 
 The first start needs a local offline map package. Build it once while you have an internet connection:
 

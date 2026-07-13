@@ -11,6 +11,33 @@ The project owner is new to coding. Keep explanations simple, concrete, and unde
 3. Read `project-knowledge/Roadmap.md` or related decisions only when relevant.
 4. Confirm that the requested work supports the North Star. If it conflicts, explain the conflict and ask the user before continuing.
 
+## Documentation location — applies to every agent
+
+This rule applies equally to Claude, Codex, and Gemini. It overrides any skill, command, tool,
+or workflow default that suggests writing documentation elsewhere (for example, defaults that
+target `docs/`, `docs/superpowers/specs/`, or `docs/plans/`).
+
+- All durable project documentation lives inside `project-knowledge/`. Do not create a
+  top-level `docs/` tree, and do not write specs, design notes, implementation plans, handoffs,
+  continuation notes, or verification records anywhere outside `project-knowledge/`.
+- If a skill or command proposes a path outside `project-knowledge/`, redirect the output into
+  `project-knowledge/` using the homes below before writing anything.
+- Homes for each kind of document:
+  - Long-term decisions and design direction → `project-knowledge/decisions/`, and add each one
+    to `project-knowledge/decisions/Decisions-Index.md`.
+  - Implementation plans, when they are persisted as files → `project-knowledge/plans/`
+    (create the folder the first time it is needed).
+  - The current continuation point → `project-knowledge/Current-Status.md`. Do not create
+    separate handoff or continuation files.
+  - Verification results and meaningful history → `project-knowledge/Project-Knowledge-Log.md`.
+  - Phase or milestone changes → `project-knowledge/Roadmap.md`.
+- Every Markdown file added under `project-knowledge/` must have valid OKF frontmatter
+  (`type`, `title`, `description`) and a non-empty body, and its internal links must resolve, so
+  that validation passes.
+- The only documents that stay at their conventional location are the repository `README.md`,
+  the agent-instruction adapters (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.agents/rules/…`), and
+  tool-generated READMEs inside code packages such as `frontend/` and `backend/`.
+
 ## Maintaining Project Knowledge
 
 - Update Project Knowledge only when direction, roadmap, an important decision, or the project's continuation point changes meaningfully.
