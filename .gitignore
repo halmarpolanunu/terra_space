@@ -1,0 +1,15 @@
+# Personal AI-agent files
+CLAUDE.local.md
+.env
+.env.*
+
+# Editor and OS state
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Temporary validation artifacts
+*.tmp
