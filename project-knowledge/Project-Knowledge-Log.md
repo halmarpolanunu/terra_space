@@ -8,6 +8,11 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-13 — Phase 1 storage foundation implemented
+
+- Implemented the initial local storage and SQLite foundation on the `phase-1-foundation` branch.
+- Added safe data-directory initialization, offline-aware health status, and a reversible migration for core Terra Space records.
+
 ## 2026-07-13 — Phase 1 implementation plan prepared
 
 - Approved the Phase 1 foundation design and prepared the detailed implementation plan.

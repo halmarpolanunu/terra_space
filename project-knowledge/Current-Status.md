@@ -10,10 +10,15 @@ status: active
 
 ## Current focus
 
-The repository inspection and Phase 1 foundation design are complete. A detailed, test-driven Phase 1 implementation plan is ready; implementation has not started.
+Phase 1 implementation is in progress. The frontend/backend skeleton, local storage health contract, and SQLite foundation are complete. The next implementation task is the neutral navigation shell.
 
 ## Recent progress
 
+- Created the isolated `phase-1-foundation` branch and worktree for implementation.
+- Built the Next.js frontend and FastAPI backend skeleton with locked dependencies and automated tests.
+- Implemented safe local data-directory initialization and a health endpoint that reports offline LM Studio without blocking application startup.
+- Added the SQLite schema and reversible Alembic migration for documents, attachments, events, event types, actors, locations, sources, and their event relationships.
+- Verified the backend suite with 9 passing tests.
 - Approved the written Phase 1 foundation design.
 - Prepared a task-by-task implementation plan covering Docker, storage, SQLite, navigation, service health, the offline world map, and verification.
 - Inspected the repository and confirmed it currently contains Project Knowledge and setup files, but no application implementation.
@@ -33,7 +38,7 @@ The repository inspection and Phase 1 foundation design are complete. A detailed
 
 ## Next actions
 
-- Choose the implementation execution approach and implement Phase 1 in small, testable steps.
+- Build the neutral navigation shell with Dashboard, Documents, Event Review, Events, and Settings routes.
 - Hold the dedicated visual-design session before final interface styling.
 - Design the detailed document and event data model before Phase 2 implementation.
 

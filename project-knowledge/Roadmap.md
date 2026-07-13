@@ -14,7 +14,7 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 - [x] **Inspect current codebase and stack** - confirmed that the repository has Project Knowledge and setup files but no existing application implementation to reuse. Status: completed.
 - [ ] **Create basic navigation** - provide Dashboard, Documents, Event Review, Events, and Settings entry points. Status: planned.
-- [ ] **Set up local database foundation** - define local storage for documents, events, locations, actors, event types, sources, and attachments. Status: planned.
+- [x] **Set up local database foundation** - SQLite schema and reversible migration now define local storage for documents, events, locations, actors, event types, sources, attachments, and event relationships. Status: completed.
 - [ ] **Prepare local attachment storage** - store image attachments locally and keep database references consistent. Status: planned.
 
 ## Phase 2: Documents and Batch Processing
