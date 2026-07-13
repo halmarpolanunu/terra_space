@@ -1,0 +1,15 @@
+{
+  "version": 8,
+  "sources": {
+    "world": {
+      "type": "vector",
+      "url": "pmtiles:///api/backend/api/maps/world.pmtiles"
+    }
+  },
+  "layers": [
+    { "id": "background", "type": "background", "paint": { "background-color": "#eef2f4" } },
+    { "id": "land", "type": "fill", "source": "world", "source-layer": "land", "paint": { "fill-color": "#dce6d8" } },
+    { "id": "countries", "type": "line", "source": "world", "source-layer": "countries", "paint": { "line-color": "#9ba8b0", "line-width": 0.75 } },
+    { "id": "admin1", "type": "line", "source": "world", "source-layer": "admin1", "minzoom": 3, "paint": { "line-color": "#c5ced4", "line-width": 0.5 } }
+  ]
+}

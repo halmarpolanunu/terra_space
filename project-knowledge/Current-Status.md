@@ -10,10 +10,22 @@ status: active
 
 ## Current focus
 
-The repository inspection and Phase 1 foundation design are complete. A detailed, test-driven Phase 1 implementation plan is ready; implementation has not started.
+The Phase 1 foundation checkpoint is complete. The next step is the dedicated visual-design session; final visual direction is intentionally not chosen yet.
 
 ## Recent progress
 
+- Created the isolated `phase-1-foundation` branch and worktree for implementation.
+- Built the Next.js frontend and FastAPI backend skeleton with locked dependencies and automated tests.
+- Implemented safe local data-directory initialization and a health endpoint that reports offline LM Studio without blocking application startup.
+- Added the SQLite schema and reversible Alembic migration for documents, attachments, events, event types, actors, locations, sources, and their event relationships.
+- Verified the current backend suite with 14 passing tests.
+- Added the neutral English navigation shell for Dashboard, Documents, Event Review, Events, and Settings.
+- Added a local-only LM Studio availability check and clear offline status messages.
+- Built and verified a 4.7 MB low-detail world PMTiles package from Natural Earth data; it remains outside Git in the local `data/maps/` folder.
+- Added a two-service Docker Compose runtime: the frontend is available only at `http://localhost:3000`, while the backend remains on the private Docker network.
+- Added beginner-friendly PowerShell start and stop helpers, along with clear instructions for the first map build, local LM Studio, backup, and restore.
+- Verified that the SQLite database retains a sentinel record after containers are stopped and started again.
+- Added a browser end-to-end test that confirms all five English routes, local map rendering, LM Studio offline usability, and no external browser network requests.
 - Approved the written Phase 1 foundation design.
 - Prepared a task-by-task implementation plan covering Docker, storage, SQLite, navigation, service health, the offline world map, and verification.
 - Inspected the repository and confirmed it currently contains Project Knowledge and setup files, but no application implementation.
@@ -33,7 +45,6 @@ The repository inspection and Phase 1 foundation design are complete. A detailed
 
 ## Next actions
 
-- Choose the implementation execution approach and implement Phase 1 in small, testable steps.
 - Hold the dedicated visual-design session before final interface styling.
 - Design the detailed document and event data model before Phase 2 implementation.
 

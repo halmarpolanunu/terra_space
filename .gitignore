@@ -2,6 +2,7 @@
 CLAUDE.local.md
 .env
 .env.*
+!.env.example
 
 # Editor and OS state
 .DS_Store
@@ -11,8 +12,29 @@ Thumbs.db
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 
+# Root-level JavaScript test tooling
+node_modules/
+test-results/
+playwright-report/
+
 # Temporary validation artifacts
 *.tmp
 
 # Isolated implementation workspaces
 .worktrees/
+
+# Python build and test state
+backend/.venv/
+backend/.pytest_cache/
+backend/**/__pycache__/
+
+# Generated offline map packages
+data/maps/*.pmtiles
+
+# Local runtime data
+data/database/*.db
+data/database/*.db-*
+data/attachments/*
+!data/attachments/.gitkeep
+data/logs/*
+!data/logs/.gitkeep
