@@ -8,6 +8,11 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-13 — Phase 1 navigation and offline-map foundation implemented
+
+- Added the neutral five-page navigation shell and LM Studio service-status reporting.
+- Added a reproducible, fully offline low-detail world-map package workflow using local PMTiles.
+
 ## 2026-07-13 — Phase 1 storage foundation implemented
 
 - Implemented the initial local storage and SQLite foundation on the `phase-1-foundation` branch.
