@@ -21,6 +21,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 - [Roadmap](Roadmap.md) — long-term phases and measurable milestones
 - [Decisions Index](decisions/Decisions-Index.md) — important choices and their reasoning
+- [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md) — current task-by-task build plan
 
 ## Reading rule
 

@@ -10,14 +10,16 @@ status: active
 
 ## Current focus
 
-The visual-design direction and the document/event data model are both locked. See the
-[Visual Design Direction](decisions/Visual-Design-Direction.md) and
-[Document & Event Data Model](decisions/Document-Event-Data-Model.md) decisions. The next
-step is to write the Phase 2/3 implementation plan (migration, backend, frontend) in
-`project-knowledge/plans/`.
+The Phase 2 implementation plan is written and ready for execution. See the
+[Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md) — document
+CRUD, the full Document & Event Data Model migration, LM Studio batch extraction with
+evidence-quote validation, and retry/reprocessing. Phase 3 (Event Review and Deduplication)
+gets its own plan once Phase 2 is built and working.
 
 ## Recent progress
 
+- Wrote the Phase 2 (Documents and Batch Processing) implementation plan, scoped to Roadmap
+  Phase 2 only, in `project-knowledge/plans/`.
 - Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
   Model decision: document dates, evidence-on-source-link, a persistent duplicate-flags
   table, actor source/target roles, AI-suggestion tracking via `is_active`, and numeric
@@ -58,16 +60,15 @@ step is to write the Phase 2/3 implementation plan (migration, backend, frontend
 
 ## Next actions
 
-- Write the Phase 2/3 implementation plan covering the Alembic migration, backend services,
-  and frontend, in `project-knowledge/plans/`.
-- During implementation, apply the locked Visual Design Direction and verify MapLibre globe
-  support and color-contrast accessibility.
-- During implementation, apply the locked Document & Event Data Model decision, including the
-  new migration for document dates, evidence, duplicate flags, actor roles, and coordinate types.
+- Execute the Phase 2 Implementation Plan task by task (migration, document CRUD, Documents
+  page, LM Studio extraction, validation/persistence, batch orchestration, batch UX,
+  end-to-end verification).
+- After Phase 2 ships, write the Phase 3 (Event Review and Deduplication) implementation plan.
 
 ## Related knowledge
 
 - [Back to Project Knowledge](Project-knowledge-Index.md)
+- [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md)
 - [North Star](North-Star.md)
 - [Roadmap](Roadmap.md)
 - [Document & Event Data Model](decisions/Document-Event-Data-Model.md)

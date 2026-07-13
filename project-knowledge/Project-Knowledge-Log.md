@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 — Phase 2 implementation plan written
+
+- Wrote the Phase 2 (Documents and Batch Processing) implementation plan in
+  `project-knowledge/plans/`, scoped to Roadmap Phase 2 only: the full Document & Event Data
+  Model migration, document draft CRUD, a Documents page styled per the Visual Design
+  Direction, LM Studio structured extraction, evidence-quote validation enforcing "never
+  invent," batch orchestration with per-document failure isolation, retry, a forward-looking
+  reprocessing-approval warning, and end-to-end verification.
+- Moved the continuation point to executing this plan; Phase 3 gets its own plan afterward.
+
 ## 2026-07-14 — Document & event data model locked
 
 - Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
