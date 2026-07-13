@@ -10,7 +10,7 @@ status: active
 
 ## Current focus
 
-Phase 1 implementation is in progress. The frontend/backend skeleton, local storage health contract, SQLite foundation, navigation shell, LM Studio status reporting, and offline world-map foundation are complete. The next implementation task is Docker Compose runtime and PowerShell helpers.
+Phase 1 implementation is in progress. The frontend/backend skeleton, local storage health contract, SQLite foundation, navigation shell, LM Studio status reporting, offline world-map foundation, and Docker Compose runtime are complete. The next implementation task is end-to-end foundation verification and the visual-design checkpoint.
 
 ## Recent progress
 
@@ -22,6 +22,9 @@ Phase 1 implementation is in progress. The frontend/backend skeleton, local stor
 - Added the neutral English navigation shell for Dashboard, Documents, Event Review, Events, and Settings.
 - Added a local-only LM Studio availability check and clear offline status messages.
 - Built and verified a 4.7 MB low-detail world PMTiles package from Natural Earth data; it remains outside Git in the local `data/maps/` folder.
+- Added a two-service Docker Compose runtime: the frontend is available only at `http://localhost:3000`, while the backend remains on the private Docker network.
+- Added beginner-friendly PowerShell start and stop helpers, along with clear instructions for the first map build, local LM Studio, backup, and restore.
+- Verified that the SQLite database retains a sentinel record after containers are stopped and started again.
 - Approved the written Phase 1 foundation design.
 - Prepared a task-by-task implementation plan covering Docker, storage, SQLite, navigation, service health, the offline world map, and verification.
 - Inspected the repository and confirmed it currently contains Project Knowledge and setup files, but no application implementation.
@@ -41,7 +44,7 @@ Phase 1 implementation is in progress. The frontend/backend skeleton, local stor
 
 ## Next actions
 
-- Build Docker Compose runtime configuration, persistent data mounts, and beginner-friendly PowerShell start/stop helpers.
+- Run end-to-end browser verification with all external network requests blocked.
 - Hold the dedicated visual-design session before final interface styling.
 - Design the detailed document and event data model before Phase 2 implementation.
 

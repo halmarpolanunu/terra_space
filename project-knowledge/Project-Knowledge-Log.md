@@ -8,6 +8,12 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-13 — Docker Compose runtime verified
+
+- Added the local two-service Docker Compose runtime and PowerShell start/stop helpers.
+- The frontend binds only to `127.0.0.1:3000`; the backend database remains private inside the Docker network while its `data/` storage is mounted from the host.
+- Confirmed that SQLite data remains available after container restart.
+
 ## 2026-07-13 — Phase 1 navigation and offline-map foundation implemented
 
 - Added the neutral five-page navigation shell and LM Studio service-status reporting.

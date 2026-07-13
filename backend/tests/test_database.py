@@ -22,6 +22,8 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     engine = create_engine(f"sqlite:///{database_file}")
     expected = {"documents", "attachments", "events", "event_types", "alembic_version"}
     assert expected <= set(inspect(engine).get_table_names())
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0001_foundation"
 
 
 def test_foundation_schema_contains_all_required_tables(tmp_path: Path) -> None:

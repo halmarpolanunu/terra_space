@@ -2,6 +2,7 @@
 CLAUDE.local.md
 .env
 .env.*
+!.env.example
 
 # Editor and OS state
 .DS_Store
@@ -24,3 +25,11 @@ backend/**/__pycache__/
 
 # Generated offline map packages
 data/maps/*.pmtiles
+
+# Local runtime data
+data/database/*.db
+data/database/*.db-*
+data/attachments/*
+!data/attachments/.gitkeep
+data/logs/*
+!data/logs/.gitkeep
