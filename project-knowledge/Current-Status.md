@@ -10,12 +10,18 @@ status: active
 
 ## Current focus
 
-The visual-design session is complete and the direction is locked. See the
-[Visual Design Direction](decisions/Visual-Design-Direction.md) decision. The next step is to
-design the detailed document and event data model before Phase 2 implementation.
+The visual-design direction and the document/event data model are both locked. See the
+[Visual Design Direction](decisions/Visual-Design-Direction.md) and
+[Document & Event Data Model](decisions/Document-Event-Data-Model.md) decisions. The next
+step is to write the Phase 2/3 implementation plan (migration, backend, frontend) in
+`project-knowledge/plans/`.
 
 ## Recent progress
 
+- Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
+  Model decision: document dates, evidence-on-source-link, a persistent duplicate-flags
+  table, actor source/target roles, AI-suggestion tracking via `is_active`, and numeric
+  latitude/longitude for the map.
 - Held the dedicated visual-design session and locked the visual direction: a calm "mission
   brief" tactical look on pure black, with a 3D globe, amber accent, serif source documents,
   and one-thing-at-a-time dense screens. Recorded as the Visual Design Direction decision.
@@ -52,14 +58,18 @@ design the detailed document and event data model before Phase 2 implementation.
 
 ## Next actions
 
-- Design the detailed document and event data model before Phase 2 implementation.
+- Write the Phase 2/3 implementation plan covering the Alembic migration, backend services,
+  and frontend, in `project-knowledge/plans/`.
 - During implementation, apply the locked Visual Design Direction and verify MapLibre globe
   support and color-contrast accessibility.
+- During implementation, apply the locked Document & Event Data Model decision, including the
+  new migration for document dates, evidence, duplicate flags, actor roles, and coordinate types.
 
 ## Related knowledge
 
 - [Back to Project Knowledge](Project-knowledge-Index.md)
 - [North Star](North-Star.md)
 - [Roadmap](Roadmap.md)
+- [Document & Event Data Model](decisions/Document-Event-Data-Model.md)
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
 - [Visual Design Direction](decisions/Visual-Design-Direction.md)

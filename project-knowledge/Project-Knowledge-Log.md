@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 — Document & event data model locked
+
+- Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
+  Model decision, extending the Phase 1 schema in place rather than splitting draft/approved
+  events into separate tables.
+- Key additions: `document_date`/`publication_date` on documents; a fixed `processing_status`
+  and `review_status` (including a new `merged` value) vocabulary; `evidence_quote` on the
+  event-source link instead of on the event; a persistent `duplicate_flags` table; a
+  `source`/`target` role on `event_actors`; reuse of `is_active` on `EventType`/`Actor` for
+  AI-suggestion tracking; and numeric `latitude`/`longitude` on locations for the map.
+- Moved the continuation point to writing the Phase 2/3 implementation plan.
+
 ## 2026-07-13 — Visual design direction locked
 
 - Held the dedicated visual-design session and recorded the Visual Design Direction decision.
