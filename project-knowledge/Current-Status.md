@@ -12,6 +12,8 @@ status: active
 
 The Phase 1 foundation checkpoint is complete. The next step is the dedicated visual-design session; final visual direction is intentionally not chosen yet.
 
+A Claude Code continuation handoff is available at `docs/continuation/claude-code-handoff.md`.
+
 ## Recent progress
 
 - Created the isolated `phase-1-foundation` branch and worktree for implementation.
@@ -26,6 +28,8 @@ The Phase 1 foundation checkpoint is complete. The next step is the dedicated vi
 - Added beginner-friendly PowerShell start and stop helpers, along with clear instructions for the first map build, local LM Studio, backup, and restore.
 - Verified that the SQLite database retains a sentinel record after containers are stopped and started again.
 - Added a browser end-to-end test that confirms all five English routes, local map rendering, LM Studio offline usability, and no external browser network requests.
+- Merged and pushed the completed Phase 1 foundation to `main` (`7fe43a7`).
+- Prepared a Claude Code handoff with the continuation point, safe commands, verification steps, and design-session boundary.
 - Approved the written Phase 1 foundation design.
 - Prepared a task-by-task implementation plan covering Docker, storage, SQLite, navigation, service health, the offline world map, and verification.
 - Inspected the repository and confirmed it currently contains Project Knowledge and setup files, but no application implementation.

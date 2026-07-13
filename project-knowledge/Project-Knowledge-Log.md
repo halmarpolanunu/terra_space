@@ -8,6 +8,10 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-13 — Claude Code continuation handoff prepared
+
+- Documented the completed and merged Phase 1 foundation, local run commands, verification commands, and the next visual-design checkpoint for Claude Code.
+
 ## 2026-07-13 — Phase 1 foundation checkpoint verified
 
 - Browser verification confirmed all five English routes, the local map canvas, LM Studio offline behavior, and the absence of external browser network requests.
