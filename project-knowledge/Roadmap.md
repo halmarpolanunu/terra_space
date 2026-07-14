@@ -38,12 +38,12 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Phase 4: Events and Dashboard
 
-- [ ] **Build approved Events list** - show approved events with search, filters, sorting, detail, source links, and edit support. Status: planned.
-- [ ] **Add event filters** - support time range, event type, epistemic status, actor, country, province/state, city/regency, and source document. Status: planned.
-- [ ] **Build Dashboard summary** - show total events, new events, distribution by type, incomplete date count, and incomplete location count. Status: planned.
-- [ ] **Build map view** - show approved events with valid location data at country, province/state, and city/regency levels. Status: planned.
-- [ ] **Build timeline view** - order events by start date and group unknown-date events separately. Status: planned.
-- [ ] **Synchronize dashboard filters** - make summary, map, timeline, and list use the same active filters. Status: planned.
+- [x] **Build approved Events list** - show approved events with search, filters, sorting, detail, source links, and edit support. Status: completed.
+- [x] **Add event filters** - support time range, event type, epistemic status, actor, country, province/state, city/regency, and source document. Status: completed.
+- [x] **Build Dashboard summary** - show total events, new events, distribution by type, incomplete date count, and incomplete location count. Status: completed.
+- [x] **Build map view** - show approved events with valid location data at country, province/state, and city/regency levels. Status: completed.
+- [x] **Build timeline view** - order events by start date and group unknown-date events separately. Status: completed.
+- [x] **Synchronize dashboard filters** - make summary, map, timeline, and list use the same active filters. Status: completed.
 
 ## Phase 5: Settings and Verification
 

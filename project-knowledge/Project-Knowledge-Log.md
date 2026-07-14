@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Phase 4 (Events and Dashboard) shipped
+
+- Built and verified approved-event exploration: the Events list supports search, shared filters,
+  sorting, detail, source links, and safe editing of approved events. Dashboard summary, map,
+  timeline, and list share one URL filter, so every view reports the same approved-event result.
+- Added fully local coordinate resolution with stored city/admin1/country precision. Unmatched
+  locations remain blank rather than guessed. The offline globe uses local map data and keeps a
+  labelled flat-map fallback when globe projection is not available.
+- Verified 80 backend tests, 64 frontend tests, frontend lint, the Docker production build, and
+  all four browser scenarios. The Phase 4 scenario confirms shared filtering, approved-event
+  editing, source reading, coordinate precision, approval timestamps, and that rejected events
+  stay out of approved-only endpoints.
+- Moved the continuation point to Phase 5 planning: Settings and final MVP verification.
+
 ## 2026-07-14 - Phase 4 implementation plan and local coordinate policy prepared
 
 - Wrote the [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md), grounded

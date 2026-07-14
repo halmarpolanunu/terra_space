@@ -35,11 +35,14 @@ export function eventLocationsToFeatureCollection(events: EventRead[]): EventPin
 export function EventGlobe({ events, onSelect }: EventGlobeProps) {
   const pins = eventLocationsToFeatureCollection(events);
 
-  return <WorldMap
-    geojson={pins}
-    onFeatureSelect={(eventId) => {
-      const event = events.find((candidate) => candidate.id === eventId);
-      if (event) onSelect(event);
-    }}
-  />;
+  return <>
+    <p aria-live="polite" className="map-marker-count">Map markers: {pins.features.length}</p>
+    <WorldMap
+      geojson={pins}
+      onFeatureSelect={(eventId) => {
+        const event = events.find((candidate) => candidate.id === eventId);
+        if (event) onSelect(event);
+      }}
+    />
+  </>;
 }

@@ -6,6 +6,7 @@ import path from "node:path";
 const powershell = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const STUB_PORT = 4180;
 const EVENT_REVIEW_STUB_PORT = 4181;
+const EVENTS_DASHBOARD_STUB_PORT = 4182;
 // Kept in sync with STUB_EVIDENCE_QUOTE in documents.spec.ts.
 const STUB_EVIDENCE_QUOTE = "A large protest occurred at the capitol on July 10th";
 const PROJECT_ROOT = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
@@ -252,8 +253,146 @@ print("Verified: approve, reject, keep-separate, and link duplicate resolution a
   }
 }
 
+async function runEventsDashboardScenario() {
+  // Kept in sync with the quotes/titles in events-dashboard.spec.ts. These
+  // records cover city, admin1, country, unmatched, and rejected cases.
+  const JAKARTA_QUOTE = "A Jakarta field observation was recorded on 2026-07-10";
+  const LOS_ANGELES_QUOTE = "A Los Angeles field observation was recorded on 2026-07-12";
+  const UNKNOWN_DATE_QUOTE = "An undated briefing was received from the field";
+  const UNMATCHED_QUOTE = "A report named an unknown location without a country";
+  const REJECTED_QUOTE = "A rejected observation should remain out of approved views";
+
+  const responseTable = [
+    {
+      match: JAKARTA_QUOTE,
+      extraction: singleEventExtraction(JAKARTA_QUOTE, {
+        title: "Jakarta field observation",
+        summary: "A confirmed observation from Jakarta.",
+        event_type: { suggested: "Observation" },
+        start_date: "2026-07-10",
+        start_date_precision: "exact",
+        epistemic_status: "confirmed",
+        locations: [{ country: "ID", admin1: "DKI Jakarta", city_regency: "Jakarta" }],
+      }),
+    },
+    {
+      match: LOS_ANGELES_QUOTE,
+      extraction: singleEventExtraction(LOS_ANGELES_QUOTE, {
+        title: "Los Angeles field observation",
+        summary: "A confirmed observation from California.",
+        event_type: { existing: "Observation" },
+        start_date: "2026-07-12",
+        start_date_precision: "exact",
+        epistemic_status: "confirmed",
+        locations: [{ country: "US", admin1: "California", city_regency: null }],
+      }),
+    },
+    {
+      match: UNKNOWN_DATE_QUOTE,
+      extraction: singleEventExtraction(UNKNOWN_DATE_QUOTE, {
+        title: "Unknown-date briefing",
+        summary: "A briefing whose date was not stated.",
+        event_type: { suggested: "Briefing" },
+        start_date: null,
+        start_date_precision: "unknown",
+        epistemic_status: "claim",
+        locations: [{ country: "ID", admin1: null, city_regency: null }],
+      }),
+    },
+    {
+      match: UNMATCHED_QUOTE,
+      extraction: singleEventExtraction(UNMATCHED_QUOTE, {
+        title: "Unmatched location report",
+        summary: "A report with a location that cannot be resolved locally.",
+        event_type: { suggested: "Assessment" },
+        start_date: "2026-07-14",
+        start_date_precision: "exact",
+        epistemic_status: "rumor",
+        locations: [{ country: null, admin1: null, city_regency: "Atlantis" }],
+      }),
+    },
+    {
+      match: REJECTED_QUOTE,
+      extraction: singleEventExtraction(REJECTED_QUOTE, {
+        title: "Rejected observation",
+        summary: "An observation deliberately rejected during review.",
+        event_type: { existing: "Observation" },
+        start_date: "2026-07-15",
+        start_date_precision: "exact",
+        epistemic_status: "denied",
+        locations: [],
+      }),
+    },
+  ];
+  const stub = await startLmStudioStubProcess(EVENTS_DASHBOARD_STUB_PORT, responseTable);
+  const env = { TERRA_LM_STUDIO_URL: `http://host.docker.internal:${EVENTS_DASHBOARD_STUB_PORT}` };
+  resetLocalDatabase();
+
+  const verifyScript = `
+import json
+import sqlite3
+from urllib.request import urlopen
+
+conn = sqlite3.connect("/data/database/terra-space.db")
+
+event_rows = conn.execute("SELECT title, review_status, approved_at FROM events").fetchall()
+statuses = {title: status for title, status, _approved_at in event_rows}
+assert statuses == {
+    "Jakarta observation updated": "approved",
+    "Los Angeles field observation": "approved",
+    "Unknown-date briefing": "approved",
+    "Unmatched location report": "approved",
+    "Rejected observation": "rejected",
+}, statuses
+assert all(approved_at is not None for _title, status, approved_at in event_rows if status == "approved")
+assert all(approved_at is None for _title, status, approved_at in event_rows if status != "approved")
+
+locations = {
+    title: (latitude, longitude, precision)
+    for title, latitude, longitude, precision in conn.execute(
+        """
+        SELECT e.title, l.latitude, l.longitude, l.coordinate_precision
+        FROM events e
+        LEFT JOIN event_locations el ON el.event_id = e.id
+        LEFT JOIN locations l ON l.id = el.location_id
+        """
+    )
+}
+assert locations["Jakarta observation updated"][0] is not None and locations["Jakarta observation updated"][1] is not None
+assert locations["Jakarta observation updated"][2] == "city_regency", locations
+assert locations["Los Angeles field observation"][0] is not None and locations["Los Angeles field observation"][1] is not None
+assert locations["Los Angeles field observation"][2] == "admin1", locations
+assert locations["Unknown-date briefing"][0] is not None and locations["Unknown-date briefing"][1] is not None
+assert locations["Unknown-date briefing"][2] == "country", locations
+assert locations["Unmatched location report"] == (None, None, None), locations
+
+with urlopen("http://backend:8000/api/events?review_status=approved") as response:
+    approved_titles = {event["title"] for event in json.load(response)}
+assert "Rejected observation" not in approved_titles, approved_titles
+assert approved_titles == {
+    "Jakarta observation updated",
+    "Los Angeles field observation",
+    "Unknown-date briefing",
+    "Unmatched location report",
+}, approved_titles
+
+print("Verified: local coordinate precision, approved_at semantics, and approved-only API visibility.")
+`.trim();
+
+  try {
+    await startTerraSpaceWithRetry(env);
+    run("npx.cmd", ["playwright", "test", "tests/e2e/events-dashboard.spec.ts"], env);
+    run("docker", ["compose", "run", "--rm", "backend", "python", "-c", verifyScript], env);
+  } finally {
+    run("powershell", [...powershell, ".\\Stop-TerraSpace.ps1"]);
+    stub.kill();
+  }
+}
+
 await runFoundationScenario();
 await sleep(5000);
 await runDocumentsScenario();
 await sleep(5000);
 await runEventReviewScenario();
+await sleep(5000);
+await runEventsDashboardScenario();
