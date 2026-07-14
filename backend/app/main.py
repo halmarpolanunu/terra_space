@@ -7,6 +7,7 @@ from app.api.routes.events import create_events_router
 from app.api.routes.health import create_health_router
 from app.api.routes.maps import create_maps_router
 from app.api.routes.processing import create_processing_router
+from app.api.routes.settings import create_settings_router
 from app.core.config import Settings
 from app.db.session import create_session_factory
 from app.services.lm_studio import LmStudioClient, LmStudioRuntimeConfig
@@ -43,6 +44,9 @@ def create_app(
     app.include_router(create_documents_router(session_factory))
     app.include_router(create_processing_router(session_factory, lm_studio_client))
     app.include_router(create_events_router(session_factory))
+    app.include_router(
+        create_settings_router(session_factory, lm_studio_client, settings.lm_studio_url)
+    )
     return app
 
 app = create_app()
