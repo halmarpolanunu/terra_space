@@ -228,6 +228,48 @@ body {
   margin: 0 0 1.25rem;
 }
 
+.facts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 1.5rem; margin: 0 0 1.25rem; }
+.facts-grid p { margin: 0; }
+.field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+.suggested-tag { color: var(--accent); font-size: 0.8rem; }
+
+.actor-row,
+.location-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+.actor-row input,
+.location-row input { flex: 1; background: var(--inset); border: 1px solid var(--border); color: var(--text); padding: 0.5rem; font-family: var(--font-sans); }
+.actor-row select,
+.location-row select,
+.field select {
+  background: var(--inset);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.55rem 0.6rem;
+  font-family: var(--font-sans);
+}
+
+.epistemic-control { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.epistemic-option {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border-bright);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.epistemic-option[data-active="true"] { background: var(--accent-wash); }
+.epistemic-option:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
 @media (max-width: 60rem) {
   .event-review-columns { grid-template-columns: 1fr; }
 }
