@@ -1,7 +1,8 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -15,25 +16,11 @@ def utc_now() -> datetime:
     return datetime.now(UTC)
 
 
-event_actors = Table(
-    "event_actors",
-    Base.metadata,
-    Column("event_id", ForeignKey("events.id", ondelete="CASCADE"), primary_key=True),
-    Column("actor_id", ForeignKey("actors.id", ondelete="CASCADE"), primary_key=True),
-)
-
 event_locations = Table(
     "event_locations",
     Base.metadata,
     Column("event_id", ForeignKey("events.id", ondelete="CASCADE"), primary_key=True),
     Column("location_id", ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True),
-)
-
-event_sources = Table(
-    "event_sources",
-    Base.metadata,
-    Column("event_id", ForeignKey("events.id", ondelete="CASCADE"), primary_key=True),
-    Column("source_id", ForeignKey("sources.id", ondelete="RESTRICT"), primary_key=True),
 )
 
 
@@ -50,10 +37,12 @@ class Document(TimestampedModel, Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(500))
     content: Mapped[str] = mapped_column(Text)
-    publication_date: Mapped[str] = mapped_column(String(10))
+    document_date: Mapped[str] = mapped_column(String(10))
+    publication_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
     source_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     input_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     processing_status: Mapped[str] = mapped_column(String(32), default="draft")
+    processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     attachments: Mapped[list["Attachment"]] = relationship(back_populates="document")
     sources: Mapped[list["Source"]] = relationship(back_populates="document")
@@ -88,8 +77,9 @@ class Actor(TimestampedModel, Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     name: Mapped[str] = mapped_column(String(500), unique=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    events: Mapped[list["Event"]] = relationship(secondary=event_actors, back_populates="actors")
+    event_actors: Mapped[list["EventActor"]] = relationship(back_populates="actor")
 
 
 class Location(TimestampedModel, Base):
@@ -99,8 +89,8 @@ class Location(TimestampedModel, Base):
     country: Mapped[str | None] = mapped_column(String(2), nullable=True)
     admin1: Mapped[str | None] = mapped_column(String(255), nullable=True)
     city_regency: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    latitude: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    longitude: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
+    longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
 
     events: Mapped[list["Event"]] = relationship(secondary=event_locations, back_populates="locations")
 
@@ -115,7 +105,7 @@ class Source(TimestampedModel, Base):
     reference_label: Mapped[str] = mapped_column(String(500))
 
     document: Mapped[Document | None] = relationship(back_populates="sources")
-    events: Mapped[list["Event"]] = relationship(secondary=event_sources, back_populates="sources")
+    event_sources: Mapped[list["EventSource"]] = relationship(back_populates="source")
 
 
 class Event(TimestampedModel, Base):
@@ -135,8 +125,49 @@ class Event(TimestampedModel, Base):
     review_status: Mapped[str] = mapped_column(String(32), default="draft")
 
     event_type: Mapped[EventType | None] = relationship(back_populates="events")
-    actors: Mapped[list[Actor]] = relationship(secondary=event_actors, back_populates="events")
+    event_actors: Mapped[list["EventActor"]] = relationship(back_populates="event")
     locations: Mapped[list[Location]] = relationship(
         secondary=event_locations, back_populates="events"
     )
-    sources: Mapped[list[Source]] = relationship(secondary=event_sources, back_populates="events")
+    event_sources: Mapped[list["EventSource"]] = relationship(back_populates="event")
+
+
+class EventActor(Base):
+    __tablename__ = "event_actors"
+
+    event_id: Mapped[str] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), primary_key=True
+    )
+    actor_id: Mapped[str] = mapped_column(
+        ForeignKey("actors.id", ondelete="CASCADE"), primary_key=True
+    )
+    role: Mapped[str] = mapped_column(String(16), primary_key=True)
+
+    event: Mapped[Event] = relationship(back_populates="event_actors")
+    actor: Mapped[Actor] = relationship(back_populates="event_actors")
+
+
+class EventSource(Base):
+    __tablename__ = "event_sources"
+
+    event_id: Mapped[str] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), primary_key=True
+    )
+    source_id: Mapped[str] = mapped_column(
+        ForeignKey("sources.id", ondelete="RESTRICT"), primary_key=True
+    )
+    evidence_quote: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    event: Mapped[Event] = relationship(back_populates="event_sources")
+    source: Mapped[Source] = relationship(back_populates="event_sources")
+
+
+class DuplicateFlag(TimestampedModel, Base):
+    __tablename__ = "duplicate_flags"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    draft_event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    matched_event_id: Mapped[str] = mapped_column(ForeignKey("events.id", ondelete="CASCADE"))
+    matched_reason: Mapped[str] = mapped_column(Text)
+    resolution: Mapped[str] = mapped_column(String(32), default="pending")
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
