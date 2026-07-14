@@ -50,6 +50,14 @@ class PendingDuplicateFlagError(Exception):
         super().__init__(f"Event has {pending_count} unresolved duplicate flag(s).")
 
 
+class EventTypeNameConflictError(Exception):
+    """Raised when creating or renaming an event type to a name that already exists."""
+
+
+class EventTypeInUseError(Exception):
+    """Raised when deleting an event type that is still referenced by an event."""
+
+
 class EvidenceQuoteNotFoundError(Exception):
     """Raised when a manually added event's evidence quote is not in the document's content."""
 
@@ -229,6 +237,55 @@ def list_event_types(db: Session) -> list[EventType]:
 
 def list_actors(db: Session) -> list[Actor]:
     return list(db.execute(select(Actor).order_by(Actor.name)).scalars())
+
+
+_UNSET = object()
+
+
+def create_event_type(db: Session, name: str) -> EventType:
+    clean_name = name.strip()
+    if not clean_name:
+        raise EventTypeNameConflictError("Event type name is required.")
+    existing = list(db.execute(select(EventType)).scalars())
+    if find_by_exact_name(existing, clean_name) is not None:
+        raise EventTypeNameConflictError("An event type with this name already exists.")
+    event_type = EventType(name=clean_name, is_active=True)
+    db.add(event_type)
+    db.commit()
+    db.refresh(event_type)
+    return event_type
+
+
+def update_event_type(
+    db: Session, event_type: EventType, *, name=_UNSET, is_active=_UNSET
+) -> EventType:
+    if name is not _UNSET:
+        clean_name = (name or "").strip()
+        if not clean_name:
+            raise EventTypeNameConflictError("Event type name is required.")
+        others = [
+            other
+            for other in db.execute(select(EventType)).scalars()
+            if other.id != event_type.id
+        ]
+        if find_by_exact_name(others, clean_name) is not None:
+            raise EventTypeNameConflictError("An event type with this name already exists.")
+        event_type.name = clean_name
+    if is_active is not _UNSET and is_active is not None:
+        event_type.is_active = is_active
+    db.commit()
+    db.refresh(event_type)
+    return event_type
+
+
+def delete_event_type(db: Session, event_type: EventType) -> None:
+    referenced = db.execute(
+        select(Event.id).where(Event.event_type_id == event_type.id).limit(1)
+    ).first()
+    if referenced is not None:
+        raise EventTypeInUseError("This event type is used by an event and cannot be deleted.")
+    db.delete(event_type)
+    db.commit()
 
 
 def _resolve_event_type(db: Session, type_input: EventTypeInput) -> EventType | None:

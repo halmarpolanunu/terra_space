@@ -5,7 +5,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.db.models import DuplicateFlag
+from app.db.models import DuplicateFlag, EventType
 from app.schemas.duplicate import DuplicateResolveRequest
 from app.schemas.event import (
     ActorRead,
@@ -13,7 +13,9 @@ from app.schemas.event import (
     ApproveAllSkipped,
     EventCreate,
     EventRead,
+    EventTypeCreate,
     EventTypeRead,
+    EventTypeUpdate,
     EventUpdate,
     DashboardSummaryRead,
 )
@@ -21,11 +23,15 @@ from app.services.documents import get_document
 from app.services.duplicates import DuplicateFlagAlreadyResolvedError, resolve_duplicate_flag
 from app.services.events import (
     EventEditNotAllowedError,
+    EventTypeInUseError,
+    EventTypeNameConflictError,
     EvidenceQuoteNotFoundError,
     PendingDuplicateFlagError,
     approve_all_for_document,
     approve_event,
+    create_event_type,
     create_manual_event,
+    delete_event_type,
     get_event,
     list_actors,
     list_event_types,
@@ -36,6 +42,7 @@ from app.services.events import (
     dashboard_summary,
     to_event_read,
     update_event,
+    update_event_type,
 )
 
 
@@ -54,6 +61,44 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         return [
             EventTypeRead.model_validate(event_type) for event_type in list_event_types(db)
         ]
+
+    @router.post("/api/event-types", response_model=EventTypeRead, status_code=201)
+    def create_event_type_route(
+        payload: EventTypeCreate, db: Session = Depends(get_db)
+    ) -> EventTypeRead:
+        try:
+            event_type = create_event_type(db, payload.name)
+        except EventTypeNameConflictError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return EventTypeRead.model_validate(event_type)
+
+    @router.patch("/api/event-types/{type_id}", response_model=EventTypeRead)
+    def update_event_type_route(
+        type_id: str, payload: EventTypeUpdate, db: Session = Depends(get_db)
+    ) -> EventTypeRead:
+        event_type = db.get(EventType, type_id)
+        if event_type is None:
+            raise HTTPException(status_code=404, detail="Event type not found.")
+        kwargs = {}
+        if "name" in payload.model_fields_set:
+            kwargs["name"] = payload.name
+        if "is_active" in payload.model_fields_set:
+            kwargs["is_active"] = payload.is_active
+        try:
+            event_type = update_event_type(db, event_type, **kwargs)
+        except EventTypeNameConflictError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return EventTypeRead.model_validate(event_type)
+
+    @router.delete("/api/event-types/{type_id}", status_code=204)
+    def delete_event_type_route(type_id: str, db: Session = Depends(get_db)) -> None:
+        event_type = db.get(EventType, type_id)
+        if event_type is None:
+            raise HTTPException(status_code=404, detail="Event type not found.")
+        try:
+            delete_event_type(db, event_type)
+        except EventTypeInUseError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     @router.get("/api/actors", response_model=list[ActorRead])
     def list_actors_route(db: Session = Depends(get_db)) -> list[ActorRead]:

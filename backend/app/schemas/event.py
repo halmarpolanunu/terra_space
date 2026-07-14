@@ -18,6 +18,15 @@ class EventTypeRead(BaseModel):
     is_active: bool
 
 
+class EventTypeCreate(BaseModel):
+    name: str = Field(min_length=1)
+
+
+class EventTypeUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1)
+    is_active: bool | None = None
+
+
 class ActorRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
