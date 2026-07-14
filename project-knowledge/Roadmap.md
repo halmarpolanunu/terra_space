@@ -47,10 +47,10 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Phase 5: Settings and Verification
 
-- [ ] **Build LM Studio settings** - configure base URL, model selection when available, connection test, connection status, and required extraction settings. Status: planned.
-- [ ] **Build simple event type management** - manage active event types as data without advanced taxonomy features. Status: planned.
-- [ ] **Verify end-to-end flow** - test document draft, batch processing, review, approval, Events, and Dashboard. Status: planned.
-- [ ] **Verify offline and failure cases** - test LM Studio offline, partial batch failure, retry, reprocessing, incomplete time/location data, and possible duplicate handling. Status: planned.
+- [x] **Build LM Studio settings** - configure base URL, model selection when available, connection test, connection status, and required extraction settings. Base URL and selected model are persisted in a single-row `app_settings` table and resolved at call time, so saved changes take effect without a restart; the selected model is now honored by extraction. Status: completed.
+- [x] **Build simple event type management** - create, rename, activate/deactivate, and delete-when-unused event types as data, with no merge, synonyms, or hierarchy. Status: completed.
+- [x] **Verify end-to-end flow** - document draft, batch processing, review, approval, Events, and Dashboard are exercised across the documents, event-review, and events-dashboard browser scenarios. Status: completed.
+- [x] **Verify offline and failure cases** - LM Studio offline (foundation scenario), partial batch failure and retry recovery (settings scenario and backend tests), reprocessing confirmation, and incomplete time/location and duplicate handling (events-dashboard and event-review scenarios) are all covered. Status: completed.
 
 ## Deferred Beyond MVP
 

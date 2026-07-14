@@ -10,10 +10,47 @@ status: active
 
 ## Current focus
 
-Phase 4 (Events and Dashboard) is built and verified end-to-end. The next continuation point is
-planning Phase 5: Settings and final MVP verification.
+Phase 5 (Settings and Verification) is built. All five MVP phases are now implemented and the
+whole document-to-event workflow is verified end-to-end. The next continuation point is the
+deferred aesthetic design pass described in
+[Design Pass Sequencing](decisions/Design-Pass-Sequencing.md).
 
 ## Recent progress
+
+- Executed the [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md)
+  task by task. Added a persisted single-row `app_settings` table (migration
+  `0005_phase5_app_settings`) and made `LmStudioClient` resolve its base URL and preferred model
+  from that row on every call, so saving new settings takes effect for the next processing run and
+  the health check without restarting containers; the selected model is now honored by extraction
+  instead of always using the first discovered model. Added `GET/PATCH /api/settings` (offline-safe
+  read, URL validation, model can be cleared to auto-detect) and an
+  `POST /api/settings/lm-studio/test` connection test that lists a candidate or saved URL's models
+  without mutating stored settings. Added create/rename/activate-deactivate/delete-when-unreferenced
+  event-type management (`POST/PATCH/DELETE /api/event-types`, with an `in_use` flag on the list so
+  the UI only offers delete for unused types). Built the Settings screen (LM Studio connection panel
+  with a live connection test, and an event-type panel), replacing the placeholder, with the
+  Tailwind Plus categories from Design Pass Sequencing in mind. Verified with 106 backend tests, 79
+  frontend tests, frontend lint, a frontend production build, and the browser e2e suite — which now
+  includes a Phase 5 settings scenario that configures LM Studio and manages event types through the
+  UI, then drives a two-document batch where one document fails and is recovered by retry (the stub
+  fails that document once, then succeeds), with `app_settings`, event-type state, and document
+  recovery all confirmed by inspecting SQLite. Partial-batch failure, retry, reprocessing
+  confirmation, and already-queued conflicts are also covered directly by backend tests.
+
+- Wrote the [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md) from a
+  direct inspection of the current codebase. The grounding surfaced the key architectural fact that
+  shapes the phase: the LM Studio base URL is baked in once at startup (`create_app` builds a single
+  `LmStudioClient(settings.lm_studio_url)` from the `TERRA_LM_STUDIO_URL` env var and hands it to the
+  processing background tasks and health check), and `_discover_model` always picks `models[0]`, so a
+  user's model choice has nowhere to live and is never honored. The plan adds a persisted single-row
+  `app_settings` table and makes the client resolve base URL and model from it on every call, so saved
+  settings take effect immediately without a restart. It also adds create/rename/activate-deactivate/
+  delete-if-unreferenced event-type management (the read-only `GET /api/event-types` already exists and
+  types are already `is_active` data), builds the still-placeholder Settings screen with the Tailwind
+  Plus categories named in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md), and closes
+  with the final MVP end-to-end and failure-case verification pass (explicitly auditing partial-batch
+  failure and retry as the one failure case not clearly covered by existing e2e specs). It fixes
+  "required extraction settings" to mean base URL + selected model, with no new generation knobs.
 
 - Did a high-level unused-files scan of the whole project and acted on every finding: added
   migration `0004_coordinate_backfill` after finding the Phase 4 migration never actually called
@@ -180,10 +217,13 @@ planning Phase 5: Settings and final MVP verification.
 
 ## Next actions
 
-- Plan Phase 5: local LM Studio settings, simple event-type management, and final end-to-end and
-  failure-case verification for the full MVP. Read the
-  [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) decision first — it names the
-  Tailwind Plus categories that should inform the Settings screen's design.
+- Hold the deferred aesthetic design pass now that the MVP is complete and verified. Re-open both
+  [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) and
+  [Visual Design Direction](decisions/Visual-Design-Direction.md) together, and work through the
+  Tailwind Plus category mapping recorded in the Design Pass Sequencing decision (Stats, Tables,
+  Description Lists, Badges, Alerts, Empty States, Settings Screens, Toggles, Radio Groups, Action
+  Panels) as structural references, keeping the pure-black/amber mission-brief system. Keep fixing
+  genuine usability defects as they surface in the meantime.
 
 ## Related knowledge
 

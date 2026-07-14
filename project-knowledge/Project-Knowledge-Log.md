@@ -8,6 +8,40 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Phase 5 (Settings and Verification) built and MVP verified end-to-end
+
+- Executed the [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md).
+  The grounding inspection confirmed the key constraint: the LM Studio base URL was baked in once at
+  startup (`create_app` built a single `LmStudioClient(settings.lm_studio_url)` and passed it to the
+  processing background tasks and health check) and `_discover_model` always picked the first model,
+  so a user's model choice had nowhere to live. Fixed by adding a persisted single-row `app_settings`
+  table (migration `0005_phase5_app_settings`) and a `config_provider` on `LmStudioClient` that
+  resolves the current base URL and preferred model from that row on every call — saved settings now
+  take effect for the next processing run and health check without a restart, and the selected model
+  is honored by extraction (auto-detect when unset).
+- Added `GET/PATCH /api/settings` (network-free read, base-URL validation, model clearable to
+  auto-detect) and `POST /api/settings/lm-studio/test` (lists the models a candidate or saved URL
+  reports; never mutates stored settings; offline is reported calmly). Added event-type management —
+  `POST/PATCH/DELETE /api/event-types` for create, rename, activate/deactivate, and
+  delete-only-when-unreferenced (409 otherwise) — with an `in_use` flag added to the event-type list
+  read so the Settings UI offers delete only for unused types. No merge, synonyms, or hierarchy;
+  renaming and deactivating never touch existing event links.
+- Built the Settings screen (LM Studio connection panel with a live connection test and model
+  selector; event-type panel), replacing the placeholder, with the Tailwind Plus categories from the
+  [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) decision as structural references and
+  the pure-black/amber mission-brief system preserved. The screen loads and saves with LM Studio
+  offline.
+- Verified end-to-end: 106 backend tests, 79 frontend tests, frontend lint and production build, and
+  the browser e2e suite. Added a Phase 5 settings scenario that, through the UI, tests the LM Studio
+  connection against a stub, selects and saves a model, and creates/deletes/deactivates event types,
+  then drives a two-document batch where one document fails and is recovered by retry — the stub
+  enhanced to fail a document a set number of times so a single run exercises process → fail → retry
+  → success. `app_settings` persistence, event-type state, and document recovery are all confirmed by
+  inspecting SQLite. Partial-batch failure, retry, reprocessing confirmation, and already-queued
+  conflicts are also covered directly by backend tests. Project Knowledge validation passed.
+- With Phase 5 complete, all five MVP phases are implemented and the whole document-to-event workflow
+  is proven. The next focus is the deferred aesthetic design pass.
+
 ## 2026-07-14 - Fixed a missed coordinate backfill and removed stale assets
 
 - A high-level scan of the project for unused files turned up a real bug: the

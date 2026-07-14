@@ -7,6 +7,7 @@ const powershell = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
 const STUB_PORT = 4180;
 const EVENT_REVIEW_STUB_PORT = 4181;
 const EVENTS_DASHBOARD_STUB_PORT = 4182;
+const SETTINGS_STUB_PORT = 4183;
 // Kept in sync with STUB_EVIDENCE_QUOTE in documents.spec.ts.
 const STUB_EVIDENCE_QUOTE = "A large protest occurred at the capitol on July 10th";
 const PROJECT_ROOT = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
@@ -389,6 +390,62 @@ print("Verified: local coordinate precision, approved_at semantics, and approved
   }
 }
 
+async function runSettingsScenario() {
+  // Kept in sync with ALPHA_CONTENT/BRAVO_CONTENT in settings.spec.ts. Bravo
+  // fails once (schema-invalid output) so the browser can drive process ->
+  // fail -> retry -> success against a stub that succeeds on the second call.
+  const ALPHA_QUOTE = "alpha valid body";
+  const BRAVO_QUOTE = "bravo failing body";
+
+  const responseTable = [
+    {
+      match: ALPHA_QUOTE,
+      extraction: singleEventExtraction(ALPHA_QUOTE, { title: "Alpha event" }),
+    },
+    {
+      match: BRAVO_QUOTE,
+      failTimes: 1,
+      extraction: singleEventExtraction(BRAVO_QUOTE, { title: "Bravo event" }),
+    },
+  ];
+
+  const stub = await startLmStudioStubProcess(SETTINGS_STUB_PORT, responseTable);
+  const env = { TERRA_LM_STUDIO_URL: `http://host.docker.internal:${SETTINGS_STUB_PORT}` };
+  resetLocalDatabase();
+
+  const verifyScript = `
+import sqlite3
+
+conn = sqlite3.connect("/data/database/terra-space.db")
+
+settings = conn.execute("SELECT lm_studio_base_url, lm_studio_model FROM app_settings").fetchone()
+assert settings is not None, "expected an app_settings row"
+assert settings[0] == "http://host.docker.internal:${SETTINGS_STUB_PORT}", settings
+assert settings[1] == "stub-model", settings
+
+types = {name: is_active for name, is_active in conn.execute("SELECT name, is_active FROM event_types").fetchall()}
+assert "Manual Type" in types, types
+assert types["Manual Type"] == 0, f"expected Manual Type deactivated, got {types}"
+assert "Temp Type" not in types, f"expected Temp Type deleted, got {types}"
+
+docs = {title: (status, error) for title, status, error in conn.execute("SELECT title, processing_status, processing_error FROM documents").fetchall()}
+assert docs["Alpha valid report"][0] == "ready_for_review", docs
+assert docs["Bravo failing report"][0] == "ready_for_review", docs
+assert docs["Bravo failing report"][1] is None, f"expected retry to clear the error, got {docs}"
+
+print("Verified: settings persistence, event-type management, and partial-failure retry recovery.")
+`.trim();
+
+  try {
+    await startTerraSpaceWithRetry(env);
+    run("npx.cmd", ["playwright", "test", "tests/e2e/settings.spec.ts"], env);
+    run("docker", ["compose", "run", "--rm", "backend", "python", "-c", verifyScript], env);
+  } finally {
+    run("powershell", [...powershell, ".\\Stop-TerraSpace.ps1"]);
+    stub.kill();
+  }
+}
+
 await runFoundationScenario();
 await sleep(5000);
 await runDocumentsScenario();
@@ -396,3 +453,5 @@ await sleep(5000);
 await runEventReviewScenario();
 await sleep(5000);
 await runEventsDashboardScenario();
+await sleep(5000);
+await runSettingsScenario();
