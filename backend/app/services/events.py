@@ -109,6 +109,14 @@ def get_event(db: Session, event_id: str) -> Event | None:
     return db.get(Event, event_id)
 
 
+def list_event_types(db: Session) -> list[EventType]:
+    return list(db.execute(select(EventType).order_by(EventType.name)).scalars())
+
+
+def list_actors(db: Session) -> list[Actor]:
+    return list(db.execute(select(Actor).order_by(Actor.name)).scalars())
+
+
 def _resolve_event_type(db: Session, type_input: EventTypeInput) -> EventType | None:
     type_name = type_input.existing or type_input.suggested
     if not type_name:

@@ -6,10 +6,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.db.models import DuplicateFlag
 from app.schemas.duplicate import DuplicateResolveRequest
 from app.schemas.event import (
+    ActorRead,
     ApproveAllResponse,
     ApproveAllSkipped,
     EventCreate,
     EventRead,
+    EventTypeRead,
     EventUpdate,
 )
 from app.services.documents import get_document
@@ -22,6 +24,8 @@ from app.services.events import (
     approve_event,
     create_manual_event,
     get_event,
+    list_actors,
+    list_event_types,
     list_events,
     list_events_for_document,
     reject_event,
@@ -39,6 +43,16 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             yield db
         finally:
             db.close()
+
+    @router.get("/api/event-types", response_model=list[EventTypeRead])
+    def list_event_types_route(db: Session = Depends(get_db)) -> list[EventTypeRead]:
+        return [
+            EventTypeRead.model_validate(event_type) for event_type in list_event_types(db)
+        ]
+
+    @router.get("/api/actors", response_model=list[ActorRead])
+    def list_actors_route(db: Session = Depends(get_db)) -> list[ActorRead]:
+        return [ActorRead.model_validate(actor) for actor in list_actors(db)]
 
     @router.get("/api/documents/{document_id}/events", response_model=list[EventRead])
     def list_for_document(document_id: str, db: Session = Depends(get_db)) -> list[EventRead]:

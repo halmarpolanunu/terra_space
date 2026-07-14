@@ -1,3 +1,4 @@
+import { StatusChip } from "@/components/status-chip";
 import type { ProcessingStatus } from "@/lib/documents-api";
 
 const LABELS: Record<ProcessingStatus, string> = {
@@ -9,12 +10,16 @@ const LABELS: Record<ProcessingStatus, string> = {
   failed: "Failed",
 };
 
+const COLOR_VARS: Partial<Record<ProcessingStatus, string>> = {
+  queued: "--status-rumor",
+  processing: "--status-rumor",
+  ready_for_review: "--status-claim",
+  completed: "--status-confirmed",
+  failed: "--status-denied",
+};
+
 type ProcessingStatusBadgeProps = { status: ProcessingStatus };
 
 export function ProcessingStatusBadge({ status }: ProcessingStatusBadgeProps) {
-  return (
-    <span className="status-badge" data-status={status}>
-      {LABELS[status]}
-    </span>
-  );
+  return <StatusChip colorVar={COLOR_VARS[status]} label={LABELS[status]} value={status} />;
 }
