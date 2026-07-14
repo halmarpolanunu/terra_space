@@ -1,18 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { DocumentForm } from "@/app/documents/document-form";
 import { DocumentList } from "@/app/documents/document-list";
+import { ReprocessConfirmDialog } from "@/app/documents/reprocess-confirm-dialog";
 import { AppShell } from "@/components/app-shell";
 import {
   createDocument,
   deleteDocument,
   listDocuments,
+  processDocuments,
+  retryDocument,
   updateDocument,
   type Document,
   type DocumentDraft,
 } from "@/lib/documents-api";
+
+const POLL_INTERVAL_MS = 1500;
+const ACTIVE_STATUSES = new Set(["queued", "processing"]);
 
 function toDraft(document: Document): DocumentDraft {
   return {
@@ -29,10 +35,34 @@ export default function DocumentsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [error, setError] = useState<string>();
+  const [pollingIds, setPollingIds] = useState<Set<string>>(new Set());
+  const [confirmation, setConfirmation] = useState<string[] | null>(null);
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     refresh();
   }, []);
+
+  useEffect(() => {
+    if (pollingIds.size === 0) {
+      return;
+    }
+    pollTimer.current = setInterval(async () => {
+      const latest = await listDocuments();
+      setDocuments(latest);
+      const stillActive = latest.some(
+        (document) => pollingIds.has(document.id) && ACTIVE_STATUSES.has(document.processing_status),
+      );
+      if (!stillActive) {
+        setPollingIds(new Set());
+      }
+    }, POLL_INTERVAL_MS);
+    return () => {
+      if (pollTimer.current) {
+        clearInterval(pollTimer.current);
+      }
+    };
+  }, [pollingIds]);
 
   async function refresh() {
     try {
@@ -81,7 +111,51 @@ export default function DocumentsPage() {
     });
   }
 
-  function handleProcessSelected() {}
+  async function handleProcessSelected() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      return;
+    }
+    try {
+      const response = await processDocuments(ids);
+      if (response.status === "confirmation_required") {
+        setConfirmation(response.document_ids);
+        return;
+      }
+      setSelectedIds(new Set());
+      setPollingIds(new Set(response.document_ids));
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : "Could not start processing.",
+      );
+    }
+  }
+
+  async function handleConfirmReprocess() {
+    if (!confirmation) {
+      return;
+    }
+    const ids = confirmation;
+    setConfirmation(null);
+    try {
+      const response = await processDocuments(ids, true);
+      setSelectedIds(new Set());
+      setPollingIds(new Set(response.document_ids));
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error ? submitError.message : "Could not start processing.",
+      );
+    }
+  }
+
+  async function handleRetry(id: string) {
+    try {
+      const response = await retryDocument(id);
+      setPollingIds(new Set(response.document_ids));
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Could not retry the document.");
+    }
+  }
 
   return (
     <AppShell currentPath="/documents">
@@ -91,6 +165,13 @@ export default function DocumentsPage() {
           <h1>Documents</h1>
         </div>
         {error && <p role="alert">{error}</p>}
+        {confirmation && (
+          <ReprocessConfirmDialog
+            count={confirmation.length}
+            onCancel={() => setConfirmation(null)}
+            onConfirm={handleConfirmReprocess}
+          />
+        )}
         <DocumentForm
           initialValues={editingDocument ? toDraft(editingDocument) : undefined}
           key={editingDocument?.id ?? "new"}
@@ -103,6 +184,7 @@ export default function DocumentsPage() {
           onDelete={handleDelete}
           onEdit={setEditingDocument}
           onProcessSelected={handleProcessSelected}
+          onRetry={handleRetry}
           onToggleSelect={handleToggleSelect}
           selectedIds={selectedIds}
         />

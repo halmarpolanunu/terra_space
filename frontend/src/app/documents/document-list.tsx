@@ -12,6 +12,7 @@ type DocumentListProps = {
   onProcessSelected: () => void;
   onEdit?: (document: Document) => void;
   onDelete?: (id: string) => void;
+  onRetry?: (id: string) => void;
 };
 
 export function DocumentList({
@@ -21,6 +22,7 @@ export function DocumentList({
   onProcessSelected,
   onEdit,
   onDelete,
+  onRetry,
 }: DocumentListProps) {
   const selectedCount = selectedIds.size;
 
@@ -54,6 +56,11 @@ export function DocumentList({
             </div>
             <div className="document-row-actions">
               <ProcessingStatusBadge status={document.processing_status} />
+              {onRetry && document.processing_status === "failed" && (
+                <button className="btn" onClick={() => onRetry(document.id)} type="button">
+                  Retry
+                </button>
+              )}
               {onEdit && EDITABLE_STATUSES.has(document.processing_status) && (
                 <button className="btn" onClick={() => onEdit(document)} type="button">
                   Edit

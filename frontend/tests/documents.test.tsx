@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { DocumentForm } from "@/app/documents/document-form";
 import { DocumentList } from "@/app/documents/document-list";
+import { ReprocessConfirmDialog } from "@/app/documents/reprocess-confirm-dialog";
 import type { Document } from "@/lib/documents-api";
 
 function makeDocument(overrides: Partial<Document> = {}): Document {
@@ -140,5 +141,68 @@ describe("DocumentList", () => {
     );
 
     expect(screen.getByText("LM Studio timed out.")).toBeVisible();
+  });
+
+  it("shows a Retry control for a failed document and calls onRetry", () => {
+    const documents = [
+      makeDocument({
+        id: "doc-1",
+        processing_status: "failed",
+        processing_error: "LM Studio timed out.",
+      }),
+    ];
+    const onRetry = vi.fn();
+
+    render(
+      <DocumentList
+        documents={documents}
+        onProcessSelected={vi.fn()}
+        onRetry={onRetry}
+        onToggleSelect={vi.fn()}
+        selectedIds={new Set()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+    expect(onRetry).toHaveBeenCalledWith("doc-1");
+  });
+
+  it("does not show a Retry control for a document that is not failed", () => {
+    const documents = [makeDocument({ id: "doc-1", processing_status: "draft" })];
+
+    render(
+      <DocumentList
+        documents={documents}
+        onProcessSelected={vi.fn()}
+        onRetry={vi.fn()}
+        onToggleSelect={vi.fn()}
+        selectedIds={new Set()}
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /retry/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("ReprocessConfirmDialog", () => {
+  it("explains why confirmation is needed and reports the choice", () => {
+    const onConfirm = vi.fn();
+    const onCancel = vi.fn();
+
+    render(<ReprocessConfirmDialog count={2} onCancel={onCancel} onConfirm={onConfirm} />);
+
+    expect(screen.getByText(/2 selected documents have approved events/i)).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: /reprocess anyway/i }));
+    expect(onConfirm).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(onCancel).toHaveBeenCalled();
+  });
+
+  it("uses singular phrasing for a single document", () => {
+    render(<ReprocessConfirmDialog count={1} onCancel={vi.fn()} onConfirm={vi.fn()} />);
+
+    expect(screen.getByText(/1 selected document has approved events/i)).toBeVisible();
   });
 });

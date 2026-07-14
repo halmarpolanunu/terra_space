@@ -73,3 +73,33 @@ export async function deleteDocument(id: string): Promise<void> {
     throw new Error(`Request failed with status ${response.status}`);
   }
 }
+
+export type ProcessResponse = {
+  status: "queued" | "confirmation_required";
+  document_ids: string[];
+};
+
+async function parseProcessResponse(response: Response): Promise<ProcessResponse> {
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.detail ?? `Request failed with status ${response.status}`);
+  }
+  return response.json() as Promise<ProcessResponse>;
+}
+
+export async function processDocuments(
+  documentIds: string[],
+  confirmReprocess = false,
+): Promise<ProcessResponse> {
+  const response = await fetch(`${BASE_URL}/process`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_ids: documentIds, confirm_reprocess: confirmReprocess }),
+  });
+  return parseProcessResponse(response);
+}
+
+export async function retryDocument(id: string): Promise<ProcessResponse> {
+  const response = await fetch(`${BASE_URL}/${id}/retry`, { method: "POST" });
+  return parseProcessResponse(response);
+}
