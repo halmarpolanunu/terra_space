@@ -8,13 +8,49 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 — Phase 2 implementation plan written
+
+- Wrote the Phase 2 (Documents and Batch Processing) implementation plan in
+  `project-knowledge/plans/`, scoped to Roadmap Phase 2 only: the full Document & Event Data
+  Model migration, document draft CRUD, a Documents page styled per the Visual Design
+  Direction, LM Studio structured extraction, evidence-quote validation enforcing "never
+  invent," batch orchestration with per-document failure isolation, retry, a forward-looking
+  reprocessing-approval warning, and end-to-end verification.
+- Moved the continuation point to executing this plan; Phase 3 gets its own plan afterward.
+
+## 2026-07-14 — Document & event data model locked
+
+- Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
+  Model decision, extending the Phase 1 schema in place rather than splitting draft/approved
+  events into separate tables.
+- Key additions: `document_date`/`publication_date` on documents; a fixed `processing_status`
+  and `review_status` (including a new `merged` value) vocabulary; `evidence_quote` on the
+  event-source link instead of on the event; a persistent `duplicate_flags` table; a
+  `source`/`target` role on `event_actors`; reuse of `is_active` on `EventType`/`Actor` for
+  AI-suggestion tracking; and numeric `latitude`/`longitude` on locations for the map.
+- Moved the continuation point to writing the Phase 2/3 implementation plan.
+
+## 2026-07-13 — Visual design direction locked
+
+- Held the dedicated visual-design session and recorded the Visual Design Direction decision.
+- Chose a calm "mission brief" tactical look on pure black: amber accent, 3D globe map,
+  serif source documents vs mono/sans system chrome, calm motion, and one-thing-at-a-time
+  dense screens (Dashboard and Event Review validated as concept mockups).
+- Moved the continuation point from the visual-design checkpoint to the document/event
+  data-model design before Phase 2.
+
 ## 2026-07-13 — Claude Code continuation handoff prepared
 
 - Documented the completed and merged Phase 1 foundation, local run commands, verification commands, and the next visual-design checkpoint for Claude Code.
 
 ## 2026-07-13 — Phase 1 foundation checkpoint verified
 
-- Browser verification confirmed all five English routes, the local map canvas, LM Studio offline behavior, and the absence of external browser network requests.
+- Verified in the `phase-1-foundation` worktree: 14 backend tests, 6 frontend tests, frontend
+  lint and production build, and the browser end-to-end check all passed.
+- The end-to-end run (`npm.cmd run test:e2e`) confirmed all five English routes, the local map
+  canvas, LM Studio offline behavior, and no external browser network requests.
+- Persistence confirmed: a SQLite sentinel record survived a `docker compose down` and restart.
+- Project Knowledge validation passed with 0 errors and 0 warnings.
 - The next planned collaboration point is the separate visual-design session; no final visual decisions were made during implementation.
 
 ## 2026-07-13 — Docker Compose runtime verified

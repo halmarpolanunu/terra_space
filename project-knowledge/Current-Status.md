@@ -10,12 +10,24 @@ status: active
 
 ## Current focus
 
-The Phase 1 foundation checkpoint is complete. The next step is the dedicated visual-design session; final visual direction is intentionally not chosen yet.
-
-A Claude Code continuation handoff is available at `docs/continuation/claude-code-handoff.md`.
+The Phase 2 implementation plan is written and ready for execution. See the
+[Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md) — document
+CRUD, the full Document & Event Data Model migration, LM Studio batch extraction with
+evidence-quote validation, and retry/reprocessing. Phase 3 (Event Review and Deduplication)
+gets its own plan once Phase 2 is built and working.
 
 ## Recent progress
 
+- Wrote the Phase 2 (Documents and Batch Processing) implementation plan, scoped to Roadmap
+  Phase 2 only, in `project-knowledge/plans/`.
+- Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
+  Model decision: document dates, evidence-on-source-link, a persistent duplicate-flags
+  table, actor source/target roles, AI-suggestion tracking via `is_active`, and numeric
+  latitude/longitude for the map.
+- Held the dedicated visual-design session and locked the visual direction: a calm "mission
+  brief" tactical look on pure black, with a 3D globe, amber accent, serif source documents,
+  and one-thing-at-a-time dense screens. Recorded as the Visual Design Direction decision.
+- Validated two screens (Dashboard and Event Review) as concept mockups during the session.
 - Created the isolated `phase-1-foundation` branch and worktree for implementation.
 - Built the Next.js frontend and FastAPI backend skeleton with locked dependencies and automated tests.
 - Implemented safe local data-directory initialization and a health endpoint that reports offline LM Studio without blocking application startup.
@@ -29,8 +41,7 @@ A Claude Code continuation handoff is available at `docs/continuation/claude-cod
 - Verified that the SQLite database retains a sentinel record after containers are stopped and started again.
 - Added a browser end-to-end test that confirms all five English routes, local map rendering, LM Studio offline usability, and no external browser network requests.
 - Merged and pushed the completed Phase 1 foundation to `main` (`7fe43a7`).
-- Prepared a Claude Code handoff with the continuation point, safe commands, verification steps, and design-session boundary.
-- Approved the written Phase 1 foundation design.
+- Approved the Phase 1 foundation design.
 - Prepared a task-by-task implementation plan covering Docker, storage, SQLite, navigation, service health, the offline world map, and verification.
 - Inspected the repository and confirmed it currently contains Project Knowledge and setup files, but no application implementation.
 - Agreed on a local browser application started with Docker Compose.
@@ -45,16 +56,21 @@ A Claude Code continuation handoff is available at `docs/continuation/claude-cod
 
 ## Blockers
 
-- Detailed visual direction remains intentionally undecided until the dedicated design session.
+- None at this checkpoint.
 
 ## Next actions
 
-- Hold the dedicated visual-design session before final interface styling.
-- Design the detailed document and event data model before Phase 2 implementation.
+- Execute the Phase 2 Implementation Plan task by task (migration, document CRUD, Documents
+  page, LM Studio extraction, validation/persistence, batch orchestration, batch UX,
+  end-to-end verification).
+- After Phase 2 ships, write the Phase 3 (Event Review and Deduplication) implementation plan.
 
 ## Related knowledge
 
 - [Back to Project Knowledge](Project-knowledge-Index.md)
+- [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md)
 - [North Star](North-Star.md)
 - [Roadmap](Roadmap.md)
+- [Document & Event Data Model](decisions/Document-Event-Data-Model.md)
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
+- [Visual Design Direction](decisions/Visual-Design-Direction.md)
