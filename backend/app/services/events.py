@@ -25,6 +25,7 @@ from app.schemas.event import (
     EventUpdate,
     LocationRead,
 )
+from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
 
 EDITABLE_REVIEW_STATUSES = {"draft"}
@@ -287,6 +288,7 @@ def create_manual_event(db: Session, document: Document, payload: EventCreate) -
         actor = _resolve_actor(db, actor_input.name)
         event.event_actors.append(EventActor(actor=actor, role=actor_input.role))
 
+    detect_duplicates(db, event)
     db.commit()
     db.refresh(event)
     return event

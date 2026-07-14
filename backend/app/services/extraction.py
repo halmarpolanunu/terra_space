@@ -13,6 +13,7 @@ from app.db.models import (
     Location,
 )
 from app.schemas.extraction import ExtractedEvent, ExtractionResult
+from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
 
 
@@ -97,6 +98,7 @@ def persist_extraction(
                 existing_actors.append(actor)
             event.event_actors.append(EventActor(actor=actor, role=actor_data.role))
 
+        detect_duplicates(db, event)
         result.saved_events.append(event)
 
     db.commit()
