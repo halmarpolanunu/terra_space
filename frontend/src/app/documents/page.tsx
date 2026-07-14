@@ -200,7 +200,7 @@ export default function DocumentsPage() {
     <AppShell currentPath="/documents">
       <section className="documents-page">
         <div>
-          <p className="eyebrow">Phase 2</p>
+          <p className="eyebrow">Source intake</p>
           <h1>Documents</h1>
         </div>
         {error && <p role="alert">{error}</p>}

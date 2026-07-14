@@ -65,6 +65,22 @@ describe("DocumentForm", () => {
 });
 
 describe("DocumentList", () => {
+  it("titles the queue panel and shows an empty state when there are no documents", () => {
+    render(
+      <DocumentList
+        documents={[]}
+        onProcessSelected={vi.fn()}
+        onToggleSelect={vi.fn()}
+        selectedIds={new Set()}
+      />,
+    );
+
+    expect(screen.getByText("Document queue")).toBeVisible();
+    expect(
+      screen.getByText("No documents yet — add your first document above."),
+    ).toBeVisible();
+  });
+
   it("renders one row per document with a status badge and checkbox", () => {
     const documents = [
       makeDocument({ id: "doc-1", title: "Report A", processing_status: "draft" }),

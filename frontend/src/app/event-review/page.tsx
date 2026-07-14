@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { AddEventForm } from "@/app/event-review/add-event-form";
@@ -8,6 +9,7 @@ import { EventCard } from "@/app/event-review/event-card";
 import { ReviewBar } from "@/app/event-review/review-bar";
 import { SourcePanel } from "@/app/event-review/source-panel";
 import { AppShell } from "@/components/app-shell";
+import { FramedPanel } from "@/components/framed-panel";
 import type { Document } from "@/lib/documents-api";
 import { listDocuments } from "@/lib/documents-api";
 import type {
@@ -210,14 +212,22 @@ export default function EventReviewPage() {
   return (
     <AppShell currentPath="/event-review">
       <div>
-        <p className="eyebrow">Phase 3</p>
+        <p className="eyebrow">Extraction queue</p>
         <h1>Event Review</h1>
       </div>
       {error && <p role="alert">{error}</p>}
       {loading ? (
         <p>Loading review queue…</p>
       ) : documents.length === 0 ? (
-        <p>No documents are waiting for review.</p>
+        <FramedPanel>
+          <p>No documents are waiting for review.</p>
+          <p className="event-review-empty-hint">
+            Events extracted from processed documents appear here for one-at-a-time approval.
+          </p>
+          <Link className="btn btn-primary" href="/documents">
+            Add or process documents
+          </Link>
+        </FramedPanel>
       ) : (
         <>
           <ReviewBar

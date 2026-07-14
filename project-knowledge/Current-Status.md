@@ -11,14 +11,28 @@ status: active
 ## Current focus
 
 Every Roadmap item across all five phases is complete. The deferred aesthetic design pass
-described in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) has started: its
-audit half is done and recorded in the
-[Design Pass Audit](plans/2026-07-15-design-pass-audit.md). The next continuation point is the
-implementation half of the pass — starting with the four usability defects listed in the audit's
-"Prioritized top 5" — working in the prepared git worktree (`.claude/worktrees/design-pass`,
-branch `worktree-design-pass`) so it can proceed without touching this checkout.
+described in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) is underway: the audit
+half is recorded in the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md), and its four
+priority usability defects are now fixed. The next continuation point is the remaining polish
+half of the pass — starting with item 5 ("Compress the shared filter block" so the Dashboard
+globe and summary are visible without scrolling) and the runners-up listed in the audit. The
+earlier design-pass git worktree was a false start (the prior session actually worked directly in
+this checkout instead) and has been removed; there is currently only one working directory.
 
 ## Recent progress
+
+- Fixed the four prioritized usability defects from the
+  [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): replaced the internal "Phase 2" /
+  "Phase 3" roadmap labels on Documents and Event Review with real eyebrow text ("Source intake",
+  "Extraction queue"); gave Event Review's dead-end empty state a framed orientation message and a
+  button to Documents; taught the shared `EventList`/`EventTimeline` components to distinguish "no
+  approved events exist yet" (with a link to Event Review) from "filters excluded everything"
+  (kept message plus a Clear filters action) on Dashboard and Events; and titled the Documents
+  queue panel with its own empty state, plus fixed disabled primary buttons fading to
+  near-invisible by switching `.btn:disabled` from the unused `--text-dim` token to the already-used
+  `--text-muted` token (removing `--text-dim` as dead CSS). Verified with 88 frontend tests (6 new),
+  lint, a production build, and a live browser check of all four affected screens in both the
+  "no data" and "filters active" empty-state branches.
 
 - Ran the audit half of the deferred design pass as a read-only review (no code changed): the
   app was started from the `design-pass` worktree, all five screens were captured as full-page

@@ -13,7 +13,7 @@ import { EventList } from "@/components/event-list";
 import { EventTimeline } from "@/components/event-timeline";
 import { FramedPanel } from "@/components/framed-panel";
 import { ServiceStatusPanel } from "@/components/service-status";
-import { parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
+import { emptyEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
 import {
   getDashboardSummary,
   listActors,
@@ -86,8 +86,8 @@ export function DashboardWorkspace() {
           <DashboardSummary events={events} />
           <FramedPanel className="dashboard-globe-panel" title="Event locations"><EventGlobe events={events} onSelect={setSelectedEvent} /></FramedPanel>
           <div className="dashboard-lower-grid">
-            <FramedPanel title="Timeline"><EventTimeline events={events} sort={filters.sort} /></FramedPanel>
-            <FramedPanel title="Filtered events"><EventList events={events} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>
+            <FramedPanel title="Timeline"><EventTimeline events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(emptyEventFilters())} sort={filters.sort} /></FramedPanel>
+            <FramedPanel title="Filtered events"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(emptyEventFilters())} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>
           </div>
         </>}
       </section>

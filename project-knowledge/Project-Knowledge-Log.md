@@ -8,6 +8,36 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Fixed the design pass audit's four priority usability defects
+
+- Fixed all four prioritized usability defects from the
+  [Design Pass Audit](plans/2026-07-15-design-pass-audit.md), per
+  [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md)'s rule that usability defects get
+  fixed regardless of design-pass timing:
+  1. Replaced the internal "Phase 2"/"Phase 3" roadmap labels shown on Documents and Event Review
+     with real eyebrow text ("Source intake", "Extraction queue").
+  2. Gave Event Review's dead-end empty state ("No documents are waiting for review." alone on a
+     black screen) a framed panel with an orientation sentence and a button linking to Documents.
+  3. Taught the shared `EventList` and `EventTimeline` components (used by both Dashboard and
+     Events) to distinguish "no approved events exist at all" (shows "No approved events yet." with
+     a link to Event Review) from "the current filters excluded everything" (keeps the original
+     message and adds a "Clear filters" action) — previously both cases showed the same misleading
+     "No events match these filters." even with no filters set on an empty database.
+  4. Titled the Documents queue panel ("Document queue") with its own "No documents yet" empty
+     state, and fixed disabled primary buttons fading to near-invisible by switching
+     `.btn:disabled` from the `--text-dim` token (~2.2:1 contrast) to the already-used
+     `--text-muted` token (~3.9:1); removed `--text-dim` since nothing referenced it afterward.
+  Item 5 ("Compress the shared filter block") and the runners-up remain for the design pass's
+  implementation half.
+- Verified with 88 frontend tests (6 new, covering both empty-state branches on `EventList`,
+  `EventTimeline`, the Documents queue panel, and the Event Review empty state), lint, a production
+  build, and a live browser check of all four affected screens — including both the "no data" and
+  "filters active" empty-state branches on Events, confirmed with real screenshots.
+- Also discovered and cleaned up in passing: the earlier `.claude/worktrees/design-pass` git
+  worktree, prepared for the design pass, was never actually used — the session that ran the audit
+  worked directly in this checkout instead, leaving the worktree's branch unchanged from its
+  creation point. Removed the unused worktree and branch after confirming no work would be lost.
+
 ## 2026-07-15 - Design pass audit completed (read-only)
 
 - Ran the deferred design pass's audit half as a read-only review: the app was started from the

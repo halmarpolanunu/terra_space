@@ -185,16 +185,16 @@ quality bar the other screens should be raised to.
 Usability defects first (per [Design Pass Sequencing](../decisions/Design-Pass-Sequencing.md),
 these get fixed regardless of design-pass timing):
 
-1. **Remove "PHASE 2" / "PHASE 3" from the UI** (Documents, Event Review) — internal roadmap
-   labels visible to the user; replace with real eyebrow text.
-2. **Fix the Event Review dead-end empty state** — add a framed message explaining what appears
-   here and a button to Documents. Right now the pipeline's most important screen offers no way
-   forward.
-3. **Fix the misleading "No events match these filters"** on Dashboard and Events — say "No
-   approved events yet" (with a pointer to Event Review) when nothing is filtered; keep the
-   filter message plus a "Clear filters" action when filters are active.
-4. **Make the Documents queue panel legible** — title it, give it a "No documents yet" empty
-   state, and stop disabled primary buttons from fading to near-invisibility.
+1. ~~**Remove "PHASE 2" / "PHASE 3" from the UI"** (Documents, Event Review)~~ — **Fixed
+   2026-07-15**: replaced with "Source intake" and "Extraction queue".
+2. ~~**Fix the Event Review dead-end empty state**~~ — **Fixed 2026-07-15**: a framed panel now
+   explains what appears there and links to Documents.
+3. ~~**Fix the misleading "No events match these filters"**~~ — **Fixed 2026-07-15**: Dashboard
+   and Events now show "No approved events yet" with a link to Event Review when nothing is
+   filtered, and the original message plus a "Clear filters" action when filters are active.
+4. ~~**Make the Documents queue panel legible**~~ — **Fixed 2026-07-15**: titled "Document queue"
+   with a "No documents yet" empty state; disabled primary buttons no longer fade to
+   near-invisible (`.btn:disabled` now uses the `--text-muted` token).
 
 Highest-impact polish:
 

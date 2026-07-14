@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { StatusChip } from "@/components/status-chip";
 import { EVENT_SORT_OPTIONS, type EventSort } from "@/lib/event-filters";
 import type { EventRead, LocationRead } from "@/lib/events-api";
@@ -7,6 +9,8 @@ type EventListProps = {
   onSelect: (event: EventRead) => void;
   sort: EventSort;
   onSortChange: (sort: EventSort) => void;
+  hasActiveFilters: boolean;
+  onClearFilters?: () => void;
 };
 
 const EPISTEMIC_LABELS = {
@@ -36,7 +40,14 @@ function formatDate(event: EventRead): string {
     : event.start_date;
 }
 
-export function EventList({ events, onSelect, sort, onSortChange }: EventListProps) {
+export function EventList({
+  events,
+  onSelect,
+  sort,
+  onSortChange,
+  hasActiveFilters,
+  onClearFilters,
+}: EventListProps) {
   return (
     <div className="event-list-panel">
       <div className="event-list-toolbar">
@@ -58,7 +69,23 @@ export function EventList({ events, onSelect, sort, onSortChange }: EventListPro
       </div>
 
       {events.length === 0 ? (
-        <p className="event-empty-state">No events match these filters.</p>
+        hasActiveFilters ? (
+          <div className="event-empty-state">
+            <p>No events match these filters.</p>
+            {onClearFilters && (
+              <button className="btn" onClick={onClearFilters} type="button">
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="event-empty-state">
+            <p>No approved events yet.</p>
+            <Link className="btn" href="/event-review">
+              Approve extracted events in Event Review
+            </Link>
+          </div>
+        )
       ) : (
         <>
           <div className="event-list-header">

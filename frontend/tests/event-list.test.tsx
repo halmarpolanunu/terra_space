@@ -31,7 +31,15 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 
 describe("EventList", () => {
   it("renders required event facts and explicit unknown values", () => {
-    render(<EventList events={[makeEvent()]} onSelect={vi.fn()} onSortChange={vi.fn()} sort="" />);
+    render(
+      <EventList
+        events={[makeEvent()]}
+        hasActiveFilters={false}
+        onSelect={vi.fn()}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
 
     expect(screen.getByText("Bridge crossing reported")).toBeInTheDocument();
     expect(screen.getByText("Claim")).toBeInTheDocument();
@@ -43,14 +51,30 @@ describe("EventList", () => {
 
   it("selects an event from its list row", () => {
     const onSelect = vi.fn();
-    render(<EventList events={[makeEvent()]} onSelect={onSelect} onSortChange={vi.fn()} sort="" />);
+    render(
+      <EventList
+        events={[makeEvent()]}
+        hasActiveFilters={false}
+        onSelect={onSelect}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /bridge crossing reported/i }));
     expect(onSelect).toHaveBeenCalledWith(makeEvent());
   });
 
   it("shows a count and column headers so the table's contents are clear", () => {
-    render(<EventList events={[makeEvent(), makeEvent({ id: "event-2", title: "Second event" })]} onSelect={vi.fn()} onSortChange={vi.fn()} sort="" />);
+    render(
+      <EventList
+        events={[makeEvent(), makeEvent({ id: "event-2", title: "Second event" })]}
+        hasActiveFilters={false}
+        onSelect={vi.fn()}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
 
     expect(screen.getByText("2 approved events")).toBeInTheDocument();
     ["Title", "Status", "Type", "Date", "Location", "Sources"].forEach((header) =>
@@ -60,9 +84,46 @@ describe("EventList", () => {
 
   it("reports sort changes from its own toolbar", () => {
     const onSortChange = vi.fn();
-    render(<EventList events={[makeEvent()]} onSelect={vi.fn()} onSortChange={onSortChange} sort="" />);
+    render(
+      <EventList
+        events={[makeEvent()]}
+        hasActiveFilters={false}
+        onSelect={vi.fn()}
+        onSortChange={onSortChange}
+        sort=""
+      />,
+    );
 
     fireEvent.change(screen.getByLabelText("Sort order"), { target: { value: "title_asc" } });
     expect(onSortChange).toHaveBeenCalledWith("title_asc");
+  });
+
+  it("shows a no-data message with a link to Event Review when there are no filters and no approved events", () => {
+    render(
+      <EventList events={[]} hasActiveFilters={false} onSelect={vi.fn()} onSortChange={vi.fn()} sort="" />,
+    );
+
+    expect(screen.getByText("No approved events yet.")).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: /approve extracted events in event review/i }),
+    ).toHaveAttribute("href", "/event-review");
+  });
+
+  it("shows a filtered-empty message with a working Clear filters button when filters are active", () => {
+    const onClearFilters = vi.fn();
+    render(
+      <EventList
+        events={[]}
+        hasActiveFilters
+        onClearFilters={onClearFilters}
+        onSelect={vi.fn()}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
+
+    expect(screen.getByText("No events match these filters.")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(onClearFilters).toHaveBeenCalled();
   });
 });

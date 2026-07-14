@@ -1,6 +1,7 @@
 "use client";
 
 import { ProcessingStatusBadge } from "@/app/documents/processing-status-badge";
+import { FramedPanel } from "@/components/framed-panel";
 import { attachmentFileUrl, type Document } from "@/lib/documents-api";
 
 const EDITABLE_STATUSES = new Set(["draft", "failed"]);
@@ -31,7 +32,7 @@ export function DocumentList({
   const selectedCount = selectedIds.size;
 
   return (
-    <div className="panel">
+    <FramedPanel title="Document queue">
       <div className="batch-actions">
         <button
           className="btn btn-primary"
@@ -42,6 +43,11 @@ export function DocumentList({
           {selectedCount > 0 ? `Process ${selectedCount} selected` : "Process selected"}
         </button>
       </div>
+      {documents.length === 0 ? (
+        <div className="event-empty-state">
+          <p>No documents yet — add your first document above.</p>
+        </div>
+      ) : (
       <ul className="document-list">
         {documents.map((document) => (
           <li className="document-row" key={document.id}>
@@ -123,6 +129,7 @@ export function DocumentList({
           </li>
         ))}
       </ul>
-    </div>
+      )}
+    </FramedPanel>
   );
 }
