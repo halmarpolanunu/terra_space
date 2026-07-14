@@ -10,12 +10,41 @@ status: active
 
 ## Current focus
 
-Phase 5 (Settings and Verification) is built. All five MVP phases are now implemented and the
-whole document-to-event workflow is verified end-to-end. The next continuation point is the
-deferred aesthetic design pass described in
-[Design Pass Sequencing](decisions/Design-Pass-Sequencing.md).
+Every Roadmap item across all five phases is now complete, including Phase 1's
+"Prepare local attachment storage," which had been deferred since Phase 1 and was just closed
+using the
+[Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md). The
+next continuation point is the deferred aesthetic design pass described in
+[Design Pass Sequencing](decisions/Design-Pass-Sequencing.md); a separate git worktree
+(`.claude/worktrees/design-pass`, branch `worktree-design-pass`) has been prepared for that work so
+it can proceed without touching this checkout.
 
 ## Recent progress
+
+- Executed the
+  [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md),
+  closing the only Roadmap item left open across the whole MVP. The `Attachment` table and
+  `data/attachments/` directory already existed from Phase 1, but no attachment route, service, or
+  UI existed anywhere in the codebase — confirmed by a repo-wide search before writing the plan.
+  Added a storage service that accepts only common image media types (`image/jpeg`, `image/png`,
+  `image/gif`, `image/webp`) up to a 10 MB cap, writes files under a server-generated path (never
+  the client's filename, avoiding path traversal), and computes a SHA-256 checksum at upload time.
+  Added nested `/api/documents/{id}/attachments` routes (upload, file-serving, delete), gated behind
+  the same draft/failed edit-lock already used for editing a document's own fields. Fixed a real gap
+  found while building this: deleting a document only removed `attachments` rows via the foreign
+  key's `ON DELETE CASCADE`, never their files on disk — the SQLAlchemy relationship now cascades
+  too, so `delete_document` cleans up every attachment file it owns. Built a thumbnail
+  grid/upload/delete UI on the Documents page. Verified with 117 backend tests, 82 frontend tests,
+  frontend lint (one pre-existing-pattern `next/image` performance warning, not an error, left as-is
+  since these are small dynamic thumbnails from a same-origin backend proxy), a production build,
+  and the full e2e suite — which now uploads an attachment, deletes it, uploads a second one, and
+  confirms after processing completes that the surviving file's bytes on disk still match its
+  stored checksum. Also discovered, while trying to follow this plan's own verification commands,
+  that `docker compose run --rm backend/frontend ...` (written into the Phase 4 and Phase 5 plans
+  and copied into this one) can never work: both Dockerfiles are multi-stage builds whose final
+  image strips out `uv`/dev dependencies (backend) or `node_modules`/test tooling (frontend) —
+  verification in every phase, including this one, actually used `docker run` against the `uv` base
+  image (backend) and `npm run test/lint/build` directly (frontend) instead.
 
 - Executed the [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md)
   task by task. Added a persisted single-row `app_settings` table (migration
@@ -217,13 +246,17 @@ deferred aesthetic design pass described in
 
 ## Next actions
 
-- Hold the deferred aesthetic design pass now that the MVP is complete and verified. Re-open both
+- Hold the deferred aesthetic design pass now that the MVP is complete and verified — including
+  the local attachment storage item, so the design pass now covers a fully finished product with
+  no remaining Roadmap gaps. Re-open both
   [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) and
   [Visual Design Direction](decisions/Visual-Design-Direction.md) together, and work through the
   Tailwind Plus category mapping recorded in the Design Pass Sequencing decision (Stats, Tables,
   Description Lists, Badges, Alerts, Empty States, Settings Screens, Toggles, Radio Groups, Action
   Panels) as structural references, keeping the pure-black/amber mission-brief system. Keep fixing
-  genuine usability defects as they surface in the meantime.
+  genuine usability defects as they surface in the meantime. A separate git worktree
+  (`.claude/worktrees/design-pass`, branch `worktree-design-pass`, branched from this work) is
+  already prepared so this pass can proceed in its own checkout.
 
 ## Related knowledge
 

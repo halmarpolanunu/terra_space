@@ -124,6 +124,8 @@ async function runDocumentsScenario() {
   resetLocalDatabase();
 
   const verifyScript = `
+import hashlib
+import os
 import sqlite3
 
 conn = sqlite3.connect("/data/database/terra-space.db")
@@ -133,7 +135,21 @@ assert any(row[0] == "draft" for row in events), f"expected a draft event, found
 quotes = [row[0] for row in conn.execute("SELECT evidence_quote FROM event_sources").fetchall()]
 assert any("${STUB_EVIDENCE_QUOTE}" in (quote or "") for quote in quotes), f"evidence quote missing from {quotes}"
 
-print("Verified: a draft event backed by the expected evidence quote exists.")
+# The e2e scenario uploads and deletes one attachment, then uploads a second
+# that must survive document processing untouched, both on disk and in the DB.
+attachments = conn.execute(
+    "SELECT original_name, relative_path, checksum FROM attachments"
+).fetchall()
+assert len(attachments) == 1, f"expected exactly one surviving attachment, found {attachments}"
+original_name, relative_path, checksum = attachments[0]
+assert original_name == "kept.png", f"expected the kept attachment, found {original_name}"
+file_path = os.path.join("/data", relative_path)
+assert os.path.isfile(file_path), f"attachment file missing on disk: {file_path}"
+with open(file_path, "rb") as handle:
+    file_bytes = handle.read()
+assert hashlib.sha256(file_bytes).hexdigest() == checksum, "attachment file bytes do not match checksum"
+
+print("Verified: a draft event backed by the expected evidence quote exists, and the surviving attachment's file matches its checksum after processing.")
 `.trim();
 
   try {

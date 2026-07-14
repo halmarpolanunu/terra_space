@@ -8,6 +8,38 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Local attachment storage built, closing the last open Roadmap item
+
+- Executed the
+  [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md).
+  The `Attachment` table and `data/attachments/` directory already existed from Phase 1, but a
+  repo-wide search confirmed no attachment route, service, or UI existed anywhere — this was
+  genuinely greenfield. Added a storage service restricted to `image/jpeg`, `image/png`,
+  `image/gif`, and `image/webp` up to a 10 MB cap, writing files under a server-generated path
+  (never the client's filename, to avoid path traversal) with a SHA-256 checksum computed at
+  upload time. Added nested `/api/documents/{id}/attachments` routes (upload, file-serving,
+  delete), gated behind the same draft/failed edit-lock already used for document edits, plus a
+  thumbnail/upload/delete UI on the Documents page.
+- Found and fixed a real gap while building this: deleting a document only removed `attachments`
+  rows via the foreign key's `ON DELETE CASCADE` — it never removed the files themselves from
+  disk. The SQLAlchemy relationship now cascades too, so `delete_document` cleans up every
+  attachment file it owns before the document row is deleted.
+- Verified with 117 backend tests, 82 frontend tests, frontend lint (one pre-existing-pattern
+  `next/image` performance warning, not an error, accepted as-is for small dynamic thumbnails
+  served from a same-origin backend proxy), a production build, and the full browser e2e suite —
+  extended to upload an attachment, delete it, upload a second, and confirm after processing
+  completes that the surviving file's bytes on disk still match its stored checksum.
+- Also discovered that `docker compose run --rm backend/frontend ...` — written into the Phase 4
+  and Phase 5 plans and copied into this one — can never actually work: both Dockerfiles are
+  multi-stage builds whose final runtime image strips out `uv`/dev dependencies (backend) or
+  `node_modules`/test tooling (frontend) entirely. Every phase's real verification, including this
+  one, used `docker run` directly against the `uv` base image (backend) and `npm run
+  test/lint/build` on the host (frontend) instead — the plan documents' command list was never
+  literally executable as written.
+- With this item closed, every Roadmap checkbox across all five MVP phases is now complete. The
+  next focus is the deferred aesthetic design pass; a separate git worktree
+  (`.claude/worktrees/design-pass`, branch `worktree-design-pass`) is already prepared for it.
+
 ## 2026-07-14 - Phase 5 (Settings and Verification) built and MVP verified end-to-end
 
 - Executed the [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md).
