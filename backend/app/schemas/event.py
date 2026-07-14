@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 EpistemicStatus = Literal["confirmed", "claim", "rumor", "denied"]
 DatePrecision = Literal["exact", "month", "year", "unknown"]
@@ -57,6 +57,60 @@ class DuplicateFlagRead(BaseModel):
     matched_reason: str
     resolution: DuplicateResolution
     resolved_at: datetime | None
+
+
+class EventTypeInput(BaseModel):
+    existing: str | None = None
+    suggested: str | None = None
+
+
+class ActorInput(BaseModel):
+    name: str
+    role: ActorRole
+
+
+class LocationInput(BaseModel):
+    country: str | None = None
+    admin1: str | None = None
+    city_regency: str | None = None
+
+
+class EventCreate(BaseModel):
+    document_id: str
+    evidence_quote: str
+    title: str
+    summary: str
+    event_type: EventTypeInput | None = None
+    start_date: str | None = None
+    start_date_precision: DatePrecision | None = None
+    end_date: str | None = None
+    end_date_precision: DatePrecision | None = None
+    epistemic_status: EpistemicStatus
+    locations: list[LocationInput] = Field(default_factory=list)
+    actors: list[ActorInput] = Field(default_factory=list)
+
+
+class EventUpdate(BaseModel):
+    title: str | None = None
+    summary: str | None = None
+    event_type: EventTypeInput | None = None
+    start_date: str | None = None
+    start_date_precision: DatePrecision | None = None
+    end_date: str | None = None
+    end_date_precision: DatePrecision | None = None
+    epistemic_status: EpistemicStatus | None = None
+    locations: list[LocationInput] | None = None
+    actors: list[ActorInput] | None = None
+
+
+class ApproveAllSkipped(BaseModel):
+    event_id: str
+    reason: str
+
+
+class ApproveAllResponse(BaseModel):
+    approved_event_ids: list[str]
+    skipped: list[ApproveAllSkipped]
 
 
 class EventRead(BaseModel):

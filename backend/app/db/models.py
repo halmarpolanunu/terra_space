@@ -125,7 +125,9 @@ class Event(TimestampedModel, Base):
     review_status: Mapped[str] = mapped_column(String(32), default="draft")
 
     event_type: Mapped[EventType | None] = relationship(back_populates="events")
-    event_actors: Mapped[list["EventActor"]] = relationship(back_populates="event")
+    event_actors: Mapped[list["EventActor"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
     locations: Mapped[list[Location]] = relationship(
         secondary=event_locations, back_populates="events"
     )

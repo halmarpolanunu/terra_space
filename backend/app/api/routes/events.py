@@ -3,8 +3,28 @@ from collections.abc import Iterator
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.schemas.event import EventRead
-from app.services.events import get_event, list_events, list_events_for_document, to_event_read
+from app.schemas.event import (
+    ApproveAllResponse,
+    ApproveAllSkipped,
+    EventCreate,
+    EventRead,
+    EventUpdate,
+)
+from app.services.documents import get_document
+from app.services.events import (
+    EventEditNotAllowedError,
+    EvidenceQuoteNotFoundError,
+    PendingDuplicateFlagError,
+    approve_all_for_document,
+    approve_event,
+    create_manual_event,
+    get_event,
+    list_events,
+    list_events_for_document,
+    reject_event,
+    to_event_read,
+    update_event,
+)
 
 
 def create_events_router(session_factory: sessionmaker) -> APIRouter:
@@ -33,5 +53,67 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found.")
         return to_event_read(event)
+
+    @router.post("/api/events", response_model=EventRead, status_code=201)
+    def create_manual(payload: EventCreate, db: Session = Depends(get_db)) -> EventRead:
+        document = get_document(db, payload.document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        try:
+            event = create_manual_event(db, document, payload)
+        except EvidenceQuoteNotFoundError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        return to_event_read(event)
+
+    @router.patch("/api/events/{event_id}", response_model=EventRead)
+    def update(event_id: str, payload: EventUpdate, db: Session = Depends(get_db)) -> EventRead:
+        event = get_event(db, event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+        try:
+            event = update_event(db, event, payload)
+        except EventEditNotAllowedError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return to_event_read(event)
+
+    @router.post("/api/events/{event_id}/approve", response_model=EventRead)
+    def approve(event_id: str, db: Session = Depends(get_db)) -> EventRead:
+        event = get_event(db, event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+        try:
+            event = approve_event(db, event)
+        except EventEditNotAllowedError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        except PendingDuplicateFlagError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return to_event_read(event)
+
+    @router.post("/api/events/{event_id}/reject", response_model=EventRead)
+    def reject(event_id: str, db: Session = Depends(get_db)) -> EventRead:
+        event = get_event(db, event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+        try:
+            event = reject_event(db, event)
+        except EventEditNotAllowedError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return to_event_read(event)
+
+    @router.post(
+        "/api/documents/{document_id}/events/approve-all", response_model=ApproveAllResponse
+    )
+    def approve_all(document_id: str, db: Session = Depends(get_db)) -> ApproveAllResponse:
+        document = get_document(db, document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        result = approve_all_for_document(db, document_id)
+        return ApproveAllResponse(
+            approved_event_ids=result.approved_event_ids,
+            skipped=[
+                ApproveAllSkipped(event_id=skip.event_id, reason=skip.reason)
+                for skip in result.skipped
+            ],
+        )
 
     return router

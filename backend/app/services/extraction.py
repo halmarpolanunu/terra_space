@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass, field
 
 from sqlalchemy import select
@@ -12,9 +11,9 @@ from app.db.models import (
     EventSource,
     EventType,
     Location,
-    Source,
 )
 from app.schemas.extraction import ExtractedEvent, ExtractionResult
+from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
 
 
 @dataclass
@@ -29,52 +28,21 @@ class PersistResult:
     dropped_events: list[DroppedEvent] = field(default_factory=list)
 
 
-def _normalize(text: str) -> str:
-    return re.sub(r"\s+", " ", text).strip().casefold()
-
-
-def _quote_found(quote: str, document_content: str) -> bool:
-    normalized_quote = _normalize(quote)
-    if not normalized_quote:
-        return False
-    return normalized_quote in _normalize(document_content)
-
-
 def _validate_event(event_data: ExtractedEvent, document_content: str) -> str | None:
     if not event_data.title.strip():
         return "Missing title."
     if not event_data.summary.strip():
         return "Missing summary."
-    if not _quote_found(event_data.evidence_quote, document_content):
+    if not quote_found(event_data.evidence_quote, document_content):
         return "Evidence quote not found in the source document."
     return None
-
-
-def _find_by_exact_name(candidates: list, name: str):
-    target = name.strip().casefold()
-    for candidate in candidates:
-        if candidate.name.strip().casefold() == target:
-            return candidate
-    return None
-
-
-def _get_or_create_document_source(db: Session, document: Document) -> Source:
-    existing = db.execute(
-        select(Source).where(Source.document_id == document.id)
-    ).scalar_one_or_none()
-    if existing is not None:
-        return existing
-    source = Source(document=document, reference_label=document.title)
-    db.add(source)
-    db.flush()
-    return source
 
 
 def persist_extraction(
     db: Session, document: Document, extraction_result: ExtractionResult
 ) -> PersistResult:
     result = PersistResult()
-    source = _get_or_create_document_source(db, document)
+    source = get_or_create_document_source(db, document)
 
     existing_event_types = list(db.execute(select(EventType)).scalars())
     existing_actors = list(db.execute(select(Actor)).scalars())
@@ -88,7 +56,7 @@ def persist_extraction(
         type_name = event_data.event_type.existing or event_data.event_type.suggested
         event_type = None
         if type_name:
-            event_type = _find_by_exact_name(existing_event_types, type_name)
+            event_type = find_by_exact_name(existing_event_types, type_name)
             if event_type is None:
                 event_type = EventType(name=type_name, is_active=False)
                 db.add(event_type)
@@ -122,7 +90,7 @@ def persist_extraction(
                 )
 
         for actor_data in event_data.actors:
-            actor = _find_by_exact_name(existing_actors, actor_data.name)
+            actor = find_by_exact_name(existing_actors, actor_data.name)
             if actor is None:
                 actor = Actor(name=actor_data.name, is_active=False)
                 db.add(actor)
