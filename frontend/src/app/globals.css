@@ -197,6 +197,41 @@ body {
 
 .batch-actions { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 
+/* Event Review */
+.review-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+.review-bar-title { color: var(--text); font-weight: 600; }
+.review-bar-actions { display: flex; gap: 0.5rem; margin-left: auto; }
+
+.event-review-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+.source-document { font-family: var(--font-serif); line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+.evidence-highlight { background: var(--accent-wash); color: var(--accent); }
+.evidence-quote {
+  font-family: var(--font-serif);
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--text);
+  border-left: 2px solid var(--accent);
+  padding-left: 1rem;
+  margin: 0 0 1.25rem;
+}
+
+@media (max-width: 60rem) {
+  .event-review-columns { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 48rem) {
   .app-shell { grid-template-columns: 1fr; }
   .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }

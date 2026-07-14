@@ -38,8 +38,11 @@ async function parseOrThrow(response: Response): Promise<Document> {
   return response.json() as Promise<Document>;
 }
 
-export async function listDocuments(): Promise<Document[]> {
-  const response = await fetch(BASE_URL);
+export async function listDocuments(processingStatus?: ProcessingStatus): Promise<Document[]> {
+  const url = processingStatus
+    ? `${BASE_URL}?processing_status=${processingStatus}`
+    : BASE_URL;
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
   }
