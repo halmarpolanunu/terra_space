@@ -1,7 +1,19 @@
+from collections.abc import Callable
+from dataclasses import dataclass
+
 import httpx2
 from pydantic import ValidationError
 
 from app.schemas.extraction import ExtractionResult
+
+
+@dataclass(frozen=True)
+class LmStudioRuntimeConfig:
+    """The base URL and preferred model to use for the next LM Studio call."""
+
+    base_url: str
+    model: str | None
+
 
 EXTRACTION_SYSTEM_PROMPT = (
     "You are an intelligence analyst extracting events from a single source document. "
@@ -32,15 +44,23 @@ class LmStudioClient:
         base_url: str,
         transport: httpx2.BaseTransport | None = None,
         extraction_timeout: float = 120.0,
+        config_provider: Callable[[], LmStudioRuntimeConfig] | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._transport = transport
         self._extraction_timeout = extraction_timeout
+        self._config_provider = config_provider
+
+    def _resolve(self) -> LmStudioRuntimeConfig:
+        if self._config_provider is not None:
+            config = self._config_provider()
+            return LmStudioRuntimeConfig(base_url=config.base_url.rstrip("/"), model=config.model)
+        return LmStudioRuntimeConfig(base_url=self._base_url, model=None)
 
     def check_connection(self) -> bool:
         try:
             with httpx2.Client(
-                base_url=self._base_url, timeout=2.0, transport=self._transport
+                base_url=self._resolve().base_url, timeout=2.0, transport=self._transport
             ) as client:
                 response = client.get("/v1/models")
                 if not response.is_success:
@@ -50,16 +70,38 @@ class LmStudioClient:
             return False
         return isinstance(payload, dict) and isinstance(payload.get("data"), list)
 
+    def list_available_models(self, base_url: str | None = None) -> list[str]:
+        """Return the ids of models LM Studio currently reports, for the connection test."""
+        target = (base_url.rstrip("/") if base_url else self._resolve().base_url)
+        try:
+            with httpx2.Client(base_url=target, timeout=2.0, transport=self._transport) as client:
+                response = client.get("/v1/models")
+                if not response.is_success:
+                    raise LmStudioUnavailableError("LM Studio is offline.")
+                payload = response.json()
+        except httpx2.HTTPError as error:
+            raise LmStudioUnavailableError("LM Studio is unreachable.") from error
+        except ValueError as error:
+            raise LmStudioResponseError("LM Studio returned an invalid response.") from error
+        if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
+            raise LmStudioResponseError("LM Studio returned an unexpected model list.")
+        return [
+            model["id"]
+            for model in payload["data"]
+            if isinstance(model, dict) and isinstance(model.get("id"), str)
+        ]
+
     def extract_events(
         self, document_text: str, known_types: list[str], known_actors: list[str]
     ) -> ExtractionResult:
+        config = self._resolve()
         try:
             with httpx2.Client(
-                base_url=self._base_url,
+                base_url=config.base_url,
                 timeout=self._extraction_timeout,
                 transport=self._transport,
             ) as client:
-                model_id = self._discover_model(client)
+                model_id = config.model or self._discover_model(client)
                 response = client.post(
                     "/v1/chat/completions",
                     json=self._build_request(model_id, document_text, known_types, known_actors),

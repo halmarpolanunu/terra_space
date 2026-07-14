@@ -31,6 +31,14 @@ class TimestampedModel:
     )
 
 
+class AppSettings(TimestampedModel, Base):
+    __tablename__ = "app_settings"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    lm_studio_base_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    lm_studio_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
 class Document(TimestampedModel, Base):
     __tablename__ = "documents"
 
