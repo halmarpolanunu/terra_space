@@ -15,6 +15,17 @@ planning Phase 5: Settings and final MVP verification.
 
 ## Recent progress
 
+- Recorded the [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) decision: defer any
+  further aesthetic design pass until after Phase 5, while mapping which Tailwind Plus
+  Application UI categories should inform Phase 5's Settings screen and the eventual pass.
+- Revised the Events page and Dashboard's embedded event list from the owner's manual testing
+  feedback: grouped the filter bar into four labeled clusters, moved Sort order into a toolbar
+  above the list with an approved-event count and column headers, clarified the Search field's
+  scope, and made the source document link visibly clickable. Also fixed a layout overflow the
+  new header exposed in the Dashboard's narrower panel.
+- Replaced the placeholder hand-drawn logo with the owner-supplied `terraspace-brand-kit-v3`,
+  recolored to the existing amber so it matches the rest of the interface, and fixed a broken
+  "A" glyph in the kit's own wordmark by rendering the wordmark as live text instead.
 - Executed the [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md):
   approved events can now be searched, filtered, sorted, opened, edited, and traced back to their
   read-only source documents. Dashboard summary, globe map, timeline, and event list use the same
@@ -160,7 +171,9 @@ planning Phase 5: Settings and final MVP verification.
 ## Next actions
 
 - Plan Phase 5: local LM Studio settings, simple event-type management, and final end-to-end and
-  failure-case verification for the full MVP.
+  failure-case verification for the full MVP. Read the
+  [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) decision first — it names the
+  Tailwind Plus categories that should inform the Settings screen's design.
 
 ## Related knowledge
 
@@ -172,3 +185,4 @@ planning Phase 5: Settings and final MVP verification.
 - [Document & Event Data Model](decisions/Document-Event-Data-Model.md)
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
 - [Visual Design Direction](decisions/Visual-Design-Direction.md)
+- [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md)
