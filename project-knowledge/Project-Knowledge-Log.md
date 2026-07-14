@@ -8,6 +8,33 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Fixed a missed coordinate backfill and removed stale assets
+
+- A high-level scan of the project for unused files turned up a real bug: the
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision and the Phase 4 plan both call for the migration to run an idempotent coordinate
+  backfill, and `backend/app/services/locations.py`'s `backfill_missing_coordinates()` exists and
+  is unit-tested, but the actual Phase 4 migration never called it — only `approved_at` was
+  backfilled. Confirmed live: 3 of 4 `locations` rows for the same place had `NULL`
+  coordinates, and the Dashboard's own "Incomplete location" metric read `1`.
+  Added `backend/alembic/versions/0004_coordinate_backfill.py`, which resolves and fills
+  coordinates for any location still missing them, so existing local databases (not just this
+  one) get fixed on upgrade. Added `test_migration_0004.py` and updated three pre-existing tests
+  that hardcoded "0003 is HEAD" (`test_database.py`, `test_migration_0002.py`,
+  `test_migration_0003.py`) now that 0004 is head. Verified: 81 backend tests pass, and the live
+  database's "Incomplete location" metric dropped to `0` after rebuilding the backend container.
+- The same scan found the frontend still shipping the stock `create-next-app` scaffolding:
+  `frontend/src/app/favicon.ico` (the generic Next.js icon, still being served live at
+  `/favicon.ico` alongside the real logo) and five unreferenced starter SVGs in
+  `frontend/public/` (`file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg`). Removed
+  all six; `/favicon.ico` now 404s (harmless) and `/icon.svg` (the real Terra Space mark) is the
+  only icon served. Verified: frontend lint clean, 66 frontend tests pass.
+- Also found, but did not act on without confirmation: `backend;D/` (an empty, untracked,
+  oddly-named directory at the repo root, likely a shell-typo artifact), two completed git
+  worktrees (`.worktrees/phase-1-foundation`, `.worktrees/phase-4-events-dashboard`), and five
+  local branches already merged into `main` (`phase-1-foundation`, `phase-2-documents-processing`,
+  `phase-4-events-dashboard`, `phase_3`, `visual-design`).
+
 ## 2026-07-14 - Events page revised from owner testing feedback
 
 - The owner manually tested Phase 4's Events page and reported six issues. Investigated each

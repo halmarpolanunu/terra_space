@@ -16,7 +16,7 @@ def _config(tmp_path: Path) -> Config:
 
 def test_migration_adds_nullable_approval_and_coordinate_precision_columns(tmp_path: Path) -> None:
     config = _config(tmp_path)
-    command.upgrade(config, "head")
+    command.upgrade(config, "0003_phase4_events_dashboard")
     engine = create_engine(config.get_main_option("sqlalchemy.url"))
     inspector = inspect(engine)
 
