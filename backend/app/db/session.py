@@ -1,6 +1,9 @@
 from sqlalchemy import Engine, event
 from sqlalchemy.orm import sessionmaker
 
+from app.db.base import Base
+from app.db import models  # noqa: F401
+
 
 def configure_sqlite_connection(engine: Engine) -> None:
     """Apply SQLite settings needed by the local single-user application."""
@@ -19,4 +22,5 @@ def create_session_factory(database_url: str) -> sessionmaker:
 
     engine = create_engine(database_url)
     configure_sqlite_connection(engine)
+    Base.metadata.create_all(engine)
     return sessionmaker(bind=engine)
