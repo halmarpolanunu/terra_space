@@ -1,6 +1,7 @@
-import { AppShell } from "@/components/app-shell";
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { Suspense } from "react";
+
+import { EventsWorkspace } from "@/app/events/events-workspace";
 
 export default function EventsPage() {
-  return <AppShell currentPath="/events"><PagePlaceholder description="Search, filters, and details for approved events will appear here in Phase 4." phase="Phase 4" title="Events" /></AppShell>;
+  return <Suspense fallback={<main className="main-content"><h1>Events</h1><p>Loading events…</p></main>}><EventsWorkspace /></Suspense>;
 }

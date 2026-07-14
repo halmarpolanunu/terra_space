@@ -328,6 +328,23 @@ body {
 .event-source-count { font-family: var(--font-mono); font-size: 0.75rem; }
 .event-empty-state { padding: 1rem; border: 1px dashed var(--border-bright); color: var(--text-muted); }
 
+/* Approved Events and read-only source view */
+.events-page,
+.document-source-page { display: grid; gap: 1rem; max-width: 78rem; }
+.events-page h1,
+.document-source-page h1 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.5rem); }
+.events-intro { margin: 0 0 0.5rem; color: var(--text-muted); }
+.event-detail { max-width: 60rem; }
+.event-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.event-detail-heading h2 { margin: 0; font-size: 1.4rem; }
+.event-source-links { display: grid; gap: 0.45rem; margin: 0; padding-left: 1.25rem; }
+.event-source-links a,
+.document-source-page a { color: var(--accent); }
+.event-read-only-note { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
+.document-source-page > .btn { justify-self: start; text-decoration: none; }
+.document-source-page .document-meta { margin: 0; }
+.document-source-page .source-document { max-width: 54rem; padding: 1.5rem; border: 1px solid var(--border); background: var(--panel); font-family: var(--font-serif); line-height: 1.75; white-space: pre-wrap; }
+
 .event-timeline { display: grid; gap: 1rem; }
 .timeline-group { border-left: 1px solid var(--border-bright); padding-left: 1rem; }
 .timeline-group h2 { margin: 0 0 0.6rem; color: var(--accent); font: 0.78rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
