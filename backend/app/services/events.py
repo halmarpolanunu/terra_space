@@ -278,6 +278,15 @@ def update_event_type(
     return event_type
 
 
+def referenced_event_type_ids(db: Session) -> set[str]:
+    return {
+        row[0]
+        for row in db.execute(
+            select(Event.event_type_id).where(Event.event_type_id.is_not(None)).distinct()
+        )
+    }
+
+
 def delete_event_type(db: Session, event_type: EventType) -> None:
     referenced = db.execute(
         select(Event.id).where(Event.event_type_id == event_type.id).limit(1)

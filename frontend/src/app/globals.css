@@ -428,6 +428,23 @@ body {
 .dashboard-lower-grid > .panel { min-width: 0; }
 .map-flat-fallback { margin: 0 0 0.65rem; color: var(--text-muted); font: 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
 
+/* Settings: LM Studio connection and simple event-type management. */
+.settings-page { display: grid; gap: 1rem; max-width: 72rem; }
+.settings-page h1 { margin: 0; font-size: clamp(1.75rem, 3vw, 2.5rem); }
+.settings-grid { display: grid; gap: 1.25rem; }
+.settings-panel { display: grid; gap: 0.5rem; }
+.settings-hint { margin: 0 0 0.5rem; color: var(--text-muted); line-height: 1.6; }
+.settings-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+.settings-status { display: inline-flex; align-items: center; gap: 0.5rem; }
+.settings-status-message { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
+.settings-saved { color: var(--status-confirmed); font-family: var(--font-mono); font-size: 0.8rem; }
+.event-type-list { display: grid; gap: 0.5rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.event-type-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.event-type-row > input { flex: 1 1 12rem; min-width: 10rem; }
+.event-type-toggle { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.78rem; }
+.settings-add-type { display: flex; align-items: end; gap: 0.75rem; flex-wrap: wrap; }
+.settings-add-type .field { flex: 1 1 16rem; margin-bottom: 0; }
+
 @media (max-width: 72rem) {
   .filter-group-fields { grid-template-columns: repeat(2, minmax(10rem, 1fr)); }
   .event-list-header,

@@ -38,6 +38,7 @@ from app.services.events import (
     list_events,
     list_filtered_events,
     list_events_for_document,
+    referenced_event_type_ids,
     reject_event,
     dashboard_summary,
     to_event_read,
@@ -58,8 +59,15 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
 
     @router.get("/api/event-types", response_model=list[EventTypeRead])
     def list_event_types_route(db: Session = Depends(get_db)) -> list[EventTypeRead]:
+        referenced = referenced_event_type_ids(db)
         return [
-            EventTypeRead.model_validate(event_type) for event_type in list_event_types(db)
+            EventTypeRead(
+                id=event_type.id,
+                name=event_type.name,
+                is_active=event_type.is_active,
+                in_use=event_type.id in referenced,
+            )
+            for event_type in list_event_types(db)
         ]
 
     @router.post("/api/event-types", response_model=EventTypeRead, status_code=201)

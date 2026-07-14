@@ -103,6 +103,17 @@ def test_delete_unreferenced_type_succeeds_but_referenced_type_conflicts(tmp_pat
     assert client.delete(f"/api/event-types/{referenced_id}").status_code == 409
 
 
+def test_list_reports_in_use_flag(tmp_path: Path) -> None:
+    app = _app(tmp_path)
+    referenced_id = _seed_type_with_event(app, name="Bombing")
+    client = TestClient(app)
+    unused_id = client.post("/api/event-types", json={"name": "Unused"}).json()["id"]
+
+    by_id = {row["id"]: row for row in client.get("/api/event-types").json()}
+    assert by_id[referenced_id]["in_use"] is True
+    assert by_id[unused_id]["in_use"] is False
+
+
 def test_unknown_type_id_returns_404(tmp_path: Path) -> None:
     client = TestClient(_app(tmp_path))
 

@@ -10,6 +10,7 @@ export type EventTypeRead = {
   id: string;
   name: string;
   is_active: boolean;
+  in_use?: boolean;
 };
 
 export type ActorRead = {

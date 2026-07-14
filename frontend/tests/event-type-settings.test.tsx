@@ -1,0 +1,76 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/settings-api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/settings-api")>("@/lib/settings-api");
+  return { ...actual, createEventType: vi.fn(), updateEventType: vi.fn(), deleteEventType: vi.fn() };
+});
+
+import { EventTypeSettings } from "@/app/settings/event-type-settings";
+import * as settingsApi from "@/lib/settings-api";
+import type { EventTypeRead } from "@/lib/events-api";
+
+const TYPES: EventTypeRead[] = [
+  { id: "type-active", name: "Protest", is_active: true, in_use: true },
+  { id: "type-suggested", name: "Skirmish", is_active: false, in_use: false },
+];
+
+describe("EventTypeSettings", () => {
+  afterEach(() => vi.clearAllMocks());
+
+  it("distinguishes active and suggested types", () => {
+    render(<EventTypeSettings eventTypes={TYPES} />);
+
+    expect(screen.getByText("Active")).toBeVisible();
+    expect(screen.getByText("Suggested")).toBeVisible();
+  });
+
+  it("adds a new event type", async () => {
+    vi.mocked(settingsApi.createEventType).mockResolvedValue({
+      id: "type-new",
+      name: "Airstrike",
+      is_active: true,
+      in_use: false,
+    });
+    render(<EventTypeSettings eventTypes={TYPES} />);
+
+    fireEvent.change(screen.getByLabelText(/new event type/i), { target: { value: "Airstrike" } });
+    fireEvent.click(screen.getByRole("button", { name: /^add event type$/i }));
+
+    await waitFor(() => expect(settingsApi.createEventType).toHaveBeenCalledWith("Airstrike"));
+    expect(await screen.findByLabelText("Rename Airstrike")).toBeVisible();
+  });
+
+  it("toggles a type active flag", async () => {
+    vi.mocked(settingsApi.updateEventType).mockResolvedValue({ ...TYPES[0], is_active: false });
+    render(<EventTypeSettings eventTypes={TYPES} />);
+
+    fireEvent.click(screen.getByLabelText("Active: Protest"));
+
+    await waitFor(() =>
+      expect(settingsApi.updateEventType).toHaveBeenCalledWith("type-active", { is_active: false }),
+    );
+  });
+
+  it("renames a type", async () => {
+    vi.mocked(settingsApi.updateEventType).mockResolvedValue({ ...TYPES[1], name: "Armed clash" });
+    render(<EventTypeSettings eventTypes={TYPES} />);
+
+    fireEvent.change(screen.getByLabelText("Rename Skirmish"), { target: { value: "Armed clash" } });
+    fireEvent.click(screen.getByRole("button", { name: "Rename Skirmish" }));
+
+    await waitFor(() =>
+      expect(settingsApi.updateEventType).toHaveBeenCalledWith("type-suggested", { name: "Armed clash" }),
+    );
+  });
+
+  it("offers delete only for unreferenced types", async () => {
+    vi.mocked(settingsApi.deleteEventType).mockResolvedValue();
+    render(<EventTypeSettings eventTypes={TYPES} />);
+
+    expect(screen.queryByRole("button", { name: "Delete Protest" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete Skirmish" }));
+
+    await waitFor(() => expect(settingsApi.deleteEventType).toHaveBeenCalledWith("type-suggested"));
+  });
+});

@@ -16,6 +16,7 @@ class EventTypeRead(BaseModel):
     id: str
     name: str
     is_active: bool
+    in_use: bool = False
 
 
 class EventTypeCreate(BaseModel):
