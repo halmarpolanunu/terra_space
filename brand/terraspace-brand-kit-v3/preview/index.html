@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TerraSpace Brand Kit Preview</title>
+<link rel="stylesheet" href="../css/terraspace-brand.css">
+<style>
+*{box-sizing:border-box} body{margin:0;font:14px/1.5 Inter,system-ui,sans-serif;background:#eceef2;color:#111318}
+header{padding:28px 36px;background:#050608;display:flex;align-items:center;justify-content:space-between} header img{height:48px}
+main{max-width:1180px;margin:auto;padding:32px} h1{font-weight:600} h2{margin-top:34px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px} .card{border-radius:16px;padding:24px;min-height:190px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px #0001} .dark{background:#050608}.light{background:#fff} .card img{max-width:100%;max-height:150px}
+.dashboard{display:grid;grid-template-columns:230px 1fr;height:520px;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px #0002;background:white} .side{background:#050608;padding:24px 20px} .side img{width:185px} .nav{margin-top:34px;display:grid;gap:10px} .nav span{padding:11px 12px;border-radius:9px;color:#A7ABB4}.nav span:first-child{background:#252932;color:#F7F7F5}.content{background:#f5f6f8} .top{height:72px;background:white;border-bottom:1px solid #e8e9ec;display:flex;align-items:center;padding:0 24px;justify-content:space-between} .metricgrid{padding:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px} .metric{height:110px;background:white;border-radius:12px;padding:18px} .gold{color:#DFA750} code{font-size:12px}
+@media(max-width:700px){.dashboard{grid-template-columns:76px 1fr}.side img{content:url('../assets/svg/terraspace-micro-dark.svg');width:36px}.nav span{font-size:0;height:40px}.metricgrid{grid-template-columns:1fr}}
+</style></head><body>
+<header><img src="../assets/svg/terraspace-compact-dark.svg" alt="TerraSpace"><span style="color:#A7ABB4">Responsive dashboard brand kit</span></header>
+<main><h1>TerraSpace logo system</h1><p>Use the detailed mark for large surfaces, compact lockup for navigation, simplified symbol for collapsed sidebars, and micro mark for favicons.</p>
+<h2>Dashboard simulation</h2><div class="dashboard"><aside class="side"><img src="../assets/svg/terraspace-compact-dark.svg"><div class="nav"><span>Overview</span><span>Projects</span><span>Spaces</span><span>Analytics</span></div></aside><section class="content"><div class="top"><strong>Spatial overview</strong><span class="gold">Live workspace</span></div><div class="metricgrid"><div class="metric"><small>Active spaces</small><h2>24</h2></div><div class="metric"><small>Occupancy</small><h2>78%</h2></div><div class="metric"><small>Projects</small><h2>12</h2></div></div></section></div>
+<h2>Core variants</h2><div class="grid">
+<div class="card dark"><img src="../assets/svg/terraspace-horizontal-dark.svg"></div><div class="card light"><img src="../assets/svg/terraspace-horizontal-light.svg"></div>
+<div class="card dark"><img src="../assets/svg/terraspace-compact-dark.svg"></div><div class="card light"><img src="../assets/svg/terraspace-compact-light.svg"></div>
+<div class="card dark"><img src="../assets/svg/terraspace-stacked-dark.svg"></div><div class="card light"><img src="../assets/svg/terraspace-stacked-light.svg"></div>
+<div class="card dark"><img src="../assets/svg/terraspace-symbol-compact-dark.svg"></div><div class="card light"><img src="../assets/svg/terraspace-micro-light.svg"></div>
+</div></main></body></html>

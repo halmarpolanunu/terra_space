@@ -57,6 +57,22 @@ No light mode in the MVP. Background is always pure black.
 - **Corner-bracket framed panels** — the signature motif (thin, low-opacity amber L-brackets).
 - **Top status bar** — `TERRA` + amber `SPACE` wordmark, and mono readouts including
   `LOCAL // OFFLINE-SAFE` and `LM STUDIO ● OFFLINE`, reinforcing local-first/offline-safe.
+- **Logo mark** — a compass ring with four cardinal pointers and a diamond hub, beside the
+  `TERRA`/amber `SPACE` wordmark. The icon is sourced from the owner-supplied
+  `terraspace-brand-kit-v3` (archived verbatim at `brand/terraspace-brand-kit-v3/` for its
+  unused sizes, light-theme variants, and source React/CSS templates); only the kit's `-dark`
+  micro variant is wired into the app, recolored from the kit's own gold (`#DFA750`) to this
+  decision's amber (`#f2a93b`) so the logo matches every other accent-colored element instead of
+  introducing a second gold. The recolored working copy lives at
+  `frontend/public/brand/terraspace-micro-dark.svg`, reused for both the navigation rail brand
+  row and the browser favicon (`frontend/src/app/icon.svg`, which adds a black backdrop for tab
+  visibility). The wordmark itself is **not** the kit's baked-in vector text: the kit's `A`
+  glyph renders as two mismatched hairline slivers with no crossbar (a font-to-path conversion
+  defect, clearly visible next to every other letter's solid bold fill), so the wordmark is
+  rendered as live text in the app's own monospace type instead, matching this decision's
+  typography rule for system chrome. The kit's own React/CSS templates (a separate `--ts-*`
+  token system) were not adopted, to avoid a second design-token system alongside this
+  decision's existing CSS variables.
 - **Left navigation rail** — numbered items with visible text labels (Dashboard, Documents,
   Event Review, Events, Settings); active item marked by amber left-border and subtle wash.
 - **Buttons** — bordered, mono, uppercase; primary = amber, destructive = red, approve = green.

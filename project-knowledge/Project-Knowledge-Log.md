@@ -8,6 +8,56 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Fixed broken "A" glyph in the brand kit wordmark
+
+- The owner spotted both letter A's in the sidebar wordmark rendering as thin, malformed
+  slivers with no crossbar. Traced it to the brand kit's vector conversion: the `A` glyph is
+  two paper-thin hairline quadrilaterals, while every other letter (T, E, R, S, P, C) is a
+  solid bold fill — a real defect in the kit's SVG, not a rendering quirk, confirmed by reading
+  the raw path data.
+- Rather than hand-patch a font-conversion bug with no access to the source font, dropped the
+  kit's baked-in vector text and went back to rendering `TERRA`/amber `SPACE` as live text in
+  the app's own monospace type — which also matches the Visual Design Direction's existing
+  typography rule for system chrome more closely than the kit's custom lettering did. Kept only
+  the kit's icon (compass ring, cardinal pointers, diamond hub), which has no text and no defect,
+  reused for both the sidebar and the favicon.
+- Removed the broken `terraspace-compact-dark.svg` from `frontend/public/brand/` (the archived
+  original at `brand/terraspace-brand-kit-v3/` is untouched, so the same `A` defect likely
+  affects the kit's other text-bearing variants — horizontal, stacked — if pulled in later, e.g.
+  for the README).
+- Verified: rebuilt the frontend Docker image, screenshotted the corrected sidebar mark, ran
+  frontend lint (clean) and the full frontend test suite (64 passed), and confirmed the favicon
+  and brand asset routes still serve.
+
+## 2026-07-14 - Official logo replaced with owner-supplied brand kit
+
+- Superseded the earlier hand-drawn placeholder logo with the owner-supplied
+  `terraspace-brand-kit-v3` (compass ring, four cardinal pointers, diamond hub, `TERRA`/`SPACE`
+  wordmark baked into one vector lockup). Archived the kit verbatim at
+  `brand/terraspace-brand-kit-v3/` for its unused sizes, light-theme variants, and source
+  templates.
+- Found the kit's own color spec (`#DFA750` gold, `#050608` canvas) did not match the already
+  locked Visual Design Direction palette (`#f2a93b` amber, `#000000` black), which every existing
+  screen already uses. Asked the owner rather than picking silently; they chose to keep the
+  existing amber/black tokens and recolor the kit's shapes to match, so the logo has no second
+  accent color competing with the rest of the interface.
+- Wired only the kit's `-dark` compact and micro variants into the app (recolored), replacing the
+  earlier `logo-mark.tsx` component and hand-drawn SVGs, which were deleted. Did not adopt the
+  kit's own React/CSS templates, since they introduce a parallel `--ts-*` token system alongside
+  the one this decision already defines.
+- Verified by rebuilding the frontend Docker image, confirming `/icon.svg` and the brand SVG
+  route serve correctly, screenshotting the rendered sidebar mark, running frontend lint (clean,
+  including the `next/image` conversion), and running the full frontend test suite (64 passed).
+
+## 2026-07-14 - Official logo mark added
+
+- Added the Terra Space logo: a compass ring with three network nodes converging on an amber
+  diamond hub, beside the existing `TERRA`/amber `SPACE` wordmark. Implemented as an inline SVG
+  component for the navigation rail, the browser favicon, and a flat lockup file for use outside
+  the app. Recorded under the Visual Design Direction decision's Signature components.
+- Verified by rebuilding the frontend Docker image, confirming `/icon.svg` serves correctly, and
+  screenshotting the running Dashboard to check the sidebar rendering. Frontend lint passed.
+
 ## 2026-07-14 - Phase 4 (Events and Dashboard) shipped
 
 - Built and verified approved-event exploration: the Events list supports search, shared filters,

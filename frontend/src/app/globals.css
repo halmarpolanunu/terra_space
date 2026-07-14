@@ -37,8 +37,14 @@ body {
 .app-shell { display: grid; min-height: 100vh; grid-template-columns: 16rem minmax(0, 1fr); }
 .sidebar { padding: 1.5rem 1rem; background: var(--panel); border-right: 1px solid var(--border); }
 .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   margin: 0 0 2rem;
   padding: 0 0.75rem;
+}
+.brand-mark { display: block; width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
+.brand-word {
   font-family: var(--font-mono);
   font-weight: 700;
   letter-spacing: 0.08em;

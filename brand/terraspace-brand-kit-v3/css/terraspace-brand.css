@@ -1,0 +1,30 @@
+/* TerraSpace dashboard brand tokens */
+:root {
+  --ts-gold: #DFA750;
+  --ts-gold-hover: #E8B867;
+  --ts-ink: #111318;
+  --ts-ink-2: #252932;
+  --ts-paper: #F7F7F5;
+  --ts-muted: #A7ABB4;
+  --ts-canvas: #050608;
+
+  --ts-logo-header-height: 36px;
+  --ts-logo-sidebar-width: 184px;
+  --ts-logo-collapsed-size: 36px;
+  --ts-logo-clearspace: 12px;
+}
+
+.ts-logo { display:block; width:auto; max-width:100%; user-select:none; }
+.ts-logo--header { height:var(--ts-logo-header-height); }
+.ts-logo--sidebar { width:var(--ts-logo-sidebar-width); height:auto; }
+.ts-logo--collapsed { width:var(--ts-logo-collapsed-size); height:var(--ts-logo-collapsed-size); }
+.ts-brand-focus { outline:2px solid var(--ts-gold); outline-offset:3px; }
+
+/* Recommended dashboard breakpoints */
+@media (max-width: 900px) {
+  .ts-logo--header { height:32px; }
+}
+@media (max-width: 640px) {
+  .ts-logo--wordmark { display:none; }
+  .ts-logo--collapsed { width:32px; height:32px; }
+}
