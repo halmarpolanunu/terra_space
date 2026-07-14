@@ -8,6 +8,25 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Design pass audit completed (read-only)
+
+- Ran the deferred design pass's audit half as a read-only review: the app was started from the
+  `design-pass` worktree, all five screens were captured as full-page and viewport screenshots,
+  and each screenshot was reviewed against the locked
+  [Visual Design Direction](decisions/Visual-Design-Direction.md) and the Tailwind Plus category
+  map in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md). No source files were
+  modified. Findings are recorded in the
+  [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): four usability defects (roadmap
+  "PHASE 2"/"PHASE 3" labels visible in the UI, a dead-end Event Review empty state, a
+  misleading "No events match these filters" message shown on an empty database, and an
+  unlabeled Documents queue panel with near-invisible disabled buttons), plus prioritized polish
+  items, the biggest being compressing the shared Dashboard/Events filter block so the globe is
+  visible without scrolling.
+- Audit caveat recorded in the document itself: all screenshots were taken against an empty
+  database, so the populated views (review card, events table, facts grid, globe pins,
+  attachment thumbnails) still need a follow-up capture with sample data before or during the
+  implementation half of the pass.
+
 ## 2026-07-14 - Local attachment storage built, closing the last open Roadmap item
 
 - Executed the

@@ -27,6 +27,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md) — task-by-task build plan for Events and Dashboard
 - [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md) — task-by-task build plan for Settings and final MVP verification
 - [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md) — build plan that closed Phase 1's remaining item
+- [Design Pass Audit](plans/2026-07-15-design-pass-audit.md) — screen-by-screen findings for the deferred aesthetic design pass
 
 ## Reading rule
 

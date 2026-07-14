@@ -10,17 +10,30 @@ status: active
 
 ## Current focus
 
-Every Roadmap item across all five phases is now complete, including Phase 1's
-"Prepare local attachment storage," which had been deferred since Phase 1 and was just closed
-using the
-[Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md). The
-next continuation point is the deferred aesthetic design pass described in
-[Design Pass Sequencing](decisions/Design-Pass-Sequencing.md); a separate git worktree
-(`.claude/worktrees/design-pass`, branch `worktree-design-pass`) has been prepared for that work so
-it can proceed without touching this checkout.
+Every Roadmap item across all five phases is complete. The deferred aesthetic design pass
+described in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) has started: its
+audit half is done and recorded in the
+[Design Pass Audit](plans/2026-07-15-design-pass-audit.md). The next continuation point is the
+implementation half of the pass — starting with the four usability defects listed in the audit's
+"Prioritized top 5" — working in the prepared git worktree (`.claude/worktrees/design-pass`,
+branch `worktree-design-pass`) so it can proceed without touching this checkout.
 
 ## Recent progress
 
+- Ran the audit half of the deferred design pass as a read-only review (no code changed): the
+  app was started from the `design-pass` worktree, all five screens were captured as full-page
+  and viewport screenshots, and each was evaluated against the locked
+  [Visual Design Direction](decisions/Visual-Design-Direction.md) and the Tailwind Plus category
+  map in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md). Findings are recorded in
+  the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): four usability defects
+  (visible "PHASE 2"/"PHASE 3" roadmap labels on Documents and Event Review, a dead-end Event
+  Review empty state, a misleading "No events match these filters" message shown on an empty
+  database, and an unlabeled Documents queue panel with near-invisible disabled buttons), plus
+  prioritized polish items led by compressing the shared Dashboard/Events filter block so the
+  globe is visible without scrolling. Caveat recorded in the audit: all screenshots were of an
+  empty database, so the populated views (review card, events table, facts grid, globe pins,
+  attachment thumbnails) still need a follow-up capture with sample data before or during the
+  implementation half.
 - Executed the
   [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md),
   closing the only Roadmap item left open across the whole MVP. The `Attachment` table and
@@ -246,17 +259,15 @@ it can proceed without touching this checkout.
 
 ## Next actions
 
-- Hold the deferred aesthetic design pass now that the MVP is complete and verified — including
-  the local attachment storage item, so the design pass now covers a fully finished product with
-  no remaining Roadmap gaps. Re-open both
-  [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) and
-  [Visual Design Direction](decisions/Visual-Design-Direction.md) together, and work through the
-  Tailwind Plus category mapping recorded in the Design Pass Sequencing decision (Stats, Tables,
-  Description Lists, Badges, Alerts, Empty States, Settings Screens, Toggles, Radio Groups, Action
-  Panels) as structural references, keeping the pure-black/amber mission-brief system. Keep fixing
-  genuine usability defects as they surface in the meantime. A separate git worktree
-  (`.claude/worktrees/design-pass`, branch `worktree-design-pass`, branched from this work) is
-  already prepared so this pass can proceed in its own checkout.
+- Implement the design pass from the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md),
+  in the prepared `design-pass` worktree, keeping the pure-black/amber mission-brief system.
+  Order of work per the audit's "Prioritized top 5": first the four usability defects (remove
+  the "PHASE 2"/"PHASE 3" labels, fix the Event Review dead-end empty state, split the
+  misleading "No events match these filters" message into no-data vs. filtered-out cases, and
+  make the Documents queue panel legible with visible disabled buttons), then the polish items,
+  led by compressing the shared Dashboard/Events filter block. During that work, capture the
+  populated views with sample data — the audit only saw empty states — and extend the audit
+  findings if the populated views surface new issues.
 
 ## Related knowledge
 
