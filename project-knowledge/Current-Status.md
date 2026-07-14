@@ -11,10 +11,27 @@ status: active
 ## Current focus
 
 Phase 3 (Event Review and Deduplication) is built, verified end-to-end, and merged into `main`.
-The next continuation point is writing the Roadmap Phase 4 (Events and Dashboard) implementation
-plan.
+The Phase 4 (Events and Dashboard) implementation plan is now ready. The next continuation point
+is executing that plan task by task.
 
 ## Recent progress
+
+- Wrote the [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md) from a
+  direct inspection of the current codebase. It covers the approved Events list (search, shared
+  filters, sorting, detail, source links, and approved-event editing), Dashboard summary, map,
+  timeline, and one URL-backed filter contract shared by all four Dashboard views and Events.
+  It also records the exact meanings of "new", incomplete date, incomplete location, partial
+  date-range matching, and map fallback so implementation has no hidden product choices.
+- Resolved Phase 3's deferred coordinate question in the
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision: a generated, checked-in GeoNames-based gazetteer performs exact local
+  city/admin1/country lookups, saves coordinate precision, never calls a geocoding service at
+  runtime, never uses AI-generated coordinates, and leaves ambiguous/unmatched locations blank.
+  The plan adds a migration and idempotent backfill for already-saved locations.
+- Reconciled a Phase 3 implementation constraint with the Roadmap: approved events are currently
+  immutable, but Phase 4 requires approved-event edit support. The plan permits direct approved
+  edits while rejected/merged records remain immutable audit history; sources/evidence stay
+  read-only and editing does not re-run duplicate detection.
 
 - Executed the [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md)
   task by task: an events read/write API (list, detail, edit, approve, reject, manual add,

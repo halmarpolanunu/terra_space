@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Phase 4 implementation plan and local coordinate policy prepared
+
+- Wrote the [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md), grounded
+  in the existing Phase 3 API, schema, frontend placeholders, local PMTiles route, and installed
+  MapLibre version. It plans the approved Events list, Dashboard summary, globe map, timeline,
+  shared filters, source navigation, approved-event editing, tests, and end-to-end verification.
+- Recorded the [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision. Coordinates will be populated only by exact lookup against a checked-in local
+  GeoNames-derived gazetteer, with city/admin1/country precision stored explicitly; no runtime
+  network geocoding, AI coordinates, fuzzy matching, or guessed pins are allowed.
+- Moved the continuation point from writing Phase 4's plan to executing it task by task.
+
 ## 2026-07-14 — Phase 3 (Event Review and Deduplication) shipped
 
 - Built and verified the full Phase 3 Implementation Plan on `main`: an events read/write API

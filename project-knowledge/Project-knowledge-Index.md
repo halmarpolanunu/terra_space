@@ -24,7 +24,8 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md) — Documents and batch processing build plan
 - [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md) — current task-by-task build plan for Event Review and Deduplication
 
+- [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md) — current task-by-task build plan for Events and Dashboard
+
 ## Reading rule
 
 Read the North Star and Current Status before substantial work. Read the Roadmap or related decisions only when they are relevant to the task.
-
