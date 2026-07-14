@@ -10,12 +10,23 @@ status: active
 
 ## Current focus
 
-Phase 2 (Documents and Batch Processing) is built, verified end-to-end, and merged into the
-`phase-2-documents-processing` branch. The next continuation point is writing the
-[Roadmap](Roadmap.md) Phase 3 (Event Review and Deduplication) implementation plan.
+Phase 2 (Documents and Batch Processing) is built, verified end-to-end, and merged into `main`.
+The [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md) (Event
+Review and Deduplication) is now written. The next continuation point is executing that plan
+task by task.
 
 ## Recent progress
 
+- Wrote the [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md),
+  grounded in a direct inspection of the current codebase rather than assumptions: confirmed
+  `DuplicateFlag` and its migration already exist from Phase 2 (no new migration needed), no
+  events API or shared design-system components exist yet, and both `event-review/page.tsx` and
+  `events/page.tsx` are still placeholders. The plan covers the events read/write API, a
+  duplicate-detection heuristic and its resolution (keep separate / link-merge) endpoint,
+  event-type/actor lookups, and the Event Review screen per the locked Visual Design Direction.
+  It introduces one new rule beyond existing decisions: approval is blocked while an event has a
+  pending duplicate flag, to enforce "no silent merges" at the one point it would otherwise be
+  bypassable.
 - Executed the [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md)
   task by task: the Document & Event Data Model migration; document draft CRUD; the Documents
   page styled per the Visual Design Direction (design tokens promoted into shared CSS); LM
@@ -79,14 +90,14 @@ Phase 2 (Documents and Batch Processing) is built, verified end-to-end, and merg
 
 ## Next actions
 
-- Write the Phase 3 (Event Review and Deduplication) implementation plan: side-by-side review,
-  event correction/approval, type/actor suggestion confirmation, and duplicate-flag handling.
-- Merge `phase-2-documents-processing` once the Phase 3 plan is ready to build on it, or sooner
-  if the user wants Phase 2 on `main` first.
+- Execute the [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md)
+  task by task: events read/write API, duplicate detection and resolution, event-type/actor
+  lookups, shared design components, and the Event Review page.
 
 ## Related knowledge
 
 - [Back to Project Knowledge](Project-knowledge-Index.md)
+- [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md)
 - [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md)
 - [North Star](North-Star.md)
 - [Roadmap](Roadmap.md)
