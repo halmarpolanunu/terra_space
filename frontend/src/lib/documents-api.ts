@@ -6,6 +6,14 @@ export type ProcessingStatus =
   | "completed"
   | "failed";
 
+export type Attachment = {
+  id: string;
+  original_name: string;
+  media_type: string;
+  size_bytes: number;
+  created_at: string;
+};
+
 export type Document = {
   id: string;
   title: string;
@@ -18,6 +26,7 @@ export type Document = {
   processing_error: string | null;
   created_at: string;
   updated_at: string;
+  attachments: Attachment[];
 };
 
 export type DocumentDraft = {
@@ -110,4 +119,32 @@ export async function processDocuments(
 export async function retryDocument(id: string): Promise<ProcessResponse> {
   const response = await fetch(`${BASE_URL}/${id}/retry`, { method: "POST" });
   return parseProcessResponse(response);
+}
+
+export function attachmentFileUrl(documentId: string, attachmentId: string): string {
+  return `${BASE_URL}/${documentId}/attachments/${attachmentId}/file`;
+}
+
+export async function uploadAttachment(documentId: string, file: File): Promise<Document> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const uploadResponse = await fetch(`${BASE_URL}/${documentId}/attachments`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!uploadResponse.ok) {
+    const body = await uploadResponse.json().catch(() => null);
+    throw new Error(body?.detail ?? `Request failed with status ${uploadResponse.status}`);
+  }
+  return getDocument(documentId);
+}
+
+export async function deleteAttachment(documentId: string, attachmentId: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}/${documentId}/attachments/${attachmentId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.detail ?? `Request failed with status ${response.status}`);
+  }
 }

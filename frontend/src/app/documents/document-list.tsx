@@ -1,7 +1,7 @@
 "use client";
 
 import { ProcessingStatusBadge } from "@/app/documents/processing-status-badge";
-import type { Document } from "@/lib/documents-api";
+import { attachmentFileUrl, type Document } from "@/lib/documents-api";
 
 const EDITABLE_STATUSES = new Set(["draft", "failed"]);
 
@@ -13,6 +13,8 @@ type DocumentListProps = {
   onEdit?: (document: Document) => void;
   onDelete?: (id: string) => void;
   onRetry?: (id: string) => void;
+  onUploadAttachment?: (documentId: string, file: File) => void;
+  onDeleteAttachment?: (documentId: string, attachmentId: string) => void;
 };
 
 export function DocumentList({
@@ -23,6 +25,8 @@ export function DocumentList({
   onEdit,
   onDelete,
   onRetry,
+  onUploadAttachment,
+  onDeleteAttachment,
 }: DocumentListProps) {
   const selectedCount = selectedIds.size;
 
@@ -52,6 +56,46 @@ export function DocumentList({
               <span className="document-meta">{document.document_date}</span>
               {document.processing_status === "failed" && document.processing_error && (
                 <span className="document-error">{document.processing_error}</span>
+              )}
+              {(document.attachments.length > 0 ||
+                (onUploadAttachment && EDITABLE_STATUSES.has(document.processing_status))) && (
+                <div className="attachment-list">
+                  {document.attachments.map((attachment) => (
+                    <div className="attachment-thumb" key={attachment.id}>
+                      <img
+                        alt={attachment.original_name}
+                        src={attachmentFileUrl(document.id, attachment.id)}
+                      />
+                      {onDeleteAttachment && EDITABLE_STATUSES.has(document.processing_status) && (
+                        <button
+                          aria-label={`Delete ${attachment.original_name}`}
+                          className="attachment-delete"
+                          onClick={() => onDeleteAttachment(document.id, attachment.id)}
+                          type="button"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {onUploadAttachment && EDITABLE_STATUSES.has(document.processing_status) && (
+                    <label className="attachment-add">
+                      Add attachment
+                      <input
+                        accept="image/jpeg,image/png,image/gif,image/webp"
+                        aria-label={`Add attachment for ${document.title}`}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) {
+                            onUploadAttachment(document.id, file);
+                          }
+                          event.target.value = "";
+                        }}
+                        type="file"
+                      />
+                    </label>
+                  )}
+                </div>
               )}
             </div>
             <div className="document-row-actions">

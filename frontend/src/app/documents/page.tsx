@@ -8,11 +8,13 @@ import { ReprocessConfirmDialog } from "@/app/documents/reprocess-confirm-dialog
 import { AppShell } from "@/components/app-shell";
 import {
   createDocument,
+  deleteAttachment,
   deleteDocument,
   listDocuments,
   processDocuments,
   retryDocument,
   updateDocument,
+  uploadAttachment,
   type Document,
   type DocumentDraft,
 } from "@/lib/documents-api";
@@ -157,6 +159,43 @@ export default function DocumentsPage() {
     }
   }
 
+  async function handleUploadAttachment(documentId: string, file: File) {
+    try {
+      const updated = await uploadAttachment(documentId, file);
+      setDocuments((current) =>
+        current.map((document) => (document.id === updated.id ? updated : document)),
+      );
+      setError(undefined);
+    } catch (uploadError) {
+      setError(
+        uploadError instanceof Error ? uploadError.message : "Could not upload the attachment.",
+      );
+    }
+  }
+
+  async function handleDeleteAttachment(documentId: string, attachmentId: string) {
+    try {
+      await deleteAttachment(documentId, attachmentId);
+      setDocuments((current) =>
+        current.map((document) =>
+          document.id === documentId
+            ? {
+                ...document,
+                attachments: document.attachments.filter(
+                  (attachment) => attachment.id !== attachmentId,
+                ),
+              }
+            : document,
+        ),
+      );
+      setError(undefined);
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error ? deleteError.message : "Could not delete the attachment.",
+      );
+    }
+  }
+
   return (
     <AppShell currentPath="/documents">
       <section className="documents-page">
@@ -182,10 +221,12 @@ export default function DocumentsPage() {
         <DocumentList
           documents={documents}
           onDelete={handleDelete}
+          onDeleteAttachment={handleDeleteAttachment}
           onEdit={setEditingDocument}
           onProcessSelected={handleProcessSelected}
           onRetry={handleRetry}
           onToggleSelect={handleToggleSelect}
+          onUploadAttachment={handleUploadAttachment}
           selectedIds={selectedIds}
         />
       </section>

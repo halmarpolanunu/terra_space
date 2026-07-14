@@ -19,6 +19,7 @@ function makeDocument(overrides: Partial<Document> = {}): Document {
     processing_error: null,
     created_at: "2026-07-14T00:00:00Z",
     updated_at: "2026-07-14T00:00:00Z",
+    attachments: [],
     ...overrides,
   };
 }
@@ -181,6 +182,101 @@ describe("DocumentList", () => {
     );
 
     expect(screen.queryByRole("button", { name: /retry/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("DocumentList attachments", () => {
+  it("shows a file input and uploads a chosen file for an editable document", () => {
+    const documents = [
+      makeDocument({ id: "doc-1", title: "Report A", processing_status: "draft" }),
+    ];
+    const onUploadAttachment = vi.fn();
+    const file = new File(["image bytes"], "photo.png", { type: "image/png" });
+
+    render(
+      <DocumentList
+        documents={documents}
+        onProcessSelected={vi.fn()}
+        onToggleSelect={vi.fn()}
+        onUploadAttachment={onUploadAttachment}
+        selectedIds={new Set()}
+      />,
+    );
+
+    const input = screen.getByLabelText(/add attachment for report a/i);
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(onUploadAttachment).toHaveBeenCalledWith("doc-1", file);
+  });
+
+  it("renders an existing attachment thumbnail and a working delete button", () => {
+    const documents = [
+      makeDocument({
+        id: "doc-1",
+        processing_status: "draft",
+        attachments: [
+          {
+            id: "att-1",
+            original_name: "photo.png",
+            media_type: "image/png",
+            size_bytes: 1234,
+            created_at: "2026-07-14T00:00:00Z",
+          },
+        ],
+      }),
+    ];
+    const onDeleteAttachment = vi.fn();
+
+    render(
+      <DocumentList
+        documents={documents}
+        onDeleteAttachment={onDeleteAttachment}
+        onProcessSelected={vi.fn()}
+        onToggleSelect={vi.fn()}
+        selectedIds={new Set()}
+      />,
+    );
+
+    expect(screen.getByAltText("photo.png")).toHaveAttribute(
+      "src",
+      "/api/backend/api/documents/doc-1/attachments/att-1/file",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete photo.png" }));
+    expect(onDeleteAttachment).toHaveBeenCalledWith("doc-1", "att-1");
+  });
+
+  it("hides upload and delete controls for a document that is not draft or failed", () => {
+    const documents = [
+      makeDocument({
+        id: "doc-1",
+        processing_status: "completed",
+        attachments: [
+          {
+            id: "att-1",
+            original_name: "photo.png",
+            media_type: "image/png",
+            size_bytes: 1234,
+            created_at: "2026-07-14T00:00:00Z",
+          },
+        ],
+      }),
+    ];
+
+    render(
+      <DocumentList
+        documents={documents}
+        onDeleteAttachment={vi.fn()}
+        onProcessSelected={vi.fn()}
+        onToggleSelect={vi.fn()}
+        onUploadAttachment={vi.fn()}
+        selectedIds={new Set()}
+      />,
+    );
+
+    expect(screen.getByAltText("photo.png")).toBeVisible();
+    expect(screen.queryByLabelText(/add attachment/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete photo.png" })).not.toBeInTheDocument();
   });
 });
 

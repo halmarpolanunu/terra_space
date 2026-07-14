@@ -53,7 +53,7 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 }
 
 function makeDocument(overrides: Partial<Document> = {}): Document {
-  return { id: "doc-1", title: "Field report", content: "The full source report.", document_date: "2026-07-10", publication_date: "2026-07-11", source_url: "https://example.test/report", input_date: "2026-07-14T00:00:00Z", processing_status: "completed", processing_error: null, created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", ...overrides };
+  return { id: "doc-1", title: "Field report", content: "The full source report.", document_date: "2026-07-10", publication_date: "2026-07-11", source_url: "https://example.test/report", input_date: "2026-07-14T00:00:00Z", processing_status: "completed", processing_error: null, created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", attachments: [], ...overrides };
 }
 
 describe("EventsPage", () => {
