@@ -40,6 +40,7 @@ class LocationRead(BaseModel):
     city_regency: str | None
     latitude: float | None
     longitude: float | None
+    coordinate_precision: Literal["country", "admin1", "city_regency"] | None
 
 
 class EventSourceRead(BaseModel):
@@ -130,3 +131,4 @@ class EventRead(BaseModel):
     duplicate_flags: list[DuplicateFlagRead]
     created_at: datetime
     updated_at: datetime
+    approved_at: datetime | None

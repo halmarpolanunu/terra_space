@@ -25,12 +25,12 @@ def _column(engine, table: str, name: str) -> dict:
     return columns[name]
 
 
-def test_migration_reaches_0002(tmp_path: Path) -> None:
+def test_migration_reaches_current_head(tmp_path: Path) -> None:
     engine = _migrated_engine(tmp_path)
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "0002_phase2_data_model"
+            == "0003_phase4_events_dashboard"
         )
 
 

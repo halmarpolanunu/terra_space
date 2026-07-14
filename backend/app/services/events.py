@@ -12,6 +12,7 @@ from app.db.models import (
     EventType,
     Location,
     Source,
+    utc_now,
 )
 from app.schemas.event import (
     ActorRead,
@@ -27,6 +28,7 @@ from app.schemas.event import (
 )
 from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
+from app.services.locations import apply_coordinates
 
 EDITABLE_REVIEW_STATUSES = {"draft"}
 
@@ -82,6 +84,7 @@ def to_event_read(event: Event) -> EventRead:
         ],
         created_at=event.created_at,
         updated_at=event.updated_at,
+        approved_at=event.approved_at,
     )
 
 
@@ -180,15 +183,16 @@ def update_event(db: Session, event: Event, payload: EventUpdate) -> Event:
             event.event_actors.append(EventActor(actor=actor, role=actor_input.role))
 
     if payload.locations is not None:
-        event.locations = [
-            Location(
-                country=location.country,
-                admin1=location.admin1,
-                city_regency=location.city_regency,
-            )
-            for location in payload.locations
-            if location.country or location.admin1 or location.city_regency
-        ]
+        event.locations = []
+        for location_input in payload.locations:
+            if location_input.country or location_input.admin1 or location_input.city_regency:
+                location = Location(
+                    country=location_input.country,
+                    admin1=location_input.admin1,
+                    city_regency=location_input.city_regency,
+                )
+                apply_coordinates(location)
+                event.locations.append(location)
 
     db.commit()
     db.refresh(event)
@@ -204,6 +208,7 @@ def approve_event(db: Session, event: Event) -> Event:
         raise PendingDuplicateFlagError(len(pending))
 
     event.review_status = "approved"
+    event.approved_at = utc_now()
     if event.event_type is not None and not event.event_type.is_active:
         event.event_type.is_active = True
     for event_actor in event.event_actors:
@@ -284,13 +289,13 @@ def create_manual_event(db: Session, document: Document, payload: EventCreate) -
 
     for location in payload.locations:
         if location.country or location.admin1 or location.city_regency:
-            event.locations.append(
-                Location(
-                    country=location.country,
-                    admin1=location.admin1,
-                    city_regency=location.city_regency,
-                )
+            location_record = Location(
+                country=location.country,
+                admin1=location.admin1,
+                city_regency=location.city_regency,
             )
+            apply_coordinates(location_record)
+            event.locations.append(location_record)
 
     for actor_input in payload.actors:
         actor = _resolve_actor(db, actor_input.name)

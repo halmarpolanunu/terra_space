@@ -15,6 +15,7 @@ from app.db.models import (
 from app.schemas.extraction import ExtractedEvent, ExtractionResult
 from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
+from app.services.locations import apply_coordinates
 
 
 @dataclass
@@ -82,13 +83,13 @@ def persist_extraction(
 
         for location_data in event_data.locations:
             if location_data.country or location_data.admin1 or location_data.city_regency:
-                event.locations.append(
-                    Location(
-                        country=location_data.country,
-                        admin1=location_data.admin1,
-                        city_regency=location_data.city_regency,
-                    )
+                location = Location(
+                    country=location_data.country,
+                    admin1=location_data.admin1,
+                    city_regency=location_data.city_regency,
                 )
+                apply_coordinates(location)
+                event.locations.append(location)
 
         for actor_data in event_data.actors:
             actor = find_by_exact_name(existing_actors, actor_data.name)
