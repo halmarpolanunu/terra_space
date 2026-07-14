@@ -1,8 +1,7 @@
-import { AppShell } from "@/components/app-shell";
-import { PagePlaceholder } from "@/components/page-placeholder";
-import { ServiceStatusPanel } from "@/components/service-status";
-import { WorldMap } from "@/components/world-map";
+import { Suspense } from "react";
+
+import { DashboardWorkspace } from "@/app/dashboard/dashboard-workspace";
 
 export default function DashboardPage() {
-  return <AppShell currentPath="/dashboard"><PagePlaceholder description="Approved event summaries, map, timeline, and filters will appear here in Phase 4." phase="Phase 4" title="Dashboard" /><ServiceStatusPanel /><WorldMap /></AppShell>;
+  return <Suspense fallback={<main className="main-content"><h1>Dashboard</h1><p>Loading dashboard…</p></main>}><DashboardWorkspace /></Suspense>;
 }

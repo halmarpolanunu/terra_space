@@ -352,6 +352,23 @@ body {
 .timeline-group li { color: var(--text); }
 .timeline-unknown-group { border-color: var(--text-muted); }
 
+/* Dashboard: every panel receives the same URL-filtered event set. */
+.dashboard-page { display: grid; gap: 1.25rem; max-width: 96rem; }
+.dashboard-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+.dashboard-heading h1 { margin: 0.2rem 0 0; font-size: clamp(1.75rem, 3vw, 2.5rem); }
+.dashboard-heading .btn { text-decoration: none; }
+.dashboard-intro { margin: 0; color: var(--text-muted); }
+.dashboard-summary-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 0 0 1.5rem; }
+.dashboard-summary-metrics div { border-left: 2px solid var(--border-bright); padding-left: 0.75rem; }
+.dashboard-summary-metrics dt { color: var(--text-muted); font: 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.dashboard-summary-metrics dd { margin: 0.35rem 0 0; color: var(--accent); font: 1.65rem var(--font-mono); }
+.dashboard-type-distribution h2 { margin: 0 0 0.5rem; font: 0.78rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.dashboard-type-distribution ul { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0; padding: 0; list-style: none; color: var(--text); }
+.dashboard-type-distribution p { margin: 0; color: var(--text-muted); }
+.dashboard-globe-panel .world-map { margin-top: 0; min-height: 30rem; }
+.dashboard-lower-grid { display: grid; grid-template-columns: minmax(17rem, 0.7fr) minmax(0, 1.3fr); gap: 1.25rem; align-items: start; }
+.map-flat-fallback { margin: 0 0 0.65rem; color: var(--text-muted); font: 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+
 @media (max-width: 72rem) {
   .event-filter-bar { grid-template-columns: repeat(3, minmax(10rem, 1fr)); }
   .event-list-row { grid-template-columns: minmax(14rem, 1fr) auto repeat(2, minmax(7rem, 1fr)); }
@@ -359,6 +376,8 @@ body {
 
 @media (max-width: 60rem) {
   .event-review-columns { grid-template-columns: 1fr; }
+  .dashboard-lower-grid { grid-template-columns: 1fr; }
+  .dashboard-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 48rem) {
@@ -370,4 +389,5 @@ body {
   .event-filter-bar { grid-template-columns: 1fr 1fr; }
   .event-list-row { grid-template-columns: 1fr 1fr; }
   .event-list-title { grid-column: 1 / -1; }
+  .dashboard-heading { align-items: start; flex-direction: column; }
 }
