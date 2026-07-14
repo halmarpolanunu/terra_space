@@ -15,6 +15,16 @@ planning Phase 5: Settings and final MVP verification.
 
 ## Recent progress
 
+- Did a high-level unused-files scan of the whole project and acted on every finding: added
+  migration `0004_coordinate_backfill` after finding the Phase 4 migration never actually called
+  the already-written, already-tested `backfill_missing_coordinates()` (confirmed live — 3 of 4
+  location rows for one place had `NULL` coordinates; the Dashboard's "Incomplete location"
+  metric read `1` and now reads `0`); removed leftover `create-next-app` scaffolding
+  (`favicon.ico` still being served over the real logo, five unused starter SVGs); and cleaned up
+  repo cruft — an empty stray `backend;D/` folder, the two completed git worktrees
+  (`phase-1-foundation`, `phase-4-events-dashboard`), and 5 branches already merged into `main`
+  (deleted locally and, for the 2 that were still pushed, on GitHub too). All committed and
+  pushed to `main`; 81 backend tests and 66 frontend tests passing.
 - Recorded the [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) decision: defer any
   further aesthetic design pass until after Phase 5, while mapping which Tailwind Plus
   Application UI categories should inform Phase 5's Settings screen and the eventual pass.
