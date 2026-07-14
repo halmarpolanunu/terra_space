@@ -10,14 +10,33 @@ status: active
 
 ## Current focus
 
-The Phase 2 implementation plan is written and ready for execution. See the
-[Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md) — document
-CRUD, the full Document & Event Data Model migration, LM Studio batch extraction with
-evidence-quote validation, and retry/reprocessing. Phase 3 (Event Review and Deduplication)
-gets its own plan once Phase 2 is built and working.
+Phase 2 (Documents and Batch Processing) is built, verified end-to-end, and merged into the
+`phase-2-documents-processing` branch. The next continuation point is writing the
+[Roadmap](Roadmap.md) Phase 3 (Event Review and Deduplication) implementation plan.
 
 ## Recent progress
 
+- Executed the [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md)
+  task by task: the Document & Event Data Model migration; document draft CRUD; the Documents
+  page styled per the Visual Design Direction (design tokens promoted into shared CSS); LM
+  Studio structured extraction with model auto-discovery; evidence-quote validation enforcing
+  "never invent"; batch processing orchestration with per-document failure isolation and a
+  forward-looking reprocessing-approval warning; and the frontend batch-processing UX (polling,
+  retry, reprocess-confirmation dialog).
+- Verified end-to-end: 48 backend tests, 18 frontend tests, frontend lint and production build,
+  and two Playwright scenarios — LM Studio genuinely offline (Documents CRUD still works) and a
+  document processed against a local LM Studio stub (confirmed a `draft` event with the correct
+  `evidence_quote` by inspecting the SQLite database directly, since no Events API exists yet).
+  Project Knowledge validation passed with 0 errors and 0 warnings.
+- Fixed two environment issues found during this verification, both real defects rather than
+  Phase 2 logic bugs: `backend/docker-entrypoint.sh` had CRLF line endings (breaking container
+  startup on a Windows checkout) with no `.gitattributes` to prevent it — added
+  `.gitattributes` forcing LF for `*.sh` and fixed the file; and the e2e LM Studio stub server
+  had to run as its own OS process rather than in the same Node process that calls
+  `spawnSync` for Docker/PowerShell, since `spawnSync` blocks that whole process's event loop
+  for the child's lifetime and would otherwise freeze the stub mid-request.
+- Optional image attachment upload was intentionally not built in Phase 2: it depends on
+  Phase 1's still-planned local attachment storage, which does not exist yet.
 - Wrote the Phase 2 (Documents and Batch Processing) implementation plan, scoped to Roadmap
   Phase 2 only, in `project-knowledge/plans/`.
 - Designed the Phase 2/3 data model extension and recorded it as the Document & Event Data
@@ -60,10 +79,10 @@ gets its own plan once Phase 2 is built and working.
 
 ## Next actions
 
-- Execute the Phase 2 Implementation Plan task by task (migration, document CRUD, Documents
-  page, LM Studio extraction, validation/persistence, batch orchestration, batch UX,
-  end-to-end verification).
-- After Phase 2 ships, write the Phase 3 (Event Review and Deduplication) implementation plan.
+- Write the Phase 3 (Event Review and Deduplication) implementation plan: side-by-side review,
+  event correction/approval, type/actor suggestion confirmation, and duplicate-flag handling.
+- Merge `phase-2-documents-processing` once the Phase 3 plan is ready to build on it, or sooner
+  if the user wants Phase 2 on `main` first.
 
 ## Related knowledge
 

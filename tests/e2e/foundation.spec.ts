@@ -32,3 +32,24 @@ test("the local foundation stays usable without LM Studio or internet", async ({
   await expect(page.getByLabel("Offline world map").locator("canvas")).toBeVisible();
   expect(externalRequests).toEqual([]);
 });
+
+test("the Documents page can create, list, and edit drafts while LM Studio is offline", async ({
+  page,
+}) => {
+  await page.goto("/documents");
+  await expect(page.getByRole("heading", { name: "Documents" })).toBeVisible();
+
+  await page.getByLabel("Title", { exact: true }).fill("Offline draft");
+  await page.getByLabel("Content", { exact: true }).fill("Body text while LM Studio is offline.");
+  await page.getByLabel("Document date", { exact: true }).fill("2026-07-14");
+  await page.getByRole("button", { name: "Add document" }).click();
+
+  await expect(page.getByText("Offline draft")).toBeVisible();
+  await expect(page.getByText("Draft", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit" }).click();
+  await page.getByLabel("Title", { exact: true }).fill("Offline draft (edited)");
+  await page.getByRole("button", { name: "Save changes" }).click();
+
+  await expect(page.getByText("Offline draft (edited)")).toBeVisible();
+});

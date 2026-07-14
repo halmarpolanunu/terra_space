@@ -8,6 +8,31 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 — Phase 2 (Documents and Batch Processing) shipped
+
+- Built and verified the full Phase 2 Implementation Plan on `phase-2-documents-processing`:
+  the Document & Event Data Model migration; document draft CRUD; the Documents page styled
+  per the Visual Design Direction, with its design tokens promoted into shared CSS for the
+  first time; LM Studio structured extraction with model auto-discovery; evidence-quote
+  validation enforcing "never invent"; batch processing orchestration with per-document
+  failure isolation and a forward-looking reprocessing-approval warning; and the frontend
+  batch-processing UX (status polling, retry, reprocess-confirmation dialog).
+- End-to-end verification: 48 backend tests, 18 frontend tests, frontend lint and production
+  build, and two Playwright scenarios (LM Studio genuinely offline; a document processed
+  against a local LM Studio HTTP stub, with the resulting draft event and its evidence_quote
+  confirmed by inspecting the SQLite database directly, since no Events API exists before
+  Phase 3). Project Knowledge validation passed with 0 errors and 0 warnings.
+- Found and fixed two real environment defects while verifying, unrelated to Phase 2's own
+  logic: `backend/docker-entrypoint.sh` had CRLF line endings with no `.gitattributes` to
+  prevent it, breaking container startup on a Windows checkout — added `.gitattributes`
+  forcing LF for `*.sh`; and the e2e LM Studio stub had to become its own OS process, since
+  `spawnSync` (used for the Docker/PowerShell calls in the e2e runner) blocks the whole Node
+  event loop for the child process's lifetime and would otherwise freeze an in-process stub.
+- Optional image attachment upload was intentionally deferred: it depends on Phase 1's
+  still-planned local attachment storage item, which does not exist yet.
+- Moved the continuation point to writing the Phase 3 (Event Review and Deduplication)
+  implementation plan.
+
 ## 2026-07-14 — Phase 2 implementation plan written
 
 - Wrote the Phase 2 (Documents and Batch Processing) implementation plan in

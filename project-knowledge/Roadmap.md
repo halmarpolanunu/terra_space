@@ -20,12 +20,12 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Phase 2: Documents and Batch Processing
 
-- [ ] **Build manual document input** - support required title, content, document/publication date, optional source URL, optional image attachment, and automatic input date. Status: planned.
-- [ ] **Support document drafts and list management** - create, save, reopen, edit, list, and select documents with checkbox selection. Status: planned.
-- [ ] **Track document processing status** - use draft, queued, processing, ready_for_review, completed, and failed with clear failure messages. Status: planned.
-- [ ] **Integrate LM Studio locally** - process selected documents through configurable local LM Studio endpoint and model. Status: planned.
-- [ ] **Validate structured LLM output** - reject invalid parsing safely without corrupting the document or approved data. Status: planned.
-- [ ] **Support retry and reprocessing** - retry failed processing and warn before reprocessing documents that already have approved events. Status: planned.
+- [x] **Build manual document input** - support required title, content, document date, optional publication date and source URL, and automatic input date. Status: completed. Optional image attachment upload is deferred: it depends on Phase 1's still-planned "Prepare local attachment storage" item, which this phase did not build.
+- [x] **Support document drafts and list management** - create, save, reopen, edit, list, and select documents with checkbox selection. Status: completed.
+- [x] **Track document processing status** - use draft, queued, processing, ready_for_review, completed, and failed with clear failure messages. Status: completed.
+- [x] **Integrate LM Studio locally** - process selected documents through a locally discovered LM Studio model over the OpenAI-compatible chat-completions endpoint. Status: completed.
+- [x] **Validate structured LLM output** - reject invalid parsing safely without corrupting the document or approved data. Status: completed.
+- [x] **Support retry and reprocessing** - retry failed processing and warn before reprocessing documents that already have approved events. Status: completed.
 
 ## Phase 3: Event Review and Deduplication
 
