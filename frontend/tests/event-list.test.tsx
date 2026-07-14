@@ -31,7 +31,7 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 
 describe("EventList", () => {
   it("renders required event facts and explicit unknown values", () => {
-    render(<EventList events={[makeEvent()]} onSelect={vi.fn()} />);
+    render(<EventList events={[makeEvent()]} onSelect={vi.fn()} onSortChange={vi.fn()} sort="" />);
 
     expect(screen.getByText("Bridge crossing reported")).toBeInTheDocument();
     expect(screen.getByText("Claim")).toBeInTheDocument();
@@ -43,9 +43,26 @@ describe("EventList", () => {
 
   it("selects an event from its list row", () => {
     const onSelect = vi.fn();
-    render(<EventList events={[makeEvent()]} onSelect={onSelect} />);
+    render(<EventList events={[makeEvent()]} onSelect={onSelect} onSortChange={vi.fn()} sort="" />);
 
     fireEvent.click(screen.getByRole("button", { name: /bridge crossing reported/i }));
     expect(onSelect).toHaveBeenCalledWith(makeEvent());
+  });
+
+  it("shows a count and column headers so the table's contents are clear", () => {
+    render(<EventList events={[makeEvent(), makeEvent({ id: "event-2", title: "Second event" })]} onSelect={vi.fn()} onSortChange={vi.fn()} sort="" />);
+
+    expect(screen.getByText("2 approved events")).toBeInTheDocument();
+    ["Title", "Status", "Type", "Date", "Location", "Sources"].forEach((header) =>
+      expect(screen.getByText(header)).toBeInTheDocument(),
+    );
+  });
+
+  it("reports sort changes from its own toolbar", () => {
+    const onSortChange = vi.fn();
+    render(<EventList events={[makeEvent()]} onSelect={vi.fn()} onSortChange={onSortChange} sort="" />);
+
+    fireEvent.change(screen.getByLabelText("Sort order"), { target: { value: "title_asc" } });
+    expect(onSortChange).toHaveBeenCalledWith("title_asc");
   });
 });

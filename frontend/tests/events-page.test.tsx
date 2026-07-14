@@ -77,9 +77,9 @@ describe("EventsPage", () => {
     await screen.findByText("Bridge crossing reported");
     expect(eventsApi.listEvents).toHaveBeenCalledWith(expect.objectContaining({ q: "bridge", sort: "title_asc" }));
     expect(screen.queryByText("Rejected event")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Search")).toHaveValue("bridge");
+    expect(screen.getByLabelText("Search title & summary")).toHaveValue("bridge");
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "convoy" } });
+    fireEvent.change(screen.getByLabelText("Search title & summary"), { target: { value: "convoy" } });
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/events?q=convoy&sort=title_asc"));
   });
 
@@ -135,7 +135,7 @@ describe("EventsPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: event.title }));
     expect(screen.getByRole("heading", { name: event.title })).toBeVisible();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "different event" } });
+    fireEvent.change(screen.getByLabelText("Search title & summary"), { target: { value: "different event" } });
 
     expect(screen.queryByRole("heading", { name: event.title })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: event.title })).toBeVisible();

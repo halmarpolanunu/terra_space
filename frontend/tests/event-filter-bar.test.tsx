@@ -71,7 +71,7 @@ describe("EventFilterBar", () => {
     );
 
     [
-      "Search",
+      "Search title & summary",
       "Start date",
       "End date",
       "Event type",
@@ -81,7 +81,6 @@ describe("EventFilterBar", () => {
       "Province or state",
       "City or regency",
       "Source document",
-      "Sort order",
     ].forEach((label) => expect(screen.getByLabelText(label)).toBeInTheDocument());
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
 

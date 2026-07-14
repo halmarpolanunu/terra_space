@@ -1,5 +1,13 @@
 export type EventSort = "" | "date_desc" | "date_asc" | "created_desc" | "title_asc";
 
+export const EVENT_SORT_OPTIONS: [EventSort, string][] = [
+  ["", "Date (newest first)"],
+  ["date_desc", "Date (newest first)"],
+  ["date_asc", "Date (oldest first)"],
+  ["created_desc", "Recently created"],
+  ["title_asc", "Title (A–Z)"],
+];
+
 export type EventFilters = {
   q: string;
   date_from: string;

@@ -1,9 +1,12 @@
 import { StatusChip } from "@/components/status-chip";
+import { EVENT_SORT_OPTIONS, type EventSort } from "@/lib/event-filters";
 import type { EventRead, LocationRead } from "@/lib/events-api";
 
 type EventListProps = {
   events: EventRead[];
   onSelect: (event: EventRead) => void;
+  sort: EventSort;
+  onSortChange: (sort: EventSort) => void;
 };
 
 const EPISTEMIC_LABELS = {
@@ -33,33 +36,63 @@ function formatDate(event: EventRead): string {
     : event.start_date;
 }
 
-export function EventList({ events, onSelect }: EventListProps) {
-  if (events.length === 0) {
-    return <p className="event-empty-state">No events match these filters.</p>;
-  }
-
+export function EventList({ events, onSelect, sort, onSortChange }: EventListProps) {
   return (
-    <ul className="event-list">
-      {events.map((event) => {
-        const location = event.locations.map(formatLocation).filter(Boolean).join("; ") || "Not stated";
-        const sourceLabel = `${event.sources.length} ${event.sources.length === 1 ? "source" : "sources"}`;
-        return (
-          <li className="event-list-row" key={event.id}>
-            <button className="event-list-title" onClick={() => onSelect(event)} type="button">
-              {event.title}
-            </button>
-            <StatusChip
-              colorVar={EPISTEMIC_COLORS[event.epistemic_status]}
-              label={EPISTEMIC_LABELS[event.epistemic_status]}
-              value={event.epistemic_status}
-            />
-            <span className="event-list-meta">{event.event_type?.name ?? "Uncategorized"}</span>
-            <span className="event-list-meta">{formatDate(event)}</span>
-            <span className="event-list-meta">{location}</span>
-            <span className="event-list-meta event-source-count">{sourceLabel}</span>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="event-list-panel">
+      <div className="event-list-toolbar">
+        <p className="event-list-count">
+          {events.length} approved event{events.length === 1 ? "" : "s"}
+        </p>
+        <div className="field event-list-sort">
+          <label htmlFor="event-list-sort">Sort order</label>
+          <select
+            id="event-list-sort"
+            onChange={(changeEvent) => onSortChange(changeEvent.target.value as EventSort)}
+            value={sort}
+          >
+            {EVENT_SORT_OPTIONS.map(([optionValue, label], index) => (
+              <option key={`${optionValue}-${index}`} value={optionValue}>{label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {events.length === 0 ? (
+        <p className="event-empty-state">No events match these filters.</p>
+      ) : (
+        <>
+          <div className="event-list-header">
+            <span>Title</span>
+            <span>Status</span>
+            <span>Type</span>
+            <span>Date</span>
+            <span>Location</span>
+            <span>Sources</span>
+          </div>
+          <ul className="event-list">
+            {events.map((event) => {
+              const location = event.locations.map(formatLocation).filter(Boolean).join("; ") || "Not stated";
+              const sourceLabel = `${event.sources.length} ${event.sources.length === 1 ? "source" : "sources"}`;
+              return (
+                <li className="event-list-row" key={event.id}>
+                  <button className="event-list-title" onClick={() => onSelect(event)} type="button">
+                    {event.title}
+                  </button>
+                  <StatusChip
+                    colorVar={EPISTEMIC_COLORS[event.epistemic_status]}
+                    label={EPISTEMIC_LABELS[event.epistemic_status]}
+                    value={event.epistemic_status}
+                  />
+                  <span className="event-list-meta">{event.event_type?.name ?? "Uncategorized"}</span>
+                  <span className="event-list-meta">{formatDate(event)}</span>
+                  <span className="event-list-meta">{location}</span>
+                  <span className="event-list-meta event-source-count">{sourceLabel}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }

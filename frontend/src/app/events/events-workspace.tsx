@@ -8,7 +8,7 @@ import { EventDetail } from "@/app/events/event-detail";
 import { EventEditor } from "@/app/events/event-editor";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
-import { parseEventFilters, toEventFilterSearch, type EventFilters } from "@/lib/event-filters";
+import { parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
 import { listActors, listEventTypes, listEvents, updateEvent, type EventUpdate, type ActorRead, type EventRead, type EventTypeRead } from "@/lib/events-api";
 import { listDocuments } from "@/lib/documents-api";
 
@@ -51,10 +51,14 @@ export function EventsWorkspace() {
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Unable to save this event."); }
   }
 
+  function changeSort(sort: EventSort) {
+    changeFilters({ ...filters, sort });
+  }
+
   return <AppShell currentPath="/events"><section className="events-page" aria-labelledby="events-title">
-    <p className="eyebrow">Approved intelligence</p><h1 id="events-title">Events</h1><p className="events-intro">Search and explore approved events. Sources and evidence stay read-only.</p>
+    <p className="eyebrow">Approved intelligence only</p><h1 id="events-title">Events</h1><p className="events-intro">Search and explore approved events. Sources and evidence stay read-only.</p>
     <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
     {error && <p className="document-error">{error}</p>}
-    {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <EventList events={events} onSelect={setSelectedEvent} />}
+    {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <EventList events={events} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} />}
   </section></AppShell>;
 }

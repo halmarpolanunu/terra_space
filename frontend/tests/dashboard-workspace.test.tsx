@@ -117,7 +117,7 @@ describe("Dashboard workspace", () => {
     expect(screen.getAllByRole("button", { name: "Bridge crossing reported" })).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Open Events" })).toHaveAttribute("href", "/events?q=bridge&sort=title_asc");
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "convoy" } });
+    fireEvent.change(screen.getByLabelText("Search title & summary"), { target: { value: "convoy" } });
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard?q=convoy&sort=title_asc"));
     currentSearch = "q=convoy&sort=title_asc";
     view.rerender(<DashboardPage />);

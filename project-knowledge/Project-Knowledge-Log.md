@@ -8,6 +8,47 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 - Events page revised from owner testing feedback
+
+- The owner manually tested Phase 4's Events page and reported six issues. Investigated each
+  against the running app before changing anything:
+  - No clear "approved events only" marker — the page eyebrow/intro existed but sat far from
+    the actual list. Fixed by adding an "N approved events" count directly above the table and
+    strengthening the eyebrow to "Approved intelligence only".
+  - Search "not working" — reproduced in the browser and confirmed the filter genuinely works
+    (verified it narrows 2 events to 1 to 0). The likely cause: the two seed events share the
+    words "depot"/"airstrike", so a broad search didn't visibly change the result count, and
+    search only matches title/summary, not the actor/location text also shown in the row. Asked
+    the owner whether to broaden search scope to those fields; they chose to keep it to
+    title/summary only, so the fix was clarifying the label to "Search title & summary" with a
+    matching placeholder instead of changing behavior.
+  - Filter bar caused cognitive overload — regrouped the 10 filters into four labelled clusters
+    (Search & date, Classification, Location, Source) with left-border dividers, per this
+    decision's existing "group, don't stretch" rule. No filters were removed.
+  - Sort order and missing table headers — moved Sort order out of the filter form into a new
+    toolbar directly above the event list (next to the approved-event count), and added a
+    column header row (Title/Status/Type/Date/Location/Sources) matching the row's own grid so
+    the table reads clearly. Applied to both the Events page and the Dashboard's embedded
+    "Filtered events" panel.
+  - No visible source document link — the link existed in the event detail view but had no
+    underline and sat low on the page; added an underline and a trailing arrow so it reads as
+    unmistakably clickable. Confirmed by clicking it end-to-end to the read-only source page.
+  - Confirmed edit already worked as expected; no change needed.
+- Found one regression risk while adding the table header: the Dashboard embeds the same event
+  list in a narrower panel, and the row's minimum column widths (about 41rem) already exceeded
+  that panel's available width. Fixed by making the list panel scroll horizontally as one unit
+  (toolbar, header, and rows together) instead of letting flex/grid children compress
+  independently, which had briefly squashed the sort control to a single visible character.
+- Left a stray test-data artifact in place rather than fixing it live: one `event_types` row
+  (id `fa8c879b-...`) has its `name` literally set to another row's UUID, a leftover from an
+  earlier verification session, and renders as a raw UUID in the Events table and Dashboard type
+  breakdown. A direct database edit to remove it was blocked by the harness as an
+  unauthorized live-data change; needs the owner's explicit go-ahead.
+- Verified: frontend lint clean, 66 frontend tests passing (2 new, 4 updated for the relabeled
+  search field and the table's new required sort props), rebuilt the Docker frontend image, and
+  checked the result visually (desktop, the Dashboard's narrower panel, and a 420px mobile
+  width) plus an end-to-end click-through from a source link to its document.
+
 ## 2026-07-14 - Fixed broken "A" glyph in the brand kit wordmark
 
 - The owner spotted both letter A's in the sidebar wordmark rendering as thin, malformed
