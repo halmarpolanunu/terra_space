@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -30,7 +31,7 @@ from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
 from app.services.locations import apply_coordinates
 
-EDITABLE_REVIEW_STATUSES = {"draft"}
+EDITABLE_REVIEW_STATUSES = {"draft", "approved"}
 
 
 class EventEditNotAllowedError(Exception):
@@ -94,6 +95,116 @@ def list_events(db: Session, review_status: str | None) -> list[Event]:
         query = query.where(Event.review_status == review_status)
     query = query.order_by(Event.created_at.desc())
     return list(db.execute(query).scalars())
+
+
+def _event_date_interval(event: Event) -> tuple[date, date] | None:
+    if not event.start_date or event.start_date_precision == "unknown":
+        return None
+    try:
+        if event.start_date_precision == "year":
+            year = int(event.start_date)
+            return date(year, 1, 1), date(year, 12, 31)
+        if event.start_date_precision == "month":
+            year, month = (int(value) for value in event.start_date.split("-"))
+            first = date(year, month, 1)
+            next_month = date(year + (month == 12), 1 if month == 12 else month + 1, 1)
+            return first, next_month - timedelta(days=1)
+        parsed = date.fromisoformat(event.start_date)
+        return parsed, parsed
+    except ValueError:
+        return None
+
+
+def list_filtered_events(
+    db: Session,
+    *,
+    review_status: str | None,
+    q: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    event_type_id: str | None = None,
+    epistemic_status: str | None = None,
+    actor_id: str | None = None,
+    country: str | None = None,
+    admin1: str | None = None,
+    city_regency: str | None = None,
+    document_id: str | None = None,
+    sort: str = "date_desc",
+) -> list[Event]:
+    events = list_events(db, review_status)
+    needle = q.strip().casefold() if q else None
+
+    def matches(event: Event) -> bool:
+        if needle and needle not in event.title.casefold() and needle not in event.summary.casefold():
+            return False
+        if event_type_id and event.event_type_id != event_type_id:
+            return False
+        if epistemic_status and event.epistemic_status != epistemic_status:
+            return False
+        if actor_id and actor_id not in {link.actor_id for link in event.event_actors}:
+            return False
+        if country and country not in {location.country for location in event.locations}:
+            return False
+        if admin1 and admin1 not in {location.admin1 for location in event.locations}:
+            return False
+        if city_regency and city_regency not in {location.city_regency for location in event.locations}:
+            return False
+        if document_id and document_id not in {
+            link.source.document_id for link in event.event_sources if link.source.document_id
+        }:
+            return False
+        if date_from or date_to:
+            interval = _event_date_interval(event)
+            if interval is None:
+                return False
+            start, end = interval
+            if date_from and end < date_from:
+                return False
+            if date_to and start > date_to:
+                return False
+        return True
+
+    filtered = [event for event in events if matches(event)]
+    if sort == "title_asc":
+        return sorted(filtered, key=lambda event: event.title.casefold())
+    if sort == "created_desc":
+        return sorted(filtered, key=lambda event: event.created_at, reverse=True)
+    dated = [(event, _event_date_interval(event)) for event in filtered]
+    known = [(event, interval) for event, interval in dated if interval is not None]
+    unknown = [event for event, interval in dated if interval is None]
+    known.sort(key=lambda item: item[1][0], reverse=sort != "date_asc")
+    return [event for event, _interval in known] + unknown
+
+
+def dashboard_summary(events: list[Event]) -> dict[str, object]:
+    now = datetime.now(UTC)
+    week_ago = now - timedelta(days=7)
+    counts: dict[str, int] = {}
+    for event in events:
+        name = event.event_type.name if event.event_type else "Uncategorized"
+        counts[name] = counts.get(name, 0) + 1
+
+    def approved_within_week(event: Event) -> bool:
+        if event.approved_at is None:
+            return False
+        approved_at = event.approved_at
+        if approved_at.tzinfo is None:
+            approved_at = approved_at.replace(tzinfo=UTC)
+        return approved_at >= week_ago
+
+    return {
+        "total_events": len(events),
+        "new_events": sum(1 for event in events if approved_within_week(event)),
+        "by_event_type": [
+            {"name": name, "count": count} for name, count in sorted(counts.items())
+        ],
+        "incomplete_date_count": sum(1 for event in events if _event_date_interval(event) is None),
+        "incomplete_location_count": sum(
+            1
+            for event in events
+            if not any(location.latitude is not None and location.longitude is not None for location in event.locations)
+        ),
+    }
 
 
 def list_events_for_document(db: Session, document_id: str) -> list[Event]:

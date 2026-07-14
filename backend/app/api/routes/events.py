@@ -1,4 +1,6 @@
 from collections.abc import Iterator
+from datetime import date
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
@@ -13,6 +15,7 @@ from app.schemas.event import (
     EventRead,
     EventTypeRead,
     EventUpdate,
+    DashboardSummaryRead,
 )
 from app.services.documents import get_document
 from app.services.duplicates import DuplicateFlagAlreadyResolvedError, resolve_duplicate_flag
@@ -27,8 +30,10 @@ from app.services.events import (
     list_actors,
     list_event_types,
     list_events,
+    list_filtered_events,
     list_events_for_document,
     reject_event,
+    dashboard_summary,
     to_event_read,
     update_event,
 )
@@ -60,9 +65,74 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
 
     @router.get("/api/events", response_model=list[EventRead])
     def list_all(
-        review_status: str | None = None, db: Session = Depends(get_db)
+        review_status: str | None = None,
+        q: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        event_type_id: str | None = None,
+        epistemic_status: str | None = None,
+        actor_id: str | None = None,
+        country: str | None = None,
+        admin1: str | None = None,
+        city_regency: str | None = None,
+        document_id: str | None = None,
+        sort: Literal["date_desc", "date_asc", "created_desc", "title_asc"] = "date_desc",
+        db: Session = Depends(get_db),
     ) -> list[EventRead]:
-        return [to_event_read(event) for event in list_events(db, review_status)]
+        if date_from and date_to and date_from > date_to:
+            raise HTTPException(status_code=422, detail="date_from must be on or before date_to.")
+        return [
+            to_event_read(event)
+            for event in list_filtered_events(
+                db,
+                review_status=review_status,
+                q=q,
+                date_from=date_from,
+                date_to=date_to,
+                event_type_id=event_type_id,
+                epistemic_status=epistemic_status,
+                actor_id=actor_id,
+                country=country,
+                admin1=admin1,
+                city_regency=city_regency,
+                document_id=document_id,
+                sort=sort,
+            )
+        ]
+
+    @router.get("/api/events/dashboard-summary", response_model=DashboardSummaryRead)
+    def dashboard_summary_route(
+        q: str | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        event_type_id: str | None = None,
+        epistemic_status: str | None = None,
+        actor_id: str | None = None,
+        country: str | None = None,
+        admin1: str | None = None,
+        city_regency: str | None = None,
+        document_id: str | None = None,
+        sort: Literal["date_desc", "date_asc", "created_desc", "title_asc"] = "date_desc",
+        db: Session = Depends(get_db),
+    ) -> DashboardSummaryRead:
+        if date_from and date_to and date_from > date_to:
+            raise HTTPException(status_code=422, detail="date_from must be on or before date_to.")
+        events = list_filtered_events(
+            db,
+            review_status="approved",
+            q=q,
+            date_from=date_from,
+            date_to=date_to,
+            event_type_id=event_type_id,
+            epistemic_status=epistemic_status,
+            actor_id=actor_id,
+            country=country,
+            admin1=admin1,
+            city_regency=city_regency,
+            document_id=document_id,
+            sort=sort,
+        )
+        return DashboardSummaryRead(**dashboard_summary(events))
 
     @router.get("/api/events/{event_id}", response_model=EventRead)
     def get_one(event_id: str, db: Session = Depends(get_db)) -> EventRead:

@@ -114,6 +114,19 @@ class ApproveAllResponse(BaseModel):
     skipped: list[ApproveAllSkipped]
 
 
+class EventTypeCount(BaseModel):
+    name: str
+    count: int
+
+
+class DashboardSummaryRead(BaseModel):
+    total_events: int
+    new_events: int
+    by_event_type: list[EventTypeCount]
+    incomplete_date_count: int
+    incomplete_location_count: int
+
+
 class EventRead(BaseModel):
     id: str
     title: str
