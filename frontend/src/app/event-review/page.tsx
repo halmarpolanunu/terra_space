@@ -3,21 +3,31 @@
 import { useEffect, useState } from "react";
 
 import { AddEventForm } from "@/app/event-review/add-event-form";
+import { DuplicateComparePanel } from "@/app/event-review/duplicate-compare-panel";
 import { EventCard } from "@/app/event-review/event-card";
 import { ReviewBar } from "@/app/event-review/review-bar";
 import { SourcePanel } from "@/app/event-review/source-panel";
 import { AppShell } from "@/components/app-shell";
 import type { Document } from "@/lib/documents-api";
 import { listDocuments } from "@/lib/documents-api";
-import type { ActorRead, EventCreate, EventRead, EventTypeRead, EventUpdate } from "@/lib/events-api";
+import type {
+  ActorRead,
+  DuplicateResolution,
+  EventCreate,
+  EventRead,
+  EventTypeRead,
+  EventUpdate,
+} from "@/lib/events-api";
 import {
   approveAllForDocument,
   approveEvent,
   createManualEvent,
+  getEvent,
   listActors,
   listEventsForDocument,
   listEventTypes,
   rejectEvent,
+  resolveDuplicateFlag,
   updateEvent,
 } from "@/lib/events-api";
 
@@ -32,6 +42,7 @@ export default function EventReviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [addingEvent, setAddingEvent] = useState(false);
   const [approveAllMessage, setApproveAllMessage] = useState<string | null>(null);
+  const [matchedEvents, setMatchedEvents] = useState<Record<string, EventRead>>({});
 
   useEffect(() => {
     Promise.all([listDocuments("ready_for_review"), listEventTypes(), listActors()])
@@ -59,6 +70,25 @@ export default function EventReviewPage() {
   }, [currentDocument]);
 
   const currentEvent = events[eventIndex];
+
+  useEffect(() => {
+    const pendingFlags =
+      currentEvent?.duplicate_flags.filter((flag) => flag.resolution === "pending") ?? [];
+    if (pendingFlags.length === 0) {
+      return;
+    }
+    Promise.all(pendingFlags.map((flag) => getEvent(flag.matched_event_id)))
+      .then((matched) => {
+        setMatchedEvents((previous) => {
+          const next = { ...previous };
+          for (const event of matched) {
+            next[event.id] = event;
+          }
+          return next;
+        });
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [currentEvent]);
 
   function goPrev() {
     if (eventIndex > 0) {
@@ -143,6 +173,18 @@ export default function EventReviewPage() {
     }
   }
 
+  async function handleResolveDuplicate(flagId: string, resolution: DuplicateResolution) {
+    if (!currentEvent) {
+      return;
+    }
+    try {
+      await resolveDuplicateFlag(currentEvent.id, flagId, resolution);
+      await refreshAfterAction();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not resolve the duplicate flag.");
+    }
+  }
+
   async function handleApproveAll() {
     if (!currentDocument) {
       return;
@@ -160,23 +202,6 @@ export default function EventReviewPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <AppShell currentPath="/event-review">
-        <p>Loading review queue…</p>
-      </AppShell>
-    );
-  }
-
-  if (documents.length === 0) {
-    return (
-      <AppShell currentPath="/event-review">
-        {error && <p role="alert">{error}</p>}
-        <p>No documents are waiting for review.</p>
-      </AppShell>
-    );
-  }
-
   const approveDisabledReason =
     currentEvent?.duplicate_flags.some((flag) => flag.resolution === "pending")
       ? "Resolve the duplicate flag below first."
@@ -184,59 +209,82 @@ export default function EventReviewPage() {
 
   return (
     <AppShell currentPath="/event-review">
+      <div>
+        <p className="eyebrow">Phase 3</p>
+        <h1>Event Review</h1>
+      </div>
       {error && <p role="alert">{error}</p>}
-      <ReviewBar
-        canNext={documentIndex < documents.length - 1 || eventIndex < events.length - 1}
-        canPrev={documentIndex > 0 || eventIndex > 0}
-        documentCount={documents.length}
-        documentIndex={documentIndex}
-        eventCount={events.length}
-        eventIndex={eventIndex}
-        onNext={goNext}
-        onPrev={goPrev}
-        onSkip={goNext}
-      />
-      <div className="batch-actions">
-        <button className="btn" onClick={handleApproveAll} type="button">
-          Approve all
-        </button>
-        <button className="btn" onClick={() => setAddingEvent((value) => !value)} type="button">
-          {addingEvent ? "Cancel add event" : "Add event"}
-        </button>
-        {approveAllMessage && <span className="document-meta">{approveAllMessage}</span>}
-      </div>
-      {addingEvent && (
-        <AddEventForm
-          eventTypeOptions={eventTypeOptions}
-          onCancel={() => setAddingEvent(false)}
-          onSubmit={handleAddEvent}
-        />
-      )}
-      <div className="event-review-columns">
-        {currentDocument && (
-          <SourcePanel
-            content={currentDocument.content}
-            evidenceQuote={currentEvent?.sources[0]?.evidence_quote}
+      {loading ? (
+        <p>Loading review queue…</p>
+      ) : documents.length === 0 ? (
+        <p>No documents are waiting for review.</p>
+      ) : (
+        <>
+          <ReviewBar
+            canNext={documentIndex < documents.length - 1 || eventIndex < events.length - 1}
+            canPrev={documentIndex > 0 || eventIndex > 0}
+            documentCount={documents.length}
+            documentIndex={documentIndex}
+            eventCount={events.length}
+            eventIndex={eventIndex}
+            onNext={goNext}
+            onPrev={goPrev}
+            onSkip={goNext}
           />
-        )}
-        {currentEvent ? (
-          <EventCard
-            actorOptions={actorOptions}
-            approveDisabledReason={approveDisabledReason}
-            event={currentEvent}
-            eventTypeOptions={eventTypeOptions}
-            key={currentEvent.id}
-            onApprove={handleApprove}
-            onReject={handleReject}
-            onSave={handleSave}
-          />
-        ) : (
-          <div className="panel">
-            <p className="panel-title">Event</p>
-            <p>No draft events for this document.</p>
+          <div className="batch-actions">
+            <button className="btn" onClick={handleApproveAll} type="button">
+              Approve all
+            </button>
+            <button
+              className="btn"
+              onClick={() => setAddingEvent((value) => !value)}
+              type="button"
+            >
+              {addingEvent ? "Cancel add event" : "Add event"}
+            </button>
+            {approveAllMessage && <span className="document-meta">{approveAllMessage}</span>}
           </div>
-        )}
-      </div>
+          {addingEvent && (
+            <AddEventForm
+              eventTypeOptions={eventTypeOptions}
+              onCancel={() => setAddingEvent(false)}
+              onSubmit={handleAddEvent}
+            />
+          )}
+          <div className="event-review-columns">
+            {currentDocument && (
+              <SourcePanel
+                content={currentDocument.content}
+                evidenceQuote={currentEvent?.sources[0]?.evidence_quote}
+              />
+            )}
+            {currentEvent ? (
+              <EventCard
+                actorOptions={actorOptions}
+                approveDisabledReason={approveDisabledReason}
+                event={currentEvent}
+                eventTypeOptions={eventTypeOptions}
+                key={currentEvent.id}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onSave={handleSave}
+              />
+            ) : (
+              <div className="panel">
+                <p className="panel-title">Event</p>
+                <p>No draft events for this document.</p>
+              </div>
+            )}
+          </div>
+          {currentEvent && (
+            <DuplicateComparePanel
+              flags={currentEvent.duplicate_flags}
+              matchedEvents={matchedEvents}
+              onResolve={handleResolveDuplicate}
+            />
+          )}
+        </>
+      )}
     </AppShell>
   );
 }

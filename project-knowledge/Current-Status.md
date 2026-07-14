@@ -10,13 +10,46 @@ status: active
 
 ## Current focus
 
-Phase 2 (Documents and Batch Processing) is built, verified end-to-end, and merged into `main`.
-The [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md) (Event
-Review and Deduplication) is now written. The next continuation point is executing that plan
-task by task.
+Phase 3 (Event Review and Deduplication) is built, verified end-to-end, and merged into `main`.
+The next continuation point is writing the Roadmap Phase 4 (Events and Dashboard) implementation
+plan.
 
 ## Recent progress
 
+- Executed the [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md)
+  task by task: an events read/write API (list, detail, edit, approve, reject, manual add,
+  approve-all); a duplicate-detection heuristic (same event type, dates within 3 days, and a
+  shared actor or location) that runs automatically after both AI extraction and manual add,
+  comparing only against already-`approved` events; a duplicate-flag resolution endpoint
+  supporting keep-separate and link/merge (the merged event's evidence-bearing source moves onto
+  the matched approved event, and the merged event's own status becomes `merged`, never
+  deleted); read-only `/api/event-types` and `/api/actors` lookups exposing AI-suggested
+  (`is_active = false`) rows for the review screen's pickers; two new shared design components
+  (`FramedPanel`, `StatusChip`, the latter absorbing `ProcessingStatusBadge`); and the full Event
+  Review screen (review bar, source panel with case/whitespace-insensitive evidence-quote
+  highlighting, an editable event card with an explicit "Date unknown"/"Not stated" for missing
+  facts, a four-segment epistemic-status control, a manual add-event form, and a duplicate
+  compare panel offering Keep Separate / Link to This Event). Approval is blocked while an event
+  has an unresolved duplicate flag — a rule introduced in the Phase 3 plan, not one of the
+  pre-existing decisions, since no earlier document had fixed it.
+- Verified end-to-end: 71 backend tests, 38 frontend tests, frontend lint and production build,
+  and a new Playwright scenario that creates four documents against a content-routed LM Studio
+  stub and drives the full review flow through the browser — approving one event (confirming its
+  suggested type and actor flip to `is_active = true`), rejecting another, resolving one
+  duplicate flag as "keep separate" then approving that event too, and resolving a second
+  duplicate flag as "link" — with the final state (`approved`/`rejected`/`merged` statuses, both
+  resolution kinds, and the merged event's evidence quote landing on the approved target)
+  confirmed by inspecting the SQLite database directly, since the Events list page is still
+  Phase 4. Project Knowledge validation passed with 0 errors and 0 warnings.
+- Found and fixed one real regression while verifying: the new Event Review page had no
+  `<h1>Event Review</h1>` heading in any of its loading/empty/main states, breaking the Phase 1
+  foundation test that expects every nav route to expose a heading matching its label — fixed by
+  giving the page a single persistent header above its conditional content, matching the pattern
+  already used on the Documents page.
+- Extended the e2e LM Studio HTTP stub to route by a substring match against the incoming
+  request body (which contains the document's own text) rather than always returning one fixed
+  canned response, so a single test run can exercise multiple documents that each need a
+  different structured extraction result.
 - Wrote the [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md),
   grounded in a direct inspection of the current codebase rather than assumptions: confirmed
   `DuplicateFlag` and its migration already exist from Phase 2 (no new migration needed), no
@@ -90,9 +123,11 @@ task by task.
 
 ## Next actions
 
-- Execute the [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md)
-  task by task: events read/write API, duplicate detection and resolution, event-type/actor
-  lookups, shared design components, and the Event Review page.
+- Write the Roadmap Phase 4 (Events and Dashboard) implementation plan: the approved Events
+  list with filters/search/sorting, the Dashboard summary, the map view, the timeline view, and
+  synchronized filters across all four. The Phase 4 plan must decide how map-view coordinates get
+  populated — Phase 3 intentionally left `locations.latitude`/`longitude` unpopulated, since no
+  geocoding mechanism has been chosen yet.
 
 ## Related knowledge
 

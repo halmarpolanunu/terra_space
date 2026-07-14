@@ -8,6 +8,51 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-14 — Phase 3 (Event Review and Deduplication) shipped
+
+- Built and verified the full Phase 3 Implementation Plan on `main`: an events read/write API
+  (list, detail, edit, approve, reject, manual add, approve-all); a duplicate-detection
+  heuristic (same event type, dates within 3 days, shared actor or location) that only ever
+  compares a fresh draft event against already-`approved` events, run automatically after both
+  AI extraction and manual add; a duplicate-flag resolution endpoint (keep separate / link and
+  merge, the latter moving the merged event's evidence-bearing source onto the matched approved
+  event and setting the merged event's own status to `merged` rather than deleting it);
+  read-only event-type/actor lookup endpoints exposing AI-suggested rows for the review
+  screen's pickers; two new shared design components (`FramedPanel`, `StatusChip`); and the full
+  Event Review screen (review bar, evidence-quote-highlighting source panel, an editable event
+  card with explicit "unknown"/"not stated" labels, an epistemic-status control, a manual
+  add-event form, and a duplicate compare panel).
+- Approval is blocked while an event has an unresolved duplicate flag — a rule the Phase 3 plan
+  introduced itself (not fixed by any earlier decision document) to enforce "no silent merges"
+  at the one point it would otherwise be bypassable.
+- End-to-end verification: 71 backend tests, 38 frontend tests, frontend lint and production
+  build, and a new Playwright scenario driving four documents through the full review flow
+  (approve with suggestion confirmation, reject, keep-separate then approve, and link/merge),
+  confirmed against the SQLite database directly since the Events list page is still Phase 4.
+  Project Knowledge validation passed with 0 errors and 0 warnings.
+- Found and fixed one real regression during verification: the new Event Review page had no
+  `<h1>` heading in any of its states, breaking the Phase 1 foundation test that expects every
+  nav route to expose a heading matching its label. Fixed by giving the page one persistent
+  header above its conditional content.
+- Extended the e2e LM Studio HTTP stub to route its canned response by matching a substring of
+  the incoming request body against a table of `{match, extraction}` pairs, instead of always
+  returning one fixed response — needed so a single test run can drive several documents that
+  each require a different structured extraction result.
+- Latitude/longitude population was intentionally left out of Phase 3's scope: event locations
+  created or edited here carry only `country`/`admin1`/`city_regency`. How coordinates get
+  populated for the map view is a decision the Phase 4 plan must make.
+- Moved the continuation point to writing the Phase 4 (Events and Dashboard) implementation
+  plan.
+
+## 2026-07-14 — Phase 3 implementation plan written
+
+- Wrote the Phase 3 (Event Review and Deduplication) implementation plan in
+  `project-knowledge/plans/`, grounded in a direct inspection of the current codebase: confirmed
+  `DuplicateFlag` and its migration already existed from Phase 2 (no new migration needed), that
+  no events API or shared design-system components existed yet, and that both
+  `event-review/page.tsx` and `events/page.tsx` were still placeholders.
+- Moved the continuation point to executing this plan.
+
 ## 2026-07-14 — Phase 2 (Documents and Batch Processing) shipped
 
 - Built and verified the full Phase 2 Implementation Plan on `phase-2-documents-processing`:

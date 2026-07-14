@@ -29,12 +29,12 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Phase 3: Event Review and Deduplication
 
-- [ ] **Build side-by-side review** - show source document on the left and extracted draft events on the right. Status: planned.
-- [ ] **Allow event correction** - edit, approve, reject, save changes, add event manually, and approve all. Status: planned.
-- [ ] **Confirm event type and actor suggestions** - let AI suggest new types or actors, but require user confirmation. Status: planned.
-- [ ] **Support event timing, location, actors, evidence, and epistemic status** - keep unknown values explicit and never force guessed values. Status: planned.
-- [ ] **Flag possible duplicates** - compare time, location, actors, type, title, and summary against approved events. Status: planned.
-- [ ] **Let user decide duplicate handling** - merge source document into an existing event or save as a separate event. Status: planned.
+- [x] **Build side-by-side review** - show source document on the left and extracted draft events on the right, with the current event's evidence quote highlighted in the source text. Status: completed.
+- [x] **Allow event correction** - edit, approve, reject, save changes, add event manually, and approve all. Status: completed.
+- [x] **Confirm event type and actor suggestions** - let AI suggest new types or actors, but require user confirmation; approving an event flips its suggested type/actor to active. Status: completed.
+- [x] **Support event timing, location, actors, evidence, and epistemic status** - keep unknown values explicit ("Date unknown — kept blank", "Not stated") and never force guessed values. Status: completed.
+- [x] **Flag possible duplicates** - compare type, date proximity, actors, and location for a draft event against every approved event. Status: completed.
+- [x] **Let user decide duplicate handling** - merge source document into an existing event (link) or save as a separate event (keep separate); approval is blocked while a flag is unresolved. Status: completed.
 
 ## Phase 4: Events and Dashboard
 

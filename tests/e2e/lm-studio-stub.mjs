@@ -1,7 +1,11 @@
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 
-export function startLmStudioStub(port, evidenceQuote) {
+// responseTable: array of { match: string, extraction: object }. The document
+// text is embedded in the chat-completions request body, so the first entry
+// whose `match` substring appears in the request body is used; if none match,
+// the first entry is used as a default (keeps a single-document caller simple).
+export function startLmStudioStub(port, responseTable) {
   const server = http.createServer((request, response) => {
     if (request.method === "GET" && request.url === "/v1/models") {
       response.writeHead(200, { "Content-Type": "application/json" });
@@ -10,25 +14,17 @@ export function startLmStudioStub(port, evidenceQuote) {
     }
 
     if (request.method === "POST" && request.url === "/v1/chat/completions") {
-      const content = JSON.stringify({
-        events: [
-          {
-            title: "Stub extracted event",
-            summary: "Extracted by the local LM Studio stub for end-to-end verification.",
-            event_type: { suggested: "Report" },
-            start_date: null,
-            start_date_precision: null,
-            end_date: null,
-            end_date_precision: null,
-            epistemic_status: "confirmed",
-            locations: [],
-            actors: [],
-            evidence_quote: evidenceQuote,
-          },
-        ],
+      let body = "";
+      request.on("data", (chunk) => {
+        body += chunk;
       });
-      response.writeHead(200, { "Content-Type": "application/json" });
-      response.end(JSON.stringify({ choices: [{ message: { content } }] }));
+      request.on("end", () => {
+        const matched = responseTable.find((entry) => body.includes(entry.match));
+        const extraction = (matched ?? responseTable[0])?.extraction ?? { events: [] };
+        const content = JSON.stringify(extraction);
+        response.writeHead(200, { "Content-Type": "application/json" });
+        response.end(JSON.stringify({ choices: [{ message: { content } }] }));
+      });
       return;
     }
 
@@ -49,7 +45,7 @@ export function startLmStudioStub(port, evidenceQuote) {
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMain) {
   const port = Number(process.argv[2]);
-  const evidenceQuote = process.argv[3];
-  await startLmStudioStub(port, evidenceQuote);
+  const responseTable = JSON.parse(process.argv[3]);
+  await startLmStudioStub(port, responseTable);
   console.log(`lm-studio-stub listening on ${port}`);
 }
