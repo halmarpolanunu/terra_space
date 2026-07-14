@@ -25,8 +25,8 @@ edit, the resolver will normalize the country code and location names, then make
 lookup in this fixed order:
 
 1. `(country, city_regency)` for a city/regency coordinate.
-2. `(country, admin1)` for a province/state coordinate.
-3. `country` for a country centroid.
+2. `(country, admin1)` for a province/state administrative-seat coordinate.
+3. `country` for a country-capital coordinate.
 
 The selected coordinate is saved together with `coordinate_precision` (`city_regency`,
 `admin1`, or `country`). If no exact match exists, all three coordinate fields remain null.
@@ -37,7 +37,9 @@ The generator uses GeoNames `countryInfo.txt`, `admin1CodesASCII.txt`, and `citi
 The committed asset records its snapshot date, source, and CC BY 4.0 attribution in its metadata.
 `cities500` supplies cities with population above 500 and administrative seats; an unmatched
 city falls back to its matched province/state or country rather than being placed at a guessed
-point.
+point. Country-level reference points come from the named country capital in `countryInfo.txt`;
+province/state reference points come from the highest-population administrative seat in
+`cities500` for that exact first-order division.
 
 # Alternatives considered
 

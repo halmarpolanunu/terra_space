@@ -91,6 +91,7 @@ class Location(TimestampedModel, Base):
     city_regency: Mapped[str | None] = mapped_column(String(255), nullable=True)
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)
+    coordinate_precision: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     events: Mapped[list["Event"]] = relationship(secondary=event_locations, back_populates="locations")
 
@@ -123,6 +124,7 @@ class Event(TimestampedModel, Base):
     end_date_precision: Mapped[str | None] = mapped_column(String(16), nullable=True)
     epistemic_status: Mapped[str] = mapped_column(String(32))
     review_status: Mapped[str] = mapped_column(String(32), default="draft")
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     event_type: Mapped[EventType | None] = relationship(back_populates="events")
     event_actors: Mapped[list["EventActor"]] = relationship(

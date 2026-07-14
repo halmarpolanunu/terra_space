@@ -1,3 +1,5 @@
+import { toEventFilterSearch, type EventFilters } from "@/lib/event-filters";
+
 export type EpistemicStatus = "confirmed" | "claim" | "rumor" | "denied";
 export type DatePrecision = "exact" | "month" | "year" | "unknown";
 export type ReviewStatus = "draft" | "approved" | "rejected" | "merged";
@@ -28,6 +30,7 @@ export type LocationRead = {
   city_regency: string | null;
   latitude: number | null;
   longitude: number | null;
+  coordinate_precision?: "country" | "admin1" | "city_regency" | null;
 };
 
 export type EventSourceRead = {
@@ -62,6 +65,15 @@ export type EventRead = {
   duplicate_flags: DuplicateFlagRead[];
   created_at: string;
   updated_at: string;
+  approved_at?: string | null;
+};
+
+export type DashboardSummaryRead = {
+  total_events: number;
+  new_events: number;
+  by_event_type: { name: string; count: number }[];
+  incomplete_date_count: number;
+  incomplete_location_count: number;
 };
 
 export type EventTypeInput = {
@@ -128,12 +140,20 @@ export async function listEventsForDocument(documentId: string): Promise<EventRe
   return parseOrThrow<EventRead[]>(response);
 }
 
-export async function listEvents(reviewStatus?: ReviewStatus): Promise<EventRead[]> {
-  const url = reviewStatus
-    ? `${API_ROOT}/events?review_status=${reviewStatus}`
-    : `${API_ROOT}/events`;
-  const response = await fetch(url);
+export async function listEvents(filters: EventFilters): Promise<EventRead[]> {
+  const params = new URLSearchParams(toEventFilterSearch(filters));
+  params.set("review_status", "approved");
+  const search = params.toString();
+  const response = await fetch(`${API_ROOT}/events${search ? `?${search}` : ""}`);
   return parseOrThrow<EventRead[]>(response);
+}
+
+export async function getDashboardSummary(filters: EventFilters): Promise<DashboardSummaryRead> {
+  const search = toEventFilterSearch(filters);
+  const response = await fetch(
+    `${API_ROOT}/events/dashboard-summary${search ? `?${search}` : ""}`,
+  );
+  return parseOrThrow<DashboardSummaryRead>(response);
 }
 
 export async function getEvent(eventId: string): Promise<EventRead> {

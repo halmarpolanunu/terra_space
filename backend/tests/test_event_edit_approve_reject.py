@@ -129,7 +129,7 @@ def test_rejecting_event_never_deletes_it(tmp_path: Path) -> None:
     assert still_there.json()["review_status"] == "rejected"
 
 
-def test_editing_approved_event_returns_409(tmp_path: Path) -> None:
+def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
     extraction = ExtractionResult(
         events=[
@@ -148,7 +148,9 @@ def test_editing_approved_event_returns_409(tmp_path: Path) -> None:
     client.post(f"/api/events/{event['id']}/approve")
 
     response = client.patch(f"/api/events/{event['id']}", json={"title": "Nope"})
-    assert response.status_code == 409
+    assert response.status_code == 200
+    assert response.json()["title"] == "Nope"
+    assert response.json()["review_status"] == "approved"
 
 
 def test_manual_add_with_quote_not_in_document_is_rejected(tmp_path: Path) -> None:

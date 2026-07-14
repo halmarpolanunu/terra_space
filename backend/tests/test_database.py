@@ -34,7 +34,7 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "0002_phase2_data_model"
+                == "0003_phase4_events_dashboard"
         )
 
 

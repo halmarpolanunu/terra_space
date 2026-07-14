@@ -68,7 +68,7 @@ project-knowledge/{Current-Status.md,Project-Knowledge-Log.md,Roadmap.md}
 
 - [ ] **Step 1: Write failing migration and resolver tests**
 
-  Assert `events.approved_at` and `locations.coordinate_precision` are nullable, existing approved records receive migration-time `updated_at`, and non-approved rows do not. Assert city wins over admin1, admin1 wins over country, and country-only uses the centroid. An unmatched city only falls back when the country/admin1 exactly matches; absent country and ambiguous/unmatched values leave coordinates and precision null. Call backfill twice and assert the second call returns zero.
+  Assert `events.approved_at` and `locations.coordinate_precision` are nullable, existing approved records receive migration-time `updated_at`, and non-approved rows do not. Assert city wins over admin1, admin1 wins over country, and country-only uses the local country-capital reference point. An unmatched city only falls back when the country/admin1 exactly matches; absent country and ambiguous/unmatched values leave coordinates and precision null. Call backfill twice and assert the second call returns zero.
 
 - [ ] **Step 2: Verify the tests fail**
 

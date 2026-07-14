@@ -10,12 +10,23 @@ status: active
 
 ## Current focus
 
-Phase 3 (Event Review and Deduplication) is built, verified end-to-end, and merged into `main`.
-The Phase 4 (Events and Dashboard) implementation plan is now ready. The next continuation point
-is executing that plan task by task.
+Phase 4 (Events and Dashboard) is built and verified end-to-end. The next continuation point is
+planning Phase 5: Settings and final MVP verification.
 
 ## Recent progress
 
+- Executed the [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md):
+  approved events can now be searched, filtered, sorted, opened, edited, and traced back to their
+  read-only source documents. Dashboard summary, globe map, timeline, and event list use the same
+  filter URL, so they always describe the same approved-event result. Locations use only the
+  checked-in local gazetteer and show their country/admin1/city precision; unmatched locations
+  stay blank instead of being guessed. The globe stays local and shows a clear flat-map fallback
+  if globe mode is unavailable.
+- Verified Phase 4 with 80 backend tests, 64 frontend tests, frontend lint, a Docker production
+  build, and all four browser scenarios. The final browser scenario creates approved, rejected,
+  date-unknown, and unmatched-location events, checks the shared Dashboard/Events filter, edits
+  an approved event, reads its source, and inspects SQLite/API state for coordinates, precision,
+  approval time, and approved-only visibility.
 - Wrote the [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md) from a
   direct inspection of the current codebase. It covers the approved Events list (search, shared
   filters, sorting, detail, source links, and approved-event editing), Dashboard summary, map,
@@ -138,13 +149,18 @@ is executing that plan task by task.
 
 - None at this checkpoint.
 
-## Next actions
+## Previous next action
 
 - Write the Roadmap Phase 4 (Events and Dashboard) implementation plan: the approved Events
   list with filters/search/sorting, the Dashboard summary, the map view, the timeline view, and
   synchronized filters across all four. The Phase 4 plan must decide how map-view coordinates get
   populated — Phase 3 intentionally left `locations.latitude`/`longitude` unpopulated, since no
   geocoding mechanism has been chosen yet.
+
+## Next actions
+
+- Plan Phase 5: local LM Studio settings, simple event-type management, and final end-to-end and
+  failure-case verification for the full MVP.
 
 ## Related knowledge
 

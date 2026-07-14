@@ -49,6 +49,11 @@ export async function listDocuments(processingStatus?: ProcessingStatus): Promis
   return response.json() as Promise<Document[]>;
 }
 
+export async function getDocument(id: string): Promise<Document> {
+  const response = await fetch(`${BASE_URL}/${id}`);
+  return parseOrThrow(response);
+}
+
 export async function createDocument(draft: DocumentDraft): Promise<Document> {
   const response = await fetch(BASE_URL, {
     method: "POST",

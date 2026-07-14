@@ -40,6 +40,7 @@ class LocationRead(BaseModel):
     city_regency: str | None
     latitude: float | None
     longitude: float | None
+    coordinate_precision: Literal["country", "admin1", "city_regency"] | None
 
 
 class EventSourceRead(BaseModel):
@@ -113,6 +114,19 @@ class ApproveAllResponse(BaseModel):
     skipped: list[ApproveAllSkipped]
 
 
+class EventTypeCount(BaseModel):
+    name: str
+    count: int
+
+
+class DashboardSummaryRead(BaseModel):
+    total_events: int
+    new_events: int
+    by_event_type: list[EventTypeCount]
+    incomplete_date_count: int
+    incomplete_location_count: int
+
+
 class EventRead(BaseModel):
     id: str
     title: str
@@ -130,3 +144,4 @@ class EventRead(BaseModel):
     duplicate_flags: list[DuplicateFlagRead]
     created_at: datetime
     updated_at: datetime
+    approved_at: datetime | None
