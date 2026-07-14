@@ -3,6 +3,8 @@ from collections.abc import Iterator
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.db.models import DuplicateFlag
+from app.schemas.duplicate import DuplicateResolveRequest
 from app.schemas.event import (
     ApproveAllResponse,
     ApproveAllSkipped,
@@ -11,6 +13,7 @@ from app.schemas.event import (
     EventUpdate,
 )
 from app.services.documents import get_document
+from app.services.duplicates import DuplicateFlagAlreadyResolvedError, resolve_duplicate_flag
 from app.services.events import (
     EventEditNotAllowedError,
     EvidenceQuoteNotFoundError,
@@ -97,6 +100,27 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         try:
             event = reject_event(db, event)
         except EventEditNotAllowedError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return to_event_read(event)
+
+    @router.post(
+        "/api/events/{event_id}/duplicate-flags/{flag_id}/resolve", response_model=EventRead
+    )
+    def resolve(
+        event_id: str,
+        flag_id: str,
+        payload: DuplicateResolveRequest,
+        db: Session = Depends(get_db),
+    ) -> EventRead:
+        event = get_event(db, event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+        flag = db.get(DuplicateFlag, flag_id)
+        if flag is None or flag.draft_event_id != event_id:
+            raise HTTPException(status_code=404, detail="Duplicate flag not found.")
+        try:
+            event = resolve_duplicate_flag(db, event, flag, payload.resolution)
+        except DuplicateFlagAlreadyResolvedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return to_event_read(event)
 

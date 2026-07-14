@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -120,3 +120,38 @@ def detect_duplicates(db: Session, event: Event) -> list[DuplicateFlag]:
     if created:
         db.flush()
     return created
+
+
+class DuplicateFlagAlreadyResolvedError(Exception):
+    """Raised when resolving a DuplicateFlag whose resolution is no longer pending."""
+
+    def __init__(self, resolution: str) -> None:
+        self.resolution = resolution
+        super().__init__(f"Duplicate flag was already resolved as {resolution}.")
+
+
+def resolve_duplicate_flag(
+    db: Session, event: Event, flag: DuplicateFlag, resolution: str
+) -> Event:
+    if flag.resolution != "pending":
+        raise DuplicateFlagAlreadyResolvedError(flag.resolution)
+
+    flag.resolution = resolution
+    flag.resolved_at = datetime.now(UTC)
+
+    if resolution == "linked":
+        matched_event = db.get(Event, flag.matched_event_id)
+        existing_source_ids = {
+            event_source.source_id for event_source in matched_event.event_sources
+        }
+        for event_source in list(event.event_sources):
+            if event_source.source_id in existing_source_ids:
+                db.delete(event_source)
+            else:
+                event_source.event = matched_event
+                existing_source_ids.add(event_source.source_id)
+        event.review_status = "merged"
+
+    db.commit()
+    db.refresh(event)
+    return event
