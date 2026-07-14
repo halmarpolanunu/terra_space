@@ -3,6 +3,7 @@ from collections.abc import Callable
 from fastapi import FastAPI
 
 from app.api.routes.documents import create_documents_router
+from app.api.routes.events import create_events_router
 from app.api.routes.health import create_health_router
 from app.api.routes.maps import create_maps_router
 from app.api.routes.processing import create_processing_router
@@ -30,6 +31,7 @@ def create_app(
     app.include_router(create_maps_router(paths))
     app.include_router(create_documents_router(session_factory))
     app.include_router(create_processing_router(session_factory, lm_studio_client))
+    app.include_router(create_events_router(session_factory))
     return app
 
 app = create_app()

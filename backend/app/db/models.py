@@ -130,6 +130,9 @@ class Event(TimestampedModel, Base):
         secondary=event_locations, back_populates="events"
     )
     event_sources: Mapped[list["EventSource"]] = relationship(back_populates="event")
+    duplicate_flags: Mapped[list["DuplicateFlag"]] = relationship(
+        foreign_keys="DuplicateFlag.draft_event_id", back_populates="draft_event"
+    )
 
 
 class EventActor(Base):
@@ -171,3 +174,8 @@ class DuplicateFlag(TimestampedModel, Base):
     matched_reason: Mapped[str] = mapped_column(Text)
     resolution: Mapped[str] = mapped_column(String(32), default="pending")
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    draft_event: Mapped[Event] = relationship(
+        foreign_keys=[draft_event_id], back_populates="duplicate_flags"
+    )
+    matched_event: Mapped[Event] = relationship(foreign_keys=[matched_event_id])
