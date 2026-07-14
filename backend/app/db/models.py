@@ -52,7 +52,9 @@ class Document(TimestampedModel, Base):
     processing_status: Mapped[str] = mapped_column(String(32), default="draft")
     processing_error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    attachments: Mapped[list["Attachment"]] = relationship(back_populates="document")
+    attachments: Mapped[list["Attachment"]] = relationship(
+        back_populates="document", cascade="all, delete-orphan"
+    )
     sources: Mapped[list["Source"]] = relationship(back_populates="document")
 
 

@@ -41,7 +41,7 @@ def create_app(
     checker = lm_studio_check or lm_studio_client.check_connection
     app.include_router(create_health_router(paths, checker))
     app.include_router(create_maps_router(paths))
-    app.include_router(create_documents_router(session_factory))
+    app.include_router(create_documents_router(session_factory, paths))
     app.include_router(create_processing_router(session_factory, lm_studio_client))
     app.include_router(create_events_router(session_factory))
     app.include_router(

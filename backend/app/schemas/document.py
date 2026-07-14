@@ -24,6 +24,16 @@ class DocumentUpdate(BaseModel):
     source_url: str | None = None
 
 
+class AttachmentRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    original_name: str
+    media_type: str
+    size_bytes: int
+    created_at: datetime
+
+
 class DocumentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -38,3 +48,4 @@ class DocumentRead(BaseModel):
     processing_error: str | None
     created_at: datetime
     updated_at: datetime
+    attachments: list[AttachmentRead] = []

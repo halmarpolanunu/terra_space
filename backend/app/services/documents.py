@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.db.models import Document
 from app.schemas.document import DocumentCreate, DocumentUpdate
+from app.services.attachments import delete_attachment_file
+from app.services.storage import StoragePaths
 
 EDITABLE_PROCESSING_STATUSES = {"draft", "failed"}
 
@@ -54,6 +56,8 @@ def update_document(db: Session, document: Document, payload: DocumentUpdate) ->
     return document
 
 
-def delete_document(db: Session, document: Document) -> None:
+def delete_document(db: Session, paths: StoragePaths, document: Document) -> None:
+    for attachment in document.attachments:
+        delete_attachment_file(paths, attachment)
     db.delete(document)
     db.commit()
