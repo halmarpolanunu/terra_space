@@ -24,7 +24,7 @@ COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN chown -R terra:terra /app && chmod 755 /app/docker-entrypoint.sh
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=6 CMD ["python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+HEALTHCHECK --interval=10s --timeout=6s --start-period=15s --retries=6 CMD ["python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

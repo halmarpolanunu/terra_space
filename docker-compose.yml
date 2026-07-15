@@ -1,3 +1,6 @@
+volumes:
+  db-data:
+
 services:
   backend:
     build:
@@ -9,10 +12,11 @@ services:
       - host.docker.internal:host-gateway
     volumes:
       - ./data:/data
+      - db-data:/data/database
     healthcheck:
-      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
       interval: 10s
-      timeout: 3s
+      timeout: 6s
       start_period: 30s
       retries: 8
 

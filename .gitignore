@@ -37,6 +37,8 @@ data/maps/*.pmtiles
 # Local runtime data
 data/database/*.db
 data/database/*.db-*
+data/database.pre-migration-backup/
+data/database-backups/
 data/attachments/*
 !data/attachments/.gitkeep
 data/logs/*

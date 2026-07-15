@@ -46,9 +46,24 @@ If your LM Studio address is different, copy `.env.example` to `.env` and edit `
 
 ## Backup and restore
 
-First stop Terra Space. Then copy the whole `data` folder somewhere safe. That one folder contains the SQLite database, attachments, map package, and logs.
+The database lives inside Docker's own storage now (not directly in the `data` folder) so Terra
+Space starts quickly on Windows. Back it up with:
 
-To restore a backup, stop Terra Space, replace the current `data` folder with your backup copy, then start Terra Space again.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Backup-TerraSpaceDatabase.ps1
+```
+
+This saves a timestamped copy into `data\database-backups\`. Then copy the whole `data` folder
+somewhere safe, same as before — it now includes that database backup plus your attachments, map
+package, and logs.
+
+To restore a backup, first stop Terra Space, then run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Restore-TerraSpaceDatabase.ps1 -BackupFolder "data\database-backups\<the-one-you-want>"
+```
+
+It asks for confirmation before replacing the live database. Start Terra Space again afterward.
 
 ## Verify the foundation
 
