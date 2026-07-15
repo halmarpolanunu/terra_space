@@ -26,6 +26,7 @@ def test_get_settings_seeds_a_single_row_from_the_default(tmp_path: Path) -> Non
 
     assert row.lm_studio_base_url == DEFAULT_URL
     assert row.lm_studio_model is None
+    assert row.lm_studio_extraction_timeout_seconds == 300
 
     again = get_settings(db, "http://ignored:9999")
     assert again.id == row.id
@@ -35,12 +36,19 @@ def test_get_settings_seeds_a_single_row_from_the_default(tmp_path: Path) -> Non
     assert count == 1
 
 
-def test_update_settings_persists_url_and_model(tmp_path: Path) -> None:
+def test_update_settings_persists_url_model_and_timeout(tmp_path: Path) -> None:
     db = _session(tmp_path)
-    row = update_settings(db, DEFAULT_URL, base_url="http://127.0.0.1:1234", model="my-model")
+    row = update_settings(
+        db,
+        DEFAULT_URL,
+        base_url="http://127.0.0.1:1234",
+        model="my-model",
+        extraction_timeout_seconds=600,
+    )
 
     assert row.lm_studio_base_url == "http://127.0.0.1:1234"
     assert row.lm_studio_model == "my-model"
+    assert row.lm_studio_extraction_timeout_seconds == 600
 
 
 def test_update_settings_can_clear_the_model_for_auto_detect(tmp_path: Path) -> None:
@@ -57,11 +65,25 @@ def test_update_settings_rejects_a_malformed_url(tmp_path: Path) -> None:
         update_settings(db, DEFAULT_URL, base_url="not-a-url")
 
 
+def test_update_settings_rejects_timeout_outside_the_supported_range(tmp_path: Path) -> None:
+    db = _session(tmp_path)
+
+    with pytest.raises(InvalidSettingsError):
+        update_settings(db, DEFAULT_URL, extraction_timeout_seconds=601)
+
+
 def test_effective_config_prefers_stored_values_over_the_default(tmp_path: Path) -> None:
     db = _session(tmp_path)
-    update_settings(db, DEFAULT_URL, base_url="http://stored:1234", model="chosen")
+    update_settings(
+        db,
+        DEFAULT_URL,
+        base_url="http://stored:1234",
+        model="chosen",
+        extraction_timeout_seconds=600,
+    )
 
     config = effective_lm_studio_config(db, "http://default:1234")
 
     assert config.base_url == "http://stored:1234"
     assert config.model == "chosen"
+    assert config.extraction_timeout_seconds == 600

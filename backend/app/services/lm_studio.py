@@ -13,6 +13,7 @@ class LmStudioRuntimeConfig:
 
     base_url: str
     model: str | None
+    extraction_timeout_seconds: float = 300.0
 
 
 EXTRACTION_SYSTEM_PROMPT = (
@@ -43,7 +44,7 @@ class LmStudioClient:
         self,
         base_url: str,
         transport: httpx2.BaseTransport | None = None,
-        extraction_timeout: float = 120.0,
+        extraction_timeout: float = 300.0,
         config_provider: Callable[[], LmStudioRuntimeConfig] | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
@@ -54,8 +55,16 @@ class LmStudioClient:
     def _resolve(self) -> LmStudioRuntimeConfig:
         if self._config_provider is not None:
             config = self._config_provider()
-            return LmStudioRuntimeConfig(base_url=config.base_url.rstrip("/"), model=config.model)
-        return LmStudioRuntimeConfig(base_url=self._base_url, model=None)
+            return LmStudioRuntimeConfig(
+                base_url=config.base_url.rstrip("/"),
+                model=config.model,
+                extraction_timeout_seconds=config.extraction_timeout_seconds,
+            )
+        return LmStudioRuntimeConfig(
+            base_url=self._base_url,
+            model=None,
+            extraction_timeout_seconds=self._extraction_timeout,
+        )
 
     def check_connection(self) -> bool:
         try:
@@ -98,7 +107,7 @@ class LmStudioClient:
         try:
             with httpx2.Client(
                 base_url=config.base_url,
-                timeout=self._extraction_timeout,
+                timeout=config.extraction_timeout_seconds,
                 transport=self._transport,
             ) as client:
                 model_id = config.model or self._discover_model(client)

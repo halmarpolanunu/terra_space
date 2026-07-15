@@ -8,6 +8,21 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Configurable LM Studio processing timeout added
+
+- Owner testing showed that the fixed two-minute extraction limit could expire before a local
+  model answered. Added a persisted per-document timeout to `app_settings` through migration
+  `0006_lm_studio_timeout`; existing and new databases use a five-minute default.
+- The Settings screen now offers 2, 5 (recommended), and 10 minutes. The saved choice is applied
+  to the next LM Studio extraction without restarting Terra Space. A longer choice helps slower
+  local models finish, while the explanatory text makes clear that it also delays subsequent
+  batch documents if LM Studio is unresponsive. Existing failure isolation and Retry behavior are
+  unchanged.
+- Used test-first coverage for stored/default/range validation, API persistence, and the Settings
+  control. Final verification: 119 backend tests, 121 frontend tests, frontend lint, and a
+  production build all passed. No North Star, Roadmap phase, or long-term architecture decision
+  changed.
+
 ## 2026-07-15 - Layered Command Deck verification completed
 
 - Completed all five checkpoints in the

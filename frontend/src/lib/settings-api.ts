@@ -3,11 +3,13 @@ import type { EventTypeRead } from "@/lib/events-api";
 export type Settings = {
   lm_studio_base_url: string;
   lm_studio_model: string | null;
+  lm_studio_extraction_timeout_seconds: number;
 };
 
 export type SettingsUpdate = Partial<{
   lm_studio_base_url: string;
   lm_studio_model: string | null;
+  lm_studio_extraction_timeout_seconds: number;
 }>;
 
 export type LmStudioTestResult = {

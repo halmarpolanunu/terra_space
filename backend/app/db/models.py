@@ -37,6 +37,7 @@ class AppSettings(TimestampedModel, Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     lm_studio_base_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     lm_studio_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lm_studio_extraction_timeout_seconds: Mapped[int] = mapped_column(Integer, default=300)
 
 
 class Document(TimestampedModel, Base):

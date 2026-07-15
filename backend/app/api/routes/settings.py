@@ -40,6 +40,8 @@ def create_settings_router(
             kwargs["base_url"] = payload.lm_studio_base_url
         if "lm_studio_model" in payload.model_fields_set:
             kwargs["model"] = payload.lm_studio_model
+        if "lm_studio_extraction_timeout_seconds" in payload.model_fields_set:
+            kwargs["extraction_timeout_seconds"] = payload.lm_studio_extraction_timeout_seconds
         try:
             row = update_settings(db, default_base_url, **kwargs)
         except InvalidSettingsError as error:

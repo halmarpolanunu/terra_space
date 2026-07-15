@@ -9,7 +9,11 @@ vi.mock("@/lib/settings-api", async () => {
 import { LmStudioSettings } from "@/app/settings/lm-studio-settings";
 import * as settingsApi from "@/lib/settings-api";
 
-const SETTINGS = { lm_studio_base_url: "http://host.docker.internal:1234", lm_studio_model: null };
+const SETTINGS = {
+  lm_studio_base_url: "http://host.docker.internal:1234",
+  lm_studio_model: null,
+  lm_studio_extraction_timeout_seconds: 300,
+};
 
 describe("LmStudioSettings", () => {
   afterEach(() => vi.clearAllMocks());
@@ -19,6 +23,7 @@ describe("LmStudioSettings", () => {
 
     expect(screen.getByLabelText(/base url/i)).toHaveValue("http://host.docker.internal:1234");
     expect(screen.getByLabelText(/^model$/i)).toHaveValue("saved-model");
+    expect(screen.getByLabelText(/processing timeout/i)).toHaveValue("300");
   });
 
   it("groups the connection test with the URL it checks", () => {
@@ -68,9 +73,27 @@ describe("LmStudioSettings", () => {
       expect(settingsApi.updateSettings).toHaveBeenCalledWith({
         lm_studio_base_url: "http://host.docker.internal:1234",
         lm_studio_model: "model-b",
+        lm_studio_extraction_timeout_seconds: 300,
       }),
     );
     expect(await screen.findByRole("status")).toHaveAttribute("data-motion-item", "save-status");
+  });
+
+  it("saves the selected ten-minute timeout", async () => {
+    vi.mocked(settingsApi.updateSettings).mockResolvedValue({
+      ...SETTINGS,
+      lm_studio_extraction_timeout_seconds: 600,
+    });
+    render(<LmStudioSettings settings={SETTINGS} />);
+
+    fireEvent.change(screen.getByLabelText(/processing timeout/i), { target: { value: "600" } });
+    fireEvent.click(screen.getByRole("button", { name: /^save/i }));
+
+    await waitFor(() =>
+      expect(settingsApi.updateSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ lm_studio_extraction_timeout_seconds: 600 }),
+      ),
+    );
   });
 
   it("saves a null model when Auto-detect is chosen", async () => {

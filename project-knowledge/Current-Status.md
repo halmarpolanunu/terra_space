@@ -18,6 +18,14 @@ four screens use restrained workflow motion. The target remains the owner's `192
 
 ## Recent progress
 
+- Added a configurable per-document LM Studio processing timeout after the owner's live testing
+  exposed the previous fixed two-minute limit. The Settings screen now offers 2, 5 (default and
+  recommended), or 10 minutes; the chosen value is saved locally in `app_settings` and used by
+  the very next extraction without a restart. The backend still fails only the affected document
+  and preserves the existing Retry flow if LM Studio does not respond. Migration
+  `0006_lm_studio_timeout` supplies the five-minute default for existing local databases.
+  Verified with 119 backend tests, 121 frontend tests, frontend lint, and a production build.
+
 - Completed all five checkpoints in the
   [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md).
   The final isolated workbench contained 9 documents, 6 approved events, 2 drafts, 1 rejected

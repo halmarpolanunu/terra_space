@@ -20,7 +20,11 @@ import { SettingsWorkspace } from "@/app/settings/settings-workspace";
 import * as settingsApi from "@/lib/settings-api";
 import * as eventsApi from "@/lib/events-api";
 
-const SETTINGS = { lm_studio_base_url: "http://host.docker.internal:1234", lm_studio_model: null };
+const SETTINGS = {
+  lm_studio_base_url: "http://host.docker.internal:1234",
+  lm_studio_model: null,
+  lm_studio_extraction_timeout_seconds: 300,
+};
 
 describe("SettingsWorkspace", () => {
   afterEach(() => vi.clearAllMocks());

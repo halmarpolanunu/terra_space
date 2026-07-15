@@ -19,6 +19,9 @@ type LmStudioSettingsProps = {
 export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
   const [baseUrl, setBaseUrl] = useState(settings.lm_studio_base_url);
   const [model, setModel] = useState(settings.lm_studio_model ?? "");
+  const [timeoutSeconds, setTimeoutSeconds] = useState(
+    settings.lm_studio_extraction_timeout_seconds,
+  );
   const [models, setModels] = useState<string[]>(
     settings.lm_studio_model ? [settings.lm_studio_model] : [],
   );
@@ -54,6 +57,7 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
       const next = await updateSettings({
         lm_studio_base_url: baseUrl,
         lm_studio_model: model || null,
+        lm_studio_extraction_timeout_seconds: timeoutSeconds,
       });
       setSaved(true);
       onSaved?.(next);
@@ -113,6 +117,26 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="lm-timeout">Processing timeout</label>
+        <select
+          id="lm-timeout"
+          onChange={(event) => {
+            setTimeoutSeconds(Number(event.target.value));
+            setSaved(false);
+          }}
+          value={timeoutSeconds}
+        >
+          <option value={120}>2 minutes</option>
+          <option value={300}>5 minutes (recommended)</option>
+          <option value={600}>10 minutes</option>
+        </select>
+        <p className="settings-hint">
+          The longest time Terra Space waits for one document. Longer settings help slower
+          models, but also delay the next document when LM Studio is unresponsive.
+        </p>
       </div>
 
       {error && <p className="document-error">{error}</p>}

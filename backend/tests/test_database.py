@@ -34,7 +34,7 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                == "0005_phase5_app_settings"
+                == "0006_lm_studio_timeout"
         )
 
 

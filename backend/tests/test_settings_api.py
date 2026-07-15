@@ -41,22 +41,42 @@ def test_get_settings_returns_the_seeded_default(tmp_path: Path) -> None:
     response = client.get("/api/settings")
 
     assert response.status_code == 200
-    assert response.json() == {"lm_studio_base_url": DEFAULT_URL, "lm_studio_model": None}
+    assert response.json() == {
+        "lm_studio_base_url": DEFAULT_URL,
+        "lm_studio_model": None,
+        "lm_studio_extraction_timeout_seconds": 300,
+    }
     # Reading settings must not touch the network.
     assert fake.tested_base_url == "<unset>"
 
 
-def test_patch_settings_updates_url_and_model(tmp_path: Path) -> None:
+def test_patch_settings_updates_url_model_and_timeout(tmp_path: Path) -> None:
     client = _client(tmp_path, FakeLmStudioClient())
 
     response = client.patch(
         "/api/settings",
-        json={"lm_studio_base_url": "http://127.0.0.1:4321", "lm_studio_model": "chosen"},
+        json={
+            "lm_studio_base_url": "http://127.0.0.1:4321",
+            "lm_studio_model": "chosen",
+            "lm_studio_extraction_timeout_seconds": 600,
+        },
     )
 
     assert response.status_code == 200
-    assert response.json() == {"lm_studio_base_url": "http://127.0.0.1:4321", "lm_studio_model": "chosen"}
+    assert response.json() == {
+        "lm_studio_base_url": "http://127.0.0.1:4321",
+        "lm_studio_model": "chosen",
+        "lm_studio_extraction_timeout_seconds": 600,
+    }
     assert client.get("/api/settings").json()["lm_studio_model"] == "chosen"
+
+
+def test_patch_settings_rejects_timeout_above_ten_minutes(tmp_path: Path) -> None:
+    client = _client(tmp_path, FakeLmStudioClient())
+
+    response = client.patch("/api/settings", json={"lm_studio_extraction_timeout_seconds": 601})
+
+    assert response.status_code == 422
 
 
 def test_patch_settings_rejects_a_malformed_url(tmp_path: Path) -> None:
