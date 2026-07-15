@@ -5,10 +5,12 @@ const map = {
   addLayer: vi.fn(),
   addSource: vi.fn(),
   getBearing: vi.fn(() => 0),
+  getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
   getSource: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),
   rotateTo: vi.fn(),
+  setPaintProperty: vi.fn(),
   setSky: vi.fn(),
   setProjection: vi.fn(),
 };
@@ -20,7 +22,14 @@ vi.mock("pmtiles", () => ({
   Protocol: class { add = vi.fn(); tile = vi.fn(); },
 }));
 
-import { MAP_UNAVAILABLE_MESSAGE, WORLD_PMTILES_URL, WorldMap, worldMapStyle } from "@/components/world-map";
+import {
+  EVENT_PIN_HALO_LAYER_ID,
+  EVENT_PIN_LAYER_ID,
+  MAP_UNAVAILABLE_MESSAGE,
+  WORLD_PMTILES_URL,
+  WorldMap,
+  worldMapStyle,
+} from "@/components/world-map";
 
 describe("offline world map configuration", () => {
   it("uses only a local PMTiles source", () => {
@@ -45,6 +54,12 @@ describe("offline world map configuration", () => {
 
     await waitFor(() => expect(map.setProjection).toHaveBeenCalledWith({ type: "globe" }));
     expect(map.setSky).toHaveBeenCalledWith(expect.objectContaining({ "horizon-color": "#2d1b05", "atmosphere-blend": 0.65 }));
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: EVENT_PIN_HALO_LAYER_ID, type: "circle" }),
+    );
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: EVENT_PIN_LAYER_ID, type: "circle" }),
+    );
     errorListener?.();
     expect(await screen.findByRole("alert")).toHaveTextContent(MAP_UNAVAILABLE_MESSAGE);
   });

@@ -33,6 +33,18 @@ vi.mock("pmtiles", () => ({
 }));
 
 vi.mock("@/app/dashboard/event-globe", () => ({
+  eventLocationsToFeatureCollection: (events: import("@/lib/events-api").EventRead[]) => ({
+    type: "FeatureCollection",
+    features: events.flatMap((event) =>
+      event.locations
+        .filter((location) => location.latitude !== null && location.longitude !== null)
+        .map((location) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [location.longitude, location.latitude] },
+          properties: { eventId: event.id },
+        })),
+    ),
+  }),
   EventGlobe: ({ events, onSelect }: { events: import("@/lib/events-api").EventRead[]; onSelect: (event: import("@/lib/events-api").EventRead) => void }) => (
     <button onClick={() => onSelect(events[0])} type="button">Map features: {events.flatMap((event) => event.locations.filter((location) => location.latitude !== null && location.longitude !== null)).length}</button>
   ),
@@ -113,6 +125,7 @@ describe("Dashboard workspace", () => {
     expect(within(summaryPanel).getByText("Incomplete location")).toBeVisible();
     expect(within(summaryPanel).queryByText("Incorrect summary response: 77")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Map features: 1" })).toBeVisible();
+    expect(screen.getByText("Markers 1")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Date unknown" })).toBeVisible();
     expect(screen.getAllByRole("button", { name: "Bridge crossing reported" })).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Open Events" })).toHaveAttribute("href", "/events?q=bridge&sort=title_asc");

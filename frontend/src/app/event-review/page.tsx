@@ -10,6 +10,7 @@ import { ReviewBar } from "@/app/event-review/review-bar";
 import { SourcePanel } from "@/app/event-review/source-panel";
 import { AppShell } from "@/components/app-shell";
 import { FramedPanel } from "@/components/framed-panel";
+import { PageHeader } from "@/components/page-header";
 import type { Document } from "@/lib/documents-api";
 import { listDocuments } from "@/lib/documents-api";
 import type {
@@ -211,10 +212,13 @@ export default function EventReviewPage() {
 
   return (
     <AppShell currentPath="/event-review">
-      <div>
-        <p className="eyebrow">Extraction queue</p>
-        <h1>Event Review</h1>
-      </div>
+      <section aria-labelledby="event-review-title" className="event-review-page">
+      <PageHeader
+        description="Review extracted events against their source evidence, one decision at a time."
+        eyebrow="Extraction queue"
+        title="Event Review"
+        titleId="event-review-title"
+      />
       {error && <p role="alert">{error}</p>}
       {loading ? (
         <p>Loading review queue…</p>
@@ -280,8 +284,8 @@ export default function EventReviewPage() {
                 onSave={handleSave}
               />
             ) : (
-              <div className="panel">
-                <p className="panel-title">Event</p>
+              <div className="panel review-event-card">
+                <div className="panel-heading"><h2 className="panel-title">Event</h2></div>
                 <p>No draft events for this document.</p>
               </div>
             )}
@@ -295,6 +299,7 @@ export default function EventReviewPage() {
           )}
         </>
       )}
+      </section>
     </AppShell>
   );
 }

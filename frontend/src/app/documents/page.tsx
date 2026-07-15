@@ -6,6 +6,7 @@ import { DocumentForm } from "@/app/documents/document-form";
 import { DocumentList } from "@/app/documents/document-list";
 import { ReprocessConfirmDialog } from "@/app/documents/reprocess-confirm-dialog";
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/page-header";
 import {
   createDocument,
   deleteAttachment,
@@ -198,11 +199,13 @@ export default function DocumentsPage() {
 
   return (
     <AppShell currentPath="/documents">
-      <section className="documents-page">
-        <div>
-          <p className="eyebrow">Source intake</p>
-          <h1>Documents</h1>
-        </div>
+      <section aria-labelledby="documents-title" className="documents-page">
+        <PageHeader
+          description="Add local source material, attach reference images, and prepare documents for extraction."
+          eyebrow="Source intake"
+          title="Documents"
+          titleId="documents-title"
+        />
         {error && <p role="alert">{error}</p>}
         {confirmation && (
           <ReprocessConfirmDialog

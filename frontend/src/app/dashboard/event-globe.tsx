@@ -35,8 +35,7 @@ export function eventLocationsToFeatureCollection(events: EventRead[]): EventPin
 export function EventGlobe({ events, onSelect }: EventGlobeProps) {
   const pins = eventLocationsToFeatureCollection(events);
 
-  return <>
-    <p aria-live="polite" className="map-marker-count">Map markers: {pins.features.length}</p>
+  return (
     <WorldMap
       geojson={pins}
       onFeatureSelect={(eventId) => {
@@ -44,5 +43,5 @@ export function EventGlobe({ events, onSelect }: EventGlobeProps) {
         if (event) onSelect(event);
       }}
     />
-  </>;
+  );
 }

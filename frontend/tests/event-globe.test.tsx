@@ -6,10 +6,12 @@ const map = {
   addLayer: vi.fn(),
   addSource: vi.fn(),
   getBearing: vi.fn(() => 0),
+  getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
   getSource: vi.fn(() => source),
   on: vi.fn(),
   remove: vi.fn(),
   rotateTo: vi.fn(),
+  setPaintProperty: vi.fn(),
   setSky: vi.fn(),
   setProjection: vi.fn(),
 };

@@ -29,7 +29,7 @@ export function EventDetail({ event, eventsPath, onClose, onEdit }: EventDetailP
   return (
     <FramedPanel className="event-detail" title="Event detail">
       <div className="event-detail-heading">
-        <h2>{event.title}</h2>
+        <h3>{event.title}</h3>
         <button className="btn" onClick={onClose} type="button">Back to list</button>
       </div>
       <div className="facts-grid">

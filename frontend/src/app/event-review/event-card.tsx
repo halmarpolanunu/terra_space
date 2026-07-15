@@ -139,7 +139,7 @@ export function EventCard({
 
   if (editing) {
     return (
-      <FramedPanel title="Edit Event">
+      <FramedPanel className="review-event-card" title="Edit Event">
         <form onSubmit={handleSaveEdit}>
           <div className="field">
             <label htmlFor="event-title">Title</label>
@@ -301,7 +301,7 @@ export function EventCard({
   }
 
   return (
-    <FramedPanel title="Event">
+    <FramedPanel className="review-event-card" meta="Draft intelligence" title="Event">
       {evidenceQuote && <p className="evidence-quote">&ldquo;{evidenceQuote}&rdquo;</p>}
 
       <div className="facts-grid">

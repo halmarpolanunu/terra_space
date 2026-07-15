@@ -38,7 +38,7 @@ export function DashboardSummary({ events }: DashboardSummaryProps) {
         <div><dt>Incomplete location</dt><dd>{value.incomplete_location_count}</dd></div>
       </dl>
       <div className="dashboard-type-distribution">
-        <h2>Distribution by type</h2>
+        <h3>Distribution by type</h3>
         {value.by_event_type.length ? (
           <ul>{value.by_event_type.map(({ name, count }) => <li key={name}>{name}: {count}</li>)}</ul>
         ) : <p>No event types in this result.</p>}

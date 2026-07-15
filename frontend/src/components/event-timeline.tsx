@@ -45,13 +45,13 @@ export function EventTimeline({ events, sort, hasActiveFilters, onClearFilters }
     <div className="event-timeline">
       {knownEvents.length > 0 && (
         <section className="timeline-group">
-          <h2>Known dates</h2>
+          <h3>Known dates</h3>
           <ul>{knownEvents.map((event) => <li key={event.id}>{event.title}</li>)}</ul>
         </section>
       )}
       {unknownEvents.length > 0 && (
         <section className="timeline-group timeline-unknown-group">
-          <h2>Date unknown</h2>
+          <h3>Date unknown</h3>
           <ul>{unknownEvents.map((event) => <li key={event.id}>{event.title}</li>)}</ul>
         </section>
       )}

@@ -71,7 +71,7 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
         Studio is offline; only processing needs it running.
       </p>
 
-      <div className="field">
+      <div className="settings-connection-row">
         <label htmlFor="lm-base-url">LM Studio base URL</label>
         <input
           id="lm-base-url"
@@ -81,9 +81,6 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
           }}
           value={baseUrl}
         />
-      </div>
-
-      <div className="settings-actions">
         <button className="btn" disabled={testing} onClick={runTest} type="button">
           {testing ? "Testing…" : "Test connection"}
         </button>

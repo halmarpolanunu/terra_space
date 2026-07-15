@@ -21,6 +21,14 @@ describe("LmStudioSettings", () => {
     expect(screen.getByLabelText(/^model$/i)).toHaveValue("saved-model");
   });
 
+  it("groups the connection test with the URL it checks", () => {
+    render(<LmStudioSettings settings={SETTINGS} />);
+
+    const row = screen.getByLabelText(/base url/i).closest(".settings-connection-row");
+    expect(row).not.toBeNull();
+    expect(within(row!).getByRole("button", { name: /test connection/i })).toBeVisible();
+  });
+
   it("tests the connection and shows the returned models", async () => {
     vi.mocked(settingsApi.testLmStudio).mockResolvedValue({
       reachable: true,

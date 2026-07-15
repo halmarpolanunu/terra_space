@@ -10,6 +10,7 @@ export const WORLD_PMTILES_URL = "/api/backend/api/maps/world.pmtiles";
 export const MAP_UNAVAILABLE_MESSAGE = "Map package is not installed.";
 export const EVENT_PIN_SOURCE_ID = "event-pins";
 export const EVENT_PIN_LAYER_ID = "event-pins";
+export const EVENT_PIN_HALO_LAYER_ID = "event-pin-halo";
 
 export type EventPinFeatureCollection = {
   type: "FeatureCollection";
@@ -86,10 +87,12 @@ export function WorldMap({ geojson = EMPTY_EVENT_PINS, onFeatureSelect }: WorldM
       container: container.current,
       style: worldMapStyle,
       center: [0, 20],
-      zoom: 1,
+      zoom: 1.2,
       attributionControl: false,
     });
     mapRef.current = map;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    let pinPulse: number | undefined;
     map.on("error", () => setUnavailable(true));
     map.on("load", () => {
       try {
@@ -107,25 +110,51 @@ export function WorldMap({ geojson = EMPTY_EVENT_PINS, onFeatureSelect }: WorldM
       } catch { /* The globe projection remains usable without optional sky styling. */ }
       map.addSource(EVENT_PIN_SOURCE_ID, { type: "geojson", data: pinsRef.current as never });
       map.addLayer({
+        id: EVENT_PIN_HALO_LAYER_ID,
+        type: "circle",
+        source: EVENT_PIN_SOURCE_ID,
+        paint: {
+          "circle-color": "#f2a93b",
+          "circle-radius": 11,
+          "circle-blur": 0.55,
+          "circle-opacity": 0.34,
+        },
+      });
+      map.addLayer({
         id: EVENT_PIN_LAYER_ID,
         type: "circle",
         source: EVENT_PIN_SOURCE_ID,
         paint: {
           "circle-color": "#f2a93b",
-          "circle-radius": 5,
-          "circle-stroke-color": "#161005",
+          "circle-radius": 6,
+          "circle-stroke-color": "#ffd17a",
           "circle-stroke-width": 1,
-          "circle-opacity": 0.9,
+          "circle-opacity": 1,
         },
       });
       map.on("click", EVENT_PIN_LAYER_ID, (event) => {
         const eventId = event.features?.[0]?.properties?.eventId;
         if (eventId) selectionRef.current?.(eventId);
       });
+      map.on("mouseenter", EVENT_PIN_LAYER_ID, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", EVENT_PIN_LAYER_ID, () => {
+        map.getCanvas().style.cursor = "";
+      });
+      if (!reduceMotion) {
+        map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-radius-transition", { duration: 1400 });
+        map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-opacity-transition", { duration: 1400 });
+        let expanded = false;
+        pinPulse = window.setInterval(() => {
+          expanded = !expanded;
+          map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-radius", expanded ? 15 : 10);
+          map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-opacity", expanded ? 0.12 : 0.34);
+        }, 1400);
+      }
       mapLoaded.current = true;
     });
 
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     let idle = false;
     const pauseRotation = () => { idle = false; };
     const resumeRotation = () => { idle = true; };
@@ -143,6 +172,7 @@ export function WorldMap({ geojson = EMPTY_EVENT_PINS, onFeatureSelect }: WorldM
 
     return () => {
       if (rotation) window.clearInterval(rotation);
+      if (pinPulse) window.clearInterval(pinPulse);
       mapLoaded.current = false;
       mapRef.current = null;
       map.remove();
