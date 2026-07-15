@@ -3,7 +3,7 @@ type: Plan
 title: Layered Command Deck Motion Implementation Plan
 description: Checkpointed, test-first implementation plan for the approved globe-dominant Layered Command Deck and controlled-cinematic motion across Terra Space.
 tags: [project-knowledge, plan, implementation, dashboard, motion, globe]
-status: in-progress
+status: completed
 ---
 
 # Layered Command Deck Motion Implementation Plan
@@ -87,7 +87,7 @@ Playwright/Chrome, Docker Compose for isolated populated QA.
 - [x] **Checkpoint 2:** static globe-dominant Layered Command Deck composition
 - [x] **Checkpoint 3:** 3D focus, keyboard/drawer interaction, parallax, and selected-pin emphasis
 - [x] **Checkpoint 4:** restrained motion on Documents, Event Review, Events, and Settings
-- [ ] **Checkpoint 5:** populated 1920×930/900 browser QA and complete verification
+- [x] **Checkpoint 5:** populated 1920×930/900 browser QA and complete verification
 
 ---
 
@@ -747,13 +747,13 @@ git commit -m "feat: add restrained motion across workflows"
 
 **Interfaces:** None. This checkpoint verifies the integrated result and records evidence.
 
-- [ ] **Step 1: Run the complete frontend test suite**
+- [x] **Step 1: Run the complete frontend test suite**
 
 Run: `npm.cmd test`
 
 Expected: every test file and test passes. Record the exact final counts.
 
-- [ ] **Step 2: Run lint and production build**
+- [x] **Step 2: Run lint and production build**
 
 Run: `npm.cmd run lint`
 
@@ -763,7 +763,7 @@ Run: `npm.cmd run build`
 
 Expected: optimized Next.js production build completes and all routes are generated.
 
-- [ ] **Step 3: Confirm the populated workbench still matches its seed contract**
+- [x] **Step 3: Confirm the populated workbench still matches its seed contract**
 
 Reuse the `terra-motion` environment started in Checkpoint 2; do not create a second database.
 Rerun the seed script's read-only assertions (9 documents, 6 approved, 2 draft, 1 rejected,
@@ -771,7 +771,7 @@ coordinate-bearing pins, 1 pending duplicate, 2 attachments). If the workbench s
 only that Docker project, LM stub, and host frontend against its existing named volume. Never mount,
 read, or mutate the owner's normal database.
 
-- [ ] **Step 4: Inspect Dashboard at both acceptance viewports**
+- [x] **Step 4: Inspect Dashboard at both acceptance viewports**
 
 Use real Chrome/Playwright at `1920 × 930` and `1920 × 900`. Verify:
 
@@ -784,19 +784,19 @@ Use real Chrome/Playwright at `1920 × 930` and `1920 × 900`. Verify:
 - pointer parallax is subtle and does not disturb map hit testing;
 - no horizontal overflow or console application error.
 
-- [ ] **Step 5: Inspect all other populated screens during state changes**
+- [x] **Step 5: Inspect all other populated screens during state changes**
 
 Check Documents row creation/selection/attachment upload, Event Review Previous/Next and duplicate
 state, Events filter/list/detail/edit, and Settings Testing/Saving/result states. Then run a second
 browser context with `reducedMotion: "reduce"` and confirm no continuous animation or parallax
 remains while all controls still work.
 
-- [ ] **Step 6: Fix only reproduced failures test-first**
+- [x] **Step 6: Fix only reproduced failures test-first**
 
 For each defect, add or extend the smallest failing test, record its red result, implement the
 minimal fix, and rerun the focused test. Do not add unrelated polish.
 
-- [ ] **Step 7: Re-run final verification after the last code change**
+- [x] **Step 7: Re-run final verification after the last code change**
 
 Run, in order:
 
@@ -816,19 +816,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Validate-ProjectKnow
 Expected: tests all pass, lint clean, build succeeds, diff check clean, Project Knowledge reports
 `0 error(s), 0 warning(s)`.
 
-- [ ] **Step 8: Clean the isolated environment and temporary artifacts**
+- [x] **Step 8: Clean the isolated environment and temporary artifacts**
 
 Stop `terra-motion`, remove only its named volume/network, stop the exact recorded LM-stub and
 Next.js process ids, close the QA browser, and remove only the verified absolute
 `test-results/motion-workbench/` directory. Preserve all pre-existing user files and changes.
 
-- [ ] **Step 9: Update Project Knowledge and complete the tracker**
+- [x] **Step 9: Update Project Knowledge and complete the tracker**
 
 Mark all checkpoint boxes complete; set this plan's status to `completed`; update Current Status
 to the owner's desktop review; add exact verification evidence to the Knowledge Log. Do not change
 Roadmap because no phase or milestone changes.
 
-- [ ] **Step 10: Commit verification documentation**
+- [x] **Step 10: Commit verification documentation**
 
 ```powershell
 git add -- project-knowledge/plans/2026-07-15-layered-command-deck-motion-implementation.md project-knowledge/Current-Status.md project-knowledge/Project-Knowledge-Log.md

@@ -8,6 +8,22 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Layered Command Deck verification completed
+
+- Completed all five checkpoints in the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md).
+  The final isolated browser workbench passed its contract with 9 documents, 6 approved events,
+  2 drafts, 1 rejected event, 8 mapped locations, 1 pending duplicate, and 2 attachments.
+- Inspected Dashboard at `1920 × 930` and `1920 × 900`, plus populated Documents, Event Review,
+  Events, and Settings states in a real browser. Also confirmed reduced-motion behavior disables
+  parallax and continuous animation while leaving controls operational.
+- Reproduced and fixed two final integration defects test-first: Event Review could briefly pair a
+  newly selected source document with a stale event, and the Dashboard filter drawer required a
+  second click to reveal the shared controls. The new final verification passed: 120 frontend tests
+  across 25 files, lint, production build, and a clean `git diff --check`. The isolated Docker
+  data, local stub, QA frontend, browser sessions, and temporary artifacts were removed without
+  touching the owner's normal database. No Roadmap phase or milestone changed.
+
 ## 2026-07-15 - Layered Command Deck implementation checkpointed
 
 - Added the

@@ -10,17 +10,22 @@ status: active
 
 ## Current focus
 
-Every Roadmap item and the deferred aesthetic pass are complete. The owner has approved and
-authorized implementation of the post-pass
-[Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md).
-It makes the Dashboard globe dominant, places a small number of instruments on subtle 3D depth
-planes, and introduces controlled-cinematic motion across the desktop interface. The target is
-the owner's `1920 × 1080` display at `100%` Windows scale; phone/mobile remains unsupported. The
-current continuation point is executing the
-[checkpointed implementation plan](plans/2026-07-15-layered-command-deck-motion-implementation.md),
-beginning with its shared reduced-motion foundation.
+The approved [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)
+is implemented, verified, and ready for the owner's desktop review. The Dashboard now makes the
+globe dominant while keeping a small number of controlled 3D instruments at its edge; the other
+four screens use restrained workflow motion. The target remains the owner's `1920 × 1080` display at
+`100%` Windows scale, with phone/mobile explicitly unsupported. No Roadmap phase or milestone changed.
 
 ## Recent progress
+
+- Completed all five checkpoints in the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md).
+  The final isolated workbench contained 9 documents, 6 approved events, 2 drafts, 1 rejected
+  event, 8 mapped locations, 1 pending duplicate, and 2 attachments. Real-browser checks covered
+  all five populated screens, Dashboard at `1920 × 930` and `1920 × 900`, normal and reduced-motion
+  behavior, and the full interaction set. Final verification passed: 120 frontend tests in 25
+  files, lint, production build, `git diff --check`, and Project Knowledge validation. The
+  isolated Docker volume, stub, frontend process, QA browsers, and temporary artifacts were removed.
 
 - Wrote and self-reviewed the
   [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md)
@@ -301,10 +306,8 @@ beginning with its shared reduced-motion foundation.
 
 ## Next actions
 
-- Execute the checkpointed test-first implementation plan for the approved
-  [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md),
-  with focused verification and a local commit at each checkpoint, then one full populated-browser
-  and frontend verification pass at the end.
+- Review the completed desktop experience at the target resolution. The local branch is committed
+  and deliberately not pushed; merge or push only with owner direction.
 
 ## Related knowledge
 

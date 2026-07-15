@@ -37,6 +37,12 @@ the globe with real pins. The isolated data did not alter the owner's normal dat
 
 All findings below are resolved:
 
+- **Post-pass motion layer:** the owner-approved Layered Command Deck makes the populated
+  Dashboard globe the dominant first-view element at the desktop target, with only Situation
+  Summary, Recent Signals, and the slim register/filter dock floating at restrained 3D depth.
+  The other four screens use controlled, reduced-motion-safe workflow transitions. Final populated
+  browser QA covered both target Dashboard heights and every listed populated state.
+
 - **Global:** all five screens now share one page-header pattern; a permanent top status bar owns
   the brand, offline-safe state, and LM Studio state; the muted token is now `#7b8990`; disabled
   actions remain legible; and navigation is numbered `01` through `05`.
