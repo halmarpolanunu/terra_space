@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { FramedPanel } from "@/components/framed-panel";
@@ -14,7 +14,8 @@ describe("FramedPanel", () => {
 
     const title = screen.getByText("Source Document");
     expect(title).toHaveClass("panel-title");
-    expect(title.parentElement).toHaveClass("panel");
+    expect(title).toHaveRole("heading", { level: 2 });
+    expect(title.closest(".panel")).not.toBeNull();
     expect(screen.getByText("Body content").closest(".panel")).not.toBeNull();
   });
 
@@ -26,6 +27,18 @@ describe("FramedPanel", () => {
     );
 
     expect(screen.queryByText(/panel-title/)).toBeNull();
+  });
+
+  it("groups compact metadata with its section title", () => {
+    render(
+      <FramedPanel meta={<span>Markers 4</span>} title="Event locations">
+        <p>Map</p>
+      </FramedPanel>,
+    );
+
+    const heading = screen.getByText("Event locations").closest(".panel-heading");
+    expect(heading).not.toBeNull();
+    expect(within(heading!).getByText("Markers 4").closest(".panel-meta")).not.toBeNull();
   });
 });
 

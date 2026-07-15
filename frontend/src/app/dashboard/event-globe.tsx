@@ -1,11 +1,17 @@
 "use client";
 
-import { WorldMap, type EventPinFeatureCollection } from "@/components/world-map";
+import {
+  WorldMap,
+  type EventPinFeatureCollection,
+  type MapProjectionMode,
+} from "@/components/world-map";
 import type { EventRead, LocationRead } from "@/lib/events-api";
 
 type EventGlobeProps = {
   events: EventRead[];
+  onProjectionModeChange?: (mode: MapProjectionMode) => void;
   onSelect: (event: EventRead) => void;
+  selectedEventId?: string;
 };
 
 function locationLabel(location: LocationRead): string {
@@ -32,17 +38,23 @@ export function eventLocationsToFeatureCollection(events: EventRead[]): EventPin
   };
 }
 
-export function EventGlobe({ events, onSelect }: EventGlobeProps) {
+export function EventGlobe({
+  events,
+  onProjectionModeChange,
+  onSelect,
+  selectedEventId,
+}: EventGlobeProps) {
   const pins = eventLocationsToFeatureCollection(events);
 
-  return <>
-    <p aria-live="polite" className="map-marker-count">Map markers: {pins.features.length}</p>
+  return (
     <WorldMap
       geojson={pins}
+      onProjectionModeChange={onProjectionModeChange}
       onFeatureSelect={(eventId) => {
         const event = events.find((candidate) => candidate.id === eventId);
         if (event) onSelect(event);
       }}
+      selectedEventId={selectedEventId}
     />
-  </>;
+  );
 }

@@ -5,6 +5,10 @@ type DashboardSummaryProps = {
   events: EventRead[];
 };
 
+type DashboardSummaryContentProps = DashboardSummaryProps & {
+  markerCount: number;
+};
+
 function approvedInLastSevenDays(approvedAt: string | null | undefined): boolean {
   if (!approvedAt) return false;
   const approvedDate = new Date(approvedAt);
@@ -38,11 +42,23 @@ export function DashboardSummary({ events }: DashboardSummaryProps) {
         <div><dt>Incomplete location</dt><dd>{value.incomplete_location_count}</dd></div>
       </dl>
       <div className="dashboard-type-distribution">
-        <h2>Distribution by type</h2>
+        <h3>Distribution by type</h3>
         {value.by_event_type.length ? (
           <ul>{value.by_event_type.map(({ name, count }) => <li key={name}>{name}: {count}</li>)}</ul>
         ) : <p>No event types in this result.</p>}
       </div>
     </FramedPanel>
+  );
+}
+
+export function DashboardSummaryContent({ events, markerCount }: DashboardSummaryContentProps) {
+  const value = summarizeDashboardEvents(events);
+
+  return (
+    <dl className="dashboard-summary-metrics dashboard-summary-metrics--compact">
+      <div><dt>Total events</dt><dd>{value.total_events}</dd></div>
+      <div><dt>New in last 7 days</dt><dd>{value.new_events}</dd></div>
+      <div><dt>Mapped locations</dt><dd>{markerCount}</dd></div>
+    </dl>
   );
 }

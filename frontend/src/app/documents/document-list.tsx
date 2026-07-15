@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { ProcessingStatusBadge } from "@/app/documents/processing-status-badge";
 import { FramedPanel } from "@/components/framed-panel";
 import { attachmentFileUrl, type Document } from "@/lib/documents-api";
@@ -32,7 +34,7 @@ export function DocumentList({
   const selectedCount = selectedIds.size;
 
   return (
-    <FramedPanel title="Document queue">
+    <FramedPanel meta={`${documents.length} total`} title="Document queue">
       <div className="batch-actions">
         <button
           className="btn btn-primary"
@@ -50,7 +52,7 @@ export function DocumentList({
       ) : (
       <ul className="document-list">
         {documents.map((document) => (
-          <li className="document-row" key={document.id}>
+          <li className="document-row" data-motion-item="document-row" key={document.id}>
             <input
               aria-label={`Select ${document.title}`}
               checked={selectedIds.has(document.id)}
@@ -59,7 +61,7 @@ export function DocumentList({
             />
             <div className="document-row-main">
               <span className="document-title">{document.title}</span>
-              <span className="document-meta">{document.document_date}</span>
+              <span className="document-meta">Dated {document.document_date} · {document.attachments.length} attachment{document.attachments.length === 1 ? "" : "s"}</span>
               {document.processing_status === "failed" && document.processing_error && (
                 <span className="document-error">{document.processing_error}</span>
               )}
@@ -67,10 +69,17 @@ export function DocumentList({
                 (onUploadAttachment && EDITABLE_STATUSES.has(document.processing_status))) && (
                 <div className="attachment-list">
                   {document.attachments.map((attachment) => (
-                    <div className="attachment-thumb" key={attachment.id}>
-                      <img
+                    <div
+                      className="attachment-thumb"
+                      data-motion-item="attachment"
+                      key={attachment.id}
+                    >
+                      <Image
                         alt={attachment.original_name}
+                        fill
+                        sizes="60px"
                         src={attachmentFileUrl(document.id, attachment.id)}
+                        unoptimized
                       />
                       {onDeleteAttachment && EDITABLE_STATUSES.has(document.processing_status) && (
                         <button

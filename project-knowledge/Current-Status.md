@@ -10,16 +10,49 @@ status: active
 
 ## Current focus
 
-Every Roadmap item across all five phases is complete. The deferred aesthetic design pass
-described in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) is underway: the audit
-half is recorded in the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md), and its four
-priority usability defects are now fixed. The next continuation point is the remaining polish
-half of the pass — starting with item 5 ("Compress the shared filter block" so the Dashboard
-globe and summary are visible without scrolling) and the runners-up listed in the audit. The
-earlier design-pass git worktree was a false start (the prior session actually worked directly in
-this checkout instead) and has been removed; there is currently only one working directory.
+The approved [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)
+is implemented, verified, and ready for the owner's desktop review. The Dashboard now makes the
+globe dominant while keeping a small number of controlled 3D instruments at its edge; the other
+four screens use restrained workflow motion. The target remains the owner's `1920 × 1080` display at
+`100%` Windows scale, with phone/mobile explicitly unsupported. No Roadmap phase or milestone changed.
 
 ## Recent progress
+
+- Completed all five checkpoints in the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md).
+  The final isolated workbench contained 9 documents, 6 approved events, 2 drafts, 1 rejected
+  event, 8 mapped locations, 1 pending duplicate, and 2 attachments. Real-browser checks covered
+  all five populated screens, Dashboard at `1920 × 930` and `1920 × 900`, normal and reduced-motion
+  behavior, and the full interaction set. Final verification passed: 120 frontend tests in 25
+  files, lint, production build, `git diff --check`, and Project Knowledge validation. The
+  isolated Docker volume, stub, frontend process, QA browsers, and temporary artifacts were removed.
+
+- Wrote and self-reviewed the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md)
+  as five locally committed checkpoints. It uses focused tests and one commit per checkpoint to
+  keep progress observable and credit use controlled. An isolated nine-document workbench is
+  populated through the real LM Studio extraction flow before Dashboard layout work begins, then
+  remains available for visual judgment through the final `1920 × 930`/`1920 × 900` browser pass;
+  the owner's normal database is never mounted or changed.
+
+- Completed the motion-design session and high-fidelity comparison. The owner initially chose the
+  Orbital HUD, found its rendered cockpit-like density excessive, and approved the calmer Layered
+  Command Deck: a viewport-height Dashboard with a 65–70% globe; a three-metric Situation Summary
+  at the far left; three-row Recent Signals at the far right; one slim Event Register/Filters dock;
+  three subtle CSS 3D depth planes with only 3–5° tilt; limited parallax and connector emphasis;
+  lighter motion on Documents, Event Review, Events, and Settings; reduced-motion behavior; and
+  browser QA at `1920 × 930` plus `1920 × 900`. The refinement stays within the pure-black/amber
+  mission-brief language and adds no phone/mobile target.
+
+- Completed the implementation half of the deferred aesthetic pass across Dashboard, Documents,
+  Event Review, Events, and Settings. Added one shared page-header pattern and permanent status
+  bar; compressed the shared Dashboard/Events filter into search plus expandable advanced
+  controls; brightened muted text; tightened hierarchy, spacing, and action grouping; and polished
+  populated tables, facts, attachments, duplicate review, and real globe pins without introducing
+  a second styling system. Created an isolated realistic sample database with nine documents and
+  mixed event types, epistemic/review states, dates, locations, duplicate states, and attachments,
+  then inspected every changed screen in a real desktop browser. Verified 100 frontend tests
+  across 22 files, clean lint, and a successful production build.
 
 - Fixed the four prioritized usability defects from the
   [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): replaced the internal "Phase 2" /
@@ -273,15 +306,8 @@ this checkout instead) and has been removed; there is currently only one working
 
 ## Next actions
 
-- Implement the design pass from the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md),
-  in the prepared `design-pass` worktree, keeping the pure-black/amber mission-brief system.
-  Order of work per the audit's "Prioritized top 5": first the four usability defects (remove
-  the "PHASE 2"/"PHASE 3" labels, fix the Event Review dead-end empty state, split the
-  misleading "No events match these filters" message into no-data vs. filtered-out cases, and
-  make the Documents queue panel legible with visible disabled buttons), then the polish items,
-  led by compressing the shared Dashboard/Events filter block. During that work, capture the
-  populated views with sample data — the audit only saw empty states — and extend the audit
-  findings if the populated views surface new issues.
+- Review the completed desktop experience at the target resolution. The local branch is committed
+  and deliberately not pushed; merge or push only with owner direction.
 
 ## Related knowledge
 
@@ -294,3 +320,4 @@ this checkout instead) and has been removed; there is currently only one working
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
 - [Visual Design Direction](decisions/Visual-Design-Direction.md)
 - [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md)
+- [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)

@@ -40,4 +40,13 @@ describe("Navigation", () => {
       "page",
     );
   });
+
+  it("shows the locked two-digit navigation sequence without changing link names", () => {
+    render(<Navigation currentPath="/dashboard" />);
+
+    ["01", "02", "03", "04", "05"].forEach((number) => {
+      expect(screen.getByText(number)).toHaveAttribute("aria-hidden", "true");
+    });
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeVisible();
+  });
 });

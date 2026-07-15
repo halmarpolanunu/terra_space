@@ -4,20 +4,32 @@ import { describe, expect, it } from "vitest";
 import { ServiceStatus } from "@/components/service-status";
 
 describe("ServiceStatus", () => {
-  it("explains how to recover when LM Studio is offline", () => {
+  it("shows labeled offline and missing states without relying on color alone", () => {
     render(
       <ServiceStatus
         health={{ app: "available", storage: "available", map: "missing", lm_studio: "offline" }}
       />,
     );
 
-    expect(screen.getByText("LM Studio is offline. Check Settings and try again.")).toBeVisible();
-    expect(screen.getByText("Map package is not installed.")).toBeVisible();
+    expect(screen.getByText("LM Studio", { exact: true })).toBeVisible();
+    expect(screen.getByText("Offline", { exact: true })).toBeVisible();
+    expect(screen.getByText("Map missing", { exact: true })).toBeVisible();
   });
 
   it("reports an unreachable backend in words", () => {
     render(<ServiceStatus error="Terra Space backend is unavailable." />);
 
-    expect(screen.getByText("Terra Space backend is unavailable.")).toBeVisible();
+    expect(screen.getByText("Backend unavailable", { exact: true })).toBeVisible();
+  });
+
+  it("does not report an LM Studio health-check error as online", () => {
+    render(
+      <ServiceStatus
+        health={{ app: "available", storage: "available", map: "available", lm_studio: "error" }}
+      />,
+    );
+
+    expect(screen.getByText("Error", { exact: true })).toBeVisible();
+    expect(screen.queryByText("Online", { exact: true })).not.toBeInTheDocument();
   });
 });

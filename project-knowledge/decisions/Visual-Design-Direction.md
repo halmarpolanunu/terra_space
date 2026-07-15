@@ -40,7 +40,8 @@ No light mode in the MVP. Background is always pure black.
 - Base background `#000000`; panel surface `#080b0d`; insets/fields `#0a0f12` / `#0c1215`.
 - Borders: subtle `#182127`, bright `#2b3a41`.
 - Primary accent — **amber `#f2a93b`** (brand, active state, primary actions, corner brackets).
-- Text `#cdd7dc`; muted `#5f6d75`; dim `#39454b`.
+- Text `#cdd7dc`; muted `#7b8990`; dim `#39454b`. The muted token is intentionally bright
+  enough for small labels and supporting copy on black while remaining secondary to body text.
 - Epistemic status colors (always shown with a text label, never color alone):
   Confirmed = green `#3dd68c`, Claim = amber `#f2a93b`, Rumor = blue `#54b8ef`, Denied = red `#e5544b`.
 
@@ -64,7 +65,7 @@ No light mode in the MVP. Background is always pure black.
   micro variant is wired into the app, recolored from the kit's own gold (`#DFA750`) to this
   decision's amber (`#f2a93b`) so the logo matches every other accent-colored element instead of
   introducing a second gold. The recolored working copy lives at
-  `frontend/public/brand/terraspace-micro-dark.svg`, reused for both the navigation rail brand
+  `frontend/public/brand/terraspace-micro-dark.svg`, reused for both the top status bar brand
   row and the browser favicon (`frontend/src/app/icon.svg`, which adds a black backdrop for tab
   visibility). The wordmark itself is **not** the kit's baked-in vector text: the kit's `A`
   glyph renders as two mismatched hairline slivers with no crossbar (a font-to-path conversion
@@ -91,15 +92,24 @@ No light mode in the MVP. Background is always pure black.
 
 ## Motion
 
-- **Keep (calm):** globe auto-rotation, gentle pin pulses, slow flowing arc dashes, a slow
-  muted activity ticker.
+- The motion identity is **controlled cinematic**: deliberate staging, spatial continuity, and
+  real depth around the Dashboard globe, without turning routine workflows into spectacle.
+- **Dashboard signature:** the globe resolves first; three restrained HUD layers enter on
+  distinct Z planes; small pointer parallax communicates their depth; a focused instrument
+  advances toward the user while its related pin/connector receives amber emphasis.
+- **Keep (ambient):** globe auto-rotation, gentle pin pulses, slow flowing arc dashes, and a slow
+  muted activity ticker. Ambient motion yields when the user interacts.
+- **Other screens:** use lighter page/panel entrances and direct state transitions. On the dense
+  Event Review screen, motion remains essentially off except for short directional transitions
+  between events and explicit state changes.
 - **Remove (too much):** scanlines, vignette flicker, blinking elements, heavy glow bloom,
-  fast/aggressive animation.
-- **On dense reading/decision screens (Event Review) motion is essentially off** — mood comes
-  from borders, color, and type, not movement.
+  bounce, and fast/aggressive animation.
 
 ## Layout rules
 
+- **Desktop browser only:** Terra Space is not a phone/mobile product. Desktop and laptop widths
+  may reflow when the browser is resized, but phone presentation is not a supported surface or
+  acceptance target.
 - **Full-width alignment:** the top status bar, sub-bars, and content panels span the same
   width with consistent page padding — no narrow centered content in wide black gutters.
 - **Group, don't stretch:** related controls cluster with thin dividers instead of being
@@ -107,8 +117,13 @@ No light mode in the MVP. Background is always pure black.
 
 ## Validated screens
 
-- **Dashboard:** status bar → 3 columns (nav rail | globe centerpiece | Recent Intake list).
-  The old summary stat tiles were removed as low-value; the Recent Intake list expands instead.
+- **Dashboard:** locked status bar and navigation rail → one viewport-height **Layered Command
+  Deck** stage. The MapLibre globe occupies roughly 65–70% of the stage and remains unobstructed
+  at its center; a compact three-metric Situation Summary and three-row Recent Signals instrument
+  float on subtle CSS 3D depth planes at the outer edges; the Event Register and Filters control
+  rest in a slim bottom dock. Selecting an instrument moves it forward and enlarges it while the
+  globe stays visible. The approved specification is
+  [Layered Command Deck and Motion Design](../plans/2026-07-15-layered-command-deck-motion-design.md).
 - **Event Review:** status bar → tight clustered review bar
   (`Event Review │ Document X of Y │ progress Event N of M │ Prev · Skip · Next`) → 2 columns
   (source document | one focused event). Left panel highlights only the current event's source
@@ -120,7 +135,9 @@ No light mode in the MVP. Background is always pure black.
 - **Focused & calm** (Linear/Notion-style) and **warm editorial** moods — rejected; the owner
   chose the mission-brief tactical direction.
 - **Full cinematic/aggressive** treatment (CLASSIFIED banner, scanlines, vignette, blinking
-  alerts, heavy glow) — rejected as too much for daily, hours-long use.
+  alerts, heavy glow) — still rejected as too much for daily, hours-long use. This does not
+  exclude the later-approved controlled-cinematic Layered Command Deck, which creates drama
+  through restrained depth, staging, and parallax instead of visual noise.
 - **Flat 2D tactical map** — rejected in favor of a 3D globe (kept only as fallback).
 - **All extracted events shown at once** in Event Review — rejected as overwhelming; replaced
   with one-event-at-a-time review.
@@ -131,7 +148,8 @@ No light mode in the MVP. Background is always pure black.
 
 - The tactical intelligence look matches the product's job (who/what/where/when + certainty)
   and is the direction the owner chose.
-- Dialing energy back and keeping motion calm supports long working sessions without fatigue.
+- Concentrating stronger motion on the Dashboard hero while keeping reading/decision screens
+  restrained supports long working sessions without making the interface feel static.
 - One-thing-at-a-time directly resolved the owner's "too much to follow" feedback.
 - Serif source documents vs mono/sans chrome keeps "the source" and "the system" distinct.
 - A 3D globe is achievable on the existing offline tiles, so it adds no data dependency.
@@ -142,11 +160,14 @@ No light mode in the MVP. Background is always pure black.
 - Accessibility must be verified: amber-on-black and each status color must meet comfortable
   contrast at the sizes used, and color is never the only signal (status, nav, and actions all
   carry text labels) — this preserves the keyboard-accessible, label-readable constraint.
-- Still to settle during implementation planning: exact type/spacing scales and border-radius
-  tokens; whether/when to add a Dashboard "Action Queue" summary strip; and the specific
-  layouts of the remaining screens (Documents, Events, Settings), which inherit this system.
-- The visual-design checkpoint is closed; the next continuation point moves to the detailed
-  document/event data model before Phase 2 implementation.
+- The completed aesthetic pass settles the shared page header, permanent status bar, compact
+  filter behavior, type/spacing rhythm, and the desktop layouts for Dashboard, Documents, Event
+  Review, Events, and Settings. Future work should extend these patterns instead of creating a
+  parallel styling system.
+- The post-pass Layered Command Deck refinement targets the owner's `1920 × 1080` display at
+  `100%` Windows scale, using `1920 × 930` as the primary maximized-browser viewport. It remains
+  desktop-only.
+- The visual-design checkpoint and deferred aesthetic implementation pass are closed.
 
 # Navigation
 

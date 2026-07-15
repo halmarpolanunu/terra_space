@@ -23,6 +23,18 @@ describe("EventTypeSettings", () => {
 
     expect(screen.getByText("Active")).toBeVisible();
     expect(screen.getByText("Suggested")).toBeVisible();
+    expect(screen.getByLabelText("Rename Protest").closest("li")).toHaveAttribute(
+      "data-motion-item",
+      "event-type-row",
+    );
+  });
+
+  it("orients the user when no event types exist", () => {
+    render(<EventTypeSettings eventTypes={[]} />);
+
+    expect(screen.getByText(/no event types yet/i)).toBeVisible();
+    expect(screen.getByText(/types suggested by the AI/i)).toBeVisible();
+    expect(screen.getByLabelText(/new event type/i)).toBeVisible();
   });
 
   it("adds a new event type", async () => {
@@ -57,7 +69,7 @@ describe("EventTypeSettings", () => {
     render(<EventTypeSettings eventTypes={TYPES} />);
 
     fireEvent.change(screen.getByLabelText("Rename Skirmish"), { target: { value: "Armed clash" } });
-    fireEvent.click(screen.getByRole("button", { name: "Rename Skirmish" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save name for Skirmish" }));
 
     await waitFor(() =>
       expect(settingsApi.updateEventType).toHaveBeenCalledWith("type-suggested", { name: "Armed clash" }),

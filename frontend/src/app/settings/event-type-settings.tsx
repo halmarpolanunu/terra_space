@@ -72,9 +72,30 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
         already use a type. A type can be deleted only when no event uses it.
       </p>
 
+      <div className="settings-add-type">
+        <div className="field">
+          <label htmlFor="new-event-type">New event type</label>
+          <input
+            id="new-event-type"
+            onChange={(event) => setNewName(event.target.value)}
+            placeholder="e.g. Border movement"
+            value={newName}
+          />
+        </div>
+        <button className="btn btn-primary" onClick={add} type="button">
+          Add event type
+        </button>
+      </div>
+
+      {types.length === 0 ? (
+        <div className="event-empty-state event-type-empty-state">
+          <p>No event types yet — add one above.</p>
+          <p>Types suggested by the AI will also appear here for activation.</p>
+        </div>
+      ) : (
       <ul className="event-type-list">
         {types.map((type) => (
-          <li className="event-type-row" key={type.id}>
+          <li className="event-type-row" data-motion-item="event-type-row" key={type.id}>
             <input
               aria-label={`Rename ${type.name}`}
               defaultValue={type.name}
@@ -87,8 +108,8 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
               label={type.is_active ? "Active" : "Suggested"}
               value={type.is_active ? "active" : "suggested"}
             />
-            <button className="btn" onClick={() => rename(type)} type="button">
-              {`Rename ${type.name}`}
+            <button aria-label={`Save name for ${type.name}`} className="btn" onClick={() => rename(type)} type="button">
+              Save name
             </button>
             <label className="event-type-toggle">
               <input
@@ -101,32 +122,20 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
             </label>
             {!type.in_use && (
               <button
+                aria-label={`Delete ${type.name}`}
                 className="btn btn-destructive"
                 onClick={() => remove(type)}
                 type="button"
               >
-                {`Delete ${type.name}`}
+                Delete
               </button>
             )}
           </li>
         ))}
       </ul>
+      )}
 
       {error && <p className="document-error">{error}</p>}
-
-      <div className="settings-add-type">
-        <div className="field">
-          <label htmlFor="new-event-type">New event type</label>
-          <input
-            id="new-event-type"
-            onChange={(event) => setNewName(event.target.value)}
-            value={newName}
-          />
-        </div>
-        <button className="btn btn-primary" onClick={add} type="button">
-          Add event type
-        </button>
-      </div>
     </FramedPanel>
   );
 }

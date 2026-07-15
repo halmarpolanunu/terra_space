@@ -10,6 +10,7 @@ import { ReviewBar } from "@/app/event-review/review-bar";
 import { SourcePanel } from "@/app/event-review/source-panel";
 import { AppShell } from "@/components/app-shell";
 import { FramedPanel } from "@/components/framed-panel";
+import { PageHeader } from "@/components/page-header";
 import type { Document } from "@/lib/documents-api";
 import { listDocuments } from "@/lib/documents-api";
 import type {
@@ -38,8 +39,10 @@ export default function EventReviewPage() {
   const [documentIndex, setDocumentIndex] = useState(0);
   const [events, setEvents] = useState<EventRead[]>([]);
   const [eventIndex, setEventIndex] = useState(0);
+  const [eventsDocumentId, setEventsDocumentId] = useState<string | null>(null);
   const [eventTypeOptions, setEventTypeOptions] = useState<EventTypeRead[]>([]);
   const [actorOptions, setActorOptions] = useState<ActorRead[]>([]);
+  const [motionDirection, setMotionDirection] = useState<"next" | "previous">("next");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addingEvent, setAddingEvent] = useState(false);
@@ -58,20 +61,29 @@ export default function EventReviewPage() {
   }, []);
 
   const currentDocument = documents[documentIndex];
+  const currentDocumentId = currentDocument?.id ?? null;
 
   useEffect(() => {
-    if (!currentDocument) {
+    if (!currentDocumentId) {
       return;
     }
-    listEventsForDocument(currentDocument.id)
+    let active = true;
+    listEventsForDocument(currentDocumentId)
       .then((allEvents) => {
+        if (!active) return;
         setEvents(allEvents.filter((event) => event.review_status === "draft"));
         setEventIndex(0);
+        setEventsDocumentId(currentDocumentId);
       })
-      .catch((err: Error) => setError(err.message));
-  }, [currentDocument]);
+      .catch((err: Error) => {
+        if (active) setError(err.message);
+      });
+    return () => { active = false; };
+  }, [currentDocumentId]);
 
-  const currentEvent = events[eventIndex];
+  const eventsLoading = Boolean(currentDocumentId && eventsDocumentId !== currentDocumentId);
+  const reviewEvents = eventsLoading ? [] : events;
+  const currentEvent = reviewEvents[eventIndex];
 
   useEffect(() => {
     const pendingFlags =
@@ -93,6 +105,7 @@ export default function EventReviewPage() {
   }, [currentEvent]);
 
   function goPrev() {
+    setMotionDirection("previous");
     if (eventIndex > 0) {
       setEventIndex((index) => index - 1);
     } else if (documentIndex > 0) {
@@ -101,6 +114,7 @@ export default function EventReviewPage() {
   }
 
   function goNext() {
+    setMotionDirection("next");
     if (eventIndex < events.length - 1) {
       setEventIndex((index) => index + 1);
     } else if (documentIndex < documents.length - 1) {
@@ -211,10 +225,13 @@ export default function EventReviewPage() {
 
   return (
     <AppShell currentPath="/event-review">
-      <div>
-        <p className="eyebrow">Extraction queue</p>
-        <h1>Event Review</h1>
-      </div>
+      <section aria-labelledby="event-review-title" className="event-review-page">
+      <PageHeader
+        description="Review extracted events against their source evidence, one decision at a time."
+        eyebrow="Extraction queue"
+        title="Event Review"
+        titleId="event-review-title"
+      />
       {error && <p role="alert">{error}</p>}
       {loading ? (
         <p>Loading review queue…</p>
@@ -231,11 +248,11 @@ export default function EventReviewPage() {
       ) : (
         <>
           <ReviewBar
-            canNext={documentIndex < documents.length - 1 || eventIndex < events.length - 1}
+            canNext={documentIndex < documents.length - 1 || eventIndex < reviewEvents.length - 1}
             canPrev={documentIndex > 0 || eventIndex > 0}
             documentCount={documents.length}
             documentIndex={documentIndex}
-            eventCount={events.length}
+            eventCount={reviewEvents.length}
             eventIndex={eventIndex}
             onNext={goNext}
             onPrev={goPrev}
@@ -261,7 +278,11 @@ export default function EventReviewPage() {
               onSubmit={handleAddEvent}
             />
           )}
-          <div className="event-review-columns">
+          <div
+            className="event-review-columns event-review-transition"
+            data-motion-direction={motionDirection}
+            key={`${currentDocument?.id ?? "none"}:${currentEvent?.id ?? "none"}`}
+          >
             {currentDocument && (
               <SourcePanel
                 content={currentDocument.content}
@@ -280,9 +301,9 @@ export default function EventReviewPage() {
                 onSave={handleSave}
               />
             ) : (
-              <div className="panel">
-                <p className="panel-title">Event</p>
-                <p>No draft events for this document.</p>
+              <div className="panel review-event-card">
+                <div className="panel-heading"><h2 className="panel-title">Event</h2></div>
+                <p>{eventsLoading ? "Loading extracted events…" : "No draft events for this document."}</p>
               </div>
             )}
           </div>
@@ -295,6 +316,7 @@ export default function EventReviewPage() {
           )}
         </>
       )}
+      </section>
     </AppShell>
   );
 }

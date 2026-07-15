@@ -49,34 +49,40 @@ export function DocumentForm({
   }
 
   return (
-    <form className="panel" onSubmit={handleSubmit}>
-      <p className="panel-title">Document</p>
+    <form className="panel document-form" onSubmit={handleSubmit}>
+      <div className="panel-heading">
+        <h2 className="panel-title">{initialValues ? "Edit document" : "New document"}</h2>
+        <span className="panel-meta">Required fields marked</span>
+      </div>
       <div className="field">
-        <label htmlFor="document-title">Title</label>
+        <label htmlFor="document-title">Title *</label>
         <input
           id="document-title"
           onChange={(event) => setValues((prev) => ({ ...prev, title: event.target.value }))}
+          required
           type="text"
           value={values.title}
         />
       </div>
       <div className="field">
-        <label htmlFor="document-content">Content</label>
+        <label htmlFor="document-content">Content *</label>
         <textarea
           className="serif"
           id="document-content"
           onChange={(event) => setValues((prev) => ({ ...prev, content: event.target.value }))}
+          required
           value={values.content}
         />
       </div>
       <div className="field-row">
         <div className="field">
-          <label htmlFor="document-date">Document date</label>
+          <label htmlFor="document-date">Document date *</label>
           <input
             id="document-date"
             onChange={(event) =>
               setValues((prev) => ({ ...prev, document_date: event.target.value }))
             }
+            required
             type="date"
             value={values.document_date}
           />

@@ -8,6 +8,74 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Layered Command Deck verification completed
+
+- Completed all five checkpoints in the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md).
+  The final isolated browser workbench passed its contract with 9 documents, 6 approved events,
+  2 drafts, 1 rejected event, 8 mapped locations, 1 pending duplicate, and 2 attachments.
+- Inspected Dashboard at `1920 × 930` and `1920 × 900`, plus populated Documents, Event Review,
+  Events, and Settings states in a real browser. Also confirmed reduced-motion behavior disables
+  parallax and continuous animation while leaving controls operational.
+- Reproduced and fixed two final integration defects test-first: Event Review could briefly pair a
+  newly selected source document with a stale event, and the Dashboard filter drawer required a
+  second click to reveal the shared controls. The new final verification passed: 120 frontend tests
+  across 25 files, lint, production build, and a clean `git diff --check`. The isolated Docker
+  data, local stub, QA frontend, browser sessions, and temporary artifacts were removed without
+  touching the owner's normal database. No Roadmap phase or milestone changed.
+
+## 2026-07-15 - Layered Command Deck implementation checkpointed
+
+- Added the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md)
+  after the owner authorized execution. Work is split into five observable checkpoints with
+  focused tests and local commits; full tests, lint, build, and acceptance QA remain concentrated
+  in the final checkpoint to limit unnecessary repetition.
+- Corrected the implementation sequence during self-review so an isolated, realistic database is
+  populated through the real document-extraction workflow before Dashboard layout work begins,
+  rather than waiting until final QA. That workbench covers populated review cards, tables, facts,
+  attachments, duplicate state, real globe pins, and mixed epistemic/review states without
+  touching the owner's normal data.
+
+## 2026-07-15 - Layered Command Deck and controlled-cinematic motion approved
+
+- The owner compared three 3D Dashboard alternatives, initially selected Orbital HUD, then found
+  its high-fidelity cockpit-like preview too elaborate and approved the calmer **Layered Command
+  Deck** in the final [motion design](plans/2026-07-15-layered-command-deck-motion-design.md). The
+  MapLibre globe becomes the dominant viewport-height hero; a small Situation Summary and Recent
+  Signals panel occupy subtle edge depth planes; Event Register and Filters share one slim bottom
+  dock. Compact instruments advance when focused without covering the globe's center.
+- Refined the [Visual Design Direction](decisions/Visual-Design-Direction.md) from broadly calm
+  motion to **controlled cinematic**: globe-first staging and restrained 3D depth on the Dashboard,
+  lighter motion on Documents/Events/Settings, and almost no ambient motion on evidence-heavy
+  Event Review. Scanlines, blinking, bounce, flicker, and aggressive bloom remain rejected.
+- Fixed the acceptance environment to the owner's `1920 × 1080` display at `100%` Windows scale,
+  with `1920 × 930` as the primary maximized-browser viewport and `1920 × 900` as the short-height
+  check. Terra Space remains desktop-only; no Roadmap phase or milestone changed.
+
+## 2026-07-15 - Deferred aesthetic design pass implemented
+
+- Completed every open finding in the
+  [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): one shared header pattern across all
+  five screens, the locked permanent status bar, a brighter muted-text token, the compact shared
+  Dashboard/Events filter, and the remaining Dashboard, Documents, Event Review, Events, and
+  Settings polish. Existing shared components and CSS classes remain the visual foundation; no
+  parallel design system was introduced.
+- Filled the audit's empty-database gap with an isolated sample database containing nine realistic
+  documents and events spanning multiple event types, epistemic statuses, approval states,
+  dates, locations, duplicate decisions, and image attachments. Inspected all five populated
+  screens in a real desktop browser, including source evidence, one-at-a-time review, duplicate
+  comparison, event facts, attachment thumbnails, the approved-events table, and glowing globe
+  pins. The owner's normal database was not changed.
+- Recorded the owner's explicit product boundary in the
+  [Visual Design Direction](decisions/Visual-Design-Direction.md): Terra Space is a desktop
+  browser application only, and phone/mobile presentation is not supported or an acceptance
+  target. Also updated the muted token to `#7b8990` and brought the documented Dashboard layout
+  in line with the completed implementation. No Roadmap phase or milestone changed.
+- Verified 100 frontend tests across 22 files, clean lint with the earlier dynamic-thumbnail
+  warning removed by using Next Image, and a successful production build. Project Knowledge
+  validation passed with 0 errors and 0 warnings.
+
 ## 2026-07-15 - Fixed the design pass audit's four priority usability defects
 
 - Fixed all four prioritized usability defects from the

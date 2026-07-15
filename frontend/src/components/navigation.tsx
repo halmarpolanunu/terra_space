@@ -14,14 +14,17 @@ export function Navigation({ currentPath }: NavigationProps) {
   return (
     <nav aria-label="Primary navigation">
       <ul className="nav-list">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map((item, index) => (
           <li key={item.href}>
             <Link
               aria-current={currentPath === item.href ? "page" : undefined}
               className="nav-link"
               href={item.href}
             >
-              {item.label}
+              <span aria-hidden="true" className="nav-index">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span>{item.label}</span>
             </Link>
           </li>
         ))}

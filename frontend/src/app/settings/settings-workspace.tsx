@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
-import { ServiceStatusPanel } from "@/components/service-status";
+import { PageHeader } from "@/components/page-header";
 import { EventTypeSettings } from "@/app/settings/event-type-settings";
 import { LmStudioSettings } from "@/app/settings/lm-studio-settings";
 import { listEventTypes, type EventTypeRead } from "@/lib/events-api";
@@ -36,13 +36,16 @@ export function SettingsWorkspace() {
   return (
     <AppShell currentPath="/settings">
       <section aria-labelledby="settings-title" className="settings-page">
-        <p className="eyebrow">Local configuration</p>
-        <h1 id="settings-title">Settings</h1>
+        <PageHeader
+          description="Configure local processing and manage the event types used across Terra Space."
+          eyebrow="Local configuration"
+          title="Settings"
+          titleId="settings-title"
+        />
         {error && <p className="document-error">{error}</p>}
         {!loaded && !error && <p>Loading settings…</p>}
         {loaded && (
           <div className="settings-grid">
-            <ServiceStatusPanel />
             <LmStudioSettings onSaved={setSettings} settings={settings} />
             <EventTypeSettings eventTypes={eventTypes} />
           </div>

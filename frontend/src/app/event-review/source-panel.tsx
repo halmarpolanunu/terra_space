@@ -27,7 +27,7 @@ export function SourcePanel({ content, evidenceQuote }: SourcePanelProps) {
 
   if (!match) {
     return (
-      <FramedPanel title="Source Document">
+      <FramedPanel className="review-source-panel" title="Source Document">
         <p className="source-document">{content}</p>
       </FramedPanel>
     );
@@ -37,7 +37,7 @@ export function SourcePanel({ content, evidenceQuote }: SourcePanelProps) {
   const end = start + match[0].length;
 
   return (
-    <FramedPanel title="Source Document">
+    <FramedPanel className="review-source-panel" title="Source Document">
       <p className="source-document">
         {content.slice(0, start)}
         <mark className="evidence-highlight">{content.slice(start, end)}</mark>

@@ -8,7 +8,9 @@ import { EventDetail } from "@/app/events/event-detail";
 import { EventEditor } from "@/app/events/event-editor";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
-import { emptyEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
+import { FramedPanel } from "@/components/framed-panel";
+import { PageHeader } from "@/components/page-header";
+import { clearEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
 import { listActors, listEventTypes, listEvents, updateEvent, type EventUpdate, type ActorRead, type EventRead, type EventTypeRead } from "@/lib/events-api";
 import { listDocuments } from "@/lib/documents-api";
 
@@ -55,10 +57,19 @@ export function EventsWorkspace() {
     changeFilters({ ...filters, sort });
   }
 
+  const currentView = selectedEvent ? (editing ? "edit" : "detail") : "list";
+
   return <AppShell currentPath="/events"><section className="events-page" aria-labelledby="events-title">
-    <p className="eyebrow">Approved intelligence only</p><h1 id="events-title">Events</h1><p className="events-intro">Search and explore approved events. Sources and evidence stay read-only.</p>
+    <PageHeader
+      description="Search and explore approved events. Sources and evidence stay read-only."
+      eyebrow="Approved intelligence only"
+      title="Events"
+      titleId="events-title"
+    />
     <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
     {error && <p className="document-error">{error}</p>}
-    {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(emptyEventFilters())} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} />}
+    <div className="events-view" data-view={currentView} key={currentView}>
+      {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <FramedPanel className="events-list-panel" title="Approved event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
+    </div>
   </section></AppShell>;
 }

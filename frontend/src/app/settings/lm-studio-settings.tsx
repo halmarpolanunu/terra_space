@@ -71,7 +71,7 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
         Studio is offline; only processing needs it running.
       </p>
 
-      <div className="field">
+      <div className="settings-connection-row">
         <label htmlFor="lm-base-url">LM Studio base URL</label>
         <input
           id="lm-base-url"
@@ -81,14 +81,11 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
           }}
           value={baseUrl}
         />
-      </div>
-
-      <div className="settings-actions">
         <button className="btn" disabled={testing} onClick={runTest} type="button">
           {testing ? "Testing…" : "Test connection"}
         </button>
         {result && (
-          <span className="settings-status">
+          <span className="settings-status" data-motion-item="connection-status">
             <StatusChip
               colorVar={result.reachable ? "--status-confirmed" : "--status-denied"}
               label={result.reachable ? "Reachable" : "Offline"}
@@ -123,7 +120,11 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
         <button className="btn btn-primary" disabled={saving} onClick={save} type="button">
           {saving ? "Saving…" : "Save connection"}
         </button>
-        {saved && <span className="settings-saved" role="status">Saved.</span>}
+        {saved && (
+          <span className="settings-saved" data-motion-item="save-status" role="status">
+            Saved.
+          </span>
+        )}
       </div>
     </FramedPanel>
   );

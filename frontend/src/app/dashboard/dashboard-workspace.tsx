@@ -1,19 +1,26 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { EventDetail } from "@/app/events/event-detail";
-import { DashboardSummary } from "@/app/dashboard/dashboard-summary";
-import { EventGlobe } from "@/app/dashboard/event-globe";
+import { DashboardSummaryContent } from "@/app/dashboard/dashboard-summary";
+import { EventGlobe, eventLocationsToFeatureCollection } from "@/app/dashboard/event-globe";
+import { LayeredCommandDeck, type CommandDeckPanel } from "@/app/dashboard/layered-command-deck";
 import { AppShell } from "@/components/app-shell";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
 import { EventTimeline } from "@/components/event-timeline";
-import { FramedPanel } from "@/components/framed-panel";
-import { ServiceStatusPanel } from "@/components/service-status";
-import { emptyEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
+import {
+  ACTIVE_FILTER_KEYS,
+  EVENT_SORT_OPTIONS,
+  clearEventFilters,
+  hasActiveEventFilters,
+  parseEventFilters,
+  toEventFilterSearch,
+  type EventFilters,
+  type EventSort,
+} from "@/lib/event-filters";
 import {
   getDashboardSummary,
   listActors,
@@ -36,6 +43,8 @@ export function DashboardWorkspace() {
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
+  const [activePanel, setActivePanel] = useState<CommandDeckPanel>(null);
+  const [projectionMode, setProjectionMode] = useState<"globe" | "flat" | "unavailable">("globe");
 
   useEffect(() => {
     let active = true;
@@ -68,28 +77,86 @@ export function DashboardWorkspace() {
     changeFilters({ ...filters, sort });
   }
 
+  function selectEvent(event: EventRead) {
+    setSelectedEvent(event);
+    setActivePanel("detail");
+  }
+
   const dashboardPath = `/dashboard${search ? `?${search}` : ""}`;
   const eventsPath = `/events${search ? `?${search}` : ""}`;
+  const markerCount = eventLocationsToFeatureCollection(events).features.length;
+  const activeFilterCount = ACTIVE_FILTER_KEYS.filter((key) => Boolean(filters[key].trim())).length;
+  const sortLabel = EVENT_SORT_OPTIONS.find(([value]) => value === filters.sort)?.[1]
+    ?? EVENT_SORT_OPTIONS[0][1];
 
   return (
     <AppShell currentPath="/dashboard">
       <section aria-labelledby="dashboard-title" className="dashboard-page">
-        <div className="dashboard-heading">
-          <div><p className="eyebrow">Approved intelligence</p><h1 id="dashboard-title">Dashboard</h1></div>
-          <Link className="btn btn-primary" href={eventsPath}>Open Events</Link>
-        </div>
-        <p className="dashboard-intro">One filtered view across the summary, globe, timeline, and event list.</p>
-        <ServiceStatusPanel />
-        <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
-        {error && <p className="document-error">{error}</p>}
-        {selectedEvent ? <EventDetail event={selectedEvent} eventsPath={dashboardPath} onClose={() => setSelectedEvent(null)} /> : <>
-          <DashboardSummary events={events} />
-          <FramedPanel className="dashboard-globe-panel" title="Event locations"><EventGlobe events={events} onSelect={setSelectedEvent} /></FramedPanel>
-          <div className="dashboard-lower-grid">
-            <FramedPanel title="Timeline"><EventTimeline events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(emptyEventFilters())} sort={filters.sort} /></FramedPanel>
-            <FramedPanel title="Filtered events"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(emptyEventFilters())} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>
-          </div>
-        </>}
+        <LayeredCommandDeck
+          activeFilterCount={activeFilterCount}
+          activePanel={activePanel}
+          detail={selectedEvent ? (
+            <EventDetail
+              event={selectedEvent}
+              eventsPath={dashboardPath}
+              onClose={() => {
+                setSelectedEvent(null);
+                setActivePanel(null);
+              }}
+            />
+          ) : undefined}
+          eventCount={events.length}
+          eventsHref={eventsPath}
+          eyebrow="Approved intelligence"
+          filters={(
+            <EventFilterBar
+              actorOptions={actors}
+              documentOptions={documents}
+              eventTypeOptions={eventTypes}
+              initiallyExpanded
+              onChange={changeFilters}
+              value={filters}
+            />
+          )}
+          globe={(
+            <>
+              {error && <p className="document-error command-deck-error">{error}</p>}
+              <EventGlobe
+                events={events}
+                onProjectionModeChange={setProjectionMode}
+                onSelect={selectEvent}
+                selectedEventId={selectedEvent?.id}
+              />
+            </>
+          )}
+          markerCount={markerCount}
+          onActivePanelChange={setActivePanel}
+          parallaxEnabled={projectionMode === "globe"}
+          register={(
+            <EventList
+              events={events}
+              hasActiveFilters={hasActiveEventFilters(filters)}
+              onClearFilters={() => changeFilters(clearEventFilters(filters))}
+              onSelect={selectEvent}
+              onSortChange={changeSort}
+              sort={filters.sort}
+            />
+          )}
+          signals={(
+            <EventTimeline
+              events={events}
+              hasActiveFilters={hasActiveEventFilters(filters)}
+              limit={3}
+              onClearFilters={() => changeFilters(clearEventFilters(filters))}
+              onSelect={selectEvent}
+              sort={filters.sort}
+            />
+          )}
+          sortLabel={sortLabel}
+          stageLabel="Global operating picture"
+          summary={<DashboardSummaryContent events={events} markerCount={markerCount} />}
+          title="Dashboard"
+        />
       </section>
     </AppShell>
   );

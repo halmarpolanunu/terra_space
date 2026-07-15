@@ -33,8 +33,29 @@ vi.mock("pmtiles", () => ({
 }));
 
 vi.mock("@/app/dashboard/event-globe", () => ({
-  EventGlobe: ({ events, onSelect }: { events: import("@/lib/events-api").EventRead[]; onSelect: (event: import("@/lib/events-api").EventRead) => void }) => (
-    <button onClick={() => onSelect(events[0])} type="button">Map features: {events.flatMap((event) => event.locations.filter((location) => location.latitude !== null && location.longitude !== null)).length}</button>
+  eventLocationsToFeatureCollection: (events: import("@/lib/events-api").EventRead[]) => ({
+    type: "FeatureCollection",
+    features: events.flatMap((event) =>
+      event.locations
+        .filter((location) => location.latitude !== null && location.longitude !== null)
+        .map((location) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [location.longitude, location.latitude] },
+          properties: { eventId: event.id },
+        })),
+    ),
+  }),
+  EventGlobe: ({ events, onProjectionModeChange, onSelect, selectedEventId }: {
+    events: import("@/lib/events-api").EventRead[];
+    onProjectionModeChange: (mode: "globe" | "flat" | "unavailable") => void;
+    onSelect: (event: import("@/lib/events-api").EventRead) => void;
+    selectedEventId?: string;
+  }) => (
+    <div>
+      <button onClick={() => onSelect(events[0])} type="button">Map features: {events.flatMap((event) => event.locations.filter((location) => location.latitude !== null && location.longitude !== null)).length}</button>
+      <button onClick={() => onProjectionModeChange("flat")} type="button">Use flat fallback</button>
+      <output>Selected map event: {selectedEventId ?? "none"}</output>
+    </div>
   ),
 }));
 
@@ -102,21 +123,38 @@ describe("Dashboard workspace", () => {
     const [summaryFilters] = vi.mocked(eventsApi.getDashboardSummary).mock.calls[0];
     expect(eventFilters).toBe(summaryFilters);
     expect(eventFilters).toMatchObject({ q: "bridge", sort: "title_asc" });
-    const summaryPanel = screen.getByText("Total events").closest(".dashboard-summary")!;
+    expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+    const stage = screen.getByRole("region", { name: "Global operating picture" });
+    expect(stage).toBeVisible();
+    expect(stage).toHaveAttribute("data-parallax-enabled", "true");
+    const summaryPanel = screen.getByText("Total events").closest(".command-deck-summary")!;
     expect(within(summaryPanel).getByText("Total events")).toBeVisible();
     expect(within(summaryPanel).getByText("3")).toBeVisible();
     expect(within(summaryPanel).getByText("New in last 7 days")).toBeVisible();
     expect(within(summaryPanel).getByText("0")).toBeVisible();
-    expect(within(summaryPanel).getByText("Distribution by type")).toBeVisible();
-    expect(within(summaryPanel).getByText("Movement: 3")).toBeVisible();
-    expect(within(summaryPanel).getByText("Incomplete date")).toBeVisible();
-    expect(within(summaryPanel).getByText("Incomplete location")).toBeVisible();
-    expect(within(summaryPanel).queryByText("Incorrect summary response: 77")).not.toBeInTheDocument();
+    expect(within(summaryPanel).getByText("Mapped locations")).toBeVisible();
+    expect(within(summaryPanel).getByText("1")).toBeVisible();
+    expect(within(summaryPanel).queryByText("Distribution by type")).not.toBeInTheDocument();
+    expect(within(summaryPanel).queryByText("Incomplete date")).not.toBeInTheDocument();
+    expect(within(summaryPanel).queryByText("Incomplete location")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Map features: 1" })).toBeVisible();
+    expect(screen.getByText("Markers · 1")).toBeVisible();
     expect(screen.getByRole("heading", { name: "Date unknown" })).toBeVisible();
     expect(screen.getAllByRole("button", { name: "Bridge crossing reported" })).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Open Events" })).toHaveAttribute("href", "/events?q=bridge&sort=title_asc");
 
+    fireEvent.click(screen.getByRole("button", { name: "Map features: 1" }));
+    expect(await screen.findByRole("heading", { name: "Event detail" })).toBeVisible();
+    expect(screen.getByText("Selected map event: event-1")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Map features: 1" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Back to list" }));
+    expect(screen.queryByRole("heading", { name: "Event detail" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Use flat fallback" }));
+    expect(stage).toHaveAttribute("data-parallax-enabled", "false");
+
+    expect(screen.queryByLabelText("Search title & summary")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Filters.*1/i }));
     fireEvent.change(screen.getByLabelText("Search title & summary"), { target: { value: "convoy" } });
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/dashboard?q=convoy&sort=title_asc"));
     currentSearch = "q=convoy&sort=title_asc";
@@ -133,6 +171,7 @@ describe("Dashboard workspace", () => {
   });
 
   it("shows zero summary states and opens selected map events in the detail panel", async () => {
+    currentSearch = "";
     vi.mocked(eventsApi.listEvents).mockResolvedValue([]);
     vi.mocked(eventsApi.getDashboardSummary).mockResolvedValue({ total_events: 0, new_events: 0, by_event_type: [], incomplete_date_count: 0, incomplete_location_count: 0 });
     vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
@@ -140,7 +179,9 @@ describe("Dashboard workspace", () => {
     vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
 
     render(<DashboardPage />);
-    await screen.findByText("No event types in this result.");
-    expect(screen.getAllByText("0")).toHaveLength(4);
+    await screen.findByRole("button", { name: "Map features: 0" });
+    expect(screen.getAllByText("0")).toHaveLength(3);
+    expect(screen.getByText("Mapped locations")).toBeVisible();
+    expect(screen.getByText("No approved events yet.")).toBeVisible();
   });
 });

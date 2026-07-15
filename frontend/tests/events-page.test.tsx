@@ -94,13 +94,18 @@ describe("EventsPage", () => {
     vi.mocked(eventsApi.listActors).mockResolvedValue([]);
     vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
 
-    render(<EventsPage />);
+    const { container } = render(<EventsPage />);
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "list");
     fireEvent.click(await screen.findByRole("button", { name: event.title }));
 
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
     expect(screen.getByText(event.summary)).toBeVisible();
     expect(screen.getByText("North Unit (source)")).toBeVisible();
     expect(screen.getByText("Jakarta, Jakarta, Indonesia (city/regency coordinates)")).toBeVisible();
-    expect(screen.getByText("Claim", { selector: ".event-detail p" })).toBeVisible();
+    expect(screen.getByText("Claim", { selector: ".event-detail .status-badge" })).toHaveAttribute(
+      "data-status",
+      "claim",
+    );
     expect(screen.getByRole("link", { name: "Field report" })).toHaveAttribute("href", "/documents/doc-1?from=%2Fevents%3Fq%3Dbridge%26sort%3Dtitle_asc");
     expect(screen.getByText(/sources and evidence are read-only/i)).toBeVisible();
   });
@@ -114,13 +119,15 @@ describe("EventsPage", () => {
     vi.mocked(eventsApi.updateEvent).mockResolvedValue(updated);
     vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
 
-    render(<EventsPage />);
+    const { container } = render(<EventsPage />);
     fireEvent.click(await screen.findByRole("button", { name: event.title }));
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "edit");
     fireEvent.change(screen.getByLabelText("Summary"), { target: { value: updated.summary } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(eventsApi.updateEvent).toHaveBeenCalledWith(event.id, expect.objectContaining({ summary: updated.summary })));
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
     expect(screen.getByText(updated.summary)).toBeVisible();
   });
 
