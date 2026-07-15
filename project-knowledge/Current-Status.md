@@ -10,16 +10,26 @@ status: active
 
 ## Current focus
 
-Every Roadmap item across all five phases is complete. The deferred aesthetic design pass
-described in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) is underway: the audit
-half is recorded in the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md), and its four
-priority usability defects are now fixed. The next continuation point is the remaining polish
-half of the pass — starting with item 5 ("Compress the shared filter block" so the Dashboard
-globe and summary are visible without scrolling) and the runners-up listed in the audit. The
-earlier design-pass git worktree was a false start (the prior session actually worked directly in
-this checkout instead) and has been removed; there is currently only one working directory.
+Every Roadmap item across all five phases is complete, and the deferred aesthetic pass described
+in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) is now complete. Its audit and
+implementation outcome are recorded together in the
+[Design Pass Audit](plans/2026-07-15-design-pass-audit.md). Terra Space is explicitly a desktop
+browser application only; phone/mobile presentation is not supported or an acceptance target.
+The next continuation point is the owner's hands-on desktop review, followed by an explicit
+choice of any post-MVP work. The completed pass is on `codex/design-pass-polish` and has not been
+pushed to GitHub.
 
 ## Recent progress
+
+- Completed the implementation half of the deferred aesthetic pass across Dashboard, Documents,
+  Event Review, Events, and Settings. Added one shared page-header pattern and permanent status
+  bar; compressed the shared Dashboard/Events filter into search plus expandable advanced
+  controls; brightened muted text; tightened hierarchy, spacing, and action grouping; and polished
+  populated tables, facts, attachments, duplicate review, and real globe pins without introducing
+  a second styling system. Created an isolated realistic sample database with nine documents and
+  mixed event types, epistemic/review states, dates, locations, duplicate states, and attachments,
+  then inspected every changed screen in a real desktop browser. Verified 100 frontend tests
+  across 22 files, clean lint, and a successful production build.
 
 - Fixed the four prioritized usability defects from the
   [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): replaced the internal "Phase 2" /

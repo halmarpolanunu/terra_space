@@ -1,9 +1,9 @@
 ---
 type: Plan
 title: Design Pass Audit - Screen-by-Screen Findings
-description: Read-only aesthetic audit of all five MVP screens against the locked Visual Design Direction and the Design Pass Sequencing category map, with usability defects and prioritized recommendations for the upcoming design pass.
+description: Completed audit and implementation outcome for the aesthetic design pass across all five MVP screens, grounded in the locked Visual Design Direction.
 tags: [project-knowledge, plan, design, ui, audit]
-status: active
+status: completed
 ---
 
 # Design Pass Audit - Screen-by-Screen Findings
@@ -21,6 +21,42 @@ out to need the most work), but the populated views — the one-event-at-a-time 
 events table, the event facts grid, attachment thumbnails, the globe with pins — were not visible
 and could not be critiqued. **A follow-up capture with sample data is needed before or during the
 implementation pass.**
+
+## Implementation outcome — completed 2026-07-15
+
+The implementation half is complete. It stayed inside the locked pure-black/amber "mission
+brief" language and reused the existing shared components and CSS classes. The Tailwind Plus
+category map was used only as a structural checklist.
+
+Before judging populated states, an isolated sample database was created with nine realistic
+documents and events across different event types, epistemic statuses, review states, dates,
+locations, duplicate states, and image attachments. The implementation was then reviewed in a
+real desktop browser on all five screens, including the one-event-at-a-time review card, source
+evidence, duplicate comparison, event facts, attachment thumbnails, approved-events table, and
+the globe with real pins. The isolated data did not alter the owner's normal database.
+
+All findings below are resolved:
+
+- **Global:** all five screens now share one page-header pattern; a permanent top status bar owns
+  the brand, offline-safe state, and LM Studio state; the muted token is now `#7b8990`; disabled
+  actions remain legible; and navigation is numbered `01` through `05`.
+- **Dashboard:** the shared filter is compact and expandable, so the summary and globe are
+  visible in the initial desktop viewport; marker count is part of the panel heading; the map
+  fills its frame; real pins have restrained amber halos; summary, timeline, and event-register
+  hierarchy and spacing were tightened; counts and sorting are grouped.
+- **Documents:** the shared header, capped form width, required-field semantics, titled queue,
+  populated row rhythm, attachment counts, and larger thumbnails now form one clear intake flow.
+- **Event Review:** the empty state has a route forward, while populated review uses matched
+  source/event panels, stronger evidence hierarchy, separated facts, and a clear duplicate
+  decision area without adding distracting motion.
+- **Events:** compact shared filters include location placeholders; count and sort are grouped;
+  the event register, populated rows, facts grid, status, and source hierarchy were polished.
+- **Settings:** service state moved into the global bar; connection testing is grouped with its
+  URL; panel headings are distinct from field labels; event types have both a useful empty state
+  and clearer populated-row actions.
+
+Terra Space is a **desktop browser application only**. Phone/mobile presentation is not a
+supported product surface or an acceptance target for this pass.
 
 ## What is true everywhere (all five screens)
 
@@ -198,13 +234,15 @@ these get fixed regardless of design-pass timing):
 
 Highest-impact polish:
 
-5. **Compress the shared filter block** (Dashboard + Events) into a compact toolbar or
-   collapsible panel so the globe and summary are visible without scrolling — the single biggest
-   step toward the locked "globe centerpiece" vision.
+5. ~~**Compress the shared filter block** (Dashboard + Events) into a compact toolbar or
+   collapsible panel so the globe and summary are visible without scrolling~~ — **Fixed
+   2026-07-15**: search remains immediately available, advanced filters open on demand, active
+   filters are counted, and the Dashboard summary plus globe are visible in the initial desktop
+   viewport.
 
-Runners-up: unify the page-header pattern across all five screens; build the locked top status
-bar (which also solves the floating "LM Studio is available." text); brighten the muted text
-token one step for contrast.
+Runners-up: ~~unify the page-header pattern across all five screens~~; ~~build the locked top
+status bar~~; ~~brighten the muted text token one step for contrast~~ — **all fixed
+2026-07-15**.
 
 ## Navigation
 

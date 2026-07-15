@@ -8,6 +8,29 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Deferred aesthetic design pass implemented
+
+- Completed every open finding in the
+  [Design Pass Audit](plans/2026-07-15-design-pass-audit.md): one shared header pattern across all
+  five screens, the locked permanent status bar, a brighter muted-text token, the compact shared
+  Dashboard/Events filter, and the remaining Dashboard, Documents, Event Review, Events, and
+  Settings polish. Existing shared components and CSS classes remain the visual foundation; no
+  parallel design system was introduced.
+- Filled the audit's empty-database gap with an isolated sample database containing nine realistic
+  documents and events spanning multiple event types, epistemic statuses, approval states,
+  dates, locations, duplicate decisions, and image attachments. Inspected all five populated
+  screens in a real desktop browser, including source evidence, one-at-a-time review, duplicate
+  comparison, event facts, attachment thumbnails, the approved-events table, and glowing globe
+  pins. The owner's normal database was not changed.
+- Recorded the owner's explicit product boundary in the
+  [Visual Design Direction](decisions/Visual-Design-Direction.md): Terra Space is a desktop
+  browser application only, and phone/mobile presentation is not supported or an acceptance
+  target. Also updated the muted token to `#7b8990` and brought the documented Dashboard layout
+  in line with the completed implementation. No Roadmap phase or milestone changed.
+- Verified 100 frontend tests across 22 files, clean lint with the earlier dynamic-thumbnail
+  warning removed by using Next Image, and a successful production build. Project Knowledge
+  validation passed with 0 errors and 0 warnings.
+
 ## 2026-07-15 - Fixed the design pass audit's four priority usability defects
 
 - Fixed all four prioritized usability defects from the
