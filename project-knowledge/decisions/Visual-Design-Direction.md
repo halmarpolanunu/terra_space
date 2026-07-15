@@ -94,8 +94,8 @@ No light mode in the MVP. Background is always pure black.
 
 - The motion identity is **controlled cinematic**: deliberate staging, spatial continuity, and
   real depth around the Dashboard globe, without turning routine workflows into spectacle.
-- **Dashboard signature:** the globe resolves first; floating HUD instruments enter along
-  different 3D orbits; small pointer parallax communicates their Z depth; a focused instrument
+- **Dashboard signature:** the globe resolves first; three restrained HUD layers enter on
+  distinct Z planes; small pointer parallax communicates their depth; a focused instrument
   advances toward the user while its related pin/connector receives amber emphasis.
 - **Keep (ambient):** globe auto-rotation, gentle pin pulses, slow flowing arc dashes, and a slow
   muted activity ticker. Ambient motion yields when the user interacts.
@@ -117,12 +117,13 @@ No light mode in the MVP. Background is always pure black.
 
 ## Validated screens
 
-- **Dashboard:** locked status bar and navigation rail → one viewport-height **Orbital HUD** stage.
-  The MapLibre globe occupies roughly 65–75% of the stage and remains unobstructed at its center;
-  compact Summary, Filter Control, and Recent Signals instruments float on different CSS 3D
-  orbits around its edges; the Event Register rests as a bottom dock. Selecting an instrument
-  moves it forward and enlarges it while the globe stays visible. The approved specification is
-  [Orbital HUD and Motion Design](../plans/2026-07-15-orbital-hud-motion-design.md).
+- **Dashboard:** locked status bar and navigation rail → one viewport-height **Layered Command
+  Deck** stage. The MapLibre globe occupies roughly 65–70% of the stage and remains unobstructed
+  at its center; a compact three-metric Situation Summary and three-row Recent Signals instrument
+  float on subtle CSS 3D depth planes at the outer edges; the Event Register and Filters control
+  rest in a slim bottom dock. Selecting an instrument moves it forward and enlarges it while the
+  globe stays visible. The approved specification is
+  [Layered Command Deck and Motion Design](../plans/2026-07-15-layered-command-deck-motion-design.md).
 - **Event Review:** status bar → tight clustered review bar
   (`Event Review │ Document X of Y │ progress Event N of M │ Prev · Skip · Next`) → 2 columns
   (source document | one focused event). Left panel highlights only the current event's source
@@ -135,8 +136,8 @@ No light mode in the MVP. Background is always pure black.
   chose the mission-brief tactical direction.
 - **Full cinematic/aggressive** treatment (CLASSIFIED banner, scanlines, vignette, blinking
   alerts, heavy glow) — still rejected as too much for daily, hours-long use. This does not
-  exclude the later-approved controlled-cinematic Orbital HUD, which creates drama through depth,
-  staging, and parallax instead of visual noise.
+  exclude the later-approved controlled-cinematic Layered Command Deck, which creates drama
+  through restrained depth, staging, and parallax instead of visual noise.
 - **Flat 2D tactical map** — rejected in favor of a 3D globe (kept only as fallback).
 - **All extracted events shown at once** in Event Review — rejected as overwhelming; replaced
   with one-event-at-a-time review.
@@ -163,8 +164,9 @@ No light mode in the MVP. Background is always pure black.
   filter behavior, type/spacing rhythm, and the desktop layouts for Dashboard, Documents, Event
   Review, Events, and Settings. Future work should extend these patterns instead of creating a
   parallel styling system.
-- The post-pass Orbital HUD refinement targets the owner's `1920 × 1080` display at `100%` Windows
-  scale, using `1920 × 930` as the primary maximized-browser viewport. It remains desktop-only.
+- The post-pass Layered Command Deck refinement targets the owner's `1920 × 1080` display at
+  `100%` Windows scale, using `1920 × 930` as the primary maximized-browser viewport. It remains
+  desktop-only.
 - The visual-design checkpoint and deferred aesthetic implementation pass are closed.
 
 # Navigation

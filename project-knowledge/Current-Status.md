@@ -10,24 +10,24 @@ status: active
 
 ## Current focus
 
-Every Roadmap item and the deferred aesthetic pass are complete. The owner has now approved a
-post-pass motion refinement: the [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md).
-It makes the Dashboard globe dominant, places compact instruments on different 3D orbits around
-it, and introduces controlled-cinematic motion across the desktop interface. The target is the
-owner's `1920 × 1080` display at `100%` Windows scale; phone/mobile remains unsupported. The next
-continuation point is the owner's review of the written design specification, followed by a
-separate implementation plan after approval.
+Every Roadmap item and the deferred aesthetic pass are complete. The owner has approved and
+authorized implementation of the post-pass
+[Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md).
+It makes the Dashboard globe dominant, places a small number of instruments on subtle 3D depth
+planes, and introduces controlled-cinematic motion across the desktop interface. The target is
+the owner's `1920 × 1080` display at `100%` Windows scale; phone/mobile remains unsupported. The
+current continuation point is writing and then executing the checkpointed implementation plan.
 
 ## Recent progress
 
-- Completed the Orbital HUD motion-design session. The owner chose the Orbital HUD over Layered
-  Command Deck and Holographic Cockpit alternatives, then approved: a viewport-height Dashboard
-  with the globe occupying roughly 65–75% of the stage; Summary, Filter Control, and Recent
-  Signals on distinct CSS 3D depth planes; an Event Register bottom dock; compact panels that
-  advance and enlarge on focus; globe-first cinematic choreography and parallax; lighter motion
-  on Documents, Event Review, Events, and Settings; reduced-motion behavior; and browser QA at
-  `1920 × 930` plus `1920 × 900`. The refinement stays within the pure-black/amber mission-brief
-  language and adds no phone/mobile target.
+- Completed the motion-design session and high-fidelity comparison. The owner initially chose the
+  Orbital HUD, found its rendered cockpit-like density excessive, and approved the calmer Layered
+  Command Deck: a viewport-height Dashboard with a 65–70% globe; a three-metric Situation Summary
+  at the far left; three-row Recent Signals at the far right; one slim Event Register/Filters dock;
+  three subtle CSS 3D depth planes with only 3–5° tilt; limited parallax and connector emphasis;
+  lighter motion on Documents, Event Review, Events, and Settings; reduced-motion behavior; and
+  browser QA at `1920 × 930` plus `1920 × 900`. The refinement stays within the pure-black/amber
+  mission-brief language and adds no phone/mobile target.
 
 - Completed the implementation half of the deferred aesthetic pass across Dashboard, Documents,
   Event Review, Events, and Settings. Added one shared page-header pattern and permanent status
@@ -291,10 +291,10 @@ separate implementation plan after approval.
 
 ## Next actions
 
-- Owner reviews the written
-  [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md). After explicit
-  approval, write a test-first implementation plan in `project-knowledge/plans/`; do not begin
-  application changes before that review gate.
+- Execute the checkpointed test-first implementation plan for the approved
+  [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md),
+  with focused verification and a local commit at each checkpoint, then one full populated-browser
+  and frontend verification pass at the end.
 
 ## Related knowledge
 
@@ -307,4 +307,4 @@ separate implementation plan after approval.
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
 - [Visual Design Direction](decisions/Visual-Design-Direction.md)
 - [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md)
-- [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md)
+- [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)

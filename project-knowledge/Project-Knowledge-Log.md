@@ -8,18 +8,18 @@ status: active
 
 # Project Knowledge Log
 
-## 2026-07-15 - Orbital HUD and controlled-cinematic motion approved
+## 2026-07-15 - Layered Command Deck and controlled-cinematic motion approved
 
-- The owner selected the **Orbital HUD** from three visual alternatives and approved the complete
-  [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md). On the Dashboard,
-  the MapLibre globe becomes the dominant viewport-height hero while Summary, Filter Control,
-  Recent Signals, and an Event Register dock occupy distinct CSS 3D orbit/depth planes. Compact
-  instruments advance and enlarge when focused; pointer parallax, pins, and amber connectors
-  communicate depth without covering the globe's center.
+- The owner compared three 3D Dashboard alternatives, initially selected Orbital HUD, then found
+  its high-fidelity cockpit-like preview too elaborate and approved the calmer **Layered Command
+  Deck** in the final [motion design](plans/2026-07-15-layered-command-deck-motion-design.md). The
+  MapLibre globe becomes the dominant viewport-height hero; a small Situation Summary and Recent
+  Signals panel occupy subtle edge depth planes; Event Register and Filters share one slim bottom
+  dock. Compact instruments advance when focused without covering the globe's center.
 - Refined the [Visual Design Direction](decisions/Visual-Design-Direction.md) from broadly calm
-  motion to **controlled cinematic**: strong globe-first staging on the Dashboard, lighter motion
-  on Documents/Events/Settings, and almost no ambient motion on evidence-heavy Event Review.
-  Scanlines, blinking, bounce, flicker, and aggressive bloom remain rejected.
+  motion to **controlled cinematic**: globe-first staging and restrained 3D depth on the Dashboard,
+  lighter motion on Documents/Events/Settings, and almost no ambient motion on evidence-heavy
+  Event Review. Scanlines, blinking, bounce, flicker, and aggressive bloom remain rejected.
 - Fixed the acceptance environment to the owner's `1920 × 1080` display at `100%` Windows scale,
   with `1920 × 930` as the primary maximized-browser viewport and `1920 × 900` as the short-height
   check. Terra Space remains desktop-only; no Roadmap phase or milestone changed.

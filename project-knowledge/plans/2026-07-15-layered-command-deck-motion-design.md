@@ -1,23 +1,24 @@
 ---
 type: Plan
-title: Orbital HUD and Motion Design
-description: Approved design specification for a globe-dominant 3D Orbital HUD Dashboard and controlled cinematic motion across the Terra Space desktop interface.
+title: Layered Command Deck and Motion Design
+description: Approved design specification for a globe-dominant Layered Command Deck Dashboard and controlled cinematic motion across the Terra Space desktop interface.
 tags: [project-knowledge, plan, design, motion, dashboard, globe]
 status: planned
 ---
 
-# Orbital HUD and Motion Design
+# Layered Command Deck and Motion Design
 
-**Approved:** 2026-07-15. The owner selected the **Orbital HUD** concept after comparing three
-visual directions, then approved its layout, Dashboard choreography, lighter motion on the other
-four screens, and technical boundaries section by section.
+**Approved:** 2026-07-15. The owner first selected the more cinematic Orbital HUD, then rejected
+its high-fidelity preview as too busy and approved the calmer **Layered Command Deck** preview.
+The final choice preserves real 3D depth with fewer, smaller instruments and substantially more
+negative space.
 
 ## Purpose
 
 Make Terra Space feel more cinematic and alive while preserving the pure-black/amber personal
 intelligence language, local-first behavior, evidence-first review workflow, and long-session
 readability. The Dashboard's globe becomes the dominant experience instead of one panel among
-several. Other information behaves like 3D instruments floating around the globe.
+several. A small number of instruments occupy distinct 3D depth planes at its outer edges.
 
 This work supports the [North Star](../North-Star.md): it changes presentation and interaction,
 not the document-to-event workflow, data model, approval rules, or offline boundary.
@@ -40,26 +41,27 @@ clear spatial transitions elsewhere, and no aggressive visual noise.
 
 - Signature easing: `cubic-bezier(0.05, 0.7, 0.1, 1)` for entrances and focus changes.
 - Duration palette: quick `140 ms`, standard `320 ms`, cinematic `650–700 ms`, ambient `1.4 s+`.
-- Entrance pattern: the hero appears first, followed by supporting controls in an orbit-aligned
-  stagger. Total stagger should stay below `400 ms`.
+- Entrance pattern: the hero appears first, followed by supporting controls in a depth-aligned
+  stagger. Total stagger should stay below `320 ms`.
 - Movement uses opacity and transforms. Normal UI movement stays within `4–12 px`; 3D panel focus
   uses perspective/`translateZ` rather than large screen-crossing travel.
 - No bounce, scanlines, vignette flicker, blinking UI, heavy glow bloom, or fast/aggressive loops.
 
-## Dashboard — approved Orbital HUD
+## Dashboard — approved Layered Command Deck
 
 ### Composition
 
 The top status bar and left navigation rail remain fixed and visually stable. The remaining
 Dashboard area becomes one viewport-height stage rather than a long sequence of stacked panels.
 
-- The interactive MapLibre globe stays centered and occupies roughly `65–75%` of the stage. It is
+- The interactive MapLibre globe stays centered and occupies roughly `65–70%` of the stage. It is
   always the largest and most visually dominant object.
-- **Situation Summary** floats to the left of the globe on the nearest-left orbit.
-- **Filter Control** floats at the upper right on a slightly deeper orbit.
-- **Recent Signals / Timeline** floats at the lower right on a nearer orbit.
+- **Situation Summary** is a compact three-metric instrument at the far left edge.
+- **Recent Signals / Timeline** is a compact three-row instrument at the far right edge.
 - **Event Register** becomes a slim dock along the bottom edge. It shows the approved-event count
-  and current filter state while collapsed, then rises into a focused drawer on request.
+  plus current filter/sort state while collapsed, then rises into a focused drawer on request.
+- Advanced filters are opened from a small `FILTERS N` control integrated into the bottom dock;
+  there is no separate large floating Filter Control instrument.
 - The center of the globe remains substantially unobstructed. Floating panels may overlap its
   outer edge, but not cover the main pin field or turn the globe into a background texture.
 - Summary, pins, Recent Signals, and Event Register continue to consume the same URL-backed
@@ -70,22 +72,24 @@ Dashboard area becomes one viewport-height stage rather than a long sequence of 
 
 "Floating" means spatial depth, not ordinary flat overlays:
 
-- The HUD layer uses CSS perspective and distinct Z planes. Panels have small opposing rotations
-  so they visually face the user from different positions around the globe.
-- Pointer movement produces restrained parallax: foreground panels move more than deep panels;
+- The HUD layer uses CSS perspective and three distinct Z planes. Panels use only `3–5°` of
+  opposing rotation, thin borders, and gentle separation shadows.
+- Pointer movement produces restrained parallax: foreground panels move slightly more than deep
+  panels;
   the globe and map controls remain stable enough for accurate pointing and dragging.
 - The MapLibre canvas is not placed inside a strongly transformed 3D plane. Its existing globe
   projection remains the real interactive hero; CSS depth belongs primarily to the overlay HUD.
-- Thin amber connectors can relate a focused panel to the selected map pin. Connectors are
-  informational emphasis, not decoration that is always moving.
+- At most one faint orbital arc and one thin amber connector relate the selected map pin to Recent
+  Signals. They are informational emphasis, not decoration that is always moving.
 
 ### Panel states
 
-Panels are compact in their resting orbit. Selecting a panel moves it forward, enlarges it, and
+Panels are compact on their resting depth plane. Selecting a panel moves it forward, enlarges it, and
 mutes the competing panels slightly while the globe remains visible.
 
 - Mouse, keyboard, and visible focus all trigger the same state.
-- `Escape`, the panel's Close/Return control, or selecting another instrument returns it to orbit.
+- `Escape`, the panel's Close/Return control, or selecting another instrument returns it to its
+  resting depth plane.
 - Long content scrolls inside the focused panel; it must not expand the overall Dashboard page.
 - Controls that are visually hidden or collapsed are immediately removed from keyboard focus.
 - Opening and closing a panel never waits for animation before updating real application state.
@@ -94,8 +98,8 @@ mutes the competing panels slightly while the globe remains visible.
 
 1. The stable shell is already present; the globe resolves into view over `650–700 ms`.
 2. Orbit lines and available pins become legible without a bright flash.
-3. Summary, Filter Control, Recent Signals, and the Event Register dock enter in sequence, about
-   `70–90 ms` apart, following their orbital direction.
+3. Situation Summary, Recent Signals, and the Event Register dock enter in sequence, about
+   `70–80 ms` apart, with small depth/vertical movement.
 4. Pointer parallax begins only after the entrance settles.
 5. Focusing a panel advances it over roughly `320 ms`; its related pin and connector gain amber
    emphasis. Closing reverses the spatial relationship instead of abruptly hiding the panel.
@@ -159,7 +163,7 @@ every workflow into a spectacle.
 - If the local map package is missing, the central stage shows the existing explicit map-package
   message in place of the globe. Floating data instruments remain usable; no fake globe is drawn.
 - If globe projection falls back to a flat map, the HUD keeps the same hierarchy but disables
-  orbit parallax that would falsely imply a 3D sphere.
+  globe-linked parallax that would falsely imply a 3D sphere.
 - If rendering performance drops, pointer parallax and nonessential HUD ambient motion are the
   first effects removed; data interaction and globe controls take priority.
 - LM Studio offline/error states remain plain labeled readouts in the fixed status bar. They do
@@ -173,8 +177,8 @@ Implementation is complete only when all of the following are true:
    dominant on first view, and no preliminary vertical scrolling is needed to reach it.
 2. The same composition remains usable at `1920 × 900`; focused panels use internal scrolling and
    do not cause page overflow.
-3. Summary, Filter Control, Recent Signals, and Event Register all work in resting, focused, and
-   closing states with mouse and keyboard.
+3. Situation Summary, Recent Signals, Event Register, and the dock's Filters control all work in
+   resting, focused, and closing states with mouse and keyboard.
 4. Globe dragging, zooming, pin selection, rotation pausing, and map controls remain reliable
    beneath the HUD layer.
 5. All five populated screens are inspected in a real browser. Event Review evidence, Documents
@@ -187,12 +191,14 @@ Implementation is complete only when all of the following are true:
 
 ## Alternatives considered
 
-- **Layered Command Deck:** clearer flat-edge composition with three Z planes. Rejected because it
-  felt less orbital and less cinematic than the owner's intended floating-3D experience.
+- **Layered Command Deck:** selected after the high-fidelity comparison because its three subtle
+  Z planes, smaller instruments, limited tilt, and larger negative space retain 3D depth without
+  making the personal workspace feel like a large military command center.
 - **Holographic Cockpit:** close-up globe with foreground panels occupying more of its surface.
   Rejected because it risked obscuring map data and making routine use tiring.
-- **Orbital HUD:** selected because the panels visibly inhabit different 3D orbits while leaving
-  the central globe open and dominant.
+- **Orbital HUD:** initially selected, then rejected after the high-fidelity preview because the
+  extra floating Filter panel, orbital chrome, and denser information made the screen feel too
+  elaborate.
 
 ## Navigation
 
