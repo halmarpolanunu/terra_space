@@ -11,7 +11,7 @@ import { EventList } from "@/components/event-list";
 import { FramedPanel } from "@/components/framed-panel";
 import { PageHeader } from "@/components/page-header";
 import { clearEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
-import { listActors, listEventTypes, listEvents, updateEvent, type EventUpdate, type ActorRead, type EventRead, type EventTypeRead } from "@/lib/events-api";
+import { deleteEvent, listActors, listEventTypes, listEvents, updateEvent, type EventUpdate, type ActorRead, type EventRead, type EventTypeRead } from "@/lib/events-api";
 import { listDocuments } from "@/lib/documents-api";
 
 export function EventsWorkspace() {
@@ -53,6 +53,19 @@ export function EventsWorkspace() {
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Unable to save this event."); }
   }
 
+  async function removeEvent(event: EventRead) {
+    const confirmed = window.confirm(
+      `Delete “${event.title}”? This permanently removes the event. Its source document remains.`,
+    );
+    if (!confirmed) return;
+    try {
+      await deleteEvent(event.id);
+      setEvents((current) => current.filter((current_) => current_.id !== event.id));
+      if (selectedEvent?.id === event.id) { setSelectedEvent(null); setEditing(false); }
+      setError(undefined);
+    } catch (deleteError) { setError(deleteError instanceof Error ? deleteError.message : "Unable to delete this event."); }
+  }
+
   function changeSort(sort: EventSort) {
     changeFilters({ ...filters, sort });
   }
@@ -69,7 +82,7 @@ export function EventsWorkspace() {
     <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
     {error && <p className="document-error">{error}</p>}
     <div className="events-view" data-view={currentView} key={currentView}>
-      {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <FramedPanel className="events-list-panel" title="Approved event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
+      {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onDelete={() => void removeEvent(selectedEvent)} onEdit={() => setEditing(true)} /> : <FramedPanel className="events-list-panel" title="Approved event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onDelete={(event) => void removeEvent(event)} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
     </div>
   </section></AppShell>;
 }

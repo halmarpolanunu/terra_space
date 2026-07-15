@@ -9,6 +9,7 @@ type EventDetailProps = {
   eventsPath: string;
   onClose: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
 };
 
 const EPISTEMIC_LABELS = {
@@ -31,8 +32,9 @@ function formatLocation(location: LocationRead): string {
   return precision ? `${name} (${precision} coordinates)` : name;
 }
 
-export function EventDetail({ event, eventsPath, onClose, onEdit }: EventDetailProps) {
+export function EventDetail({ event, eventsPath, onClose, onEdit, onDelete }: EventDetailProps) {
   const editable = event.review_status === "draft" || event.review_status === "approved";
+  const deletable = editable;
 
   return (
     <FramedPanel className="event-detail" title="Event detail">
@@ -67,6 +69,7 @@ export function EventDetail({ event, eventsPath, onClose, onEdit }: EventDetailP
       <p className="event-read-only-note">Sources and evidence are read-only.</p>
       <div className="form-actions">
         {editable && onEdit && <button className="btn btn-primary" onClick={onEdit} type="button">Edit</button>}
+        {deletable && onDelete && <button className="btn btn-destructive" onClick={onDelete} type="button">Delete</button>}
       </div>
     </FramedPanel>
   );

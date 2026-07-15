@@ -8,6 +8,55 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Delete moved into the Events list row too
+
+- After reviewing the detail-only Delete control live, the owner expected Delete to be reachable
+  directly from each row in the Events list rather than only after opening an event's detail panel.
+  Updated the [Event Deletion Design](plans/2026-07-15-event-deletion-design.md) to record Delete
+  as offered wherever a deletable event is visible (list row and detail), not detail-only.
+- Added an `Actions` column and a per-row `Delete` button to `frontend/src/components/event-list.tsx`
+  (shown only for `draft`/`approved` rows, matching the existing detail-view rule), widened the
+  list's CSS grid in `frontend/src/app/globals.css` (base layout plus both `72rem` responsive
+  overrides, and a full-width placement at the `48rem` mobile breakpoint) to fit the new column, and
+  generalized `EventsWorkspace`'s single-event delete handler into `removeEvent(event)` so the same
+  confirm/call/refresh logic runs whether Delete is triggered from a list row or the open detail
+  panel; closing the detail panel now only happens if the deleted event was the one open.
+- Added a failing frontend test first (delete an event directly from its list row without opening
+  detail, confirming the row disappears and a sibling row survives), confirmed it failed, then
+  implemented the change above and confirmed it passed along with the full 126-test frontend suite,
+  lint, and a production build. No backend change was required. Visually verified with a throwaway
+  Playwright script (mocked event data on a local dev server, screenshots before/after) rather than
+  the owner's live database, so their running instance and data were left untouched; the script and
+  its screenshots were deleted after verification.
+
+## 2026-07-15 - Protected event deletion added
+
+- Executed the
+  [Event Deletion Implementation Plan](plans/2026-07-15-event-deletion-implementation.md)
+  test-first: added failing backend tests for successful draft/approved deletion, a missing-event
+  404, and rejected/merged 409 protection, confirmed they failed (405, since no route existed),
+  then added `delete_event()` in `backend/app/services/events.py` (reusing
+  `EDITABLE_REVIEW_STATUSES`) and `DELETE /api/events/{event_id}` in
+  `backend/app/api/routes/events.py`.
+- Found and fixed a real gap while making the first two tests pass: the ORM `Event.event_sources`
+  and `Event.duplicate_flags` relationships had no `cascade="all, delete-orphan"`, so
+  `db.delete(event)` raised a SQLAlchemy `AssertionError` trying to null out non-nullable link
+  columns instead of deleting the link rows. Added the same cascade already used on
+  `Event.event_actors`. No migration was needed: the database's `ON DELETE CASCADE` constraints
+  already matched; only the ORM's in-session delete behavior was wrong. Source documents,
+  attachments, actors, locations, event types, and shared `Source` rows are untouched, since none
+  of those relationships were changed.
+- Added failing frontend tests (delete confirmation and success, declined confirmation, delete
+  failure showing an error, and Delete button visibility limited to draft/approved), confirmed
+  they failed, then added `deleteEvent()` to `frontend/src/lib/events-api.ts`, a `Delete` button
+  (reusing the existing `btn-destructive` class) in `EventDetail`, and a `removeSelectedEvent`
+  handler in `EventsWorkspace` that confirms via `window.confirm` naming the event title and
+  stating the source document remains, then removes the event from local state and closes the
+  detail panel on success, or shows the existing error banner on failure.
+- Verified with the full suite: 124 backend tests (13 new), 125 frontend tests (4 new), clean
+  frontend lint, a successful production build, Project Knowledge validation (0 errors, 0
+  warnings), and a clean `git diff --check`. No North Star or Roadmap change.
+
 ## 2026-07-15 - Configurable LM Studio processing timeout added
 
 - Owner testing showed that the fixed two-minute extraction limit could expire before a local

@@ -7,11 +7,16 @@ import type { EventRead, LocationRead } from "@/lib/events-api";
 type EventListProps = {
   events: EventRead[];
   onSelect: (event: EventRead) => void;
+  onDelete?: (event: EventRead) => void;
   sort: EventSort;
   onSortChange: (sort: EventSort) => void;
   hasActiveFilters: boolean;
   onClearFilters?: () => void;
 };
+
+function isDeletable(event: EventRead): boolean {
+  return event.review_status === "draft" || event.review_status === "approved";
+}
 
 const EPISTEMIC_LABELS = {
   confirmed: "Confirmed",
@@ -43,6 +48,7 @@ function formatDate(event: EventRead): string {
 export function EventList({
   events,
   onSelect,
+  onDelete,
   sort,
   onSortChange,
   hasActiveFilters,
@@ -95,6 +101,7 @@ export function EventList({
             <span>Date</span>
             <span>Location</span>
             <span>Sources</span>
+            <span>Actions</span>
           </div>
           <ul className="event-list">
             {events.map((event) => {
@@ -114,6 +121,13 @@ export function EventList({
                   <span className="event-list-meta">{formatDate(event)}</span>
                   <span className="event-list-meta">{location}</span>
                   <span className="event-list-meta event-source-count">{sourceLabel}</span>
+                  <span className="event-list-row-actions">
+                    {onDelete && isDeletable(event) && (
+                      <button className="btn btn-destructive" onClick={() => onDelete(event)} type="button">
+                        Delete
+                      </button>
+                    )}
+                  </span>
                 </li>
               );
             })}

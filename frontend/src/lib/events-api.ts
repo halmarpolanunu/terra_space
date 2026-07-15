@@ -190,6 +190,11 @@ export async function rejectEvent(eventId: string): Promise<EventRead> {
   return parseOrThrow<EventRead>(response);
 }
 
+export async function deleteEvent(eventId: string): Promise<void> {
+  const response = await fetch(`${API_ROOT}/events/${eventId}`, { method: "DELETE" });
+  if (!response.ok) await parseOrThrow<never>(response);
+}
+
 export async function approveAllForDocument(documentId: string): Promise<ApproveAllResponse> {
   const response = await fetch(`${API_ROOT}/documents/${documentId}/events/approve-all`, {
     method: "POST",

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
@@ -283,3 +284,88 @@ def test_approve_all_skips_events_with_pending_duplicate_flags(tmp_path: Path) -
     assert events[1]["id"] in body["approved_event_ids"]
     assert events[0]["id"] not in body["approved_event_ids"]
     assert body["skipped"][0]["event_id"] == events[0]["id"]
+
+
+def test_deleting_draft_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
+    content = "Something happened on 2026-07-10."
+    extraction = ExtractionResult(
+        events=[
+            ExtractedEvent(
+                title="Something",
+                summary="Summary.",
+                event_type=ExtractedEventType(suggested="Report"),
+                epistemic_status="confirmed",
+                evidence_quote=content,
+            )
+        ]
+    )
+    client = _client(tmp_path, {content: extraction})
+    document = _create_and_process_document(client, content)
+    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    assert event["review_status"] == "draft"
+
+    response = client.delete(f"/api/events/{event['id']}")
+    assert response.status_code == 204
+    assert client.get(f"/api/events/{event['id']}").status_code == 404
+    assert client.get(f"/api/documents/{document['id']}").status_code == 200
+
+
+def test_deleting_approved_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
+    content = "Something happened on 2026-07-10."
+    extraction = ExtractionResult(
+        events=[
+            ExtractedEvent(
+                title="Something",
+                summary="Summary.",
+                event_type=ExtractedEventType(suggested="Report"),
+                epistemic_status="confirmed",
+                evidence_quote=content,
+            )
+        ]
+    )
+    client = _client(tmp_path, {content: extraction})
+    document = _create_and_process_document(client, content)
+    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    client.post(f"/api/events/{event['id']}/approve")
+
+    response = client.delete(f"/api/events/{event['id']}")
+    assert response.status_code == 204
+    assert client.get(f"/api/events/{event['id']}").status_code == 404
+    assert client.get(f"/api/documents/{document['id']}").status_code == 200
+
+
+def test_deleting_missing_event_returns_404(tmp_path: Path) -> None:
+    client = _client(tmp_path, {})
+    response = client.delete("/api/events/does-not-exist")
+    assert response.status_code == 404
+
+
+@pytest.mark.parametrize("review_status", ["rejected", "merged"])
+def test_deleting_rejected_or_merged_event_returns_409(tmp_path: Path, review_status: str) -> None:
+    content = "Something happened on 2026-07-10."
+    extraction = ExtractionResult(
+        events=[
+            ExtractedEvent(
+                title="Something",
+                summary="Summary.",
+                event_type=ExtractedEventType(suggested="Report"),
+                epistemic_status="confirmed",
+                evidence_quote=content,
+            )
+        ]
+    )
+    client = _client(tmp_path, {content: extraction})
+    app = client.app
+    document = _create_and_process_document(client, content)
+    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+
+    with app.state.session_factory() as session:
+        from app.db.models import Event as EventModel
+
+        stored_event = session.get(EventModel, event["id"])
+        stored_event.review_status = review_status
+        session.commit()
+
+    response = client.delete(f"/api/events/{event['id']}")
+    assert response.status_code == 409
+    assert client.get(f"/api/events/{event['id']}").status_code == 200

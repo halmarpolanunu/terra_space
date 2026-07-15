@@ -144,9 +144,13 @@ class Event(TimestampedModel, Base):
     locations: Mapped[list[Location]] = relationship(
         secondary=event_locations, back_populates="events"
     )
-    event_sources: Mapped[list["EventSource"]] = relationship(back_populates="event")
+    event_sources: Mapped[list["EventSource"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
     duplicate_flags: Mapped[list["DuplicateFlag"]] = relationship(
-        foreign_keys="DuplicateFlag.draft_event_id", back_populates="draft_event"
+        foreign_keys="DuplicateFlag.draft_event_id",
+        back_populates="draft_event",
+        cascade="all, delete-orphan",
     )
 
 

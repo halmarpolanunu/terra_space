@@ -10,13 +10,39 @@ status: active
 
 ## Current focus
 
-The approved [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)
-is implemented, verified, and ready for the owner's desktop review. The Dashboard now makes the
-globe dominant while keeping a small number of controlled 3D instruments at its edge; the other
-four screens use restrained workflow motion. The target remains the owner's `1920 × 1080` display at
-`100%` Windows scale, with phone/mobile explicitly unsupported. No Roadmap phase or milestone changed.
+Protected event deletion is implemented and verified per the
+[Event Deletion Design](plans/2026-07-15-event-deletion-design.md). Owners can permanently delete
+`draft` and `approved` events either directly from an Events list row or from the Events detail
+view, after an explicit confirmation naming the event; `rejected` and `merged` events remain
+immutable audit history with no Delete control and a `409` from the API. Deletion never touches the
+source document, attachments, actors, locations, event types, or shared source records. The target
+remains the owner's `1920 × 1080` display at `100%` Windows scale, with phone/mobile explicitly
+unsupported. No Roadmap phase or milestone changed.
 
 ## Recent progress
+
+- Moved Delete from a detail-only control to an inline action in every Events list row (plus
+  keeping it in the detail view), after the owner's live testing showed the detail-only placement
+  read as "no delete option" from the list. Added an `Actions` column to `EventList` and widened
+  its grid (including both responsive breakpoints) to fit a `Delete` button per deletable row;
+  `EventsWorkspace` now has one shared `removeEvent(event)` handler used by both the list row and
+  the detail panel, so either entry point confirms, calls the same `DELETE` endpoint, updates
+  local state, and closes the detail panel only if the deleted event was the one open. Verified
+  with a new list-row test plus the full 126-test frontend suite, lint, and a production build; no
+  backend change was needed. Visually confirmed in a real browser against mocked event data
+  (Delete button per row, correct confirmation copy, row removal, and count update on success).
+- Executed the
+  [Event Deletion Implementation Plan](plans/2026-07-15-event-deletion-implementation.md)
+  test-first: added `DELETE /api/events/{event_id}` (`204` on success, `404` if missing, `409` for
+  `rejected`/`merged`) and a `Delete` control on the Events detail view that confirms via a dialog
+  naming the event and stating the source document remains, then closes the detail panel and
+  refreshes the Events list on success or shows the existing error banner on failure. Fixed a real
+  ORM gap found while implementing: `Event.event_sources` and `Event.duplicate_flags` needed
+  `cascade="all, delete-orphan"` (matching the existing `Event.event_actors` pattern) for
+  `db.delete(event)` to work at all — no migration was needed, since the database's own
+  `ON DELETE CASCADE` constraints already matched. Verified with 124 backend tests (13 new), 125
+  frontend tests (4 new), clean lint, a production build, Project Knowledge validation, and a clean
+  `git diff --check`.
 
 - Added a configurable per-document LM Studio processing timeout after the owner's live testing
   exposed the previous fixed two-minute limit. The Settings screen now offers 2, 5 (default and

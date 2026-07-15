@@ -13,7 +13,14 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/events-api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
-  return { ...actual, listEvents: vi.fn(), listEventTypes: vi.fn(), listActors: vi.fn(), updateEvent: vi.fn() };
+  return {
+    ...actual,
+    listEvents: vi.fn(),
+    listEventTypes: vi.fn(),
+    listActors: vi.fn(),
+    updateEvent: vi.fn(),
+    deleteEvent: vi.fn(),
+  };
 });
 
 vi.mock("@/lib/documents-api", async () => {
@@ -131,6 +138,83 @@ describe("EventsPage", () => {
     expect(screen.getByText(updated.summary)).toBeVisible();
   });
 
+  it("deletes an event directly from its list row without opening the detail panel", async () => {
+    const event = makeEvent();
+    const other = makeEvent({ id: "event-2", title: "Second approved event" });
+    vi.mocked(eventsApi.listEvents).mockResolvedValue([event, other]);
+    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
+    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(eventsApi.deleteEvent).mockResolvedValue();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<EventsPage />);
+    await screen.findByText(event.title);
+    const row = screen.getByRole("button", { name: event.title }).closest("li")!;
+
+    fireEvent.click(within(row).getByRole("button", { name: "Delete" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining(event.title));
+    await waitFor(() => expect(eventsApi.deleteEvent).toHaveBeenCalledWith(event.id));
+    expect(screen.queryByRole("button", { name: event.title })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: other.title })).toBeVisible();
+  });
+
+  it("deletes an approved event after confirmation and returns to the refreshed list", async () => {
+    const event = makeEvent();
+    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
+    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
+    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(eventsApi.deleteEvent).mockResolvedValue();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { container } = render(<EventsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: event.title }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(window.confirm).toHaveBeenCalledWith(
+      expect.stringContaining(event.title),
+    );
+    await waitFor(() => expect(eventsApi.deleteEvent).toHaveBeenCalledWith(event.id));
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "list");
+    expect(screen.queryByRole("button", { name: event.title })).not.toBeInTheDocument();
+  });
+
+  it("does not delete when the confirmation dialog is declined", async () => {
+    const event = makeEvent();
+    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
+    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
+    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    const { container } = render(<EventsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: event.title }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(eventsApi.deleteEvent).not.toHaveBeenCalled();
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
+  });
+
+  it("keeps the detail open and shows an error message when deletion fails", async () => {
+    const event = makeEvent();
+    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
+    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
+    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(eventsApi.deleteEvent).mockRejectedValue(new Error("Event cannot be edited while rejected."));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { container } = render(<EventsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: event.title }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    await screen.findByText("Event cannot be edited while rejected.");
+    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
+  });
+
   it("returns to the filtered list when filters change while an event is selected", async () => {
     const event = makeEvent();
     vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
@@ -173,6 +257,20 @@ describe("EventDetail edit permissions", () => {
 
     rerender(<EventDetail event={makeEvent({ review_status: "merged" })} eventsPath="/events" onClose={vi.fn()} onEdit={vi.fn()} />);
     expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+  });
+
+  it("shows Delete only for draft or approved events, never for rejected or merged", () => {
+    const { rerender } = render(<EventDetail event={makeEvent({ review_status: "rejected" })} eventsPath="/events" onClose={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+
+    rerender(<EventDetail event={makeEvent({ review_status: "merged" })} eventsPath="/events" onClose={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+
+    rerender(<EventDetail event={makeEvent({ review_status: "draft" })} eventsPath="/events" onClose={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Delete" })).toBeVisible();
+
+    rerender(<EventDetail event={makeEvent({ review_status: "approved" })} eventsPath="/events" onClose={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByRole("button", { name: "Delete" })).toBeVisible();
   });
 });
 

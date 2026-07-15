@@ -385,9 +385,9 @@ body {
 .event-list-header,
 .event-list-row {
   display: grid;
-  grid-template-columns: minmax(13rem, 1.5fr) auto repeat(4, minmax(7rem, 1fr));
+  grid-template-columns: minmax(13rem, 1.5fr) auto repeat(4, minmax(7rem, 1fr)) minmax(5.5rem, auto);
   gap: 0.75rem 1rem;
-  min-width: 41rem;
+  min-width: 44rem;
 }
 .event-list-header {
   padding: 0 1rem 0.5rem;
@@ -398,7 +398,7 @@ body {
   text-transform: uppercase;
   border-bottom: 1px solid var(--border);
 }
-.event-list { display: grid; gap: 0.65rem; margin: 0; padding: 0; list-style: none; min-width: 41rem; }
+.event-list { display: grid; gap: 0.65rem; margin: 0; padding: 0; list-style: none; min-width: 44rem; }
 .event-list-row {
   align-items: center;
   padding: 0.85rem 1rem;
@@ -417,6 +417,7 @@ body {
 .event-list-title:hover { color: var(--accent); }
 .event-list-meta { color: var(--text-muted); font-size: 0.88rem; }
 .event-source-count { font-family: var(--font-mono); font-size: 0.75rem; }
+.event-list-row-actions { display: flex; justify-content: flex-end; }
 .event-empty-state {
   display: flex;
   flex-direction: column;
@@ -484,7 +485,7 @@ body {
 @media (max-width: 72rem) {
   .filter-group-fields { grid-template-columns: repeat(2, minmax(10rem, 1fr)); }
   .event-list-header,
-  .event-list-row { grid-template-columns: minmax(14rem, 1fr) auto repeat(2, minmax(7rem, 1fr)); }
+  .event-list-row { grid-template-columns: minmax(14rem, 1fr) auto repeat(2, minmax(7rem, 1fr)) minmax(5.5rem, auto); }
 }
 
 @media (max-width: 60rem) {
@@ -505,6 +506,7 @@ body {
   .event-list-row { min-width: 0; }
   .event-list-row { grid-template-columns: 1fr 1fr; }
   .event-list-title { grid-column: 1 / -1; }
+  .event-list-row-actions { grid-column: 1 / -1; justify-content: flex-start; }
 }
 
 /* July 2026 aesthetic pass: one mission-brief rhythm across every workspace. */
@@ -1506,7 +1508,7 @@ body {
   .event-filter-options { grid-template-columns: 1fr; }
   .event-filter-options > .filter-group { grid-column: auto; }
   .event-list-header,
-  .event-list-row { grid-template-columns: minmax(14rem, 1.2fr) auto repeat(2, minmax(7rem, 1fr)); }
+  .event-list-row { grid-template-columns: minmax(14rem, 1.2fr) auto repeat(2, minmax(7rem, 1fr)) minmax(5.5rem, auto); }
 }
 
 @media (max-width: 60rem) {

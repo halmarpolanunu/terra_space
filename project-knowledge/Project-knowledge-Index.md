@@ -31,6 +31,9 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md) — approved globe-dominant 3D Dashboard and controlled-cinematic motion specification
 - [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md) — checkpointed, test-first execution plan with an isolated populated visual workbench
 
+- [Event Deletion Design](plans/2026-07-15-event-deletion-design.md) — approved safety rules for deleting draft and approved events
+- [Event Deletion Implementation Plan](plans/2026-07-15-event-deletion-implementation.md) — test-first implementation plan for protected event deletion
+
 ## Reading rule
 
 Read the North Star and Current Status before substantial work. Read the Roadmap or related decisions only when they are relevant to the task.

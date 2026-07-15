@@ -31,6 +31,7 @@ from app.services.events import (
     approve_event,
     create_event_type,
     create_manual_event,
+    delete_event,
     delete_event_type,
     get_event,
     list_actors,
@@ -215,6 +216,16 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         except EventEditNotAllowedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return to_event_read(event)
+
+    @router.delete("/api/events/{event_id}", status_code=204)
+    def delete(event_id: str, db: Session = Depends(get_db)) -> None:
+        event = get_event(db, event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found.")
+        try:
+            delete_event(db, event)
+        except EventEditNotAllowedError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     @router.post("/api/events/{event_id}/approve", response_model=EventRead)
     def approve(event_id: str, db: Session = Depends(get_db)) -> EventRead:

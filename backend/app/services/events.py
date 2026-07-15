@@ -411,6 +411,13 @@ def reject_event(db: Session, event: Event) -> Event:
     return event
 
 
+def delete_event(db: Session, event: Event) -> None:
+    if event.review_status not in EDITABLE_REVIEW_STATUSES:
+        raise EventEditNotAllowedError(event.review_status)
+    db.delete(event)
+    db.commit()
+
+
 @dataclass
 class ApproveAllSkip:
     event_id: str
