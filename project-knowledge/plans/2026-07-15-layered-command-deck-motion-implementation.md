@@ -85,7 +85,7 @@ Playwright/Chrome, Docker Compose for isolated populated QA.
 
 - [x] **Checkpoint 1:** shared motion foundation and reduced-motion behavior
 - [x] **Checkpoint 2:** static globe-dominant Layered Command Deck composition
-- [ ] **Checkpoint 3:** 3D focus, keyboard/drawer interaction, parallax, and selected-pin emphasis
+- [x] **Checkpoint 3:** 3D focus, keyboard/drawer interaction, parallax, and selected-pin emphasis
 - [ ] **Checkpoint 4:** restrained motion on Documents, Event Review, Events, and Settings
 - [ ] **Checkpoint 5:** populated 1920×930/900 browser QA and complete verification
 
@@ -552,7 +552,7 @@ git commit -m "feat: make the dashboard globe dominant"
   passed through `EventGlobe`, so the command deck can disable parallax on real fallback states.
 - Preserves: `onFeatureSelect(eventId)` and current map click behavior.
 
-- [ ] **Step 1: Write failing interaction tests**
+- [x] **Step 1: Write failing interaction tests**
 
 Cover each behavior separately:
 
@@ -572,13 +572,13 @@ and unavailable-map fallbacks. Retain the existing WorldMap error test and exten
 test to prove a `Map package is not installed.` globe slot does not remove or disable Situation
 Summary, Recent Signals, Event Register, or Filters.
 
-- [ ] **Step 2: Run the tests and record the expected red result**
+- [x] **Step 2: Run the tests and record the expected red result**
 
 Run: `npm.cmd test -- tests/layered-command-deck.test.tsx tests/dashboard-workspace.test.tsx tests/event-globe.test.tsx tests/world-map.test.tsx`
 
 Expected: FAIL on Escape, parallax, detail-in-stage, and selected-pin assertions.
 
-- [ ] **Step 3: Implement controlled focus and pointer parallax**
+- [x] **Step 3: Implement controlled focus and pointer parallax**
 
 Use `useReducedMotion`; calculate normalized pointer position from the stage bounds; set only
 `--deck-parallax-x` and `--deck-parallax-y` on the stage. Reset both on pointer leave. Do not move
@@ -598,13 +598,13 @@ function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
 Render only the selected drawer slot; collapsed drawers are absent from the DOM so their fields
 cannot receive keyboard focus.
 
-- [ ] **Step 4: Keep event detail inside the stage**
+- [x] **Step 4: Keep event detail inside the stage**
 
 When a map pin, Recent Signals row, or Event Register row is selected, set both
 `selectedEvent` and `activePanel="detail"`. Pass `EventDetail` as the detail slot. Its Close action
 clears the selected event and returns the panel state to `null`; the globe remains mounted.
 
-- [ ] **Step 5: Add selected-pin emphasis and explicit projection fallback reporting**
+- [x] **Step 5: Add selected-pin emphasis and explicit projection fallback reporting**
 
 Pass `selectedEvent?.id` through `EventGlobe` to `WorldMap`. In `WorldMap`, update the existing pin
 and halo paint properties with MapLibre expressions comparing `eventId` to `selectedEventId`.
@@ -619,20 +619,20 @@ Do not animate the fixed status bar or its LM Studio offline/error readout. A mi
 continues to show its existing explicit alert in the central globe slot—never a fabricated globe—
 while all data instruments remain usable.
 
-- [ ] **Step 6: Add final depth and focus CSS**
+- [x] **Step 6: Add final depth and focus CSS**
 
 Use three resting Z planes with no more than `5deg` tilt. Active instruments use a roughly
 `translateZ(90px)` advance over `var(--motion-standard)`; competing instruments reduce opacity
 slightly but remain legible. Add one faint arc pseudo-element and show one connector only while a
 detail/signals panel is active.
 
-- [ ] **Step 7: Run focused tests**
+- [x] **Step 7: Run focused tests**
 
 Run: `npm.cmd test -- tests/layered-command-deck.test.tsx tests/dashboard-workspace.test.tsx tests/event-globe.test.tsx tests/world-map.test.tsx`
 
 Expected: all focused tests PASS with no timer leaks.
 
-- [ ] **Step 8: Commit Checkpoint 3**
+- [x] **Step 8: Commit Checkpoint 3**
 
 ```powershell
 git add -- frontend/src/app/dashboard/layered-command-deck.tsx frontend/src/app/dashboard/dashboard-workspace.tsx frontend/src/app/dashboard/event-globe.tsx frontend/src/components/world-map.tsx frontend/src/app/globals.css frontend/tests/layered-command-deck.test.tsx frontend/tests/dashboard-workspace.test.tsx frontend/tests/event-globe.test.tsx frontend/tests/world-map.test.tsx

@@ -993,6 +993,8 @@ body {
 .layered-command-deck {
   --deck-edge: clamp(1.15rem, 1.6vw, 1.75rem);
   --deck-dock-height: 3.75rem;
+  --deck-parallax-x: 0px;
+  --deck-parallax-y: 0px;
   position: relative;
   isolation: isolate;
   width: 100%;
@@ -1020,6 +1022,37 @@ body {
   pointer-events: none;
   transform: translate(-50%, -50%) rotate(-10deg);
   box-shadow: 0 -1px 0 rgba(242, 169, 59, 0.035) inset;
+}
+
+.layered-command-deck::after {
+  content: "";
+  position: absolute;
+  z-index: 7;
+  top: 47%;
+  left: 55%;
+  width: min(28%, 29rem);
+  height: 1px;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(-10deg) scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(242, 169, 59, 0.48), transparent 88%);
+  transition:
+    opacity var(--motion-standard) var(--motion-ease),
+    transform var(--motion-standard) var(--motion-ease);
+}
+
+.layered-command-deck[data-panel="signals"]::after {
+  opacity: 0.3;
+  transform: rotate(-10deg) scaleX(1);
+}
+
+.layered-command-deck[data-panel="detail"]::after {
+  top: 56%;
+  left: 50%;
+  width: 10rem;
+  opacity: 0.24;
+  transform: rotate(90deg) scaleX(1);
 }
 
 .command-deck-heading {
@@ -1133,6 +1166,7 @@ body {
 .command-deck-globe .maplibregl-ctrl-bottom-right { bottom: 0.35rem; }
 
 .command-deck-instrument {
+  --deck-focus-x: 0px;
   --deck-rx: 0deg;
   --deck-ry: 0deg;
   --deck-z: 0px;
@@ -1141,12 +1175,18 @@ body {
   min-width: 0;
   padding: 0.95rem 1rem 1rem;
   transform-style: preserve-3d;
-  transform: translate3d(0, 0, var(--deck-z)) rotateX(var(--deck-rx)) rotateY(var(--deck-ry));
+  transform: translate3d(calc(var(--deck-parallax-x) + var(--deck-focus-x)), var(--deck-parallax-y), var(--deck-z)) rotateX(var(--deck-rx)) rotateY(var(--deck-ry));
   border-color: rgba(43, 58, 65, 0.88);
   background-color: rgba(5, 8, 9, 0.95);
   box-shadow:
     0 1.25rem 3rem rgba(0, 0, 0, 0.68),
     inset 0 1px 0 rgba(205, 215, 220, 0.035);
+  transition:
+    transform var(--motion-standard) var(--motion-ease),
+    opacity var(--motion-standard) var(--motion-ease),
+    border-color var(--motion-quick) var(--motion-ease),
+    box-shadow var(--motion-standard) var(--motion-ease);
+  will-change: transform;
 }
 
 .command-deck-instrument--summary {
@@ -1169,10 +1209,22 @@ body {
 }
 
 .command-deck-instrument[data-active="true"] {
+  --deck-z: 5.625rem;
   border-color: rgba(242, 169, 59, 0.58);
   box-shadow:
     0 1.6rem 3.5rem rgba(0, 0, 0, 0.78),
     0 0 0 1px rgba(242, 169, 59, 0.055) inset;
+}
+
+.command-deck-instrument--summary[data-active="true"] { --deck-focus-x: 1.4rem; }
+.command-deck-instrument--signals[data-active="true"] { --deck-focus-x: -1.4rem; }
+
+.layered-command-deck[data-panel="summary"] .command-deck-instrument--signals,
+.layered-command-deck[data-panel="signals"] .command-deck-instrument--summary,
+.layered-command-deck[data-panel="register"] .command-deck-instrument,
+.layered-command-deck[data-panel="filters"] .command-deck-instrument,
+.layered-command-deck[data-panel="detail"] .command-deck-instrument {
+  opacity: 0.68;
 }
 
 .command-deck-instrument__trigger {
@@ -1283,13 +1335,24 @@ body {
   min-height: var(--deck-dock-height);
   padding: 0.48rem 0.58rem;
   transform-style: preserve-3d;
-  transform: translate3d(-50%, 0, 3.35rem) rotateX(1.5deg);
+  transform: translate3d(calc(-50% + var(--deck-parallax-x)), var(--deck-parallax-y), 3.35rem) rotateX(1.5deg);
   transform-origin: center bottom;
   border-color: rgba(43, 58, 65, 0.92);
   background-color: rgba(4, 7, 8, 0.96);
   box-shadow:
     0 1.15rem 3rem rgba(0, 0, 0, 0.75),
     inset 0 1px 0 rgba(205, 215, 220, 0.04);
+  transition:
+    transform var(--motion-standard) var(--motion-ease),
+    border-color var(--motion-quick) var(--motion-ease),
+    box-shadow var(--motion-standard) var(--motion-ease);
+}
+
+.layered-command-deck[data-panel="register"] .command-deck-dock,
+.layered-command-deck[data-panel="filters"] .command-deck-dock,
+.layered-command-deck[data-panel="detail"] .command-deck-dock {
+  transform: translate3d(calc(-50% + var(--deck-parallax-x)), var(--deck-parallax-y), 5.25rem) rotateX(1deg);
+  border-color: rgba(242, 169, 59, 0.36);
 }
 
 .command-deck-dock__control,
@@ -1334,6 +1397,7 @@ body {
     0 1.8rem 4.5rem rgba(0, 0, 0, 0.86),
     0 0 0 1px rgba(242, 169, 59, 0.045) inset;
   scrollbar-color: var(--border-bright) #040708;
+  animation: command-deck-drawer-in var(--motion-standard) var(--motion-ease) both;
 }
 
 .command-deck-drawer > .event-filter-bar { border: 0; }
@@ -1343,6 +1407,17 @@ body {
   border: 0;
   background-color: transparent;
   background-image: none;
+}
+
+@keyframes command-deck-drawer-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-50%, 0.75rem, 2.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 5rem);
+  }
 }
 
 @media (max-height: 57.5rem) and (min-width: 80rem) {

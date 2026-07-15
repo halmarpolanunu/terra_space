@@ -45,8 +45,17 @@ vi.mock("@/app/dashboard/event-globe", () => ({
         })),
     ),
   }),
-  EventGlobe: ({ events, onSelect }: { events: import("@/lib/events-api").EventRead[]; onSelect: (event: import("@/lib/events-api").EventRead) => void }) => (
-    <button onClick={() => onSelect(events[0])} type="button">Map features: {events.flatMap((event) => event.locations.filter((location) => location.latitude !== null && location.longitude !== null)).length}</button>
+  EventGlobe: ({ events, onProjectionModeChange, onSelect, selectedEventId }: {
+    events: import("@/lib/events-api").EventRead[];
+    onProjectionModeChange: (mode: "globe" | "flat" | "unavailable") => void;
+    onSelect: (event: import("@/lib/events-api").EventRead) => void;
+    selectedEventId?: string;
+  }) => (
+    <div>
+      <button onClick={() => onSelect(events[0])} type="button">Map features: {events.flatMap((event) => event.locations.filter((location) => location.latitude !== null && location.longitude !== null)).length}</button>
+      <button onClick={() => onProjectionModeChange("flat")} type="button">Use flat fallback</button>
+      <output>Selected map event: {selectedEventId ?? "none"}</output>
+    </div>
   ),
 }));
 
@@ -115,7 +124,9 @@ describe("Dashboard workspace", () => {
     expect(eventFilters).toBe(summaryFilters);
     expect(eventFilters).toMatchObject({ q: "bridge", sort: "title_asc" });
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
-    expect(screen.getByRole("region", { name: "Global operating picture" })).toBeVisible();
+    const stage = screen.getByRole("region", { name: "Global operating picture" });
+    expect(stage).toBeVisible();
+    expect(stage).toHaveAttribute("data-parallax-enabled", "true");
     const summaryPanel = screen.getByText("Total events").closest(".command-deck-summary")!;
     expect(within(summaryPanel).getByText("Total events")).toBeVisible();
     expect(within(summaryPanel).getByText("3")).toBeVisible();
@@ -131,6 +142,16 @@ describe("Dashboard workspace", () => {
     expect(screen.getByRole("heading", { name: "Date unknown" })).toBeVisible();
     expect(screen.getAllByRole("button", { name: "Bridge crossing reported" })).toHaveLength(1);
     expect(screen.getByRole("link", { name: "Open Events" })).toHaveAttribute("href", "/events?q=bridge&sort=title_asc");
+
+    fireEvent.click(screen.getByRole("button", { name: "Map features: 1" }));
+    expect(await screen.findByRole("heading", { name: "Event detail" })).toBeVisible();
+    expect(screen.getByText("Selected map event: event-1")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Map features: 1" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Back to list" }));
+    expect(screen.queryByRole("heading", { name: "Event detail" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Use flat fallback" }));
+    expect(stage).toHaveAttribute("data-parallax-enabled", "false");
 
     expect(screen.queryByLabelText("Search title & summary")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Filters.*1/i }));

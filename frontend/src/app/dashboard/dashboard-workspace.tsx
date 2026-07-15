@@ -44,6 +44,7 @@ export function DashboardWorkspace() {
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
   const [activePanel, setActivePanel] = useState<CommandDeckPanel>(null);
+  const [projectionMode, setProjectionMode] = useState<"globe" | "flat" | "unavailable">("globe");
 
   useEffect(() => {
     let active = true;
@@ -119,11 +120,17 @@ export function DashboardWorkspace() {
           globe={(
             <>
               {error && <p className="document-error command-deck-error">{error}</p>}
-              <EventGlobe events={events} onSelect={selectEvent} />
+              <EventGlobe
+                events={events}
+                onProjectionModeChange={setProjectionMode}
+                onSelect={selectEvent}
+                selectedEventId={selectedEvent?.id}
+              />
             </>
           )}
           markerCount={markerCount}
           onActivePanelChange={setActivePanel}
+          parallaxEnabled={projectionMode === "globe"}
           register={(
             <EventList
               events={events}

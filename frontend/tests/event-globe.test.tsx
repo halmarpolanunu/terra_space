@@ -8,6 +8,7 @@ const map = {
   getBearing: vi.fn(() => 0),
   getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
   getSource: vi.fn(() => source),
+  off: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),
   rotateTo: vi.fn(),
@@ -62,5 +63,65 @@ describe("EventGlobe", () => {
     expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: "event-pins" }));
     unmount();
     expect(map.remove).toHaveBeenCalledOnce();
+  });
+
+  it("passes the selected event and projection mode reporting through to the world map", async () => {
+    const onProjectionModeChange = vi.fn();
+    map.on.mockImplementation((event: string, listener: () => void) => {
+      if (event === "load") listener();
+      return map;
+    });
+
+    const { rerender } = render(
+      <EventGlobe
+        events={[makeEvent()]}
+        onProjectionModeChange={onProjectionModeChange}
+        onSelect={vi.fn()}
+        selectedEventId="event-1"
+      />,
+    );
+
+    await waitFor(() => expect(onProjectionModeChange).toHaveBeenCalledWith("globe"));
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "event-pins",
+        paint: expect.objectContaining({
+          "circle-radius": expect.arrayContaining(["case"]),
+        }),
+      }),
+    );
+
+    map.setPaintProperty.mockClear();
+    rerender(
+      <EventGlobe
+        events={[makeEvent()]}
+        onProjectionModeChange={onProjectionModeChange}
+        onSelect={vi.fn()}
+        selectedEventId={undefined}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(map.setPaintProperty).toHaveBeenCalledWith("event-pins", "circle-radius", 6);
+    });
+  });
+
+  it("preserves event selection through the existing pin click handler", () => {
+    let clickListener: ((event: { features?: { properties?: { eventId?: string } }[] }) => void) | undefined;
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      if (event === "click" && typeof listener === "function") {
+        clickListener = listener as typeof clickListener;
+      }
+      return map;
+    });
+    const event = makeEvent();
+    const onSelect = vi.fn();
+
+    render(<EventGlobe events={[event]} onSelect={onSelect} />);
+    clickListener?.({ features: [{ properties: { eventId: event.id } }] });
+
+    expect(onSelect).toHaveBeenCalledWith(event);
   });
 });

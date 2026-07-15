@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import type { KeyboardEvent, PointerEvent, ReactNode } from "react";
+
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 export type CommandDeckPanel =
   | "summary"
@@ -22,6 +25,7 @@ export type LayeredCommandDeckProps = {
   globe: ReactNode;
   markerCount: number;
   onActivePanelChange: (panel: CommandDeckPanel) => void;
+  parallaxEnabled: boolean;
   register: ReactNode;
   signals: ReactNode;
   sortLabel: string;
@@ -51,14 +55,16 @@ function Instrument({
       data-active={active || undefined}
     >
       <button
+        aria-expanded={active}
         aria-label={label}
-        aria-pressed={active}
         className="command-deck-instrument__trigger"
         onClick={onActivate}
         type="button"
       >
         <span>{label}</span>
-        <span aria-hidden="true" className="command-deck-instrument__glyph">+</span>
+        <span aria-hidden="true" className="command-deck-instrument__glyph">
+          {active ? "−" : "+"}
+        </span>
       </button>
       <div className="command-deck-instrument__body">{children}</div>
     </aside>
@@ -76,6 +82,7 @@ export function LayeredCommandDeck({
   globe,
   markerCount,
   onActivePanelChange,
+  parallaxEnabled,
   register,
   signals,
   sortLabel,
@@ -83,6 +90,9 @@ export function LayeredCommandDeck({
   summary,
   title,
 }: LayeredCommandDeckProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+  const canUseParallax = parallaxEnabled && !reducedMotion;
   const drawer = activePanel === "filters"
     ? filters
     : activePanel === "register"
@@ -91,8 +101,38 @@ export function LayeredCommandDeck({
         ? detail
         : null;
 
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!canUseParallax && stage?.style.getPropertyValue("--deck-parallax-x")) {
+      stage.style.setProperty("--deck-parallax-x", "0px");
+      stage.style.setProperty("--deck-parallax-y", "0px");
+    }
+  }, [canUseParallax]);
+
   function togglePanel(panel: Exclude<CommandDeckPanel, "detail" | null>) {
     onActivePanelChange(activePanel === panel ? null : panel);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape" && activePanel) {
+      onActivePanelChange(null);
+    }
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (!canUseParallax) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width <= 0 || bounds.height <= 0) return;
+    const normalizedX = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width - 0.5) * 2));
+    const normalizedY = Math.max(-1, Math.min(1, ((event.clientY - bounds.top) / bounds.height - 0.5) * 2));
+    event.currentTarget.style.setProperty("--deck-parallax-x", `${(normalizedX * 8).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--deck-parallax-y", `${(normalizedY * 5).toFixed(2)}px`);
+  }
+
+  function handlePointerLeave(event: PointerEvent<HTMLDivElement>) {
+    if (!canUseParallax) return;
+    event.currentTarget.style.setProperty("--deck-parallax-x", "0px");
+    event.currentTarget.style.setProperty("--deck-parallax-y", "0px");
   }
 
   return (
@@ -100,6 +140,11 @@ export function LayeredCommandDeck({
       aria-label={stageLabel}
       className="layered-command-deck"
       data-panel={activePanel ?? "rest"}
+      data-parallax-enabled={canUseParallax}
+      onKeyDown={handleKeyDown}
+      onPointerLeave={handlePointerLeave}
+      onPointerMove={handlePointerMove}
+      ref={stageRef}
       role="region"
     >
       <header className="command-deck-heading">
