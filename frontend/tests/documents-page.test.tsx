@@ -42,6 +42,30 @@ describe("DocumentsPage batch processing", () => {
     vi.clearAllMocks();
   });
 
+  it("marks populated rows and attachment thumbnails for restrained motion", async () => {
+    const document = makeDocument({
+      attachments: [
+        {
+          id: "attachment-1",
+          original_name: "briefing-map.png",
+          media_type: "image/png",
+          size_bytes: 2048,
+          created_at: "2026-07-14T00:00:00Z",
+        },
+      ],
+    });
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([document]);
+
+    render(<DocumentsPage />);
+
+    const title = await screen.findByText(document.title);
+    expect(title.closest("li")).toHaveAttribute("data-motion-item", "document-row");
+    expect(screen.getByAltText("briefing-map.png").closest(".attachment-thumb")).toHaveAttribute(
+      "data-motion-item",
+      "attachment",
+    );
+  });
+
   it("shows the confirmation dialog before reprocessing, and proceeds only once confirmed", async () => {
     const document = makeDocument();
     vi.mocked(documentsApi.listDocuments).mockResolvedValue([document]);

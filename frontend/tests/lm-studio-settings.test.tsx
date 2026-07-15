@@ -39,7 +39,12 @@ describe("LmStudioSettings", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /test connection/i }));
 
-    expect(await screen.findByText("Connected. 2 model(s) available.")).toBeVisible();
+    const message = await screen.findByText("Connected. 2 model(s) available.");
+    expect(message).toBeVisible();
+    expect(message.closest(".settings-status")).toHaveAttribute(
+      "data-motion-item",
+      "connection-status",
+    );
     const model = screen.getByLabelText(/^model$/i);
     expect(within(model).getByRole("option", { name: "model-a" })).toBeInTheDocument();
     expect(within(model).getByRole("option", { name: "model-b" })).toBeInTheDocument();
@@ -65,6 +70,7 @@ describe("LmStudioSettings", () => {
         lm_studio_model: "model-b",
       }),
     );
+    expect(await screen.findByRole("status")).toHaveAttribute("data-motion-item", "save-status");
   });
 
   it("saves a null model when Auto-detect is chosen", async () => {

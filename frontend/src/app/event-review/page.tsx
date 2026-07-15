@@ -41,6 +41,7 @@ export default function EventReviewPage() {
   const [eventIndex, setEventIndex] = useState(0);
   const [eventTypeOptions, setEventTypeOptions] = useState<EventTypeRead[]>([]);
   const [actorOptions, setActorOptions] = useState<ActorRead[]>([]);
+  const [motionDirection, setMotionDirection] = useState<"next" | "previous">("next");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [addingEvent, setAddingEvent] = useState(false);
@@ -94,6 +95,7 @@ export default function EventReviewPage() {
   }, [currentEvent]);
 
   function goPrev() {
+    setMotionDirection("previous");
     if (eventIndex > 0) {
       setEventIndex((index) => index - 1);
     } else if (documentIndex > 0) {
@@ -102,6 +104,7 @@ export default function EventReviewPage() {
   }
 
   function goNext() {
+    setMotionDirection("next");
     if (eventIndex < events.length - 1) {
       setEventIndex((index) => index + 1);
     } else if (documentIndex < documents.length - 1) {
@@ -265,7 +268,11 @@ export default function EventReviewPage() {
               onSubmit={handleAddEvent}
             />
           )}
-          <div className="event-review-columns">
+          <div
+            className="event-review-columns event-review-transition"
+            data-motion-direction={motionDirection}
+            key={`${currentDocument?.id ?? "none"}:${currentEvent?.id ?? "none"}`}
+          >
             {currentDocument && (
               <SourcePanel
                 content={currentDocument.content}

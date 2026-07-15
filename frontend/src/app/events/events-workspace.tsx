@@ -57,6 +57,8 @@ export function EventsWorkspace() {
     changeFilters({ ...filters, sort });
   }
 
+  const currentView = selectedEvent ? (editing ? "edit" : "detail") : "list";
+
   return <AppShell currentPath="/events"><section className="events-page" aria-labelledby="events-title">
     <PageHeader
       description="Search and explore approved events. Sources and evidence stay read-only."
@@ -66,6 +68,8 @@ export function EventsWorkspace() {
     />
     <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
     {error && <p className="document-error">{error}</p>}
-    {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <FramedPanel className="events-list-panel" title="Approved event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
+    <div className="events-view" data-view={currentView} key={currentView}>
+      {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onEdit={() => setEditing(true)} /> : <FramedPanel className="events-list-panel" title="Approved event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
+    </div>
   </section></AppShell>;
 }

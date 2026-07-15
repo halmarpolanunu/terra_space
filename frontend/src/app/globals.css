@@ -696,8 +696,8 @@ body {
 }
 .panel-title {
   margin: 0;
-  color: #cbd5da;
-  font-size: 0.76rem;
+  color: #dce5e9;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 .panel-meta {
@@ -973,6 +973,77 @@ body {
 }
 .event-type-toggle { padding: 0 0.25rem; }
 .event-type-empty-state { max-width: 48rem; }
+
+/* Restrained workflow motion: state changes arrive with direction, never with layout shift. */
+.page-header {
+  animation: mission-heading-in var(--motion-cinematic) var(--motion-ease) both;
+}
+
+[data-motion-item="document-row"],
+.event-list-row,
+[data-motion-item="event-type-row"] {
+  animation: mission-row-in var(--motion-standard) var(--motion-ease) both;
+}
+
+[data-motion-item="attachment"] {
+  animation: mission-thumbnail-in var(--motion-standard) var(--motion-ease) both;
+}
+
+.event-review-transition {
+  animation-duration: var(--motion-standard);
+  animation-timing-function: var(--motion-ease);
+  animation-fill-mode: both;
+}
+
+.event-review-transition[data-motion-direction="next"] { animation-name: review-next-in; }
+.event-review-transition[data-motion-direction="previous"] { animation-name: review-previous-in; }
+
+.events-view { min-width: 0; }
+.events-view[data-view="detail"],
+.events-view[data-view="edit"] {
+  animation: mission-focus-in var(--motion-standard) var(--motion-ease) both;
+}
+
+[data-motion-item="connection-status"],
+[data-motion-item="save-status"],
+[role="alert"] {
+  animation: mission-status-in var(--motion-standard) var(--motion-ease) both;
+}
+
+@keyframes mission-heading-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes mission-row-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes mission-thumbnail-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes review-next-in {
+  from { opacity: 0; transform: translate3d(8px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes review-previous-in {
+  from { opacity: 0; transform: translate3d(-8px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes mission-focus-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.995); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes mission-status-in {
+  from { opacity: 0; transform: translate3d(0, -4px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
 
 /* Dashboard signature: one globe-dominant, viewport-height Layered Command Deck. */
 .main-content[data-route="/dashboard"] {

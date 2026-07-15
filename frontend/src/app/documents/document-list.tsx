@@ -52,7 +52,7 @@ export function DocumentList({
       ) : (
       <ul className="document-list">
         {documents.map((document) => (
-          <li className="document-row" key={document.id}>
+          <li className="document-row" data-motion-item="document-row" key={document.id}>
             <input
               aria-label={`Select ${document.title}`}
               checked={selectedIds.has(document.id)}
@@ -69,7 +69,11 @@ export function DocumentList({
                 (onUploadAttachment && EDITABLE_STATUSES.has(document.processing_status))) && (
                 <div className="attachment-list">
                   {document.attachments.map((attachment) => (
-                    <div className="attachment-thumb" key={attachment.id}>
+                    <div
+                      className="attachment-thumb"
+                      data-motion-item="attachment"
+                      key={attachment.id}
+                    >
                       <Image
                         alt={attachment.original_name}
                         fill

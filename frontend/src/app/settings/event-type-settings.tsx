@@ -95,7 +95,7 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
       ) : (
       <ul className="event-type-list">
         {types.map((type) => (
-          <li className="event-type-row" key={type.id}>
+          <li className="event-type-row" data-motion-item="event-type-row" key={type.id}>
             <input
               aria-label={`Rename ${type.name}`}
               defaultValue={type.name}

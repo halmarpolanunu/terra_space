@@ -23,6 +23,10 @@ describe("EventTypeSettings", () => {
 
     expect(screen.getByText("Active")).toBeVisible();
     expect(screen.getByText("Suggested")).toBeVisible();
+    expect(screen.getByLabelText("Rename Protest").closest("li")).toHaveAttribute(
+      "data-motion-item",
+      "event-type-row",
+    );
   });
 
   it("orients the user when no event types exist", () => {

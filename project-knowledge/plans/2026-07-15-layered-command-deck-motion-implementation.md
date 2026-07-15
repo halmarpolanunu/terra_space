@@ -86,7 +86,7 @@ Playwright/Chrome, Docker Compose for isolated populated QA.
 - [x] **Checkpoint 1:** shared motion foundation and reduced-motion behavior
 - [x] **Checkpoint 2:** static globe-dominant Layered Command Deck composition
 - [x] **Checkpoint 3:** 3D focus, keyboard/drawer interaction, parallax, and selected-pin emphasis
-- [ ] **Checkpoint 4:** restrained motion on Documents, Event Review, Events, and Settings
+- [x] **Checkpoint 4:** restrained motion on Documents, Event Review, Events, and Settings
 - [ ] **Checkpoint 5:** populated 1920×930/900 browser QA and complete verification
 
 ---
@@ -649,14 +649,16 @@ git commit -m "feat: add layered command deck interactions"
 
 - Modify: `frontend/src/app/documents/document-list.tsx`
 - Modify: `frontend/src/app/event-review/page.tsx`
+- Modify: `frontend/src/app/events/event-detail.tsx`
 - Modify: `frontend/src/app/events/events-workspace.tsx`
 - Modify: `frontend/src/app/settings/lm-studio-settings.tsx`
 - Modify: `frontend/src/app/settings/event-type-settings.tsx`
 - Modify: `frontend/src/app/globals.css`
-- Modify: `frontend/tests/event-review.test.tsx`
+- Add: `frontend/tests/event-review-page-motion.test.tsx`
 - Modify: `frontend/tests/events-page.test.tsx`
 - Modify: `frontend/tests/documents-page.test.tsx`
-- Modify: `frontend/tests/settings-workspace.test.tsx`
+- Modify: `frontend/tests/lm-studio-settings.test.tsx`
+- Modify: `frontend/tests/event-type-settings.test.tsx`
 
 **Interfaces:**
 
@@ -666,7 +668,7 @@ git commit -m "feat: add layered command deck interactions"
   results, save confirmation, and event-type rows.
 - Preserves: all existing API calls, actions, form semantics, and error/status copy.
 
-- [ ] **Step 1: Write failing state-marker tests**
+- [x] **Step 1: Write failing state-marker tests**
 
 In Event Review, click Next and assert the active review content has
 `data-motion-direction="next"`; click Previous and assert `"previous"`. In Events, assert list,
@@ -684,13 +686,13 @@ status expose `data-motion-item="connection-status"` and `data-motion-item="save
 the populated type row exposes `data-motion-item="event-type-row"`. These assertions fail before
 the production markers are added.
 
-- [ ] **Step 2: Run focused tests and record the red result**
+- [x] **Step 2: Run focused tests and record the red result**
 
-Run: `npm.cmd test -- tests/event-review.test.tsx tests/events-page.test.tsx tests/documents-page.test.tsx tests/settings-workspace.test.tsx`
+Run: `npm.cmd test -- tests/event-review-page-motion.test.tsx tests/events-page.test.tsx tests/documents-page.test.tsx tests/lm-studio-settings.test.tsx tests/event-type-settings.test.tsx`
 
 Expected: FAIL because the direction/view markers do not exist.
 
-- [ ] **Step 3: Add the minimal React state markers**
+- [x] **Step 3: Add the minimal React state markers**
 
 Track Event Review direction inside `goPrev`/`goNext`, place the current source/event pair in a
 keyed wrapper, and add the marker. Wrap the Events conditional branch in one keyed `events-view`
@@ -698,7 +700,7 @@ container with its final `data-view`. Add only the tested static `data-motion-it
 the existing Document and Settings elements; do not create parallel wrappers or motion state.
 Do not delay state changes for animation callbacks.
 
-- [ ] **Step 4: Add restrained workflow CSS**
+- [x] **Step 4: Add restrained workflow CSS**
 
 Add bounded keyframes and selectors:
 
@@ -716,16 +718,16 @@ Use `4–8px` travel, no ambient motion in Event Review, and no animation that c
 layout height. Attachment thumbnails may scale from `.98` to `1`; processing indicators stop when
 their state stops.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
-Run: `npm.cmd test -- tests/event-review.test.tsx tests/events-page.test.tsx tests/documents-page.test.tsx tests/settings-workspace.test.tsx`
+Run: `npm.cmd test -- tests/event-review-page-motion.test.tsx tests/events-page.test.tsx tests/documents-page.test.tsx tests/lm-studio-settings.test.tsx tests/event-type-settings.test.tsx`
 
 Expected: all focused tests PASS.
 
-- [ ] **Step 6: Commit Checkpoint 4**
+- [x] **Step 6: Commit Checkpoint 4**
 
 ```powershell
-git add -- frontend/src/app/documents/document-list.tsx frontend/src/app/event-review/page.tsx frontend/src/app/events/events-workspace.tsx frontend/src/app/settings/lm-studio-settings.tsx frontend/src/app/settings/event-type-settings.tsx frontend/src/app/globals.css frontend/tests/event-review.test.tsx frontend/tests/events-page.test.tsx frontend/tests/documents-page.test.tsx frontend/tests/settings-workspace.test.tsx
+git add -- frontend/src/app/documents/document-list.tsx frontend/src/app/event-review/page.tsx frontend/src/app/events/event-detail.tsx frontend/src/app/events/events-workspace.tsx frontend/src/app/settings/lm-studio-settings.tsx frontend/src/app/settings/event-type-settings.tsx frontend/src/app/globals.css frontend/tests/event-review-page-motion.test.tsx frontend/tests/events-page.test.tsx frontend/tests/documents-page.test.tsx frontend/tests/lm-studio-settings.test.tsx frontend/tests/event-type-settings.test.tsx
 git commit -m "feat: add restrained motion across workflows"
 ```
 

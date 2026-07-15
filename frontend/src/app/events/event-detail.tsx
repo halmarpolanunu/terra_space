@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { FramedPanel } from "@/components/framed-panel";
+import { StatusChip } from "@/components/status-chip";
 import type { EventRead, LocationRead } from "@/lib/events-api";
 
 type EventDetailProps = {
@@ -15,6 +16,13 @@ const EPISTEMIC_LABELS = {
   claim: "Claim",
   rumor: "Rumor",
   denied: "Denied",
+} as const;
+
+const EPISTEMIC_COLORS = {
+  confirmed: "--status-confirmed",
+  claim: "--status-claim",
+  rumor: "--status-rumor",
+  denied: "--status-denied",
 } as const;
 
 function formatLocation(location: LocationRead): string {
@@ -34,7 +42,14 @@ export function EventDetail({ event, eventsPath, onClose, onEdit }: EventDetailP
       </div>
       <div className="facts-grid">
         <div><span className="field-label">Type</span><p>{event.event_type?.name ?? "Not stated"}</p></div>
-        <div><span className="field-label">Epistemic status</span><p>{EPISTEMIC_LABELS[event.epistemic_status]}</p></div>
+        <div>
+          <span className="field-label">Epistemic status</span>
+          <StatusChip
+            colorVar={EPISTEMIC_COLORS[event.epistemic_status]}
+            label={EPISTEMIC_LABELS[event.epistemic_status]}
+            value={event.epistemic_status}
+          />
+        </div>
         <div><span className="field-label">Start date</span><p>{event.start_date ?? "Date unknown"}</p></div>
         <div><span className="field-label">End date</span><p>{event.end_date ?? "Not stated"}</p></div>
         <div><span className="field-label">Actors</span><p>{event.actors.length ? event.actors.map(({ actor, role }) => `${actor.name} (${role})`).join("; ") : "Not stated"}</p></div>

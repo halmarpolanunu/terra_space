@@ -85,7 +85,7 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
           {testing ? "Testing…" : "Test connection"}
         </button>
         {result && (
-          <span className="settings-status">
+          <span className="settings-status" data-motion-item="connection-status">
             <StatusChip
               colorVar={result.reachable ? "--status-confirmed" : "--status-denied"}
               label={result.reachable ? "Reachable" : "Offline"}
@@ -120,7 +120,11 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
         <button className="btn btn-primary" disabled={saving} onClick={save} type="button">
           {saving ? "Saving…" : "Save connection"}
         </button>
-        {saved && <span className="settings-saved" role="status">Saved.</span>}
+        {saved && (
+          <span className="settings-saved" data-motion-item="save-status" role="status">
+            Saved.
+          </span>
+        )}
       </div>
     </FramedPanel>
   );
