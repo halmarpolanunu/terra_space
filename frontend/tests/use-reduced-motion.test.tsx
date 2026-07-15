@@ -11,26 +11,28 @@ function PreferenceProbe() {
 
 describe("useReducedMotion", () => {
   it("tracks the browser preference and removes its listener on unmount", () => {
-    let listener: ((event: MediaQueryListEvent) => void) | undefined;
+    let listener: (() => void) | undefined;
+    let matches = false;
     const removeEventListener = vi.fn();
+    const mediaQuery = {
+      get matches() { return matches; },
+      addEventListener: (_: string, nextListener: () => void) => {
+        listener = nextListener;
+      },
+      removeEventListener,
+    };
     vi.stubGlobal(
       "matchMedia",
-      vi.fn(() => ({
-        matches: false,
-        addEventListener: (
-          _: string,
-          nextListener: (event: MediaQueryListEvent) => void,
-        ) => {
-          listener = nextListener;
-        },
-        removeEventListener,
-      })),
+      vi.fn(() => mediaQuery),
     );
 
     const { unmount } = render(<PreferenceProbe />);
 
     expect(screen.getByText("full")).toBeVisible();
-    act(() => listener?.({ matches: true } as MediaQueryListEvent));
+    act(() => {
+      matches = true;
+      listener?.();
+    });
     expect(screen.getByText("reduced")).toBeVisible();
 
     unmount();

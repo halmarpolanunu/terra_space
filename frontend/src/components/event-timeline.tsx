@@ -7,19 +7,39 @@ type EventTimelineProps = {
   events: EventRead[];
   sort: EventSort;
   hasActiveFilters: boolean;
+  limit?: number;
   onClearFilters?: () => void;
+  onSelect?: (event: EventRead) => void;
 };
 
 function isKnownDate(event: EventRead): event is EventRead & { start_date: string } {
   return Boolean(event.start_date && event.start_date_precision !== "unknown");
 }
 
-export function EventTimeline({ events, sort, hasActiveFilters, onClearFilters }: EventTimelineProps) {
+export function EventTimeline({ events, sort, hasActiveFilters, limit, onClearFilters, onSelect }: EventTimelineProps) {
   const knownEvents = events.filter(isKnownDate).sort((left, right) => {
     const comparison = left.start_date.localeCompare(right.start_date);
     return sort === "date_asc" ? comparison : -comparison;
   });
-  const unknownEvents = events.filter((event) => !isKnownDate(event));
+  const unknownEvents = events
+    .filter((event) => !isKnownDate(event))
+    .sort((left, right) => left.title.localeCompare(right.title));
+  const orderedEvents = [...knownEvents, ...unknownEvents];
+  const visibleEvents = limit === undefined ? orderedEvents : orderedEvents.slice(0, limit);
+  const visibleKnownEvents = visibleEvents.filter(isKnownDate);
+  const visibleUnknownEvents = visibleEvents.filter((event) => !isKnownDate(event));
+
+  function renderEvent(event: EventRead) {
+    return (
+      <li key={event.id}>
+        {onSelect ? (
+          <button className="timeline-event-trigger" onClick={() => onSelect(event)} type="button">
+            {event.title}
+          </button>
+        ) : event.title}
+      </li>
+    );
+  }
 
   if (events.length === 0) {
     return hasActiveFilters ? (
@@ -43,16 +63,16 @@ export function EventTimeline({ events, sort, hasActiveFilters, onClearFilters }
 
   return (
     <div className="event-timeline">
-      {knownEvents.length > 0 && (
+      {visibleKnownEvents.length > 0 && (
         <section className="timeline-group">
           <h3>Known dates</h3>
-          <ul>{knownEvents.map((event) => <li key={event.id}>{event.title}</li>)}</ul>
+          <ul>{visibleKnownEvents.map(renderEvent)}</ul>
         </section>
       )}
-      {unknownEvents.length > 0 && (
+      {visibleUnknownEvents.length > 0 && (
         <section className="timeline-group timeline-unknown-group">
           <h3>Date unknown</h3>
-          <ul>{unknownEvents.map((event) => <li key={event.id}>{event.title}</li>)}</ul>
+          <ul>{visibleUnknownEvents.map(renderEvent)}</ul>
         </section>
       )}
     </div>

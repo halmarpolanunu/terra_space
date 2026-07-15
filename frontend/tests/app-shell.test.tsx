@@ -32,5 +32,6 @@ describe("AppShell", () => {
       "href",
       "/dashboard",
     );
+    expect(screen.getByRole("main")).toHaveAttribute("data-route", "/dashboard");
   });
 });

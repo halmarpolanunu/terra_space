@@ -59,6 +59,33 @@ describe("EventTimeline", () => {
     ]);
   });
 
+  it("limits both date groups to three signals and makes them selectable", () => {
+    const onSelect = vi.fn();
+    const newer = makeEvent("new", "Newer event", "2026-07-14");
+    const older = makeEvent("old", "Older event", "2026-01-01");
+    const firstUnknown = makeEvent("unknown-1", "First undated event", null);
+    const secondUnknown = makeEvent("unknown-2", "Second undated event", null);
+
+    render(
+      <EventTimeline
+        events={[older, secondUnknown, newer, firstUnknown]}
+        hasActiveFilters={false}
+        limit={3}
+        onSelect={onSelect}
+        sort="date_desc"
+      />,
+    );
+
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Newer event" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Older event" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "First undated event" })).toBeVisible();
+    expect(screen.queryByText("Second undated event")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "First undated event" }));
+    expect(onSelect).toHaveBeenCalledWith(firstUnknown);
+  });
+
   it("shows a no-data message with a link to Event Review when there are no filters and no approved events", () => {
     render(<EventTimeline events={[]} hasActiveFilters={false} sort="date_desc" />);
 

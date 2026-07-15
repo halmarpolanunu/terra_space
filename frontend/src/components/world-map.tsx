@@ -87,7 +87,7 @@ export function WorldMap({ geojson = EMPTY_EVENT_PINS, onFeatureSelect }: WorldM
       container: container.current,
       style: worldMapStyle,
       center: [0, 20],
-      zoom: 1.2,
+      zoom: 2.2,
       attributionControl: false,
     });
     mapRef.current = map;

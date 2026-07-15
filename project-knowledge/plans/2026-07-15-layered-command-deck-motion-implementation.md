@@ -83,8 +83,8 @@ Playwright/Chrome, Docker Compose for isolated populated QA.
 
 ## Checkpoint tracker
 
-- [ ] **Checkpoint 1:** shared motion foundation and reduced-motion behavior
-- [ ] **Checkpoint 2:** static globe-dominant Layered Command Deck composition
+- [x] **Checkpoint 1:** shared motion foundation and reduced-motion behavior
+- [x] **Checkpoint 2:** static globe-dominant Layered Command Deck composition
 - [ ] **Checkpoint 3:** 3D focus, keyboard/drawer interaction, parallax, and selected-pin emphasis
 - [ ] **Checkpoint 4:** restrained motion on Documents, Event Review, Events, and Settings
 - [ ] **Checkpoint 5:** populated 1920×930/900 browser QA and complete verification
@@ -107,7 +107,7 @@ Playwright/Chrome, Docker Compose for isolated populated QA.
 - Produces: `useReducedMotion(): boolean` for the Layered Command Deck.
 - Preserves: existing `WorldMap` motion behavior and MapLibre API.
 
-- [ ] **Step 1: Write the failing hook test**
+- [x] **Step 1: Write the failing hook test**
 
 ```tsx
 function Probe() {
@@ -128,13 +128,13 @@ it("tracks the reduced-motion media query and its change event", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and record the expected red result**
+- [x] **Step 2: Run the test and record the expected red result**
 
 Run: `npm.cmd test -- tests/use-reduced-motion.test.tsx`
 
 Expected: FAIL because `@/hooks/use-reduced-motion` does not exist.
 
-- [ ] **Step 3: Implement the hook**
+- [x] **Step 3: Implement the hook**
 
 ```ts
 "use client";
@@ -156,7 +156,7 @@ export function useReducedMotion(): boolean {
 }
 ```
 
-- [ ] **Step 4: Add shared CSS motion tokens and a complete reduced-motion override**
+- [x] **Step 4: Add shared CSS motion tokens and a complete reduced-motion override**
 
 ```css
 :root {
@@ -176,7 +176,7 @@ export function useReducedMotion(): boolean {
 }
 ```
 
-- [ ] **Step 5: Extend the map test to prove reduced motion suppresses pulse transitions**
+- [x] **Step 5: Extend the map test to prove reduced motion suppresses pulse transitions**
 
 Add an assertion that `setPaintProperty` is not called with
 `"circle-radius-transition"` when `matchMedia().matches` is true, then run:
@@ -185,7 +185,7 @@ Add an assertion that `setPaintProperty` is not called with
 
 Expected: both files PASS.
 
-- [ ] **Step 6: Commit Checkpoint 1**
+- [x] **Step 6: Commit Checkpoint 1**
 
 ```powershell
 git add -- frontend/src/hooks/use-reduced-motion.ts frontend/src/app/globals.css frontend/tests/use-reduced-motion.test.tsx frontend/tests/world-map.test.tsx
@@ -210,7 +210,7 @@ git commit -m "feat: add the controlled cinematic motion foundation"
 `127.0.0.1:3020` (host Next.js dev server), and stores data only in the named
 `terra-motion-data` volume.
 
-- [ ] **Step 1: Define and start the isolated services**
+- [x] **Step 1: Define and start the isolated services**
 
 Use Docker project name `terra-motion`. The override replaces `/data` with the named volume,
 publishes backend port `8020`, and points the backend at an LM Studio stub on host port `4184`:
@@ -233,7 +233,7 @@ then run `docker compose -p terra-motion -f docker-compose.yml -f
 test-results/motion-workbench/compose.motion.yml up -d backend`. Do not start or stop the owner's
 normal Compose project.
 
-- [ ] **Step 2: Seed nine documents through the real extraction workflow**
+- [x] **Step 2: Seed nine documents through the real extraction workflow**
 
 `seed-motion.mjs` talks only to `http://127.0.0.1:8020/api`. For each scenario it:
 
@@ -267,7 +267,7 @@ detector creates a pending flag. Assert at the end that counts are 9 documents, 
 2 drafts, 1 rejected event, at least 6 coordinate-bearing locations, 1 pending duplicate flag,
 and 2 attachments; abort if any assertion fails.
 
-- [ ] **Step 3: Start the host frontend and inspect the populated baseline**
+- [x] **Step 3: Start the host frontend and inspect the populated baseline**
 
 Start a hidden Next.js dev process from `frontend/` with
 `BACKEND_URL=http://127.0.0.1:8020` on port `3020`. Open the existing populated Dashboard in real
@@ -301,7 +301,7 @@ workbench running for Checkpoints 2–5.
 - Consumes: existing filtered `EventRead[]`, `EventFilterBar`, `EventList`, `EventDetail`, and
   `EventGlobe` instances from `DashboardWorkspace`.
 
-- [ ] **Step 1: Write failing structure tests**
+- [x] **Step 1: Write failing structure tests**
 
 ```tsx
 render(
@@ -337,13 +337,13 @@ expect(screen.queryByText("Filter form")).not.toBeInTheDocument();
 In `app-shell.test.tsx`, assert that the existing main landmark has
 `data-route="/dashboard"`. This fails before adding the route marker.
 
-- [ ] **Step 2: Run the tests and record the expected red result**
+- [x] **Step 2: Run the tests and record the expected red result**
 
 Run: `npm.cmd test -- tests/layered-command-deck.test.tsx tests/dashboard-workspace.test.tsx tests/event-timeline.test.tsx tests/app-shell.test.tsx`
 
 Expected: FAIL because the new component and compact interfaces do not exist.
 
-- [ ] **Step 3: Implement the final component interface and semantic shell**
+- [x] **Step 3: Implement the final component interface and semantic shell**
 
 ```tsx
 export type CommandDeckPanel = "summary" | "signals" | "register" | "filters" | "detail" | null;
@@ -451,7 +451,7 @@ Import `Link` from `next/link` and `ReactNode` from React. Summary and Signals r
 the resting state; activating them only changes their depth/focus. Register, Filters, and Detail
 are the only drawer contents, and an inactive drawer is absent from the DOM.
 
-- [ ] **Step 4: Expose compact content without duplicating event logic**
+- [x] **Step 4: Expose compact content without duplicating event logic**
 
 Refactor `dashboard-summary.tsx` so `summarizeDashboardEvents()` remains the single calculation
 source and `DashboardSummaryContent` renders:
@@ -477,7 +477,7 @@ const visibleUnknownEvents = visibleEvents.filter((event) => !isKnownDate(event)
 Render each title as a button only when `onSelect` exists, calling `onSelect(event)`; otherwise
 retain the current plain list item. Retain both current empty-state branches.
 
-- [ ] **Step 5: Compose the stage in `DashboardWorkspace`**
+- [x] **Step 5: Compose the stage in `DashboardWorkspace`**
 
 Keep the existing URL filter object and API requests unchanged. Remove the Dashboard-only external
 `PageHeader`; the command deck renders the `.eyebrow` and sole `<h1>` inside the stage, and its
@@ -491,7 +491,7 @@ Add `data-route={currentPath}` to `AppShell`'s current `<main>`—without changi
 landmark semantics—so only `/dashboard` receives the edge-to-edge stage padding. The other four
 screens keep the shared `PageHeader` pattern and their current content width.
 
-- [ ] **Step 6: Add target-viewport geometry**
+- [x] **Step 6: Add target-viewport geometry**
 
 Implement CSS with the stable shell outside the stage and these constraints:
 
@@ -513,13 +513,13 @@ Implement CSS with the stable shell outside the stage and these constraints:
 
 The exact inspected result, not the percentage alone, decides final geometry at 1920×930.
 
-- [ ] **Step 7: Run focused tests**
+- [x] **Step 7: Run focused tests**
 
 Run: `npm.cmd test -- tests/layered-command-deck.test.tsx tests/dashboard-workspace.test.tsx tests/event-timeline.test.tsx tests/app-shell.test.tsx`
 
 Expected: all focused tests PASS.
 
-- [ ] **Step 8: Commit Checkpoint 2**
+- [x] **Step 8: Commit Checkpoint 2**
 
 ```powershell
 git add -- frontend/src/app/dashboard/layered-command-deck.tsx frontend/src/app/dashboard/dashboard-summary.tsx frontend/src/app/dashboard/dashboard-workspace.tsx frontend/src/components/app-shell.tsx frontend/src/components/event-timeline.tsx frontend/src/app/globals.css frontend/tests/layered-command-deck.test.tsx frontend/tests/dashboard-workspace.test.tsx frontend/tests/event-timeline.test.tsx frontend/tests/app-shell.test.tsx

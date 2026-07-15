@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import maplibregl from "maplibre-gl";
 import { describe, expect, it, vi } from "vitest";
 
 const map = {
@@ -32,6 +33,14 @@ import {
 } from "@/components/world-map";
 
 describe("offline world map configuration", () => {
+  it("opens at the globe-dominant command-deck scale", () => {
+    render(<WorldMap />);
+
+    expect(maplibregl.Map).toHaveBeenLastCalledWith(
+      expect.objectContaining({ zoom: 2.2 }),
+    );
+  });
+
   it("uses only a local PMTiles source", () => {
     expect(WORLD_PMTILES_URL).toBe("/api/backend/api/maps/world.pmtiles");
     expect(JSON.stringify(worldMapStyle)).not.toMatch(/https?:\/\//);

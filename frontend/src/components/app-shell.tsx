@@ -37,7 +37,7 @@ export function AppShell({ currentPath, children }: AppShellProps) {
         <Navigation currentPath={currentPath} />
         <p className="sidebar-note">Local intelligence workspace</p>
       </aside>
-      <main className="main-content" id="main-content">
+      <main className="main-content" data-route={currentPath} id="main-content">
         {children}
       </main>
     </div>
