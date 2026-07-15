@@ -4,7 +4,7 @@ Terra Space is a local web application for building an intelligence workspace. Y
 
 ## Current status
 
-Phase 1 (application foundation) is complete: navigation, local database, offline map, and the Docker runtime all work. Document upload, AI processing, event review, and the dashboard are not built yet, so the five pages you see after starting the app are currently empty shells. See `project-knowledge/Current-Status.md` for what's being worked on next.
+The full MVP is complete and working end to end: manual document input and batch AI processing through LM Studio, Event Review with duplicate-flag resolution, the approved Events list, the Dashboard (summary, globe map, timeline), and Settings (LM Studio connection and event-type management) are all built and verified. The Dashboard's "Layered Command Deck" motion-design refinement is also implemented and verified, ready for the owner's desktop review. See `project-knowledge/Current-Status.md` for what's being worked on next.
 
 ## Before you start
 
@@ -58,7 +58,7 @@ To run the automated browser check, use:
 npm.cmd run test:e2e
 ```
 
-It starts the local application, checks the five pages and offline behavior, then stops it again.
+It starts the local application, drives the document-to-approved-event flow (including Settings and failure/retry cases) across all five pages, and checks offline behavior, then stops it again.
 
 This folder uses a lean Project Knowledge setup so coding agents can share the same project memory.
 
