@@ -20,6 +20,7 @@ type EventFilterBarProps = {
   eventTypeOptions: EventTypeRead[];
   actorOptions: ActorRead[];
   documentOptions: DocumentOption[];
+  initiallyExpanded?: boolean;
   onChange: (filters: EventFilters) => void;
 };
 
@@ -35,9 +36,10 @@ export function EventFilterBar({
   eventTypeOptions,
   actorOptions,
   documentOptions,
+  initiallyExpanded = false,
   onChange,
 }: EventFilterBarProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   const optionsId = useId();
   const activeCount = ACTIVE_FILTER_KEYS.filter((key) => Boolean(value[key].trim())).length;
 

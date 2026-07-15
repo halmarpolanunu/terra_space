@@ -1295,7 +1295,7 @@ body {
 .layered-command-deck[data-panel="register"] .command-deck-instrument,
 .layered-command-deck[data-panel="filters"] .command-deck-instrument,
 .layered-command-deck[data-panel="detail"] .command-deck-instrument {
-  opacity: 0.68;
+  opacity: 0.9;
 }
 
 .command-deck-instrument__trigger {

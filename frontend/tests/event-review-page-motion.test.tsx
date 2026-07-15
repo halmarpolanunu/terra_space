@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/app-shell", () => ({
@@ -63,6 +64,13 @@ const documentFixture: Document = {
   attachments: [],
 };
 
+const secondDocumentFixture: Document = {
+  ...documentFixture,
+  id: "document-2",
+  title: "Second field report",
+  content: "A separate report describes activity at the depot.",
+};
+
 describe("EventReviewPage motion direction", () => {
   beforeEach(() => {
     vi.mocked(documentsApi.listDocuments).mockResolvedValue([documentFixture]);
@@ -102,5 +110,41 @@ describe("EventReviewPage motion direction", () => {
         "next",
       ),
     );
+  });
+
+  it("does not pair a new source document with stale events while its events are loading", async () => {
+    let resolveSecondDocumentEvents: ((events: EventRead[]) => void) | undefined;
+    const secondDocumentEvents = new Promise<EventRead[]>((resolve) => {
+      resolveSecondDocumentEvents = resolve;
+    });
+    const firstEvent = makeEvent("event-1", "Bridge crossing reported");
+    const secondEvent = makeEvent("event-2", "Depot activity reported");
+
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([
+      documentFixture,
+      secondDocumentFixture,
+    ]);
+    vi.mocked(eventsApi.listEventsForDocument).mockImplementation((documentId) =>
+      documentId === documentFixture.id
+        ? Promise.resolve([firstEvent])
+        : secondDocumentEvents,
+    );
+
+    render(<EventReviewPage />);
+    await screen.findByText(firstEvent.title);
+
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    await screen.findByText(secondDocumentFixture.content);
+    expect(screen.queryByText(firstEvent.title)).not.toBeInTheDocument();
+    expect(screen.getByText("Loading extracted events…")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Prev" }));
+    await screen.findByText(documentFixture.content);
+    await screen.findByText(firstEvent.title);
+
+    await act(async () => resolveSecondDocumentEvents?.([secondEvent]));
+    expect(screen.getByText(firstEvent.title)).toBeVisible();
+    expect(screen.queryByText(secondEvent.title)).not.toBeInTheDocument();
   });
 });

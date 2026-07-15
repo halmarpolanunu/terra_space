@@ -39,6 +39,7 @@ export default function EventReviewPage() {
   const [documentIndex, setDocumentIndex] = useState(0);
   const [events, setEvents] = useState<EventRead[]>([]);
   const [eventIndex, setEventIndex] = useState(0);
+  const [eventsDocumentId, setEventsDocumentId] = useState<string | null>(null);
   const [eventTypeOptions, setEventTypeOptions] = useState<EventTypeRead[]>([]);
   const [actorOptions, setActorOptions] = useState<ActorRead[]>([]);
   const [motionDirection, setMotionDirection] = useState<"next" | "previous">("next");
@@ -60,20 +61,29 @@ export default function EventReviewPage() {
   }, []);
 
   const currentDocument = documents[documentIndex];
+  const currentDocumentId = currentDocument?.id ?? null;
 
   useEffect(() => {
-    if (!currentDocument) {
+    if (!currentDocumentId) {
       return;
     }
-    listEventsForDocument(currentDocument.id)
+    let active = true;
+    listEventsForDocument(currentDocumentId)
       .then((allEvents) => {
+        if (!active) return;
         setEvents(allEvents.filter((event) => event.review_status === "draft"));
         setEventIndex(0);
+        setEventsDocumentId(currentDocumentId);
       })
-      .catch((err: Error) => setError(err.message));
-  }, [currentDocument]);
+      .catch((err: Error) => {
+        if (active) setError(err.message);
+      });
+    return () => { active = false; };
+  }, [currentDocumentId]);
 
-  const currentEvent = events[eventIndex];
+  const eventsLoading = Boolean(currentDocumentId && eventsDocumentId !== currentDocumentId);
+  const reviewEvents = eventsLoading ? [] : events;
+  const currentEvent = reviewEvents[eventIndex];
 
   useEffect(() => {
     const pendingFlags =
@@ -238,11 +248,11 @@ export default function EventReviewPage() {
       ) : (
         <>
           <ReviewBar
-            canNext={documentIndex < documents.length - 1 || eventIndex < events.length - 1}
+            canNext={documentIndex < documents.length - 1 || eventIndex < reviewEvents.length - 1}
             canPrev={documentIndex > 0 || eventIndex > 0}
             documentCount={documents.length}
             documentIndex={documentIndex}
-            eventCount={events.length}
+            eventCount={reviewEvents.length}
             eventIndex={eventIndex}
             onNext={goNext}
             onPrev={goPrev}
@@ -293,7 +303,7 @@ export default function EventReviewPage() {
             ) : (
               <div className="panel review-event-card">
                 <div className="panel-heading"><h2 className="panel-title">Event</h2></div>
-                <p>No draft events for this document.</p>
+                <p>{eventsLoading ? "Loading extracted events…" : "No draft events for this document."}</p>
               </div>
             )}
           </div>

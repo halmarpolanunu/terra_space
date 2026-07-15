@@ -69,6 +69,25 @@ describe("event filter URL state", () => {
 });
 
 describe("EventFilterBar", () => {
+  it("can reveal advanced controls immediately when mounted inside a dedicated filters drawer", () => {
+    render(
+      <EventFilterBar
+        actorOptions={[]}
+        documentOptions={[]}
+        eventTypeOptions={[]}
+        initiallyExpanded
+        onChange={vi.fn()}
+        value={emptyEventFilters()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Hide filters" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(screen.getByLabelText("Country")).toBeVisible();
+  });
+
   it("labels every shared Roadmap filter and only shows Clear filters when active", () => {
     const { rerender } = render(
       <EventFilterBar

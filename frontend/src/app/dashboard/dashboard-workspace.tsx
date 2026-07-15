@@ -113,6 +113,7 @@ export function DashboardWorkspace() {
               actorOptions={actors}
               documentOptions={documents}
               eventTypeOptions={eventTypes}
+              initiallyExpanded
               onChange={changeFilters}
               value={filters}
             />
