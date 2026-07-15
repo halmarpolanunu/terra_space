@@ -101,6 +101,7 @@ describe("offline world map configuration", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
     map.rotateTo.mockClear();
+    map.setPaintProperty.mockClear();
     const listeners = new Map<string, () => void>();
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
@@ -113,6 +114,16 @@ describe("offline world map configuration", () => {
     listeners.get("idle")?.();
     vi.advanceTimersByTime(5000);
     expect(map.rotateTo).not.toHaveBeenCalled();
+    expect(map.setPaintProperty).not.toHaveBeenCalledWith(
+      EVENT_PIN_HALO_LAYER_ID,
+      "circle-radius-transition",
+      expect.anything(),
+    );
+    expect(map.setPaintProperty).not.toHaveBeenCalledWith(
+      EVENT_PIN_HALO_LAYER_ID,
+      "circle-opacity-transition",
+      expect.anything(),
+    );
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
