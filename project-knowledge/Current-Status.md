@@ -16,9 +16,19 @@ authorized implementation of the post-pass
 It makes the Dashboard globe dominant, places a small number of instruments on subtle 3D depth
 planes, and introduces controlled-cinematic motion across the desktop interface. The target is
 the owner's `1920 × 1080` display at `100%` Windows scale; phone/mobile remains unsupported. The
-current continuation point is writing and then executing the checkpointed implementation plan.
+current continuation point is executing the
+[checkpointed implementation plan](plans/2026-07-15-layered-command-deck-motion-implementation.md),
+beginning with its shared reduced-motion foundation.
 
 ## Recent progress
+
+- Wrote and self-reviewed the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md)
+  as five locally committed checkpoints. It uses focused tests and one commit per checkpoint to
+  keep progress observable and credit use controlled. An isolated nine-document workbench is
+  populated through the real LM Studio extraction flow before Dashboard layout work begins, then
+  remains available for visual judgment through the final `1920 × 930`/`1920 × 900` browser pass;
+  the owner's normal database is never mounted or changed.
 
 - Completed the motion-design session and high-fidelity comparison. The owner initially chose the
   Orbital HUD, found its rendered cockpit-like density excessive, and approved the calmer Layered

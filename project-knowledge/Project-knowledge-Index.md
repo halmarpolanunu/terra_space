@@ -29,6 +29,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md) — build plan that closed Phase 1's remaining item
 - [Design Pass Audit](plans/2026-07-15-design-pass-audit.md) — screen-by-screen findings for the deferred aesthetic design pass
 - [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md) — approved globe-dominant 3D Dashboard and controlled-cinematic motion specification
+- [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md) — checkpointed, test-first execution plan with an isolated populated visual workbench
 
 ## Reading rule
 

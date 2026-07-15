@@ -8,6 +8,19 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Layered Command Deck implementation checkpointed
+
+- Added the
+  [Layered Command Deck Motion Implementation Plan](plans/2026-07-15-layered-command-deck-motion-implementation.md)
+  after the owner authorized execution. Work is split into five observable checkpoints with
+  focused tests and local commits; full tests, lint, build, and acceptance QA remain concentrated
+  in the final checkpoint to limit unnecessary repetition.
+- Corrected the implementation sequence during self-review so an isolated, realistic database is
+  populated through the real document-extraction workflow before Dashboard layout work begins,
+  rather than waiting until final QA. That workbench covers populated review cards, tables, facts,
+  attachments, duplicate state, real globe pins, and mixed epistemic/review states without
+  touching the owner's normal data.
+
 ## 2026-07-15 - Layered Command Deck and controlled-cinematic motion approved
 
 - The owner compared three 3D Dashboard alternatives, initially selected Orbital HUD, then found
