@@ -8,6 +8,22 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-15 - Orbital HUD and controlled-cinematic motion approved
+
+- The owner selected the **Orbital HUD** from three visual alternatives and approved the complete
+  [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md). On the Dashboard,
+  the MapLibre globe becomes the dominant viewport-height hero while Summary, Filter Control,
+  Recent Signals, and an Event Register dock occupy distinct CSS 3D orbit/depth planes. Compact
+  instruments advance and enlarge when focused; pointer parallax, pins, and amber connectors
+  communicate depth without covering the globe's center.
+- Refined the [Visual Design Direction](decisions/Visual-Design-Direction.md) from broadly calm
+  motion to **controlled cinematic**: strong globe-first staging on the Dashboard, lighter motion
+  on Documents/Events/Settings, and almost no ambient motion on evidence-heavy Event Review.
+  Scanlines, blinking, bounce, flicker, and aggressive bloom remain rejected.
+- Fixed the acceptance environment to the owner's `1920 × 1080` display at `100%` Windows scale,
+  with `1920 × 930` as the primary maximized-browser viewport and `1920 × 900` as the short-height
+  check. Terra Space remains desktop-only; no Roadmap phase or milestone changed.
+
 ## 2026-07-15 - Deferred aesthetic design pass implemented
 
 - Completed every open finding in the

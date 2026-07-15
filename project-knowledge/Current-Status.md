@@ -10,16 +10,24 @@ status: active
 
 ## Current focus
 
-Every Roadmap item across all five phases is complete, and the deferred aesthetic pass described
-in [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md) is now complete. Its audit and
-implementation outcome are recorded together in the
-[Design Pass Audit](plans/2026-07-15-design-pass-audit.md). Terra Space is explicitly a desktop
-browser application only; phone/mobile presentation is not supported or an acceptance target.
-The next continuation point is the owner's hands-on desktop review, followed by an explicit
-choice of any post-MVP work. The completed pass is on `codex/design-pass-polish` and has not been
-pushed to GitHub.
+Every Roadmap item and the deferred aesthetic pass are complete. The owner has now approved a
+post-pass motion refinement: the [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md).
+It makes the Dashboard globe dominant, places compact instruments on different 3D orbits around
+it, and introduces controlled-cinematic motion across the desktop interface. The target is the
+owner's `1920 × 1080` display at `100%` Windows scale; phone/mobile remains unsupported. The next
+continuation point is the owner's review of the written design specification, followed by a
+separate implementation plan after approval.
 
 ## Recent progress
+
+- Completed the Orbital HUD motion-design session. The owner chose the Orbital HUD over Layered
+  Command Deck and Holographic Cockpit alternatives, then approved: a viewport-height Dashboard
+  with the globe occupying roughly 65–75% of the stage; Summary, Filter Control, and Recent
+  Signals on distinct CSS 3D depth planes; an Event Register bottom dock; compact panels that
+  advance and enlarge on focus; globe-first cinematic choreography and parallax; lighter motion
+  on Documents, Event Review, Events, and Settings; reduced-motion behavior; and browser QA at
+  `1920 × 930` plus `1920 × 900`. The refinement stays within the pure-black/amber mission-brief
+  language and adds no phone/mobile target.
 
 - Completed the implementation half of the deferred aesthetic pass across Dashboard, Documents,
   Event Review, Events, and Settings. Added one shared page-header pattern and permanent status
@@ -283,15 +291,10 @@ pushed to GitHub.
 
 ## Next actions
 
-- Implement the design pass from the [Design Pass Audit](plans/2026-07-15-design-pass-audit.md),
-  in the prepared `design-pass` worktree, keeping the pure-black/amber mission-brief system.
-  Order of work per the audit's "Prioritized top 5": first the four usability defects (remove
-  the "PHASE 2"/"PHASE 3" labels, fix the Event Review dead-end empty state, split the
-  misleading "No events match these filters" message into no-data vs. filtered-out cases, and
-  make the Documents queue panel legible with visible disabled buttons), then the polish items,
-  led by compressing the shared Dashboard/Events filter block. During that work, capture the
-  populated views with sample data — the audit only saw empty states — and extend the audit
-  findings if the populated views surface new issues.
+- Owner reviews the written
+  [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md). After explicit
+  approval, write a test-first implementation plan in `project-knowledge/plans/`; do not begin
+  application changes before that review gate.
 
 ## Related knowledge
 
@@ -304,3 +307,4 @@ pushed to GitHub.
 - [Local-First MVP Decision](decisions/MVP-Local-First-Architecture.md)
 - [Visual Design Direction](decisions/Visual-Design-Direction.md)
 - [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md)
+- [Orbital HUD and Motion Design](plans/2026-07-15-orbital-hud-motion-design.md)

@@ -92,12 +92,18 @@ No light mode in the MVP. Background is always pure black.
 
 ## Motion
 
-- **Keep (calm):** globe auto-rotation, gentle pin pulses, slow flowing arc dashes, a slow
-  muted activity ticker.
+- The motion identity is **controlled cinematic**: deliberate staging, spatial continuity, and
+  real depth around the Dashboard globe, without turning routine workflows into spectacle.
+- **Dashboard signature:** the globe resolves first; floating HUD instruments enter along
+  different 3D orbits; small pointer parallax communicates their Z depth; a focused instrument
+  advances toward the user while its related pin/connector receives amber emphasis.
+- **Keep (ambient):** globe auto-rotation, gentle pin pulses, slow flowing arc dashes, and a slow
+  muted activity ticker. Ambient motion yields when the user interacts.
+- **Other screens:** use lighter page/panel entrances and direct state transitions. On the dense
+  Event Review screen, motion remains essentially off except for short directional transitions
+  between events and explicit state changes.
 - **Remove (too much):** scanlines, vignette flicker, blinking elements, heavy glow bloom,
-  fast/aggressive animation.
-- **On dense reading/decision screens (Event Review) motion is essentially off** — mood comes
-  from borders, color, and type, not movement.
+  bounce, and fast/aggressive animation.
 
 ## Layout rules
 
@@ -111,9 +117,12 @@ No light mode in the MVP. Background is always pure black.
 
 ## Validated screens
 
-- **Dashboard:** locked status bar and navigation rail → compact search/filter toolbar → concise
-  summary → globe centerpiece beside the timeline → full-width approved-event register. Advanced
-  filters open on demand so the summary and globe remain visible in the initial desktop viewport.
+- **Dashboard:** locked status bar and navigation rail → one viewport-height **Orbital HUD** stage.
+  The MapLibre globe occupies roughly 65–75% of the stage and remains unobstructed at its center;
+  compact Summary, Filter Control, and Recent Signals instruments float on different CSS 3D
+  orbits around its edges; the Event Register rests as a bottom dock. Selecting an instrument
+  moves it forward and enlarges it while the globe stays visible. The approved specification is
+  [Orbital HUD and Motion Design](../plans/2026-07-15-orbital-hud-motion-design.md).
 - **Event Review:** status bar → tight clustered review bar
   (`Event Review │ Document X of Y │ progress Event N of M │ Prev · Skip · Next`) → 2 columns
   (source document | one focused event). Left panel highlights only the current event's source
@@ -125,7 +134,9 @@ No light mode in the MVP. Background is always pure black.
 - **Focused & calm** (Linear/Notion-style) and **warm editorial** moods — rejected; the owner
   chose the mission-brief tactical direction.
 - **Full cinematic/aggressive** treatment (CLASSIFIED banner, scanlines, vignette, blinking
-  alerts, heavy glow) — rejected as too much for daily, hours-long use.
+  alerts, heavy glow) — still rejected as too much for daily, hours-long use. This does not
+  exclude the later-approved controlled-cinematic Orbital HUD, which creates drama through depth,
+  staging, and parallax instead of visual noise.
 - **Flat 2D tactical map** — rejected in favor of a 3D globe (kept only as fallback).
 - **All extracted events shown at once** in Event Review — rejected as overwhelming; replaced
   with one-event-at-a-time review.
@@ -136,7 +147,8 @@ No light mode in the MVP. Background is always pure black.
 
 - The tactical intelligence look matches the product's job (who/what/where/when + certainty)
   and is the direction the owner chose.
-- Dialing energy back and keeping motion calm supports long working sessions without fatigue.
+- Concentrating stronger motion on the Dashboard hero while keeping reading/decision screens
+  restrained supports long working sessions without making the interface feel static.
 - One-thing-at-a-time directly resolved the owner's "too much to follow" feedback.
 - Serif source documents vs mono/sans chrome keeps "the source" and "the system" distinct.
 - A 3D globe is achievable on the existing offline tiles, so it adds no data dependency.
@@ -151,6 +163,8 @@ No light mode in the MVP. Background is always pure black.
   filter behavior, type/spacing rhythm, and the desktop layouts for Dashboard, Documents, Event
   Review, Events, and Settings. Future work should extend these patterns instead of creating a
   parallel styling system.
+- The post-pass Orbital HUD refinement targets the owner's `1920 × 1080` display at `100%` Windows
+  scale, using `1920 × 930` as the primary maximized-browser viewport. It remains desktop-only.
 - The visual-design checkpoint and deferred aesthetic implementation pass are closed.
 
 # Navigation
