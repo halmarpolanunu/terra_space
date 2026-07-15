@@ -306,8 +306,8 @@ four screens use restrained workflow motion. The target remains the owner's `192
 
 ## Next actions
 
-- Review the completed desktop experience at the target resolution. The local branch is committed
-  and deliberately not pushed; merge or push only with owner direction.
+- Review the completed desktop experience at the target resolution. The verified implementation is
+  merged into `main` and pushed to GitHub; the temporary implementation branch was removed.
 
 ## Related knowledge
 
