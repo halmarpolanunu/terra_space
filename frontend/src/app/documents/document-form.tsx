@@ -98,17 +98,17 @@ export function DocumentForm({
             value={values.publication_date ?? ""}
           />
         </div>
-      </div>
-      <div className="field">
-        <label htmlFor="source-url">Source URL</label>
-        <input
-          id="source-url"
-          onChange={(event) =>
-            setValues((prev) => ({ ...prev, source_url: event.target.value || null }))
-          }
-          type="text"
-          value={values.source_url ?? ""}
-        />
+        <div className="field">
+          <label htmlFor="source-url">Source URL</label>
+          <input
+            id="source-url"
+            onChange={(event) =>
+              setValues((prev) => ({ ...prev, source_url: event.target.value || null }))
+            }
+            type="text"
+            value={values.source_url ?? ""}
+          />
+        </div>
       </div>
       <div className="form-actions">
         <button className="btn btn-primary" disabled={!canSubmit} type="submit">

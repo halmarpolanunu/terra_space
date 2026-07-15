@@ -31,6 +31,10 @@ target `docs/`, `docs/superpowers/specs/`, or `docs/plans/`).
     separate handoff or continuation files.
   - Verification results and meaningful history → `project-knowledge/Project-Knowledge-Log.md`.
   - Phase or milestone changes → `project-knowledge/Roadmap.md`.
+  - Owner-reported gaps and future development requests not yet scheduled →
+    `project-knowledge/Feedback-Backlog.md`. Check it whenever work touches an area it mentions;
+    move an item's status to resolved (with a link to the decision/plan that addressed it)
+    instead of deleting it once acted on.
 - Every Markdown file added under `project-knowledge/` must have valid OKF frontmatter
   (`type`, `title`, `description`) and a non-empty body, and its internal links must resolve, so
   that validation passes.

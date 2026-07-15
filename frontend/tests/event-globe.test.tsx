@@ -8,6 +8,7 @@ const map = {
   getBearing: vi.fn(() => 0),
   getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
   getSource: vi.fn(() => source),
+  getZoom: vi.fn(() => 2.2),
   off: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),

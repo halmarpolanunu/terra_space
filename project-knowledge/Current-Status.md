@@ -10,16 +10,53 @@ status: active
 
 ## Current focus
 
-Protected event deletion is implemented and verified per the
-[Event Deletion Design](plans/2026-07-15-event-deletion-design.md). Owners can permanently delete
-`draft` and `approved` events either directly from an Events list row or from the Events detail
-view, after an explicit confirmation naming the event; `rejected` and `merged` events remain
-immutable audit history with no Delete control and a `409` from the API. Deletion never touches the
-source document, attachments, actors, locations, event types, or shared source records. The target
-remains the owner's `1920 × 1080` display at `100%` Windows scale, with phone/mobile explicitly
-unsupported. No Roadmap phase or milestone changed.
+Fixed two items from the owner's live-testing
+[Feedback Backlog](Feedback-Backlog.md): the Documents page's disproportionate top/bottom layout,
+and the Dashboard globe's atmosphere ring staying static and covering the globe when zoomed in.
+On Documents, the "New Document" form panel was hard-capped to a `52rem` width inside a page that
+can be up to `86rem` wide, leaving a large empty area to its right while the Document Queue panel
+below it correctly stretched full width; removed the cap so both panels match, and moved the
+Source URL field into the same row as Document date/Publication date (using an auto-fit grid) so
+the reclaimed width is used instead of sitting empty inside the form. On the Dashboard, the amber
+ring drawn by `.command-deck-globe::after` is a fixed-size decorative overlay sized for the
+resting globe view (zoom `2.2`); it does not track the MapLibre globe's own zoom, so zooming in
+made the enlarged globe surface grow past it and appear covered by a static ring. `WorldMap` now
+tracks the map's zoom level and sets a `--globe-ring-opacity` CSS variable on the ring's container,
+fading the ring out over about two zoom levels past resting so it only shows at the intended
+full-globe view. Verified with 127 frontend tests (2 new/updated, covering the ring's zoom-fade
+behavior and the added `zoom` listener cleanup), lint, a production build, and a live desktop
+browser check at `1920 × 1080` (Documents before/after, Dashboard at rest and after a simulated
+wheel-zoom) against the owner's real local database — read-only navigation only, no data changed.
+Both closed items are marked resolved in the Feedback Backlog; the remaining Dashboard panel
+parallax issue in that same entry is still open, since removing parallax conflicts with the locked
+Visual Design Direction decision and needs owner approval first. No Roadmap phase or milestone
+changed.
 
 ## Recent progress
+
+- Fixed slow local startup: `Start-TerraSpace.ps1` was taking about 70 seconds because the SQLite
+  database lived on the Windows-mounted `data` folder, where Docker Desktop's bind-mount I/O is
+  slow for SQLite's frequent small writes. Per the
+  [Database Storage Moved to a Docker-Managed Volume](decisions/Database-Storage-Location.md)
+  decision, only the database now lives in a Docker-managed volume; `data/maps`,
+  `data/attachments`, and `data/logs` are unchanged and still visible in Windows Explorer. Startup
+  is now about 8.5 seconds. Added `Backup-TerraSpaceDatabase.ps1` and
+  `Restore-TerraSpaceDatabase.ps1` (both verified working) since the database can no longer be
+  backed up by just copying the `data` folder, and updated the README's "Backup and restore"
+  section accordingly. While verifying, also fixed an unrelated pre-existing bug found along the
+  way: the backend health check's hardcoded 2-second internal timeout was too tight for this
+  machine's ~2-second normal loopback latency, causing the health check to fail most of the time
+  regardless of the database change (confirmed by reproducing the same failure on the unmodified
+  prior configuration); both the Dockerfile's `HEALTHCHECK` and `docker-compose.yml`'s override
+  were widened. No Roadmap phase or milestone changed.
+- Protected event deletion is implemented and verified per the
+  [Event Deletion Design](plans/2026-07-15-event-deletion-design.md). Owners can permanently
+  delete `draft` and `approved` events either directly from an Events list row or from the Events
+  detail view, after an explicit confirmation naming the event; `rejected` and `merged` events
+  remain immutable audit history with no Delete control and a `409` from the API. Deletion never
+  touches the source document, attachments, actors, locations, event types, or shared source
+  records. The target remains the owner's `1920 × 1080` display at `100%` Windows scale, with
+  phone/mobile explicitly unsupported. No Roadmap phase or milestone changed.
 
 - Moved Delete from a detail-only control to an inline action in every Events list row (plus
   keeping it in the detail view), after the owner's live testing showed the detail-only placement

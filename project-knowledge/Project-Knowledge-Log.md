@@ -8,6 +8,111 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Documents layout and Dashboard globe ring feedback items resolved
+
+- Resolved two open [Feedback Backlog](Feedback-Backlog.md) items. Documents: the "New Document"
+  form panel had a hard `width: min(100%, 52rem)` cap while the page itself is up to `86rem` wide
+  and the Document Queue panel below it had no such cap, so the form panel stopped well short of
+  the page's right edge while the queue panel didn't; removed the cap and moved the Source URL
+  field into the same row as Document date/Publication date so the reclaimed width is used instead
+  of sitting empty. Dashboard: the amber atmosphere ring around the globe
+  (`.command-deck-globe::after`) is a fixed-size decorative overlay sized for the resting globe
+  view and never tracked the MapLibre globe's actual zoom, so zooming in made the enlarged globe
+  surface grow past it and appear covered; `WorldMap` now fades the ring out via a
+  `--globe-ring-opacity` CSS variable as the user zooms in.
+- The Dashboard panel-parallax half of that same backlog item remains open, since removing it
+  conflicts with the locked
+  [Visual Design Direction](decisions/Visual-Design-Direction.md) decision and needs owner
+  approval first.
+- Verified with 127 frontend tests (2 new/updated), lint, a production build, and a live desktop
+  browser check at `1920 × 1080` against the owner's real local database (read-only navigation, no
+  data changed). No Roadmap phase or milestone changed.
+
+## 2026-07-16 - Two more Feedback Backlog items recorded (Dashboard motion, Documents layout)
+
+- Added a fifth item to `project-knowledge/Feedback-Backlog.md`: the owner does not want the
+  Situation Summary, Recent Signals, and Event Register panels moving with the pointer (this
+  parallax is a deliberate feature of the locked
+  [Visual Design Direction](decisions/Visual-Design-Direction.md) decision, so this conflicts and
+  needs a decision update, not just a code change); and the amber atmosphere ring around the
+  Dashboard globe stays static and covers the globe when zoomed in, which reads as a behavior
+  defect rather than an intended design choice.
+- Added a sixth item: the Documents page's overall layout composition feels disproportionate
+  between the "New Document" form panel and the "Document Queue" panel below it.
+- Per the owner's request to reduce verification overhead, both items were captured as-reported
+  without opening the frontend code first; verification is deferred to whenever either item is
+  actually scheduled for a fix. No code changed, no decision made — backlog entries only.
+
+## 2026-07-16 - Fourth Feedback Backlog item recorded (event types have no description)
+
+- Added a fourth item to `project-knowledge/Feedback-Backlog.md`: the owner finds event types
+  "too shallow" since Settings only collects a bare name. Confirmed in code before writing
+  anything down — `EventType` (`backend/app/db/models.py:76-84`) has only `name` and `is_active`
+  columns, and extraction (`backend/app/services/extraction.py:58-65`) matches/creates types by
+  exact name only, with no description passed anywhere (UI or LLM prompt) to disambiguate similar
+  types. Recorded the open question: whether a description should just be a human-readable field
+  for Settings/pickers, or also feed the LM Studio extraction prompt to improve classification —
+  needs the owner's choice before scoping an implementation plan (either way requires a migration,
+  API, and UI change).
+- No code changed, no decision made — backlog entry only.
+
+## 2026-07-16 - Two more Feedback Backlog items recorded (Event Review editing, background emptiness)
+
+- Added a second item to `project-knowledge/Feedback-Backlog.md`: the owner wants to edit every
+  draft field directly on the Event Review card. Checked `frontend/src/app/event-review/event-card.tsx`
+  before writing anything down — an `Edit` button already swaps the whole card into a form
+  covering title, summary, dates/precision, event type, actors, and locations, so full-field
+  editing already exists there. Recorded the real open question instead: whether the owner didn't
+  notice the existing `Edit` button (discoverability) or wants fields editable inline without a
+  separate view/edit toggle (a design change) — flagged as needing the owner's clarification
+  before any fix is scoped, so a future agent doesn't just re-add a feature that's already built.
+- Added a third item: the owner wants an accent, picture, or texture on the sidebar/Dashboard
+  background instead of pure black, calling the current look "too empty and void." Checked this
+  against the locked [Visual Design Direction](decisions/Visual-Design-Direction.md) decision,
+  which explicitly fixes "Background is always pure black" and lists a more decorated/light-mode
+  treatment as considered and rejected. Recorded this as a real conflict with a locked decision,
+  not a simple styling tweak — any fix needs an explicit decision update/supersession with the
+  owner's approval first, per the same "never change silently" rule `AGENTS.md` applies to the
+  North Star.
+- No code changed and no decision was updated in this pass — both items are backlog entries only,
+  pending the rest of the owner's feedback.
+
+## 2026-07-16 - Database storage moved to fix slow startup
+
+- Recorded the
+  [Database Storage Moved to a Docker-Managed Volume](decisions/Database-Storage-Location.md)
+  decision: only the SQLite database moves from the Windows-mounted `data` folder into a
+  Docker-managed volume, cutting `Start-TerraSpace.ps1` startup from about 70 seconds to about 8.5
+  seconds. `data/maps`, `data/attachments`, and `data/logs` are unaffected. Migrated the owner's
+  existing database with no data loss (verified row counts before/after: 1 document, 4 events, 1
+  attachment) and kept a pre-migration safety copy at `data/database.pre-migration-backup/`
+  (git-ignored). Added `Backup-TerraSpaceDatabase.ps1` and `Restore-TerraSpaceDatabase.ps1`
+  (both verified working end-to-end, including a real restore-and-restart check) since the
+  database can no longer be backed up by copying the `data` folder alone, and updated the README's
+  "Backup and restore" section to match.
+- Found and fixed an unrelated pre-existing bug while verifying: the backend health check's
+  hardcoded 2-second internal timeout was too tight for this machine's normal ~2-second loopback
+  latency, so the check failed most of the time regardless of the database change — confirmed by
+  reproducing the identical failure on the unmodified prior configuration before making any
+  change. Widened both the Dockerfile's built-in `HEALTHCHECK` and `docker-compose.yml`'s override
+  to a 5-second internal / 6-second outer timeout.
+
+## 2026-07-16 - Feedback Backlog started; first item recorded (globe location gaps)
+
+- Added `project-knowledge/Feedback-Backlog.md`, a new standing home for owner-reported gaps and
+  future development requests that are not yet an approved decision or scheduled Roadmap item.
+  Linked it from `Project-knowledge-Index.md` and added it as a documented home in `AGENTS.md`
+  so Claude, Codex, and Gemini all check it, not just this session.
+- Recorded the first item from the owner's live testing: approved events frequently reach
+  Events/Dashboard without a usable location, so they never get a globe pin, and there is
+  currently no visibility into which approved events are missing one or why. Traced the likely
+  cause to two compounding gaps against the existing
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision: AI extraction does not always produce location text, and the decision's deliberate
+  exact-match-only gazetteer lookup (no fuzzy matching, by design) silently leaves near-misses
+  uncoordinated. No fix was scoped or implemented — this is a backlog entry only, pending the
+  owner's remaining feedback items and a follow-up decision/plan.
+
 ## 2026-07-15 - Delete moved into the Events list row too
 
 - After reviewing the detail-only Delete control live, the owner expected Delete to be reachable

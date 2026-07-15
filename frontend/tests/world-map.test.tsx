@@ -8,6 +8,7 @@ const map = {
   getBearing: vi.fn(() => 0),
   getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
   getSource: vi.fn(),
+  getZoom: vi.fn(() => 2.2),
   off: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),
@@ -230,6 +231,31 @@ describe("offline world map configuration", () => {
     expect(await screen.findByText("Flat map fallback")).toBeVisible();
   });
 
+  it("fades the decorative globe ring as the user zooms in so it stops covering the globe surface", () => {
+    let zoom = 2.2;
+    let zoomListener: (() => void) | undefined;
+    map.getZoom.mockImplementation(() => zoom);
+    map.setProjection.mockImplementation(() => undefined);
+    map.setSky.mockImplementation(() => undefined);
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      if (event === "zoom" && typeof listener === "function") zoomListener = listener as () => void;
+      return map;
+    });
+
+    const { container } = render(<WorldMap />);
+    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("1");
+
+    zoom = 3.2;
+    zoomListener?.();
+    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0.5");
+
+    zoom = 4.2;
+    zoomListener?.();
+    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0");
+  });
+
   it("clears ambient intervals and registered listeners on unmount", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
@@ -247,7 +273,7 @@ describe("offline world map configuration", () => {
     unmount();
 
     expect(clearInterval).toHaveBeenCalledTimes(2);
-    expect(map.off).toHaveBeenCalledTimes(13);
+    expect(map.off).toHaveBeenCalledTimes(14);
     expect(map.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("load", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("click", EVENT_PIN_LAYER_ID, expect.any(Function));

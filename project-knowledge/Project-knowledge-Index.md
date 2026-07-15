@@ -15,6 +15,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 - [North Star](North-Star.md) — overarching objective, success definition, boundaries, and principles
 - [Current Status](Current-Status.md) — current focus, recent progress, blockers, and next actions
+- [Feedback Backlog](Feedback-Backlog.md) — owner-reported gaps and future development requests not yet scheduled
 - [Project Knowledge Log](Project-Knowledge-Log.md) — meaningful changes to the knowledge bundle
 
 ## Planning and decisions
@@ -36,4 +37,6 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 ## Reading rule
 
-Read the North Star and Current Status before substantial work. Read the Roadmap or related decisions only when they are relevant to the task.
+Read the North Star and Current Status before substantial work. Read the Roadmap or related
+decisions only when they are relevant to the task. Check the Feedback Backlog whenever work
+touches an area it mentions.

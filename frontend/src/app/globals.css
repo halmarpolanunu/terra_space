@@ -838,8 +838,8 @@ body {
 
 /* Document intake: a focused form followed by a broader operational queue. */
 .documents-page { max-width: 86rem; }
-.document-form { width: min(100%, 52rem); }
 .document-form textarea.serif { min-height: 11rem; resize: vertical; }
+.document-form .field-row { grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); }
 .documents-page > .panel:not(.document-form) { min-width: 0; }
 .batch-actions {
   min-height: 2.5rem;
@@ -1195,6 +1195,8 @@ body {
   inset: 6% 16%;
   border-radius: 50%;
   pointer-events: none;
+  opacity: var(--globe-ring-opacity, 1);
+  transition: opacity 220ms ease;
   box-shadow:
     0 0 3.5rem rgba(242, 169, 59, 0.025) inset,
     0 0 5rem rgba(35, 55, 58, 0.08);

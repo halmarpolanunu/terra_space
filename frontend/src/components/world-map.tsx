@@ -155,6 +155,15 @@ export function WorldMap({
     const handlePinMouseLeave = () => {
       map.getCanvas().style.cursor = "";
     };
+    const restingZoom = map.getZoom();
+    const updateGlobeRingOpacity = () => {
+      const wrapper = container.current?.parentElement;
+      if (!wrapper) return;
+      // The decorative ring is sized for the resting globe view; fade it out as the
+      // user zooms in so it stops sitting on top of the enlarged globe surface.
+      const opacity = Math.max(0, Math.min(1, 1 - (map.getZoom() - restingZoom) / 2));
+      wrapper.style.setProperty("--globe-ring-opacity", opacity.toString());
+    };
     const handleLoad = () => {
       try {
         map.setProjection({ type: "globe" });
@@ -220,10 +229,12 @@ export function WorldMap({
         }, 1400);
       }
       mapLoaded.current = true;
+      updateGlobeRingOpacity();
     };
 
     map.on("error", handleMapError);
     map.on("load", handleLoad);
+    map.on("zoom", updateGlobeRingOpacity);
 
     let idle = false;
     const pauseRotation = () => { idle = false; };
@@ -245,6 +256,7 @@ export function WorldMap({
       if (pinPulse !== undefined) window.clearInterval(pinPulse);
       map.off("error", handleMapError);
       map.off("load", handleLoad);
+      map.off("zoom", updateGlobeRingOpacity);
       map.off("click", EVENT_PIN_LAYER_ID, handlePinClick);
       map.off("mouseenter", EVENT_PIN_LAYER_ID, handlePinMouseEnter);
       map.off("mouseleave", EVENT_PIN_LAYER_ID, handlePinMouseLeave);
