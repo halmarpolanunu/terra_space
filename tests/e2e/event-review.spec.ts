@@ -13,9 +13,9 @@ async function createAndProcessDocument(
   documentDate: string,
 ) {
   await page.goto("/documents");
-  await page.getByLabel("Title", { exact: true }).fill(title);
-  await page.getByLabel("Content", { exact: true }).fill(content);
-  await page.getByLabel("Document date", { exact: true }).fill(documentDate);
+  await page.getByLabel("Title *", { exact: true }).fill(title);
+  await page.getByLabel("Content *", { exact: true }).fill(content);
+  await page.getByLabel("Document date *", { exact: true }).fill(documentDate);
   await page.getByRole("button", { name: "Add document" }).click();
   await expect(page.getByText(title)).toBeVisible();
 

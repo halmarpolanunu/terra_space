@@ -40,15 +40,15 @@ test("configures LM Studio and manages event types from Settings", async ({ page
 test("isolates a failed document in a batch and recovers it with retry", async ({ page }) => {
   await page.goto("/documents");
 
-  await page.getByLabel("Title", { exact: true }).fill("Alpha valid report");
-  await page.getByLabel("Content", { exact: true }).fill(ALPHA_CONTENT);
-  await page.getByLabel("Document date", { exact: true }).fill("2026-07-10");
+  await page.getByLabel("Title *", { exact: true }).fill("Alpha valid report");
+  await page.getByLabel("Content *", { exact: true }).fill(ALPHA_CONTENT);
+  await page.getByLabel("Document date *", { exact: true }).fill("2026-07-10");
   await page.getByRole("button", { name: "Add document" }).click();
   await expect(page.getByText("Alpha valid report")).toBeVisible();
 
-  await page.getByLabel("Title", { exact: true }).fill("Bravo failing report");
-  await page.getByLabel("Content", { exact: true }).fill(BRAVO_CONTENT);
-  await page.getByLabel("Document date", { exact: true }).fill("2026-07-11");
+  await page.getByLabel("Title *", { exact: true }).fill("Bravo failing report");
+  await page.getByLabel("Content *", { exact: true }).fill(BRAVO_CONTENT);
+  await page.getByLabel("Document date *", { exact: true }).fill("2026-07-11");
   await page.getByRole("button", { name: "Add document" }).click();
   await expect(page.getByText("Bravo failing report")).toBeVisible();
 

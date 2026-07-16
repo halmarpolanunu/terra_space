@@ -89,7 +89,7 @@ async function runFoundationScenario() {
   resetLocalDatabase();
   try {
     await startTerraSpaceWithRetry(env);
-    run("npx.cmd", ["playwright", "test", "tests/e2e/foundation.spec.ts", "tests/e2e/visual-responsive.spec.ts"], env);
+    run("npx.cmd", ["playwright", "test", "--workers=1", "tests/e2e/foundation.spec.ts", "tests/e2e/visual-responsive.spec.ts"], env);
   } finally {
     run("powershell", [...powershell, ".\\Stop-TerraSpace.ps1"]);
   }
