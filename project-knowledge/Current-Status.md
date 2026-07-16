@@ -534,11 +534,11 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 - Once approved events with resolved locations exist in the owner's live database again, do a
   direct visual check of the cluster marker and "Unresolved locations" list against real data (the
   only confirmation so far used an isolated, fully torn-down test stack, not the live database).
-- Review the approved
-  [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md)
-  decision, then prepare its test-first implementation plan. The owner selected descriptions that
-  guide both people and LM Studio; AI must inspect existing active definitions before proposing a
-  new inactive type.
+- Execute the owner-approved
+  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md). It
+  adds human-reviewed definitions to Settings and type selectors, requires descriptions before
+  activation, and makes LM Studio compare active name/description pairs before proposing a new
+  inactive type.
 - Review the completed desktop experience at the target resolution. The verified implementation is
   merged into `main` and pushed to GitHub; the temporary implementation branch was removed.
 

@@ -40,6 +40,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md) — strengthens the LM Studio extraction prompt/schema and adds a location-level grounding check
 - [Globe Rotation Controls Implementation Plan](plans/2026-07-16-globe-rotation-controls.md) — play/pause and speed/direction mini controller, plus a root-cause fix for permanently stalled ambient rotation
 - [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md) — approved rules for described event types, human activation, and description-aware local AI classification
+- [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md) — test-first database, API, extraction, Settings, selection guidance, and verification plan
 
 ## Reading rule
 

@@ -19,6 +19,10 @@ status: active
 - Settings will manage names and descriptions together, while Event Review and Events editing will
   show the selected definition beneath the type control. See
   [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md).
+- Prepared the test-first
+  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md), split
+  into independently verifiable database/API, extraction persistence, LM Studio prompt, Settings,
+  selection guidance, and end-to-end completion tasks.
 
 ## 2026-07-16 - Globe rotation play/pause, speed/axis controller, and a real stall bug fixed
 

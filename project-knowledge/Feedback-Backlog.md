@@ -159,7 +159,9 @@ implementation plan or decision, link it from here and mark it resolved instead 
   Active types require descriptions, with a migration exception for existing active records so the
   upgrade remains safe. See
   [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md).
-- **Status:** Planned; design approved and awaiting its implementation plan.
+- **Status:** Planned; design approved and the
+  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md) is
+  ready for execution.
 
 ### UI should adapt to the user's browser zoom level (2026-07-16)
 
