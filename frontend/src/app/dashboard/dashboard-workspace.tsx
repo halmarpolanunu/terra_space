@@ -7,6 +7,7 @@ import { EventDetail } from "@/app/events/event-detail";
 import { DashboardSummaryContent } from "@/app/dashboard/dashboard-summary";
 import { EventGlobe, eventLocationsToFeatureCollection } from "@/app/dashboard/event-globe";
 import { LayeredCommandDeck, type CommandDeckPanel } from "@/app/dashboard/layered-command-deck";
+import { CommandDeckViewport } from "@/app/dashboard/command-deck-viewport";
 import { AppShell } from "@/components/app-shell";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
@@ -92,6 +93,7 @@ export function DashboardWorkspace() {
   return (
     <AppShell currentPath="/dashboard">
       <section aria-labelledby="dashboard-title" className="dashboard-page">
+        <CommandDeckViewport>
         <LayeredCommandDeck
           activeFilterCount={activeFilterCount}
           activePanel={activePanel}
@@ -157,6 +159,7 @@ export function DashboardWorkspace() {
           summary={<DashboardSummaryContent events={events} markerCount={markerCount} />}
           title="Dashboard"
         />
+        </CommandDeckViewport>
       </section>
     </AppShell>
   );
