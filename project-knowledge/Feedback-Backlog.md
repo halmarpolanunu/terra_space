@@ -144,12 +144,13 @@ implementation plan or decision, link it from here and mark it resolved instead 
   (without its description)."
 - **Screenshot context:** Settings → Event Types panel — only a "New event type" name field and,
   per existing row, a name input plus Active/Enabled controls. No description field anywhere.
-- **Confirmed in code (not assumed):** `EventType` (`backend/app/db/models.py:76-84`) has only
-  `name` and `is_active` columns — no description column exists at all. Extraction
-  (`backend/app/services/extraction.py:58-65`) matches or creates an event type purely by exact
-  name (`find_by_exact_name`); nothing passes a definition/description to the LLM to disambiguate
+- **Original state confirmed in code before this work:** `EventType`
+  (`backend/app/db/models.py:76-84`) had only
+  `name` and `is_active` columns — no description column existed at all. Extraction
+  (`backend/app/services/extraction.py:58-65`) matched or created an event type purely by exact
+  name (`find_by_exact_name`); nothing passed a definition/description to the LLM to disambiguate
   similar-sounding types (e.g. "Report" vs. "Statement" vs. "Incident"). The Settings event-type
-  row and the Event Review/Events edit-screen type pickers only ever show/collect the bare name.
+  row and the Event Review/Events edit-screen type pickers only showed/collected the bare name.
 - **Requested outcome:** the owner wants each event type to carry a description, so both the
   reviewer (a human deciding "is this the right type?") and the extraction step (the AI choosing
   or suggesting a type) have more than a one- or two-word label to go on.

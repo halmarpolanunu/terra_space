@@ -83,7 +83,7 @@ React 19, Next.js 16, Vitest, Testing Library.
 - Produces: `create_event_type(db, name, description)` and
   `update_event_type(..., description=_UNSET)`.
 
-- [ ] **Step 1: Write migration and API tests that describe the required behavior**
+- [x] **Step 1: Write migration and API tests that describe the required behavior**
 
 Add database coverage that the upgraded table contains nullable `description`. Add API tests with
 these exact cases:
@@ -187,7 +187,7 @@ def test_approve_all_skips_a_suggested_type_without_description(tmp_path: Path) 
     assert body["skipped"][0]["reason"] == "Event type needs a description."
 ```
 
-- [ ] **Step 2: Run the focused backend tests and confirm RED**
+- [x] **Step 2: Run the focused backend tests and confirm RED**
 
 Run from `backend/`:
 
@@ -199,7 +199,7 @@ Expected: failures because the column, payload fields, and validation error do n
 helper itself becomes usable as soon as the model field is added; before that, the expected
 `description is an invalid keyword argument` failure proves the field is missing.
 
-- [ ] **Step 3: Add the migration, model field, schemas, and service validation**
+- [x] **Step 3: Add the migration, model field, schemas, and service validation**
 
 Create revision `0007_event_type_descriptions` after `0006_lm_studio_timeout`:
 
@@ -357,7 +357,7 @@ Update `_extraction_with_suggestions` in `test_event_edit_approve_reject.py` to 
 `suggested_description` so its existing successful-approval test continues to represent a reviewed
 suggestion.
 
-- [ ] **Step 4: Run focused tests and confirm GREEN**
+- [x] **Step 4: Run focused tests and confirm GREEN**
 
 ```powershell
 uv run pytest tests/test_database.py tests/test_event_types_actors_api.py tests/test_event_edit_approve_reject.py -q
@@ -365,7 +365,7 @@ uv run pytest tests/test_database.py tests/test_event_types_actors_api.py tests/
 
 Expected: all selected tests pass.
 
-- [ ] **Step 5: Verify upgrade and downgrade on a disposable SQLite database**
+- [x] **Step 5: Verify upgrade and downgrade on a disposable SQLite database**
 
 Extend `test_alembic_migration_creates_foundation_schema` and add this migration-safety test:
 
@@ -397,7 +397,7 @@ def test_event_type_description_migration_preserves_legacy_rows(tmp_path: Path) 
     assert "description" in {column["name"] for column in inspect(engine).get_columns("event_types")}
 ```
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 ```powershell
 git add backend/alembic/versions/0007_event_type_descriptions.py backend/app/db/models.py backend/app/schemas/event.py backend/app/services/events.py backend/app/api/routes/events.py backend/tests/test_database.py backend/tests/test_event_types_actors_api.py backend/tests/test_event_edit_approve_reject.py
@@ -421,7 +421,7 @@ git commit -m "feat: add event type descriptions"
 - Produces: `ExtractedEventType.suggested_description: str | None` with max length 1,000.
 - Guarantees: only a newly created suggested type receives the AI draft description.
 
-- [ ] **Step 1: Write failing persistence tests**
+- [x] **Step 1: Write failing persistence tests**
 
 ```python
 SOURCE_TEXT = "Aircraft struck the depot."
@@ -526,7 +526,7 @@ def test_blank_ai_description_is_null_on_inactive_suggestion(tmp_path: Path) -> 
     assert row["is_active"] is False
 ```
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [x] **Step 2: Run focused tests and confirm RED**
 
 ```powershell
 uv run pytest tests/test_event_types_actors_api.py tests/test_extraction_validation.py -q
@@ -534,7 +534,7 @@ uv run pytest tests/test_event_types_actors_api.py tests/test_extraction_validat
 
 Expected: schema rejects/ignores `suggested_description`, or API returns `null` instead of the draft.
 
-- [ ] **Step 3: Extend the structured extraction schema and persistence**
+- [x] **Step 3: Extend the structured extraction schema and persistence**
 
 ```python
 class ExtractedEventType(BaseModel):
@@ -572,7 +572,7 @@ event_type = EventType(
 Do not write to `event_type.description` when `find_by_exact_name` returns an existing row. Keeping
 the first created row in `existing_event_types` also guarantees one record per repeated name.
 
-- [ ] **Step 4: Run focused tests and confirm GREEN**
+- [x] **Step 4: Run focused tests and confirm GREEN**
 
 ```powershell
 uv run pytest tests/test_event_types_actors_api.py tests/test_extraction_validation.py -q
@@ -580,7 +580,7 @@ uv run pytest tests/test_event_types_actors_api.py tests/test_extraction_validat
 
 Expected: all selected tests pass.
 
-- [ ] **Step 5: Commit Task 2**
+- [x] **Step 5: Commit Task 2**
 
 ```powershell
 git add backend/app/schemas/extraction.py backend/app/services/extraction.py backend/tests/test_event_types_actors_api.py backend/tests/test_extraction_validation.py
@@ -610,7 +610,7 @@ git commit -m "feat: preserve suggested type definitions"
   `known_types` is `list[KnownEventType]`.
 - Consumes: active `EventType.name` and `EventType.description` from Task 1.
 
-- [ ] **Step 1: Write a failing request-capture test**
+- [x] **Step 1: Write a failing request-capture test**
 
 ```python
 def test_extract_events_sends_active_type_definitions_and_reuse_instruction() -> None:
@@ -681,7 +681,7 @@ def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) ->
     ]
 ```
 
-- [ ] **Step 2: Run focused tests and confirm RED**
+- [x] **Step 2: Run focused tests and confirm RED**
 
 ```powershell
 uv run pytest tests/test_lm_studio_extraction.py tests/test_events_api.py -q
@@ -690,7 +690,7 @@ uv run pytest tests/test_lm_studio_extraction.py tests/test_events_api.py -q
 Expected: import/signature failures because `KnownEventType` and structured prompt content do not
 exist.
 
-- [ ] **Step 3: Add the typed definition and deterministic JSON prompt**
+- [x] **Step 3: Add the typed definition and deterministic JSON prompt**
 
 ```python
 import json
@@ -731,7 +731,7 @@ Update all five named fake-client annotations to `list[KnownEventType]`. Their r
 unchanged except for the processing-route fake that captures the received definitions for its new
 assertion.
 
-- [ ] **Step 4: Run focused tests and confirm GREEN**
+- [x] **Step 4: Run focused tests and confirm GREEN**
 
 ```powershell
 uv run pytest tests/test_lm_studio_extraction.py tests/test_events_api.py -q
@@ -739,7 +739,7 @@ uv run pytest tests/test_lm_studio_extraction.py tests/test_events_api.py -q
 
 Expected: all selected tests pass and the captured prompt contains structured definitions.
 
-- [ ] **Step 5: Run the complete backend suite**
+- [x] **Step 5: Run the complete backend suite**
 
 ```powershell
 uv run pytest -q
@@ -747,7 +747,7 @@ uv run pytest -q
 
 Expected: all backend tests pass with zero failures.
 
-- [ ] **Step 6: Commit Task 3**
+- [x] **Step 6: Commit Task 3**
 
 ```powershell
 git add backend/app/services/lm_studio.py backend/app/api/routes/processing.py backend/tests
@@ -778,7 +778,7 @@ git commit -m "feat: guide extraction with type definitions"
 - Produces: `createEventType(name: string, description: string)`.
 - Produces: `updateEventType(id, Partial<{name; description; is_active}>)`.
 
-- [ ] **Step 1: Update fixtures and write failing Settings interaction tests**
+- [x] **Step 1: Update fixtures and write failing Settings interaction tests**
 
 Add `description: null` or a meaningful definition to every `EventTypeRead` fixture in the seven
 named test files. Then add:
@@ -825,7 +825,7 @@ it("saves a name and description together", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused frontend test and confirm RED**
+- [x] **Step 2: Run the focused frontend test and confirm RED**
 
 Run from `frontend/`:
 
@@ -835,7 +835,7 @@ npm.cmd test -- event-type-settings.test.tsx
 
 Expected: failures because the description fields, API payload, and activation guard are absent.
 
-- [ ] **Step 3: Extend types, requests, component state, and layout**
+- [x] **Step 3: Extend types, requests, component state, and layout**
 
 Update the shared type and requests:
 
@@ -900,7 +900,7 @@ An active legacy blank type keeps an enabled checked box so it can be deactivate
 type submit button until both name and description contain non-whitespace text. Add layout classes
 that keep name, description, status, and actions readable without altering the global visual system.
 
-- [ ] **Step 4: Run focused tests and confirm GREEN**
+- [x] **Step 4: Run focused tests and confirm GREEN**
 
 ```powershell
 npm.cmd test -- event-type-settings.test.tsx
@@ -908,7 +908,7 @@ npm.cmd test -- event-type-settings.test.tsx
 
 Expected: all Settings tests pass.
 
-- [ ] **Step 5: Run frontend lint to catch type/JSX issues**
+- [x] **Step 5: Run frontend lint to catch type/JSX issues**
 
 ```powershell
 npm.cmd run lint
@@ -916,7 +916,7 @@ npm.cmd run lint
 
 Expected: exit code 0 with no lint errors.
 
-- [ ] **Step 6: Commit Task 4**
+- [x] **Step 6: Commit Task 4**
 
 ```powershell
 git add frontend/src/lib/events-api.ts frontend/src/lib/settings-api.ts frontend/src/app/settings/event-type-settings.tsx frontend/src/app/globals.css frontend/tests/event-type-settings.test.tsx
@@ -946,7 +946,7 @@ git commit -m "feat: manage event type descriptions"
 - Produces: `eventTypeNeedsDescription(eventType)` used by Event Review approval gating.
 - Guarantees: filters and compact summaries are untouched.
 
-- [ ] **Step 1: Write failing component and integration tests**
+- [x] **Step 1: Write failing component and integration tests**
 
 ```tsx
 it("shows a selected type definition", () => {
@@ -1027,7 +1027,7 @@ it("updates the definition when the approved-event type changes", () => {
 });
 ```
 
-- [ ] **Step 2: Run the focused tests and confirm RED**
+- [x] **Step 2: Run the focused tests and confirm RED**
 
 ```powershell
 npm.cmd test -- event-type-description.test.tsx event-card.test.tsx events-page.test.tsx
@@ -1035,7 +1035,7 @@ npm.cmd test -- event-type-description.test.tsx event-card.test.tsx events-page.
 
 Expected: missing module/component and missing description text failures.
 
-- [ ] **Step 3: Implement the focused hint component**
+- [x] **Step 3: Implement the focused hint component**
 
 ```tsx
 import type { EventTypeRead } from "@/lib/events-api";
@@ -1132,7 +1132,7 @@ it("disables approval with the supplied description-review reason", () => {
 });
 ```
 
-- [ ] **Step 4: Run focused tests and confirm GREEN**
+- [x] **Step 4: Run focused tests and confirm GREEN**
 
 ```powershell
 npm.cmd test -- event-type-description.test.tsx event-card.test.tsx events-page.test.tsx
@@ -1140,7 +1140,7 @@ npm.cmd test -- event-type-description.test.tsx event-card.test.tsx events-page.
 
 Expected: all selected tests pass.
 
-- [ ] **Step 5: Run the complete frontend suite, lint, and build**
+- [x] **Step 5: Run the complete frontend suite, lint, and build**
 
 ```powershell
 npm.cmd test
@@ -1150,7 +1150,7 @@ npm.cmd run build
 
 Expected: all tests pass; lint and production build exit 0.
 
-- [ ] **Step 6: Commit Task 5**
+- [x] **Step 6: Commit Task 5**
 
 ```powershell
 git add frontend/src/components/event-type-description.tsx frontend/src/app/event-review/add-event-form.tsx frontend/src/app/event-review/event-card.tsx frontend/src/app/event-review/page.tsx frontend/src/app/events/event-editor.tsx frontend/src/app/globals.css frontend/tests
