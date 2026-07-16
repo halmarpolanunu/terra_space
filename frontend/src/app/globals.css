@@ -1298,6 +1298,89 @@ body {
 .event-pin-cluster:hover { background: #ffd17a; }
 .event-pin-cluster:focus-visible { outline: 2px solid var(--focus); outline-offset: 0.18rem; }
 
+.command-deck-globe > .globe-rotation-controls {
+  position: absolute;
+  z-index: 5;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.globe-rotation-controls__row { display: flex; gap: 0.4rem; }
+
+.globe-rotation-toggle,
+.globe-rotation-settings-toggle {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border-bright);
+  border-radius: 50%;
+  background: rgba(4, 7, 8, 0.72);
+  color: var(--accent);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  transition: border-color var(--motion-quick) var(--motion-ease), background-color var(--motion-quick) var(--motion-ease);
+}
+
+.globe-rotation-toggle:hover,
+.globe-rotation-settings-toggle:hover { border-color: var(--accent); background: rgba(242, 169, 59, 0.14); }
+.globe-rotation-toggle:focus-visible,
+.globe-rotation-settings-toggle:focus-visible,
+.globe-rotation-direction-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 0.18rem; }
+.globe-rotation-settings-toggle[aria-expanded="true"] { border-color: var(--accent); color: #ffd17a; }
+
+.globe-rotation-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border-bright);
+  border-radius: 0.6rem;
+  background: rgba(4, 7, 8, 0.82);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.globe-rotation-panel__speed {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font: 0.68rem var(--font-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.globe-rotation-panel__speed input[type="range"] {
+  width: 6rem;
+  accent-color: var(--accent);
+}
+
+.globe-rotation-direction-toggle {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 1px solid var(--border-bright);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.globe-rotation-direction-toggle:hover { border-color: var(--accent); background: rgba(242, 169, 59, 0.14); }
+
 .command-deck-instrument {
   --deck-focus-x: 0px;
   --deck-rx: 0deg;

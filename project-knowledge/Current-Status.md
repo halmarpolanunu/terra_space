@@ -10,6 +10,40 @@ status: active
 
 ## Current focus
 
+Implemented the
+[Globe Rotation Controls Implementation Plan](plans/2026-07-16-globe-rotation-controls.md): a
+play/pause button and a speed/direction mini controller for the Dashboard globe's ambient
+rotation, requested directly by the owner as a small cinematic touch. Live testing surfaced that
+the *pre-existing* ambient rotation (shipped before this session) was not actually working in the
+owner's real browser at all — root-caused by grabbing the live MapLibre instance directly out of
+the running page (via React fiber internals) and confirming camera animations were getting
+permanently stuck. The cause: the pin-halo pulse animation keeps a MapLibre style transition
+perpetually in progress (a 1400ms transition retriggered every 1400ms, back to back, forever), and
+rotation was gated on MapLibre's `"idle"` event, which only fires when *no* transition is in
+progress — so once the halo pulse started, rotation was permanently starved. Fixed by replacing
+`"idle"`/`"move"`-based gating with a simple interaction-cooldown timestamp keyed only to direct
+user input (`mousedown`/`touchstart`/`dragstart`/`zoomstart`/`keydown` — deliberately not
+`"move"`/`"movestart"`, since rotation's own camera movement fires those too, a second related
+self-blocking bug). Also switched the rotation mechanism from bearing (`rotateTo`, an in-place
+compass spin) to panning the camera's center longitude (revealing new geography, "like the real
+Earth" per the owner's own clarification of what "rotation axis" should mean), and — after the
+owner reported the now-working rotation looked "patah-patah" (choppy) — replaced the once-a-second
+`easeTo` step with a `requestAnimationFrame` loop calling `jumpTo` every frame with a tiny
+proportional increment, removing the accelerate/decelerate/stop pattern at each 1-second boundary.
+Verified with 152 frontend tests (11 new/updated; the rotation tests rely on Vitest's built-in fake
+`requestAnimationFrame` via `vi.advanceTimersByTime`, after an earlier attempt at a custom
+`requestAnimationFrame` stub turned out to silently conflict with `vi.useFakeTimers()`'s own rAF
+fake), clean lint, and a successful production build after every stage; rebuilt and restarted the
+real frontend container after each stage. The automated browser tool used for live diagnosis in
+this session reports its tab as `document.visibilityState: "hidden"`, which fully suspends
+`requestAnimationFrame` — so the final smoothing stage could be verified via the test suite and
+direct state inspection (grabbing the live map instance and confirming `jumpTo` calls/arguments)
+but not by watching the tool's own browser pane; final visual confirmation is the owner's own
+"great to see the result!!" after checking their real browser. No Roadmap milestone changed; this
+was a direct owner feature request, not a Feedback Backlog item.
+
+## Previous focus
+
 Implemented and deployed a fix for the second still-open root cause behind
 "[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)": AI extraction
 was not consistently producing `country`/`admin1`/`city_regency` text at all, confirmed live when
@@ -45,38 +79,36 @@ document between each iteration ("seems good for now" after the second iteration
 example added) — a precise before/after location count was not captured in this session, so full
 confirmation is still the owner's to make as they continue reviewing. No Roadmap milestone changed.
 
-## Previous focus
-
-Implemented and verified the first half of the owner-reported
-"[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)" gap, per the
-[Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md):
-pins that share an identical gazetteer coordinate (same city/province/country) now group into one
-numbered cluster marker instead of stacking invisibly, and events whose location never resolved to
-any coordinate are now surfaced as a clickable "Unresolved locations" stat on the Dashboard that
-opens a list of the affected events. Both are frontend-only; the locked
-[Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md) decision
-is unchanged (no fuzzy matching, no manual coordinate override, no invented precision). Clustering
-is done in application code rather than MapLibre's built-in distance-based clustering, since
-co-located pins share the *exact* same coordinate (zooming can never separate them); cluster
-markers render as DOM elements via `maplibregl.Marker` rather than a GeoJSON `symbol` layer, since
-the map style has no configured glyph source and GeoJSON array/object feature properties are
-silently stringified with no decode-side parse. Both the cluster-contents list and the
-unresolved-locations list reuse one new generic `"list"` drawer panel added to
-`LayeredCommandDeck`. `markerCount` ("Markers · N", "Mapped locations") was switched from counting
-GeoJSON features to `countResolvedEventLocations`, so it keeps reflecting the true resolved-location
-count regardless of clustering. Verified with 148 frontend tests across 29 files, clean lint, and a
-successful production build. Since the owner's live database had 0 approved events at the time, full
-visual confirmation used a separate, fully isolated Docker Compose stack (own project name, ports,
-and scratch database; the real containers and database were never touched) seeded with three test
-events via the API (two sharing one Jakarta coordinate, one with an unresolvable location) — this
-confirmed the cluster marker ("2 events at Jakarta, Jakarta, ID"), cluster-click → list → detail
-flow, the "Unresolved locations · 1" stat and its list, and correct "Markers"/"Mapped locations"
-counts, all end to end in a real browser. The isolated stack, its images, and its volume were fully
-torn down afterward. The owner then manually tested the real Dashboard and Event Review themselves,
-which surfaced the still-open root cause now recorded under Current focus above.
-
 ## Recent progress
 
+- Implemented and verified the first half of the owner-reported
+  "[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)" gap, per the
+  [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md):
+  pins that share an identical gazetteer coordinate (same city/province/country) now group into one
+  numbered cluster marker instead of stacking invisibly, and events whose location never resolved
+  to any coordinate are now surfaced as a clickable "Unresolved locations" stat on the Dashboard
+  that opens a list of the affected events. Both are frontend-only; the locked
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision is unchanged (no fuzzy matching, no manual coordinate override, no invented precision).
+  Clustering is done in application code rather than MapLibre's built-in distance-based clustering,
+  since co-located pins share the *exact* same coordinate (zooming can never separate them); cluster
+  markers render as DOM elements via `maplibregl.Marker` rather than a GeoJSON `symbol` layer, since
+  the map style has no configured glyph source and GeoJSON array/object feature properties are
+  silently stringified with no decode-side parse. Both the cluster-contents list and the
+  unresolved-locations list reuse one new generic `"list"` drawer panel added to
+  `LayeredCommandDeck`. `markerCount` ("Markers · N", "Mapped locations") was switched from
+  counting GeoJSON features to `countResolvedEventLocations`, so it keeps reflecting the true
+  resolved-location count regardless of clustering. Verified with 148 frontend tests across 29
+  files, clean lint, and a successful production build. Since the owner's live database had 0
+  approved events at the time, full visual confirmation used a separate, fully isolated Docker
+  Compose stack (own project name, ports, and scratch database; the real containers and database
+  were never touched) seeded with three test events via the API (two sharing one Jakarta
+  coordinate, one with an unresolvable location) — this confirmed the cluster marker ("2 events at
+  Jakarta, Jakarta, ID"), cluster-click → list → detail flow, the "Unresolved locations · 1" stat
+  and its list, and correct "Markers"/"Mapped locations" counts, all end to end in a real browser.
+  The isolated stack, its images, and its volume were fully torn down afterward. The owner then
+  manually tested the real Dashboard and Event Review themselves, which surfaced the extraction
+  root cause fixed in the Previous focus above.
 - Implemented and verified the owner-approved
   [Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md)
   direction through the complete
@@ -522,4 +554,5 @@ which surfaced the still-open root cause now recorded under Current focus above.
 - [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)
 - [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md)
 - [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md)
+- [Globe Rotation Controls Implementation Plan](plans/2026-07-16-globe-rotation-controls.md)
 - [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)

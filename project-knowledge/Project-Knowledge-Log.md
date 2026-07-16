@@ -8,6 +8,38 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Globe rotation play/pause, speed/axis controller, and a real stall bug fixed
+
+- The owner asked for a play/pause button on the Dashboard globe, then a mini controller to adjust
+  rotation speed and axis, as a small cinematic touch — a direct feature request, not a Feedback
+  Backlog item. See the
+  [Globe Rotation Controls Implementation Plan](plans/2026-07-16-globe-rotation-controls.md).
+- Live testing surfaced that the ambient rotation shipped before this session was not actually
+  working in the owner's real browser at all. Root-caused by grabbing the live MapLibre instance
+  directly out of the running page (via React fiber internals, since the map isn't otherwise
+  exposed) and confirming camera animations were getting permanently stuck. Cause: the pin-halo
+  pulse animation keeps a MapLibre style transition perpetually in progress (a 1400ms transition
+  retriggered every 1400ms, back to back, forever), and rotation was gated on MapLibre's `"idle"`
+  event, which only fires when no transition is in progress — so once the halo pulse started,
+  rotation was permanently starved. Fixed by replacing `"idle"`/`"move"`-based gating with a simple
+  interaction-cooldown timestamp keyed only to direct user input, deliberately excluding `"move"`/
+  `"movestart"` since rotation's own camera movement fires those too (a second, related
+  self-blocking bug).
+- Switched the rotation mechanism from bearing (`rotateTo`, an in-place compass spin) to panning
+  the camera's center longitude, after the owner clarified "rotation axis" should mean spinning
+  like the real Earth (revealing new geography) rather than the original in-place spin. After the
+  owner reported the now-working rotation looked "patah-patah" (choppy), replaced the
+  once-a-second `easeTo` step with a `requestAnimationFrame` loop calling `jumpTo` every frame with
+  a tiny proportional increment, removing the accelerate/decelerate/stop pattern at each 1-second
+  boundary — the standard technique for continuous camera motion.
+- Verified with 152 frontend tests (11 new/updated across the four stages; the rotation tests rely
+  on Vitest's built-in fake `requestAnimationFrame` via `vi.advanceTimersByTime`, after an earlier
+  attempt at a custom `requestAnimationFrame` stub turned out to silently conflict with
+  `vi.useFakeTimers()`'s own rAF fake), clean lint, and a successful production build after every
+  stage; rebuilt and restarted the real frontend container each time. Final visual confirmation is
+  the owner's own report after checking their real browser each stage, ending with "great to see
+  the result!!" No Roadmap milestone changed.
+
 ## 2026-07-16 - Extraction prompt strengthened for location reliability
 
 - Fixed the second still-open root cause behind

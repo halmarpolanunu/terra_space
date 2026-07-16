@@ -1,18 +1,22 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import maplibregl from "maplibre-gl";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+let mapCenter = { lng: 0, lat: 20 };
 
 const map = {
   addLayer: vi.fn(),
   addSource: vi.fn(),
-  getBearing: vi.fn(() => 0),
   getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
+  getCenter: vi.fn(() => mapCenter),
   getSource: vi.fn(),
   getZoom: vi.fn(() => 2.2),
+  jumpTo: vi.fn((options: { center: [number, number] }) => {
+    mapCenter = { lng: options.center[0], lat: options.center[1] };
+  }),
   off: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),
-  rotateTo: vi.fn(),
   setPaintProperty: vi.fn(),
   setSky: vi.fn(),
   setProjection: vi.fn(),
@@ -55,7 +59,14 @@ import {
 } from "@/components/world-map";
 
 describe("offline world map configuration", () => {
-  afterEach(() => { markerInstances.length = 0; });
+  beforeEach(() => {
+    mapCenter = { lng: 0, lat: 20 };
+  });
+
+  afterEach(() => {
+    markerInstances.length = 0;
+    vi.unstubAllGlobals();
+  });
 
   it("opens at the globe-dominant command-deck scale", () => {
     render(<WorldMap />);
@@ -97,9 +108,9 @@ describe("offline world map configuration", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(MAP_UNAVAILABLE_MESSAGE);
   });
 
-  it("waits for MapLibre idle, then stops rotating for map movement and keyboard interaction", () => {
+  it("rotates continuously via animation frames and pauses briefly after direct user interaction", () => {
     vi.useFakeTimers();
-    map.rotateTo.mockClear();
+    map.jumpTo.mockClear();
     const listeners = new Map<string, () => void>();
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
@@ -110,43 +121,37 @@ describe("offline world map configuration", () => {
 
     render(<WorldMap />);
     vi.advanceTimersByTime(1000);
-    expect(map.rotateTo).not.toHaveBeenCalled();
+    expect(map.jumpTo).toHaveBeenCalled();
+    // Default speed is 4 deg/s; after ~1s of simulated frames the globe should have
+    // turned about 4 degrees, confirming continuous per-frame motion accumulates correctly.
+    expect(mapCenter.lng).toBeCloseTo(4, 0);
 
-    listeners.get("idle")?.();
-    vi.advanceTimersByTime(1000);
-    expect(map.rotateTo).toHaveBeenCalledTimes(1);
+    const callsBeforeInteraction = map.jumpTo.mock.calls.length;
+    listeners.get("dragstart")?.();
+    vi.advanceTimersByTime(500);
+    // Still inside the 1.2s post-interaction cooldown: no further movement.
+    expect(map.jumpTo.mock.calls.length).toBe(callsBeforeInteraction);
 
-    listeners.get("move")?.();
-    vi.advanceTimersByTime(1000);
-    expect(map.rotateTo).toHaveBeenCalledTimes(1);
-
-    listeners.get("idle")?.();
-    vi.advanceTimersByTime(1000);
-    expect(map.rotateTo).toHaveBeenCalledTimes(2);
-
-    listeners.get("keydown")?.();
-    vi.advanceTimersByTime(1000);
-    expect(map.rotateTo).toHaveBeenCalledTimes(2);
+    vi.advanceTimersByTime(1500);
+    // Cooldown has elapsed; rotation resumes.
+    expect(map.jumpTo.mock.calls.length).toBeGreaterThan(callsBeforeInteraction);
     vi.useRealTimers();
   });
 
   it("keeps auto-rotation disabled when reduced motion is requested", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
-    map.rotateTo.mockClear();
+    map.jumpTo.mockClear();
     map.setPaintProperty.mockClear();
-    const listeners = new Map<string, () => void>();
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
-      if (typeof listener === "function") listeners.set(event, listener as () => void);
       if (event === "load" && typeof listener === "function") (listener as () => void)();
       return map;
     });
 
     render(<WorldMap />);
-    listeners.get("idle")?.();
     vi.advanceTimersByTime(5000);
-    expect(map.rotateTo).not.toHaveBeenCalled();
+    expect(map.jumpTo).not.toHaveBeenCalled();
     expect(map.setPaintProperty).not.toHaveBeenCalledWith(
       EVENT_PIN_HALO_LAYER_ID,
       "circle-radius-transition",
@@ -157,8 +162,95 @@ describe("offline world map configuration", () => {
       "circle-opacity-transition",
       expect.anything(),
     );
+    expect(screen.queryByRole("button", { name: /globe rotation/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Rotation settings" })).not.toBeInTheDocument();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it("lets the owner manually pause and resume globe rotation from a toggle button", () => {
+    vi.useFakeTimers();
+    map.jumpTo.mockClear();
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+
+    render(<WorldMap />);
+    vi.advanceTimersByTime(500);
+    expect(map.jumpTo).toHaveBeenCalled();
+
+    const toggle = screen.getByRole("button", { name: "Pause globe rotation" });
+    fireEvent.click(toggle);
+    map.jumpTo.mockClear();
+    vi.advanceTimersByTime(1000);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Resume globe rotation" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Resume globe rotation" }));
+    vi.advanceTimersByTime(500);
+    expect(map.jumpTo).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Pause globe rotation" })).toBeVisible();
+
+    vi.useRealTimers();
+  });
+
+  it("keeps the rotation settings panel collapsed until the gear button is clicked", () => {
+    render(<WorldMap />);
+
+    expect(screen.queryByLabelText("Rotation speed")).not.toBeInTheDocument();
+    const settingsToggle = screen.getByRole("button", { name: "Rotation settings" });
+    expect(settingsToggle).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(settingsToggle);
+    expect(screen.getByLabelText("Rotation speed")).toBeVisible();
+    expect(settingsToggle).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(settingsToggle);
+    expect(screen.queryByLabelText("Rotation speed")).not.toBeInTheDocument();
+  });
+
+  it("applies the speed slider value to the rotation rate", () => {
+    vi.useFakeTimers();
+    map.jumpTo.mockClear();
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+
+    render(<WorldMap />);
+    fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
+    fireEvent.change(screen.getByLabelText("Rotation speed"), { target: { value: "8" } });
+
+    vi.advanceTimersByTime(1000);
+    // 8 deg/s for ~1s of simulated frames.
+    expect(mapCenter.lng).toBeCloseTo(8, 0);
+    expect(screen.getByText("8.0°/s")).toBeVisible();
+
+    vi.useRealTimers();
+  });
+
+  it("reverses which way the globe spins from the direction toggle", () => {
+    vi.useFakeTimers();
+    map.jumpTo.mockClear();
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+
+    render(<WorldMap />);
+    fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rotating eastward. Switch to westward." }));
+
+    vi.advanceTimersByTime(1000);
+    // Default speed 4 deg/s, reversed to westward (negative longitude direction).
+    expect(mapCenter.lng).toBeCloseTo(-4, 0);
+    expect(screen.getByRole("button", { name: "Rotating westward. Switch to eastward." })).toBeVisible();
+
+    vi.useRealTimers();
   });
 
   it("does not label the map as a flat fallback when only its sky styling fails", () => {
@@ -282,6 +374,7 @@ describe("offline world map configuration", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
     const clearInterval = vi.spyOn(window, "clearInterval");
+    const cancelAnimationFrame = vi.spyOn(window, "cancelAnimationFrame");
     map.off.mockClear();
     map.setProjection.mockImplementation(() => undefined);
     map.setSky.mockImplementation(() => undefined);
@@ -294,15 +387,17 @@ describe("offline world map configuration", () => {
     const { unmount } = render(<WorldMap />);
     unmount();
 
-    expect(clearInterval).toHaveBeenCalledTimes(2);
-    expect(map.off).toHaveBeenCalledTimes(14);
+    expect(clearInterval).toHaveBeenCalledTimes(1);
+    expect(cancelAnimationFrame).toHaveBeenCalled();
+    expect(map.off).toHaveBeenCalledTimes(11);
     expect(map.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("load", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("click", EVENT_PIN_LAYER_ID, expect.any(Function));
-    expect(map.off).toHaveBeenCalledWith("idle", expect.any(Function));
+    expect(map.off).toHaveBeenCalledWith("dragstart", expect.any(Function));
     expect(map.remove).toHaveBeenCalled();
 
     clearInterval.mockRestore();
+    cancelAnimationFrame.mockRestore();
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });

@@ -62,6 +62,10 @@ function haloOpacity(selectedEventId: string | undefined, expanded = false): Num
   return selectedPaintValue(selectedEventId, expanded ? 0.22 : 0.48, expanded ? 0.12 : 0.34);
 }
 
+function wrapLongitude(lng: number): number {
+  return ((lng + 180) % 360 + 360) % 360 - 180;
+}
+
 function applySelectedPinPaint(
   map: maplibregl.Map,
   selectedEventId: string | undefined,
@@ -155,8 +159,39 @@ export function WorldMap({
   const selectionRef = useRef(onFeatureSelect);
   const mapLoaded = useRef(false);
   const pinPulseExpanded = useRef(false);
+  const rotationEnabledRef = useRef(true);
+  const rotationSpeedRef = useRef(4);
+  const rotationDirectionRef = useRef<1 | -1>(1);
   const [unavailable, setUnavailable] = useState(false);
   const [flatFallback, setFlatFallback] = useState(false);
+  const [rotationPlaying, setRotationPlaying] = useState(true);
+  const [rotationSpeed, setRotationSpeed] = useState(4);
+  const [rotationDirection, setRotationDirection] = useState<1 | -1>(1);
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [reduceMotionAtMount] = useState(
+    () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
+  );
+
+  function toggleRotation() {
+    setRotationPlaying((current) => {
+      const next = !current;
+      rotationEnabledRef.current = next;
+      return next;
+    });
+  }
+
+  function changeRotationSpeed(nextSpeed: number) {
+    setRotationSpeed(nextSpeed);
+    rotationSpeedRef.current = nextSpeed;
+  }
+
+  function toggleRotationDirection() {
+    setRotationDirection((current) => {
+      const next = current === 1 ? -1 : 1;
+      rotationDirectionRef.current = next;
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (!container.current) {
@@ -273,23 +308,43 @@ export function WorldMap({
     map.on("load", handleLoad);
     map.on("zoom", updateGlobeRingOpacity);
 
-    let idle = false;
-    const pauseRotation = () => { idle = false; };
-    const resumeRotation = () => { idle = true; };
-    map.on("mousedown", pauseRotation);
-    map.on("touchstart", pauseRotation);
-    map.on("dragstart", pauseRotation);
-    map.on("zoomstart", pauseRotation);
-    map.on("movestart", pauseRotation);
-    map.on("move", pauseRotation);
-    map.on("keydown", pauseRotation);
-    map.on("idle", resumeRotation);
-    const rotation = reduceMotion ? undefined : window.setInterval(() => {
-      if (idle) map.rotateTo(map.getBearing() + 1, { duration: 1000, essential: false });
-    }, 1000);
+    // Tracks genuine user input only (not MapLibre's "idle"/"move" events, which the
+    // continuous pin-halo style transition and the rotation's own camera movement would
+    // otherwise keep permanently "not idle", starving rotation of any chance to run).
+    const INTERACTION_COOLDOWN_MS = 1200;
+    let lastInteractionAt = 0;
+    const markInteraction = () => { lastInteractionAt = Date.now(); };
+    map.on("mousedown", markInteraction);
+    map.on("touchstart", markInteraction);
+    map.on("dragstart", markInteraction);
+    map.on("zoomstart", markInteraction);
+    map.on("keydown", markInteraction);
+
+    // Advances the camera a tiny amount every animation frame (rather than one large
+    // eased step per second) so rotation reads as continuous motion instead of a
+    // once-a-second stutter. jumpTo is instant/unanimated by design: we are the animation.
+    let rotationFrame: number | undefined;
+    let lastFrameAt: number | undefined;
+    const rotateFrame = () => {
+      const now = Date.now();
+      if (lastFrameAt !== undefined) {
+        const elapsedSeconds = (now - lastFrameAt) / 1000;
+        const cooledDown = now - lastInteractionAt > INTERACTION_COOLDOWN_MS;
+        if (cooledDown && rotationEnabledRef.current && elapsedSeconds > 0) {
+          const center = map.getCenter();
+          const nextLng = wrapLongitude(
+            center.lng + rotationDirectionRef.current * rotationSpeedRef.current * elapsedSeconds,
+          );
+          map.jumpTo({ center: [nextLng, center.lat] });
+        }
+      }
+      lastFrameAt = now;
+      rotationFrame = window.requestAnimationFrame(rotateFrame);
+    };
+    if (!reduceMotion) rotationFrame = window.requestAnimationFrame(rotateFrame);
 
     return () => {
-      if (rotation !== undefined) window.clearInterval(rotation);
+      if (rotationFrame !== undefined) window.cancelAnimationFrame(rotationFrame);
       if (pinPulse !== undefined) window.clearInterval(pinPulse);
       map.off("error", handleMapError);
       map.off("load", handleLoad);
@@ -297,14 +352,11 @@ export function WorldMap({
       map.off("click", EVENT_PIN_LAYER_ID, handlePinClick);
       map.off("mouseenter", EVENT_PIN_LAYER_ID, handlePinMouseEnter);
       map.off("mouseleave", EVENT_PIN_LAYER_ID, handlePinMouseLeave);
-      map.off("mousedown", pauseRotation);
-      map.off("touchstart", pauseRotation);
-      map.off("dragstart", pauseRotation);
-      map.off("zoomstart", pauseRotation);
-      map.off("movestart", pauseRotation);
-      map.off("move", pauseRotation);
-      map.off("keydown", pauseRotation);
-      map.off("idle", resumeRotation);
+      map.off("mousedown", markInteraction);
+      map.off("touchstart", markInteraction);
+      map.off("dragstart", markInteraction);
+      map.off("zoomstart", markInteraction);
+      map.off("keydown", markInteraction);
       clusterMarkersRef.current.forEach((marker) => marker.remove());
       clusterMarkersRef.current = [];
       mapLoaded.current = false;
@@ -331,5 +383,62 @@ export function WorldMap({
   if (unavailable) {
     return <p role="alert">{MAP_UNAVAILABLE_MESSAGE}</p>;
   }
-  return <>{flatFallback && <p className="map-flat-fallback">Flat map fallback</p>}<div aria-label="Offline world map" className="world-map" ref={container} /></>;
+  return (
+    <>
+      {flatFallback && <p className="map-flat-fallback">Flat map fallback</p>}
+      <div aria-label="Offline world map" className="world-map" ref={container} />
+      {!reduceMotionAtMount && (
+        <div className="globe-rotation-controls">
+          <div className="globe-rotation-controls__row">
+            <button
+              aria-label={rotationPlaying ? "Pause globe rotation" : "Resume globe rotation"}
+              className="globe-rotation-toggle"
+              onClick={toggleRotation}
+              type="button"
+            >
+              <span aria-hidden="true">{rotationPlaying ? "⏸" : "▶"}</span>
+            </button>
+            <button
+              aria-expanded={controlsOpen}
+              aria-label="Rotation settings"
+              className="globe-rotation-settings-toggle"
+              onClick={() => setControlsOpen((open) => !open)}
+              type="button"
+            >
+              <span aria-hidden="true">⚙</span>
+            </button>
+          </div>
+          {controlsOpen && (
+            <div className="globe-rotation-panel">
+              <label className="globe-rotation-panel__speed">
+                <span>Speed</span>
+                <input
+                  aria-label="Rotation speed"
+                  max={12}
+                  min={0.5}
+                  onChange={(event) => changeRotationSpeed(Number(event.target.value))}
+                  step={0.5}
+                  type="range"
+                  value={rotationSpeed}
+                />
+                <span aria-hidden="true">{rotationSpeed.toFixed(1)}°/s</span>
+              </label>
+              <button
+                aria-label={
+                  rotationDirection === 1
+                    ? "Rotating eastward. Switch to westward."
+                    : "Rotating westward. Switch to eastward."
+                }
+                className="globe-rotation-direction-toggle"
+                onClick={toggleRotationDirection}
+                type="button"
+              >
+                <span aria-hidden="true">{rotationDirection === 1 ? "⟳" : "⟲"}</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
 }
