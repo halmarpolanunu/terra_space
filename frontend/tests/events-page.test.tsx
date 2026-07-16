@@ -275,6 +275,28 @@ describe("EventDetail edit permissions", () => {
 });
 
 describe("EventEditor type selection", () => {
+  it("updates the definition when the approved-event type changes", () => {
+    const movement = {
+      id: "movement", name: "Movement",
+      description: "Movement of people or equipment.", is_active: true,
+    };
+    const protest = {
+      id: "protest", name: "Protest",
+      description: "Collective public demonstration.", is_active: true,
+    };
+    render(
+      <EventEditor
+        actorOptions={[]}
+        event={makeEvent({ event_type: movement })}
+        eventTypeOptions={[movement, protest]}
+        onCancel={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "protest" } });
+    expect(screen.getByText("Collective public demonstration.")).toBeVisible();
+  });
+
   it("offers only supported active event types", () => {
     render(<EventEditor actorOptions={[]} event={makeEvent()} eventTypeOptions={[makeEvent().event_type!]} onCancel={vi.fn()} onSave={vi.fn()} />);
 

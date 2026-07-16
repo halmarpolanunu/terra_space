@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { EpistemicStatusControl } from "@/app/event-review/epistemic-status-control";
+import { EventTypeDescription } from "@/components/event-type-description";
 import { FramedPanel } from "@/components/framed-panel";
 import type { EpistemicStatus, EventCreate, EventTypeRead } from "@/lib/events-api";
 
@@ -22,6 +23,9 @@ export function AddEventForm({ eventTypeOptions, onSubmit, onCancel }: AddEventF
   const [epistemicStatus, setEpistemicStatus] = useState<EpistemicStatus>("claim");
 
   const canSubmit = title.trim() !== "" && summary.trim() !== "" && evidenceQuote.trim() !== "";
+  const selectedType = eventTypeOptions.find(
+    (type) => type.name.toLocaleLowerCase() === eventTypeName.trim().toLocaleLowerCase(),
+  );
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -78,6 +82,10 @@ export function AddEventForm({ eventTypeOptions, onSubmit, onCancel }: AddEventF
               <option key={eventType.id} value={eventType.name} />
             ))}
           </datalist>
+          <EventTypeDescription
+            eventType={selectedType}
+            unmatchedName={selectedType ? undefined : eventTypeName}
+          />
         </div>
         <div className="field">
           <label>Epistemic status</label>

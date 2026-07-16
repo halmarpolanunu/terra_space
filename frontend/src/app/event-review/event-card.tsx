@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { EpistemicStatusControl } from "@/app/event-review/epistemic-status-control";
+import { EventTypeDescription } from "@/components/event-type-description";
 import { FramedPanel } from "@/components/framed-panel";
 import type {
   ActorInput,
@@ -79,6 +80,9 @@ export function EventCard({
 
   const evidenceQuote = event.sources[0]?.evidence_quote;
   const isDraft = event.review_status === "draft";
+  const selectedType = eventTypeOptions.find(
+    (type) => type.name.toLocaleLowerCase() === eventTypeName.trim().toLocaleLowerCase(),
+  );
 
   function startEditing() {
     setTitle(event.title);
@@ -218,6 +222,10 @@ export function EventCard({
                 <option key={eventType.id} value={eventType.name} />
               ))}
             </datalist>
+            <EventTypeDescription
+              eventType={selectedType}
+              unmatchedName={selectedType ? undefined : eventTypeName}
+            />
           </div>
 
           <div className="field">
@@ -317,6 +325,7 @@ export function EventCard({
               <span className="suggested-tag"> — Suggested, confirmed on approve</span>
             )}
           </p>
+          <EventTypeDescription eventType={event.event_type ?? undefined} />
         </div>
         <div>
           <span className="field-label">Start</span>

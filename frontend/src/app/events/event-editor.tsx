@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { FramedPanel } from "@/components/framed-panel";
+import { EventTypeDescription } from "@/components/event-type-description";
 import type { ActorInput, ActorRead, DatePrecision, EventRead, EventTypeRead, EventUpdate, LocationInput } from "@/lib/events-api";
 
 type EventEditorProps = {
@@ -27,6 +28,7 @@ export function EventEditor({ event, eventTypeOptions, actorOptions, onCancel, o
   const [actors, setActors] = useState<ActorInput[]>(event.actors.map(({ actor, role }) => ({ name: actor.name, role })));
   const [locations, setLocations] = useState<LocationInput[]>(event.locations.map(({ country, admin1, city_regency }) => ({ country, admin1, city_regency })));
   const [saving, setSaving] = useState(false);
+  const selectedType = eventTypeOptions.find((type) => type.id === typeId);
 
   async function submit(formEvent: FormEvent) {
     formEvent.preventDefault();
@@ -49,7 +51,7 @@ export function EventEditor({ event, eventTypeOptions, actorOptions, onCancel, o
       <form onSubmit={submit}>
         <div className="field"><label htmlFor="event-title">Title</label><input id="event-title" onChange={(e) => setTitle(e.target.value)} required value={title} /></div>
         <div className="field"><label htmlFor="event-summary">Summary</label><textarea id="event-summary" onChange={(e) => setSummary(e.target.value)} required value={summary} /></div>
-        <div className="field"><label htmlFor="event-type">Event type</label><select id="event-type" onChange={(e) => setTypeId(e.target.value)} value={typeId}><option disabled value="">Choose an event type</option>{eventTypeOptions.filter((type) => type.is_active).map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select></div>
+        <div className="field"><label htmlFor="event-type">Event type</label><select id="event-type" onChange={(e) => setTypeId(e.target.value)} value={typeId}><option disabled value="">Choose an event type</option>{eventTypeOptions.filter((type) => type.is_active).map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}</select><EventTypeDescription eventType={selectedType} /></div>
         <div className="field-row">
           <div className="field"><label htmlFor="event-start-date">Start date</label><input id="event-start-date" onChange={(e) => setStartDate(e.target.value)} type="date" value={startDate} /></div>
           <div className="field"><label htmlFor="event-start-precision">Start date precision</label><select id="event-start-precision" onChange={(e) => setStartPrecision(e.target.value as DatePrecision | "")} value={startPrecision}><option value="">Not stated</option>{DATE_PRECISIONS.map((precision) => <option key={precision} value={precision}>{precision}</option>)}</select></div>

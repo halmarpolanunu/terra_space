@@ -28,6 +28,28 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 }
 
 describe("EventCard", () => {
+  it("shows the selected definition before approving or editing an extracted event", () => {
+    const event = makeEvent({
+      event_type: {
+        id: "attack", name: "Attack",
+        description: "Deliberate use of force against a target.",
+        is_active: false,
+      },
+    });
+    render(
+      <EventCard
+        actorOptions={[]}
+        approveDisabledReason={null}
+        event={event}
+        eventTypeOptions={[event.event_type!]}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Deliberate use of force against a target.")).toBeVisible();
+  });
+
   it("shows explicit unknown/not-stated labels instead of blank cells", () => {
     render(
       <EventCard
@@ -71,6 +93,24 @@ describe("EventCard", () => {
       />,
     );
     expect(screen.getByRole("button", { name: /approve/i })).toBeEnabled();
+  });
+
+  it("disables approval with the supplied description-review reason", () => {
+    render(
+      <EventCard
+        actorOptions={[]}
+        approveDisabledReason="Add a description in Settings before approving this suggested type."
+        event={makeEvent()}
+        eventTypeOptions={[]}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
+    expect(screen.getByText(
+      "Add a description in Settings before approving this suggested type.",
+    )).toBeVisible();
   });
 
   it("calls onSave with the edited title when Edit then Save is used", () => {
@@ -119,6 +159,17 @@ describe("EventCard", () => {
 });
 
 describe("AddEventForm", () => {
+  it("shows the selected definition when manually adding a review event", () => {
+    const eventType = {
+      id: "protest", name: "Protest",
+      description: "Collective public demonstration.",
+      is_active: true,
+    };
+    render(<AddEventForm eventTypeOptions={[eventType]} onCancel={vi.fn()} onSubmit={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "Protest" } });
+    expect(screen.getByText("Collective public demonstration.")).toBeVisible();
+  });
+
   it("keeps submit disabled until title, summary, and evidence quote are filled", () => {
     render(<AddEventForm eventTypeOptions={[]} onCancel={vi.fn()} onSubmit={vi.fn()} />);
 
