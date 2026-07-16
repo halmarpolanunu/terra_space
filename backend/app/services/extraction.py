@@ -74,7 +74,16 @@ def persist_extraction(
         if type_name:
             event_type = find_by_exact_name(existing_event_types, type_name)
             if event_type is None:
-                event_type = EventType(name=type_name, is_active=False)
+                suggested_description = (
+                    (event_data.event_type.suggested_description or "").strip() or None
+                    if event_data.event_type.suggested
+                    else None
+                )
+                event_type = EventType(
+                    name=type_name,
+                    description=suggested_description,
+                    is_active=False,
+                )
                 db.add(event_type)
                 existing_event_types.append(event_type)
 

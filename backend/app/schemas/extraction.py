@@ -7,8 +7,19 @@ DatePrecision = Literal["exact", "month", "year", "unknown"]
 
 
 class ExtractedEventType(BaseModel):
-    existing: str | None = None
-    suggested: str | None = None
+    existing: str | None = Field(
+        default=None,
+        description="Exact name of a supplied active event type; prefer this whenever it fits.",
+    )
+    suggested: str | None = Field(
+        default=None,
+        description="New type name only when no supplied active definition fits.",
+    )
+    suggested_description: str | None = Field(
+        default=None,
+        max_length=1000,
+        description="Draft definition for suggested; null when existing is used.",
+    )
 
 
 class ExtractedLocation(BaseModel):

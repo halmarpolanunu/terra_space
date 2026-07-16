@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
@@ -50,6 +52,11 @@ def _event(**overrides: object) -> ExtractedEvent:
     }
     defaults.update(overrides)
     return ExtractedEvent(**defaults)
+
+
+def test_suggested_event_type_description_is_limited_to_1000_characters() -> None:
+    with pytest.raises(ValidationError):
+        ExtractedEventType(suggested="Airstrike", suggested_description="x" * 1001)
 
 
 def test_event_with_evidence_quote_not_found_is_dropped_but_others_are_saved(
