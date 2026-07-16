@@ -78,6 +78,21 @@ def test_legacy_active_type_can_be_renamed_or_deactivated_without_description(
     assert client.patch(f"/api/event-types/{type_id}", json={"is_active": False}).status_code == 200
 
 
+def test_legacy_active_type_can_save_rename_with_unchanged_blank_description(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path, {})
+    type_id = _seed_event_type(client, name="Legacy", description=None, is_active=True)
+    response = client.patch(
+        f"/api/event-types/{type_id}",
+        json={"name": "Legacy renamed", "description": "   "},
+    )
+    assert response.status_code == 200
+    assert response.json()["name"] == "Legacy renamed"
+    assert response.json()["description"] is None
+    assert response.json()["is_active"] is True
+
+
 def test_active_description_cannot_be_cleared(tmp_path: Path) -> None:
     client = _client(tmp_path, {})
     created = client.post(

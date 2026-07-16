@@ -294,7 +294,10 @@ def update_event_type(
     )
     activates = is_active is True and not event_type.is_active
     clears_active_description = (
-        event_type.is_active and description is not _UNSET and next_description is None
+        event_type.is_active
+        and _clean_description(event_type.description) is not None
+        and description is not _UNSET
+        and next_description is None
     )
     if (activates and next_description is None) or clears_active_description:
         raise EventTypeDescriptionRequiredError(
