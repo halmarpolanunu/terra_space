@@ -39,7 +39,7 @@ function makeEvent(id: string, title: string): EventRead {
     end_date_precision: null,
     epistemic_status: "claim",
     review_status: "draft",
-    event_type: { id: "type-1", name: "Movement", is_active: true },
+    event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
     actors: [],
     locations: [],
     sources: [],

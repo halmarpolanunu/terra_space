@@ -51,18 +51,18 @@ export async function testLmStudio(baseUrl?: string): Promise<LmStudioTestResult
   return parseOrThrow<LmStudioTestResult>(response);
 }
 
-export async function createEventType(name: string): Promise<EventTypeRead> {
+export async function createEventType(name: string, description: string): Promise<EventTypeRead> {
   const response = await fetch(`${API_ROOT}/event-types`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, description }),
   });
   return parseOrThrow<EventTypeRead>(response);
 }
 
 export async function updateEventType(
   id: string,
-  patch: Partial<{ name: string; is_active: boolean }>,
+  patch: Partial<{ name: string; description: string | null; is_active: boolean }>,
 ): Promise<EventTypeRead> {
   const response = await fetch(`${API_ROOT}/event-types/${id}`, {
     method: "PATCH",

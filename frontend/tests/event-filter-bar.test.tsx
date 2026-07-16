@@ -189,7 +189,9 @@ describe("EventFilterBar", () => {
       <EventFilterBar
         actorOptions={[{ id: "actor-1", name: "River Watch", is_active: true }]}
         documentOptions={[{ id: "doc-1", title: "Field report" }]}
-        eventTypeOptions={[{ id: "type-1", name: "Attack", is_active: true }]}
+        eventTypeOptions={[
+          { id: "type-1", name: "Attack", description: null, is_active: true },
+        ]}
         onChange={onChange}
         value={{ ...emptyEventFilters(), actor_id: "actor-1", country: "Sudan" }}
       />,

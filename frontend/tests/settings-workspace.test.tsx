@@ -42,7 +42,7 @@ describe("SettingsWorkspace", () => {
   it("shows the panels once settings and types load", async () => {
     vi.mocked(settingsApi.getSettings).mockResolvedValue(SETTINGS);
     vi.mocked(eventsApi.listEventTypes).mockResolvedValue([
-      { id: "type-1", name: "Protest", is_active: true, in_use: false },
+      { id: "type-1", name: "Protest", description: null, is_active: true, in_use: false },
     ]);
 
     render(<SettingsWorkspace />);

@@ -480,10 +480,15 @@ body {
 .settings-status-message { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
 .settings-saved { color: var(--status-confirmed); font-family: var(--font-mono); font-size: 0.8rem; }
 .event-type-list { display: grid; gap: 0.5rem; margin: 0 0 1rem; padding: 0; list-style: none; }
-.event-type-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
-.event-type-row > input { flex: 1 1 12rem; min-width: 10rem; }
+.event-type-row { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(10rem, auto) auto; align-items: start; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); }
+.event-type-fields { display: grid; gap: 0.5rem; }
+.event-type-fields > input,
+.event-type-fields > textarea { width: 100%; }
+.event-type-state,
+.event-type-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.event-type-required { flex-basis: 100%; margin: 0; color: var(--status-warning); font: 0.74rem var(--font-mono); }
 .event-type-toggle { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.78rem; }
-.settings-add-type { display: flex; align-items: end; gap: 0.75rem; flex-wrap: wrap; }
+.settings-add-type { display: grid; grid-template-columns: minmax(12rem, 0.7fr) minmax(18rem, 1.3fr) auto; align-items: end; gap: 0.75rem; }
 .settings-add-type .field { flex: 1 1 16rem; margin-bottom: 0; }
 
 @media (max-width: 72rem) {
@@ -985,15 +990,26 @@ body {
   border: 1px solid var(--border);
   background: #06090b;
 }
-.event-type-row > input {
+.event-type-fields > input,
+.event-type-fields > textarea {
   padding: 0.55rem 0.65rem;
   background: var(--inset);
   color: var(--text);
   font: 0.92rem var(--font-sans);
   border: 1px solid var(--border-bright);
 }
+.event-type-fields > textarea { min-height: 4rem; resize: vertical; line-height: 1.45; }
+.settings-type-description-field textarea { min-height: 4rem; resize: vertical; }
+.event-type-state { padding-top: 0.45rem; }
+.event-type-actions { justify-content: flex-end; padding-top: 0.25rem; }
 .event-type-toggle { padding: 0 0.25rem; }
 .event-type-empty-state { max-width: 48rem; }
+
+@media (max-width: 60rem) {
+  .settings-add-type,
+  .event-type-row { grid-template-columns: 1fr; }
+  .event-type-actions { justify-content: flex-start; }
+}
 
 /* Restrained workflow motion: state changes arrive with direction, never with layout shift. */
 .page-header {

@@ -26,7 +26,7 @@ function makeMatchedEvent(overrides: Partial<EventRead> = {}): EventRead {
     end_date_precision: null,
     epistemic_status: "confirmed",
     review_status: "approved",
-    event_type: { id: "type-1", name: "Airstrike", is_active: true },
+    event_type: { id: "type-1", name: "Airstrike", description: null, is_active: true },
     actors: [],
     locations: [],
     sources: [],

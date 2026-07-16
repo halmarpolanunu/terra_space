@@ -84,7 +84,7 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     end_date_precision: null,
     epistemic_status: "claim",
     review_status: "approved",
-    event_type: { id: "type-1", name: "Movement", is_active: true },
+    event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
     actors: [],
     locations: [{ id: "location-1", country: "Indonesia", admin1: null, city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" }],
     sources: [{ source_id: "source-1", document_id: "doc-1", reference_label: "Field report", evidence_quote: null }],

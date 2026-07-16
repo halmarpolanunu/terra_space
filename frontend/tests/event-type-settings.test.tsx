@@ -11,8 +11,14 @@ import * as settingsApi from "@/lib/settings-api";
 import type { EventTypeRead } from "@/lib/events-api";
 
 const TYPES: EventTypeRead[] = [
-  { id: "type-active", name: "Protest", is_active: true, in_use: true },
-  { id: "type-suggested", name: "Skirmish", is_active: false, in_use: false },
+  { id: "type-active", name: "Protest", description: null, is_active: true, in_use: true },
+  {
+    id: "type-suggested",
+    name: "Skirmish",
+    description: "Use for a brief armed clash between opposing forces.",
+    is_active: false,
+    in_use: false,
+  },
 ];
 
 describe("EventTypeSettings", () => {
@@ -34,23 +40,53 @@ describe("EventTypeSettings", () => {
 
     expect(screen.getByText(/no event types yet/i)).toBeVisible();
     expect(screen.getByText(/types suggested by the AI/i)).toBeVisible();
-    expect(screen.getByLabelText(/new event type/i)).toBeVisible();
+    expect(screen.getByLabelText("New event type")).toBeVisible();
   });
 
-  it("adds a new event type", async () => {
+  it("creates an active type with a required description", async () => {
     vi.mocked(settingsApi.createEventType).mockResolvedValue({
       id: "type-new",
       name: "Airstrike",
+      description: "Use for attacks delivered by military aircraft.",
       is_active: true,
       in_use: false,
     });
     render(<EventTypeSettings eventTypes={TYPES} />);
 
-    fireEvent.change(screen.getByLabelText(/new event type/i), { target: { value: "Airstrike" } });
-    fireEvent.click(screen.getByRole("button", { name: /^add event type$/i }));
+    fireEvent.change(screen.getByLabelText("New event type"), {
+      target: { value: "Airstrike" },
+    });
+    fireEvent.change(screen.getByLabelText("New event type description"), {
+      target: { value: "Use for attacks delivered by military aircraft." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add event type" }));
 
-    await waitFor(() => expect(settingsApi.createEventType).toHaveBeenCalledWith("Airstrike"));
+    await waitFor(() =>
+      expect(settingsApi.createEventType).toHaveBeenCalledWith(
+        "Airstrike",
+        "Use for attacks delivered by military aircraft.",
+      ),
+    );
     expect(await screen.findByLabelText("Rename Airstrike")).toBeVisible();
+  });
+
+  it("blocks activation and explains when a suggested type has no description", () => {
+    render(
+      <EventTypeSettings
+        eventTypes={[
+          {
+            id: "suggested",
+            name: "New type",
+            description: null,
+            is_active: false,
+            in_use: false,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByLabelText("Active: New type")).toBeDisabled();
+    expect(screen.getByText("Add a description before activating.")).toBeVisible();
   });
 
   it("toggles a type active flag", async () => {
@@ -64,15 +100,23 @@ describe("EventTypeSettings", () => {
     );
   });
 
-  it("renames a type", async () => {
-    vi.mocked(settingsApi.updateEventType).mockResolvedValue({ ...TYPES[1], name: "Armed clash" });
+  it("saves a name and description together", async () => {
+    vi.mocked(settingsApi.updateEventType).mockResolvedValue({
+      ...TYPES[0],
+      description: "Collective public demonstration.",
+    });
     render(<EventTypeSettings eventTypes={TYPES} />);
 
-    fireEvent.change(screen.getByLabelText("Rename Skirmish"), { target: { value: "Armed clash" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save name for Skirmish" }));
+    fireEvent.change(screen.getByLabelText("Description for Protest"), {
+      target: { value: "Collective public demonstration." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes for Protest" }));
 
     await waitFor(() =>
-      expect(settingsApi.updateEventType).toHaveBeenCalledWith("type-suggested", { name: "Armed clash" }),
+      expect(settingsApi.updateEventType).toHaveBeenCalledWith("type-active", {
+        name: "Protest",
+        description: "Collective public demonstration.",
+      }),
     );
   });
 

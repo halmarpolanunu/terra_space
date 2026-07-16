@@ -11,24 +11,59 @@ type EventTypeSettingsProps = {
   eventTypes: EventTypeRead[];
 };
 
+type TypeDraft = {
+  name: string;
+  description: string;
+};
+
 export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
   const [types, setTypes] = useState<EventTypeRead[]>(eventTypes);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, TypeDraft>>({});
   const [newName, setNewName] = useState("");
+  const [newDescription, setNewDescription] = useState("");
   const [error, setError] = useState<string>();
 
   function replaceType(updated: EventTypeRead) {
     setTypes((current) => current.map((type) => (type.id === updated.id ? updated : type)));
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[updated.id];
+      return next;
+    });
+  }
+
+  function draftFor(type: EventTypeRead): TypeDraft {
+    return (
+      drafts[type.id] ?? {
+        name: type.name,
+        description: type.description ?? "",
+      }
+    );
+  }
+
+  function updateDraft(type: EventTypeRead, patch: Partial<TypeDraft>) {
+    setDrafts((current) => {
+      const currentDraft = current[type.id] ?? {
+        name: type.name,
+        description: type.description ?? "",
+      };
+      return {
+        ...current,
+        [type.id]: { ...currentDraft, ...patch },
+      };
+    });
   }
 
   async function add() {
     const name = newName.trim();
-    if (!name) return;
+    const description = newDescription.trim();
+    if (!name || !description) return;
     setError(undefined);
     try {
-      const created = await createEventType(name);
+      const created = await createEventType(name, description);
       setTypes((current) => [...current, created]);
       setNewName("");
+      setNewDescription("");
     } catch (addError) {
       setError(addError instanceof Error ? addError.message : "Unable to add this event type.");
     }
@@ -43,14 +78,16 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
     }
   }
 
-  async function rename(type: EventTypeRead) {
-    const name = (drafts[type.id] ?? type.name).trim();
-    if (!name || name === type.name) return;
+  async function save(type: EventTypeRead) {
+    const draft = draftFor(type);
+    const name = draft.name.trim();
+    const description = draft.description.trim() || null;
+    if (!name) return;
     setError(undefined);
     try {
-      replaceType(await updateEventType(type.id, { name }));
-    } catch (renameError) {
-      setError(renameError instanceof Error ? renameError.message : "Unable to rename this type.");
+      replaceType(await updateEventType(type.id, { name, description }));
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Unable to save this type.");
     }
   }
 
@@ -82,7 +119,23 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
             value={newName}
           />
         </div>
-        <button className="btn btn-primary" onClick={add} type="button">
+        <div className="field settings-type-description-field">
+          <label htmlFor="new-event-type-description">New event type description</label>
+          <textarea
+            id="new-event-type-description"
+            maxLength={1000}
+            onChange={(event) => setNewDescription(event.target.value)}
+            placeholder="Explain when this type should be used"
+            rows={2}
+            value={newDescription}
+          />
+        </div>
+        <button
+          className="btn btn-primary"
+          disabled={!newName.trim() || !newDescription.trim()}
+          onClick={add}
+          type="button"
+        >
           Add event type
         </button>
       </div>
@@ -94,44 +147,70 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
         </div>
       ) : (
       <ul className="event-type-list">
-        {types.map((type) => (
-          <li className="event-type-row" data-motion-item="event-type-row" key={type.id}>
-            <input
-              aria-label={`Rename ${type.name}`}
-              defaultValue={type.name}
-              onChange={(event) =>
-                setDrafts((current) => ({ ...current, [type.id]: event.target.value }))
-              }
-            />
-            <StatusChip
-              colorVar={type.is_active ? "--status-confirmed" : undefined}
-              label={type.is_active ? "Active" : "Suggested"}
-              value={type.is_active ? "active" : "suggested"}
-            />
-            <button aria-label={`Save name for ${type.name}`} className="btn" onClick={() => rename(type)} type="button">
-              Save name
-            </button>
-            <label className="event-type-toggle">
-              <input
-                aria-label={`Active: ${type.name}`}
-                checked={type.is_active}
-                onChange={() => toggle(type)}
-                type="checkbox"
-              />
-              <span>Enabled</span>
-            </label>
-            {!type.in_use && (
-              <button
-                aria-label={`Delete ${type.name}`}
-                className="btn btn-destructive"
-                onClick={() => remove(type)}
-                type="button"
-              >
-                Delete
-              </button>
-            )}
-          </li>
-        ))}
+        {types.map((type) => {
+          const draft = draftFor(type);
+          const activationBlocked = !type.is_active && !draft.description.trim();
+
+          return (
+            <li className="event-type-row" data-motion-item="event-type-row" key={type.id}>
+              <div className="event-type-fields">
+                <input
+                  aria-label={`Rename ${type.name}`}
+                  onChange={(event) => updateDraft(type, { name: event.target.value })}
+                  value={draft.name}
+                />
+                <textarea
+                  aria-label={`Description for ${type.name}`}
+                  maxLength={1000}
+                  onChange={(event) => updateDraft(type, { description: event.target.value })}
+                  placeholder="Explain when this type should be used"
+                  rows={2}
+                  value={draft.description}
+                />
+              </div>
+              <div className="event-type-state">
+                <StatusChip
+                  colorVar={type.is_active ? "--status-confirmed" : undefined}
+                  label={type.is_active ? "Active" : "Suggested"}
+                  value={type.is_active ? "active" : "suggested"}
+                />
+                <label className="event-type-toggle">
+                  <input
+                    aria-label={`Active: ${type.name}`}
+                    checked={type.is_active}
+                    disabled={activationBlocked}
+                    onChange={() => toggle(type)}
+                    type="checkbox"
+                  />
+                  <span>Enabled</span>
+                </label>
+                {activationBlocked && (
+                  <p className="event-type-required">Add a description before activating.</p>
+                )}
+              </div>
+              <div className="event-type-actions">
+                <button
+                  aria-label={`Save changes for ${type.name}`}
+                  className="btn"
+                  onClick={() => save(type)}
+                  type="button"
+                >
+                  Save changes
+                </button>
+                {!type.in_use && (
+                  <button
+                    aria-label={`Delete ${type.name}`}
+                    className="btn btn-destructive"
+                    onClick={() => remove(type)}
+                    type="button"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       )}
 

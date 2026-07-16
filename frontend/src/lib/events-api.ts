@@ -9,6 +9,7 @@ export type DuplicateResolution = "pending" | "kept_separate" | "linked";
 export type EventTypeRead = {
   id: string;
   name: string;
+  description: string | null;
   is_active: boolean;
   in_use?: boolean;
 };

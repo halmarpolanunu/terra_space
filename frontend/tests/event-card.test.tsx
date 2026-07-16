@@ -16,7 +16,7 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     end_date_precision: null,
     epistemic_status: "claim",
     review_status: "draft",
-    event_type: { id: "type-1", name: "Attack", is_active: false },
+    event_type: { id: "type-1", name: "Attack", description: null, is_active: false },
     actors: [],
     locations: [],
     sources: [{ source_id: "source-1", document_id: "doc-1", reference_label: "Doc", evidence_quote: "attacked the fuel depot" }],
