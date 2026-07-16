@@ -153,12 +153,13 @@ implementation plan or decision, link it from here and mark it resolved instead 
 - **Requested outcome:** the owner wants each event type to carry a description, so both the
   reviewer (a human deciding "is this the right type?") and the extraction step (the AI choosing
   or suggesting a type) have more than a one- or two-word label to go on.
-- **Not yet decided:** whether a description would just be a human-readable field shown in
-  Settings/pickers, or would also be fed into the LM Studio extraction prompt to improve
-  classification accuracy (the more valuable but more involved option). Needs a migration
-  (new nullable column), API, and UI change either way — scope this as an implementation plan
-  once the owner confirms which of the two they want.
-- **Status:** Reported by owner, not yet actioned.
+- **Decision:** The owner chose the integrated approach: descriptions guide both humans and LM
+  Studio. AI must compare against existing active type names and descriptions before suggesting a
+  new type; new suggestions may include a draft description but remain inactive until reviewed.
+  Active types require descriptions, with a migration exception for existing active records so the
+  upgrade remains safe. See
+  [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md).
+- **Status:** Planned; design approved and awaiting its implementation plan.
 
 ### UI should adapt to the user's browser zoom level (2026-07-16)
 

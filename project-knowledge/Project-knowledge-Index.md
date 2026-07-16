@@ -39,6 +39,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md) — clusters co-located globe pins and surfaces an unresolved-locations list
 - [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md) — strengthens the LM Studio extraction prompt/schema and adds a location-level grounding check
 - [Globe Rotation Controls Implementation Plan](plans/2026-07-16-globe-rotation-controls.md) — play/pause and speed/direction mini controller, plus a root-cause fix for permanently stalled ambient rotation
+- [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md) — approved rules for described event types, human activation, and description-aware local AI classification
 
 ## Reading rule
 

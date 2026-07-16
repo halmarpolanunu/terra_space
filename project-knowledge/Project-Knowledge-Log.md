@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Event type descriptions and AI classification direction approved
+
+- The owner chose the integrated solution for the remaining Event Types backlog item: every type
+  can carry a human-readable description, and active types require one while existing active
+  records receive a safe migration exception.
+- LM Studio will receive existing active type names and descriptions first, prefer a matching
+  existing definition, and only then propose a new inactive type with a draft description. AI
+  output cannot overwrite human-authored definitions.
+- Settings will manage names and descriptions together, while Event Review and Events editing will
+  show the selected definition beneath the type control. See
+  [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md).
+
 ## 2026-07-16 - Globe rotation play/pause, speed/axis controller, and a real stall bug fixed
 
 - The owner asked for a play/pause button on the Dashboard globe, then a mini controller to adjust
