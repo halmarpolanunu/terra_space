@@ -10,6 +10,30 @@ status: active
 
 ## Current focus
 
+Implemented and verified the
+[Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md). Event
+types now carry normalized descriptions through the database and API; new active types and
+inactive-to-active transitions require a description, while legacy active blank types remain usable
+until deactivated. Local extraction receives active type names and descriptions in deterministic
+order, preserves draft descriptions only for newly suggested inactive types, and never overwrites
+an existing human definition. Settings manages each name and description together and explains
+blocked activation; Event Review add/edit and Events edit show the selected definition while compact
+filters and summaries remain name-only.
+
+Fresh verification passed: 143 backend tests; 161 frontend tests across 29 files; clean frontend
+lint; and a successful production build. A separate 10-test evidence run named the prompt,
+active-only, legacy migration, activation, AI draft, non-overwrite, single-approval, and approve-all
+guarantees. The normal containers were rebuilt and checked read-only against the owner's database.
+All write-path browser checks used an isolated Compose project and database: creation and returned
+definition, legacy deactivation, blank-type blocking, editable inactive AI draft, and definition
+hints in Settings, Event Review, and Events all passed. The temporary
+`Verification — event type description` type reported `in_use: false`, was deleted with HTTP 204,
+and the isolated volume was removed. The normal containers are healthy again; the owner database
+contains no type with that verification name. Project Knowledge validation passed with zero errors
+and zero warnings. No North Star or Roadmap milestone changed.
+
+## Previous focus
+
 Implemented the
 [Globe Rotation Controls Implementation Plan](plans/2026-07-16-globe-rotation-controls.md): a
 play/pause button and a speed/direction mini controller for the Dashboard globe's ambient
@@ -42,7 +66,7 @@ but not by watching the tool's own browser pane; final visual confirmation is th
 "great to see the result!!" after checking their real browser. No Roadmap milestone changed; this
 was a direct owner feature request, not a Feedback Backlog item.
 
-## Previous focus
+## Earlier focus
 
 Implemented and deployed a fix for the second still-open root cause behind
 "[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)": AI extraction
@@ -534,13 +558,7 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 - Once approved events with resolved locations exist in the owner's live database again, do a
   direct visual check of the cluster marker and "Unresolved locations" list against real data (the
   only confirmation so far used an isolated, fully torn-down test stack, not the live database).
-- Execute the owner-approved
-  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md). It
-  adds human-reviewed definitions to Settings and type selectors, requires descriptions before
-  activation, and makes LM Studio compare active name/description pairs before proposing a new
-  inactive type.
-- Review the completed desktop experience at the target resolution. The verified implementation is
-  merged into `main` and pushed to GitHub; the temporary implementation branch was removed.
+- Review the completed desktop experience at the target resolution when the owner is ready.
 
 ## Related knowledge
 

@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-17 - Event type descriptions implemented and verified
+
+- Completed the
+  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md):
+  descriptions now flow through storage, APIs, Settings, review/edit guidance, and local LM Studio
+  classification without allowing AI output to overwrite an existing definition.
+- Preserved safe legacy behavior: an already-active blank type remains usable until deactivated,
+  while new activation, single approval, and approve-all cannot activate an inactive blank type.
+- Verified 143 backend tests, 161 frontend tests across 29 files, clean lint, a successful production
+  build, and a focused 10-test prompt/activation evidence set. Browser write checks ran in a fully
+  isolated Compose database; the temporary type was confirmed unused, deleted, and the isolated
+  volume removed before the healthy normal containers were restored. Project Knowledge validation
+  passed with zero errors and zero warnings. No Roadmap milestone changed.
+
 ## 2026-07-16 - Event type descriptions and AI classification direction approved
 
 - The owner chose the integrated solution for the remaining Event Types backlog item: every type

@@ -159,9 +159,14 @@ implementation plan or decision, link it from here and mark it resolved instead 
   Active types require descriptions, with a migration exception for existing active records so the
   upgrade remains safe. See
   [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md).
-- **Status:** Planned; design approved and the
-  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md) is
-  ready for execution.
+- **Status:** Resolved; implemented and verified through the
+  [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md).
+  Settings now saves names and descriptions together, activation requires a description while
+  preserving the legacy active-blank exception, Event Review and Events editing show the selected
+  definition, and LM Studio receives deterministic active name/description pairs before it may
+  suggest a new inactive type. Verified with 143 backend tests, 161 frontend tests, clean lint, a
+  successful production build, focused prompt/activation checks, and an isolated browser workflow
+  that left the owner's data unchanged.
 
 ### UI should adapt to the user's browser zoom level (2026-07-16)
 

@@ -3,7 +3,7 @@ type: Implementation Plan
 title: Event Type Descriptions Implementation Plan
 description: Test-first plan for human-reviewed event-type descriptions that guide users and local AI classification.
 tags: [project-knowledge, plan, event-types, extraction, lm-studio]
-status: planned
+status: completed
 ---
 
 # Event Type Descriptions Implementation Plan
@@ -1174,7 +1174,7 @@ git commit -m "feat: explain selected event types"
 - Consumes: all Tasks 1-5.
 - Produces: verified local workflow and durable continuation record.
 
-- [ ] **Step 1: Run fresh full automated verification**
+- [x] **Step 1: Run fresh full automated verification**
 
 From `backend/`:
 
@@ -1192,7 +1192,7 @@ npm.cmd run build
 
 Expected: zero failures/errors and successful production build. Record exact test counts.
 
-- [ ] **Step 2: Exercise the real local workflow without changing unrelated owner data**
+- [x] **Step 2: Exercise the real local workflow without changing unrelated owner data**
 
 Rebuild and restart the normal containers from repository root:
 
@@ -1216,14 +1216,14 @@ Prefer a disposable document and temporary type named `Verification — event ty
 that type is created in the owner's real database, delete it before completion only when the API
 reports `in_use: false`; never delete owner-created types or events.
 
-- [ ] **Step 3: Update Project Knowledge with measured results**
+- [x] **Step 3: Update Project Knowledge with measured results**
 
 Mark the Feedback Backlog item resolved only after all requirements are verified. Update Current
 Status with the exact continuation point and test counts. Add one meaningful log entry and change
 this plan's status to `completed`. Do not modify the North Star or Roadmap because this implements an
 approved refinement without changing MVP milestones.
 
-- [ ] **Step 4: Validate Project Knowledge**
+- [x] **Step 4: Validate Project Knowledge**
 
 From repository root:
 
@@ -1233,7 +1233,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Validate-ProjectKnow
 
 Expected: `0 error(s), 0 warning(s)`.
 
-- [ ] **Step 5: Inspect the final change set**
+- [x] **Step 5: Inspect the final change set**
 
 ```powershell
 git status --short
@@ -1243,7 +1243,7 @@ git diff --stat
 
 Expected: only task-related files, no whitespace errors, no unexpected generated or owner files.
 
-- [ ] **Step 6: Commit Task 6**
+- [x] **Step 6: Commit Task 6**
 
 ```powershell
 git add project-knowledge frontend backend
@@ -1252,17 +1252,17 @@ git commit -m "docs: record event type description verification"
 
 ## Completion checklist
 
-- [ ] Database migration upgrades and downgrades safely.
-- [ ] API returns normalized descriptions and enforces activation rules.
-- [ ] Legacy active blank types remain usable until deactivated.
-- [ ] A blank inactive type cannot become active through Settings, single approval, or approve-all.
-- [ ] AI draft descriptions persist only on newly suggested inactive types.
-- [ ] Existing human definitions are never overwritten by extraction.
-- [ ] LM Studio receives active names and descriptions in deterministic order.
-- [ ] Settings manages name and description together and explains blocked activation.
-- [ ] Event Review add/edit and Events edit show the selected description.
-- [ ] Filters and compact summaries remain name-only.
-- [ ] Backend and frontend full suites, lint, build, browser checks, and OKF validation pass.
+- [x] Database migration upgrades and downgrades safely.
+- [x] API returns normalized descriptions and enforces activation rules.
+- [x] Legacy active blank types remain usable until deactivated.
+- [x] A blank inactive type cannot become active through Settings, single approval, or approve-all.
+- [x] AI draft descriptions persist only on newly suggested inactive types.
+- [x] Existing human definitions are never overwritten by extraction.
+- [x] LM Studio receives active names and descriptions in deterministic order.
+- [x] Settings manages name and description together and explains blocked activation.
+- [x] Event Review add/edit and Events edit show the selected description.
+- [x] Filters and compact summaries remain name-only.
+- [x] Backend and frontend full suites, lint, build, browser checks, and OKF validation pass.
 
 ## Related knowledge
 
