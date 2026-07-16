@@ -73,18 +73,21 @@ test("approved Events and Dashboard stay synchronized through filters, editing, 
   await reviewDocument(page, "Rejected observation", "reject");
 
   await page.goto("/dashboard");
+  await page.getByRole("button", { name: /Filters/i }).click();
   await page.getByLabel("Event type").selectOption({ label: "Observation" });
   await expect(page).toHaveURL(/\/dashboard\?event_type_id=/);
 
-  const summary = page.locator(".dashboard-summary");
+  const summary = page.locator(".command-deck-instrument--summary");
   await expect(summary.getByText("Total events")).toBeVisible();
   await expect(summary.locator("dd").first()).toHaveText("2");
   await expect(page.locator("[aria-label='Offline world map']")).toBeVisible();
-  await expect(page.getByText("Map markers: 2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Markers · 2", { exact: true })).toBeVisible();
   await expect(page.locator(".event-timeline li")).toHaveCount(2);
-  await expect(page.locator(".event-list-row")).toHaveCount(2);
-  await expect(page.getByRole("button", { name: "Jakarta field observation" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Los Angeles field observation" })).toBeVisible();
+  await page.getByRole("button", { name: /Event register/i }).click();
+  const register = page.getByRole("region", { name: "register panel" });
+  await expect(register.locator(".event-list-row")).toHaveCount(2);
+  await expect(register.getByRole("button", { name: "Jakarta field observation" })).toBeVisible();
+  await expect(register.getByRole("button", { name: "Los Angeles field observation" })).toBeVisible();
   await expect(page.getByText("Rejected observation", { exact: true })).not.toBeVisible();
 
   await page.getByRole("link", { name: "Open Events" }).click();
@@ -100,7 +103,7 @@ test("approved Events and Dashboard stay synchronized through filters, editing, 
 
   await page.getByRole("button", { name: "Jakarta field observation" }).click();
   await page.getByRole("button", { name: "Edit" }).click();
-  await page.getByLabel("Title *", { exact: true }).fill("Jakarta observation updated");
+  await page.getByLabel("Title", { exact: true }).fill("Jakarta observation updated");
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("heading", { name: "Jakarta observation updated" })).toBeVisible();
 

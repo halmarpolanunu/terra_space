@@ -1,6 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { existsSync, rmSync } from "node:fs";
 import path from "node:path";
 
 const powershell = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"];
@@ -11,15 +10,16 @@ const SETTINGS_STUB_PORT = 4183;
 // Kept in sync with STUB_EVIDENCE_QUOTE in documents.spec.ts.
 const STUB_EVIDENCE_QUOTE = "A large protest occurred at the capitol on July 10th";
 const PROJECT_ROOT = path.resolve(fileURLToPath(import.meta.url), "..", "..", "..");
-const DATABASE_DIR = path.join(PROJECT_ROOT, "data", "database");
 const STUB_SCRIPT = path.join(PROJECT_ROOT, "tests", "e2e", "lm-studio-stub.mjs");
 
 function resetLocalDatabase() {
-  for (const name of ["terra-space.db", "terra-space.db-shm", "terra-space.db-wal"]) {
-    const target = path.join(DATABASE_DIR, name);
-    if (existsSync(target)) {
-      rmSync(target);
-    }
+  const result = spawnSync(
+    "docker",
+    ["compose", "down", "--volumes", "--remove-orphans"],
+    { stdio: "inherit" },
+  );
+  if (result.status !== 0) {
+    throw new Error("Could not reset the isolated Docker database volume.");
   }
 }
 

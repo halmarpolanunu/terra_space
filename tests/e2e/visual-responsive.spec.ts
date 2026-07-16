@@ -34,6 +34,7 @@ test("the complete Dashboard deck shrinks at effective browser-zoom viewports", 
     await expect(page.getByRole("button", { name: /Event register/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Filters/i })).toBeVisible();
     await expect(page.getByRole("link", { name: "Open Events" })).toBeVisible();
+    if (zoom >= 110) await expect(page.locator(".command-deck-canvas")).not.toHaveAttribute("data-command-deck-scale", "1.0000");
     const scale = Number(await page.locator(".command-deck-canvas").getAttribute("data-command-deck-scale"));
     expect(scale).toBeGreaterThan(0); expect(scale).toBeLessThanOrEqual(1);
     if (zoom <= 100) expect(scale).toBeCloseTo(1, 2); if (zoom >= 110) expect(scale).toBeLessThan(1);

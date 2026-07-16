@@ -44,10 +44,10 @@ test("the Documents page can create, list, and edit drafts while LM Studio is of
   await page.getByLabel("Document date *", { exact: true }).fill("2026-07-14");
   await page.getByRole("button", { name: "Add document" }).click();
 
-  await expect(page.getByText("Offline draft", { exact: true })).toBeVisible();
-  await expect(page.getByText("Draft", { exact: true })).toBeVisible();
+  await expect(page.getByText("Offline draft", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Draft", { exact: true }).first()).toBeVisible();
 
-  await page.getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("button", { name: "Edit", exact: true }).first().click();
   await page.getByLabel("Title *", { exact: true }).fill("Offline draft (edited)");
   await page.getByRole("button", { name: "Save changes" }).click();
 
