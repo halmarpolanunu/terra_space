@@ -32,32 +32,41 @@ vi.mock("pmtiles", () => ({
   Protocol: class { add = vi.fn(); tile = vi.fn(); },
 }));
 
-vi.mock("@/app/dashboard/event-globe", () => ({
-  eventLocationsToFeatureCollection: (events: import("@/lib/events-api").EventRead[]) => ({
-    type: "FeatureCollection",
-    features: events.flatMap((event) =>
-      event.locations
-        .filter((location) => location.latitude !== null && location.longitude !== null)
-        .map((location) => ({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [location.longitude, location.latitude] },
-          properties: { eventId: event.id },
-        })),
+vi.mock("@/app/dashboard/event-globe", () => {
+  const locationIsResolved = (location: import("@/lib/events-api").LocationRead) =>
+    location.latitude !== null && location.longitude !== null;
+  const countResolvedEventLocations = (events: import("@/lib/events-api").EventRead[]) =>
+    events.flatMap((event) => event.locations).filter(locationIsResolved).length;
+
+  return {
+    locationIsResolved,
+    countResolvedEventLocations,
+    eventLocationsToFeatureCollection: (events: import("@/lib/events-api").EventRead[]) => ({
+      type: "FeatureCollection",
+      features: events.flatMap((event) =>
+        event.locations
+          .filter(locationIsResolved)
+          .map((location) => ({
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [location.longitude, location.latitude] },
+            properties: { eventId: event.id },
+          })),
+      ),
+    }),
+    EventGlobe: ({ events, onProjectionModeChange, onSelect, selectedEventId }: {
+      events: import("@/lib/events-api").EventRead[];
+      onProjectionModeChange: (mode: "globe" | "flat" | "unavailable") => void;
+      onSelect: (event: import("@/lib/events-api").EventRead) => void;
+      selectedEventId?: string;
+    }) => (
+      <div>
+        <button onClick={() => onSelect(events[0])} type="button">Map features: {countResolvedEventLocations(events)}</button>
+        <button onClick={() => onProjectionModeChange("flat")} type="button">Use flat fallback</button>
+        <output>Selected map event: {selectedEventId ?? "none"}</output>
+      </div>
     ),
-  }),
-  EventGlobe: ({ events, onProjectionModeChange, onSelect, selectedEventId }: {
-    events: import("@/lib/events-api").EventRead[];
-    onProjectionModeChange: (mode: "globe" | "flat" | "unavailable") => void;
-    onSelect: (event: import("@/lib/events-api").EventRead) => void;
-    selectedEventId?: string;
-  }) => (
-    <div>
-      <button onClick={() => onSelect(events[0])} type="button">Map features: {events.flatMap((event) => event.locations.filter((location) => location.latitude !== null && location.longitude !== null)).length}</button>
-      <button onClick={() => onProjectionModeChange("flat")} type="button">Use flat fallback</button>
-      <output>Selected map event: {selectedEventId ?? "none"}</output>
-    </div>
-  ),
-}));
+  };
+});
 
 import DashboardPage from "@/app/dashboard/page";
 import * as eventsApi from "@/lib/events-api";
@@ -180,8 +189,38 @@ describe("Dashboard workspace", () => {
 
     render(<DashboardPage />);
     await screen.findByRole("button", { name: "Map features: 0" });
-    expect(screen.getAllByText("0")).toHaveLength(3);
+    expect(screen.getAllByText("0")).toHaveLength(4);
     expect(screen.getByText("Mapped locations")).toBeVisible();
     expect(screen.getByText("No approved events yet.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Unresolved locations · 0" })).toBeDisabled();
+  });
+
+  it("opens a list of unresolved-location events from the summary stat and can drill into one", async () => {
+    currentSearch = "";
+    const located = makeEvent({ id: "event-1", title: "Bridge crossing reported" });
+    const unlocated = makeEvent({
+      id: "event-2",
+      title: "Unlocated report",
+      locations: [{ id: "location-2", country: "Indonesia", admin1: null, city_regency: null, latitude: null, longitude: null }],
+    });
+    vi.mocked(eventsApi.listEvents).mockResolvedValue([located, unlocated]);
+    vi.mocked(eventsApi.getDashboardSummary).mockResolvedValue(summary);
+    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
+    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
+    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+
+    render(<DashboardPage />);
+    const statButton = await screen.findByRole("button", { name: "Unresolved locations · 1" });
+    expect(statButton).toBeEnabled();
+
+    fireEvent.click(statButton);
+    const listDrawer = screen.getByRole("region", { name: "list panel" });
+    expect(within(listDrawer).getByRole("heading", { name: "Unresolved locations" })).toBeVisible();
+    expect(within(listDrawer).getByRole("button", { name: "Unlocated report" })).toBeVisible();
+    expect(within(listDrawer).queryByText("Bridge crossing reported")).not.toBeInTheDocument();
+
+    fireEvent.click(within(listDrawer).getByRole("button", { name: "Unlocated report" }));
+    expect(await screen.findByRole("heading", { name: "Event detail" })).toBeVisible();
+    expect(screen.getByText("Selected map event: event-2")).toBeVisible();
   });
 });

@@ -40,7 +40,43 @@ implementation plan or decision, link it from here and mark it resolved instead 
 - **Not yet decided:** The actual fix approach (looser matching, manual coordinate entry, an
   "unresolved location" review queue, etc.). This entry only records the reported gap; solving it
   requires a follow-up decision or implementation plan before code changes.
-- **Status:** Reported by owner, not yet actioned.
+- **Additional facet reported (2026-07-16, same day, follow-up conversation):** the owner also
+  noticed that events which *do* resolve to a coordinate can still be invisible on the globe if
+  they land on the exact same point as another event (the gazetteer returns one fixed coordinate
+  per city/admin1/country, so same-city events are pixel-for-pixel identical) — "is it possible the
+  location should result the exact match of latitude and longitude so the pin tidak menumpuk pada
+  satu titik."
+- **Status:** Partially resolved, three of four facets addressed.
+  1. **Visibility (both facets) — resolved.** The owner chose pure visibility (no fuzzy gazetteer
+     matching, no manual coordinate override): co-located pins now group into one numbered cluster
+     marker (click → list of the events at that point), and unresolved-location events are now
+     surfaced via a clickable "Unresolved locations" Dashboard stat that opens a list of the
+     affected events. See the
+     [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md),
+     verified with 148 frontend tests, lint, a production build, and (since the owner's live
+     database had 0 approved events at the time) an isolated, fully torn-down Docker Compose stack
+     seeded with test events — cluster marker, cluster-click → list → detail, the unresolved stat
+     and its list, and correct marker counts all confirmed end to end in a real browser. Not yet
+     confirmed against the owner's own live approved events specifically.
+  2. **AI extraction not consistently producing location text — addressed, not yet fully confirmed.**
+     Root-caused to the LM Studio system prompt and JSON schema never mentioning locations at all
+     (confirmed by reading the exact request sent to the model) plus a second bug (nothing told the
+     model `country` must be an ISO alpha-2 code). Fixed via the
+     [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md):
+     a strengthened system prompt with a concrete worked example (a first pass with abstract
+     instructions plus schema field descriptions alone still produced zero locations against the
+     owner's real document and local model, `qwen/qwen3.5-9b`), schema-level field descriptions, and
+     a new location-level "never invent" grounding check (a location is dropped unless at least one
+     of its named fields is found in the event's own evidence quote — reusing the existing
+     `quote_found` helper; country-only locations are trusted, since an ISO code never appears
+     literally in prose). Verified with 127 backend tests. The owner reprocessed their real "US
+     military reimposes naval blockade..." document afterward and reported "seems good for now," but
+     a precise before/after location count across more than one document was not captured in this
+     session — see [Current Status](Current-Status.md) for the open follow-up.
+  3. **Gazetteer's exact-match-only lookup — still explicitly out of scope.** No fuzzy/alternate-name
+     matching or manual coordinate override was built; the owner chose visibility-only for this pass
+     (see above). Remains a possible future item if extraction improvements alone prove
+     insufficient.
 
 ### Event Review card should let every draft field be edited in place (2026-07-16)
 

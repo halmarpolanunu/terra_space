@@ -18,8 +18,26 @@ const map = {
   setProjection: vi.fn(),
 };
 
+const markerInstances: { element: HTMLElement; setLngLat: ReturnType<typeof vi.fn>; addTo: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> }[] = [];
+
 vi.mock("maplibre-gl", () => ({
-  default: { Map: vi.fn(function Map() { return map; }), addProtocol: vi.fn() },
+  default: {
+    Map: vi.fn(function Map() { return map; }),
+    Marker: vi.fn(function Marker({ element }: { element: HTMLElement }) {
+      const instance = {
+        element,
+        setLngLat: vi.fn().mockReturnThis(),
+        addTo: vi.fn().mockReturnThis(),
+        remove: vi.fn(() => {
+          const index = markerInstances.indexOf(instance);
+          if (index !== -1) markerInstances.splice(index, 1);
+        }),
+      };
+      markerInstances.push(instance);
+      return instance;
+    }),
+    addProtocol: vi.fn(),
+  },
 }));
 
 vi.mock("pmtiles", () => ({
@@ -27,7 +45,13 @@ vi.mock("pmtiles", () => ({
   Protocol: class { add = vi.fn(); tile = vi.fn(); },
 }));
 
-import { EventGlobe, eventLocationsToFeatureCollection } from "@/app/dashboard/event-globe";
+import {
+  EventGlobe,
+  buildEventMapData,
+  countResolvedEventLocations,
+  eventLocationsToClusters,
+  eventLocationsToFeatureCollection,
+} from "@/app/dashboard/event-globe";
 import type { EventRead } from "@/lib/events-api";
 
 function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
@@ -40,7 +64,64 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 }
 
 describe("EventGlobe", () => {
-  afterEach(() => vi.clearAllMocks());
+  afterEach(() => {
+    vi.clearAllMocks();
+    markerInstances.length = 0;
+  });
+
+  it("groups events sharing an identical resolved coordinate into one cluster instead of stacked pins", () => {
+    const eventA = makeEvent({ id: "event-1" });
+    const eventB = makeEvent({ id: "event-2", title: "Second report at the same point" });
+    const { pins, clusters } = buildEventMapData([eventA, eventB]);
+
+    expect(pins.features).toHaveLength(0);
+    expect(clusters).toEqual([
+      { coordinates: [106.8, -6.2], count: 2, eventIds: ["event-1", "event-2"], locationLabel: "Jakarta, Jakarta, Indonesia" },
+    ]);
+    expect(eventLocationsToClusters([eventA, eventB])).toEqual(clusters);
+  });
+
+  it("keeps a single event with two same-coordinate locations as one pin, not a self-cluster", () => {
+    const event = makeEvent({
+      locations: [
+        { id: "location-1", country: "Indonesia", admin1: "Jakarta", city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" },
+        { id: "location-2", country: "Indonesia", admin1: "Jakarta", city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" },
+      ],
+    });
+
+    const { pins, clusters } = buildEventMapData([event]);
+
+    expect(pins.features).toHaveLength(1);
+    expect(clusters).toHaveLength(0);
+  });
+
+  it("counts every resolved location regardless of clustering", () => {
+    const eventA = makeEvent({ id: "event-1" });
+    const eventB = makeEvent({ id: "event-2" });
+    const eventC = makeEvent({
+      id: "event-3",
+      locations: [{ id: "location-3", country: "Indonesia", admin1: null, city_regency: null, latitude: null, longitude: 106.8 }],
+    });
+
+    expect(countResolvedEventLocations([eventA, eventB, eventC])).toBe(2);
+  });
+
+  it("resolves a cluster's event ids back to full events and reports them on click", () => {
+    map.on.mockImplementation((event: string, listener: () => void) => {
+      if (event === "load") listener();
+      return map;
+    });
+    const eventA = makeEvent({ id: "event-1" });
+    const eventB = makeEvent({ id: "event-2", title: "Second report at the same point" });
+    const onSelectCluster = vi.fn();
+
+    render(<EventGlobe events={[eventA, eventB]} onSelect={vi.fn()} onSelectCluster={onSelectCluster} />);
+
+    expect(markerInstances).toHaveLength(1);
+    markerInstances[0].element.click();
+
+    expect(onSelectCluster).toHaveBeenCalledWith([eventA, eventB], "Jakarta, Jakarta, Indonesia");
+  });
 
   it("creates one local GeoJSON point for each complete event location and none for null coordinates", () => {
     const features = eventLocationsToFeatureCollection([

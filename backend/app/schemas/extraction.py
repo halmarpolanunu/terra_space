@@ -12,9 +12,24 @@ class ExtractedEventType(BaseModel):
 
 
 class ExtractedLocation(BaseModel):
-    country: str | None = None
-    admin1: str | None = None
-    city_regency: str | None = None
+    country: str | None = Field(
+        default=None,
+        description=(
+            "ISO 3166-1 alpha-2 country code, e.g. 'US', 'ID', 'IR'. Never the full "
+            "country name. Null if no country is identifiable for this location."
+        ),
+    )
+    admin1: str | None = Field(
+        default=None,
+        description=(
+            "Province, state, or other first-level administrative division name. "
+            "Null if not stated or clearly implied."
+        ),
+    )
+    city_regency: str | None = Field(
+        default=None,
+        description="City or regency (district) name. Null if not stated or clearly implied.",
+    )
 
 
 class ExtractedActor(BaseModel):
@@ -32,7 +47,15 @@ class ExtractedEvent(BaseModel):
     end_date: str | None = None
     end_date_precision: DatePrecision | None = None
     epistemic_status: EpistemicStatus
-    locations: list[ExtractedLocation] = Field(default_factory=list)
+    locations: list[ExtractedLocation] = Field(
+        default_factory=list,
+        description=(
+            "Every location this specific event took place in or is directly tied to, "
+            "based on the document. Include indirect geographic references (straits, "
+            "coastlines, regions) if the document connects them to this event. Empty "
+            "only if the document gives no geographic detail for this event."
+        ),
+    )
     actors: list[ExtractedActor] = Field(default_factory=list)
     evidence_quote: str
 

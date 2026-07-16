@@ -12,6 +12,7 @@ export type CommandDeckPanel =
   | "register"
   | "filters"
   | "detail"
+  | "list"
   | null;
 
 export type LayeredCommandDeckProps = {
@@ -23,6 +24,7 @@ export type LayeredCommandDeckProps = {
   eyebrow: string;
   filters: ReactNode;
   globe: ReactNode;
+  list?: ReactNode;
   markerCount: number;
   onActivePanelChange: (panel: CommandDeckPanel) => void;
   parallaxEnabled: boolean;
@@ -80,6 +82,7 @@ export function LayeredCommandDeck({
   eyebrow,
   filters,
   globe,
+  list,
   markerCount,
   onActivePanelChange,
   parallaxEnabled,
@@ -99,7 +102,9 @@ export function LayeredCommandDeck({
       ? register
       : activePanel === "detail"
         ? detail
-        : null;
+        : activePanel === "list"
+          ? list
+          : null;
 
   useEffect(() => {
     const stage = stageRef.current;

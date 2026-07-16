@@ -80,6 +80,18 @@ describe("LayeredCommandDeck", () => {
     expect(screen.queryByText("Filter form")).not.toBeInTheDocument();
   });
 
+  it("renders the list drawer when activePanel is list", () => {
+    render(
+      <LayeredCommandDeck
+        {...makeProps({ activePanel: "list", list: <p>Events at this point</p> })}
+      />,
+    );
+
+    expect(screen.getByText("Events at this point")).toBeVisible();
+    expect(screen.queryByText("Filter form")).not.toBeInTheDocument();
+    expect(screen.queryByText("Event rows")).not.toBeInTheDocument();
+  });
+
   it("focuses edge instruments and dismisses the active layer with Escape", () => {
     const onActivePanelChange = vi.fn();
     const props = makeProps({ onActivePanelChange });

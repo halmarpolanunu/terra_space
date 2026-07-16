@@ -8,6 +8,73 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Extraction prompt strengthened for location reliability
+
+- Fixed the second still-open root cause behind
+  "[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)" via the
+  [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md).
+  Root-caused live: the owner's real "US military reimposes naval blockade on Iranian ports..."
+  document produced draft events with zero locations across two manual test runs, despite the text
+  plainly describing Iranian ports, Kuwait, Bahrain, and the Strait of Hormuz. Reading the exact
+  request sent to LM Studio confirmed why: `EXTRACTION_SYSTEM_PROMPT`
+  (`backend/app/services/lm_studio.py`) never mentioned locations at all, and `ExtractedLocation`'s
+  fields (`backend/app/schemas/extraction.py`) had no `Field(description=...)`, so the JSON schema
+  sent via structured output (`response_format: json_schema`) was bare for `locations` — plus a
+  second, independent bug: nothing told the model `country` must be an ISO 3166-1 alpha-2 code, so
+  even a model that did try would silently fail the gazetteer's exact-match resolver.
+- Fixed in two prompt iterations: the first added explicit location-extraction instructions to the
+  system prompt plus schema field descriptions, but a `docker exec` check confirmed both really
+  were reaching the model correctly and the owner's reprocessed document still came back with zero
+  locations — the abstract instruction alone wasn't enough for the owner's local model
+  (`qwen/qwen3.5-9b`). The second iteration added a concrete worked example (a sample sentence and
+  its expected `locations` output) to the system prompt, a well-established technique for smaller
+  local models that abstract instructions alone often fail to induce compliance from.
+- Paired the prompt change with a new location-level "never invent" grounding check in
+  `persist_extraction` (`backend/app/services/extraction.py`), since asking the model to extract
+  more aggressively raises the stakes of it inventing a place name: a location is now dropped
+  unless at least one of its non-null `admin1`/`city_regency` values is found in that event's own
+  `evidence_quote` (reusing the existing `quote_found` helper); country-only locations are trusted
+  without grounding, since an ISO code never appears literally in prose. Scoped only to AI
+  extraction, not manual add/edit. No change to the locked
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision.
+- Verified with 127 backend tests (fixed two pre-existing fixtures whose locations predated the new
+  grounding check and would otherwise have started failing; added three new grounding tests),
+  rebuilt and restarted the real backend container after each iteration, and had the owner reject
+  the stale drafts and reprocess their real document themselves each time. The owner reported
+  "seems good for now" after the second iteration, but a precise before/after location count across
+  more than one document was not captured in this session — recorded as an open follow-up in
+  [Current Status](Current-Status.md). Updated the
+  [Feedback Backlog](Feedback-Backlog.md) entry accordingly. No Roadmap milestone changed.
+
+## 2026-07-16 - Dashboard cluster markers and unresolved-locations list shipped
+
+- Implemented the visibility half of
+  "[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)" via the
+  [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md).
+  The owner had also separately noticed, while testing the previous session's amber-glass/zoom
+  work, that events sharing an identical gazetteer coordinate (same city/province/country) stack
+  pixel-for-pixel on one invisible pin, since the resolver returns one fixed point per place name.
+- Grouped co-located pins into one numbered `maplibregl.Marker` DOM element per shared coordinate
+  (not MapLibre's built-in distance-based clustering, since identical coordinates can never be
+  separated by zooming, and not a GeoJSON `symbol` layer, since the map style has no configured
+  glyph source and GeoJSON array/object feature properties are silently stringified with no
+  decode-side parse). Clicking a cluster or the new "Unresolved locations" Dashboard stat both open
+  one new generic `"list"` drawer panel added to `LayeredCommandDeck`, reusing the existing
+  detail-panel interaction language rather than introducing a floating popup (no prior precedent in
+  this codebase). `markerCount` was switched from counting GeoJSON features to
+  `countResolvedEventLocations`, so clustering can no longer silently shrink the "Markers · N" /
+  "Mapped locations" figures. Entirely frontend; no change to the locked
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)
+  decision.
+- Verified with 148 frontend tests across 29 files (11 new/updated), clean lint, and a production
+  build. Since the owner's live database had 0 approved events, full visual confirmation used a
+  separate, fully isolated Docker Compose stack (own project name, ports, and scratch database —
+  the real containers and database were never touched) seeded with three test events via the API,
+  confirmed end to end in a real browser, then completely torn down.
+- The owner's own manual testing afterward surfaced the still-open extraction-reliability root
+  cause, addressed in the following session entry above.
+
 ## 2026-07-16 - Amber glass backgrounds and browser zoom implemented
 
 - Completed the

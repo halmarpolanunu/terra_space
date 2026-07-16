@@ -36,6 +36,8 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 - [Event Deletion Design](plans/2026-07-15-event-deletion-design.md) — approved safety rules for deleting draft and approved events
 - [Event Deletion Implementation Plan](plans/2026-07-15-event-deletion-implementation.md) — test-first implementation plan for protected event deletion
+- [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md) — clusters co-located globe pins and surfaces an unresolved-locations list
+- [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md) — strengthens the LM Studio extraction prompt/schema and adds a location-level grounding check
 
 ## Reading rule
 

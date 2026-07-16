@@ -10,51 +10,109 @@ status: active
 
 ## Current focus
 
-Implemented and verified the owner-approved
-[Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md)
-direction through the complete
-[implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md). Terra Space now
-uses five original, route-specific local amber-on-black WebP backgrounds; the shared status bar
-and sidebar use restrained dark glass; Dashboard HUD surfaces use slightly stronger glass; and
-workflow reading/editing surfaces remain nearly opaque. The old blue-gray Dashboard atmosphere
-was removed. The five `1920 x 1080` assets total `306572` bytes (each below `650 KiB`) and require
-no external runtime request.
-
-The Dashboard now renders inside one `1664 x 872` `CommandDeckViewport` and applies one bounded
-scale to the complete composition as effective browser zoom increases; Documents, Event Review,
-Events, and Settings continue to reflow normally. Verified with 137 frontend tests across 27 test
-files, lint, a successful production build, and the full isolated end-to-end runner (10 Playwright
-tests plus database verification scripts) after repairing its stale pre-required-field selectors
-and obsolete bind-mounted database reset. Browser QA covered 90%, 100%, 110%, 125%, and 150%
-effective zoom: the 150% viewport reported scale `0.8718`, zero horizontal overflow, static
-background artwork, and a `0.00001s` reduced-motion transition. Filters, Event Register, Escape
-dismissal, globe rendering, and pointer movement were exercised without console errors. Nine
-screenshots are saved temporarily under `D:\tmp\terra-space-amber-glass-qa\`. Read-only QA used
-an isolated copy of the owner's current database (1 document, 4 draft events, 0 approved events)
-and copied attachment, so the owner's live database was not changed. No Roadmap milestone changed.
+Implemented and deployed a fix for the second still-open root cause behind
+"[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)": AI extraction
+was not consistently producing `country`/`admin1`/`city_regency` text at all, confirmed live when
+the owner's own real document ("US military reimposes naval blockade on Iranian ports...") produced
+5-8 draft events with zero locations across two separate manual test runs, despite the source text
+plainly describing Iranian ports, Kuwait, Bahrain, and the Strait of Hormuz. Root-caused by reading
+the exact request sent to LM Studio: `EXTRACTION_SYSTEM_PROMPT`
+(`backend/app/services/lm_studio.py`) never mentioned locations at all, and none of
+`ExtractedLocation`'s fields (`backend/app/schemas/extraction.py`) had a `Field(description=...)`,
+so the JSON schema sent to the model via structured output (`response_format: json_schema`) was
+bare for `locations` — plus a second, independent bug: nothing told the model `country` must be an
+ISO 3166-1 alpha-2 code, so even a model that *did* try (writing "Iran" instead of "IR") would
+silently fail the gazetteer's exact-match resolver. Fixed in three parts: (1) added an explicit
+location-extraction paragraph plus a concrete worked example to `EXTRACTION_SYSTEM_PROMPT`, since a
+first pass with only abstract instructions plus schema descriptions still produced zero locations
+against the owner's real local model (`qwen/qwen3.5-9b`) — confirmed via `docker exec` that both the
+system prompt and the JSON schema (with descriptions) really were reaching the model correctly, so
+the abstract instruction alone just wasn't enough for this model and a one-shot example was added as
+the next escalation; (2) added `Field(description=...)` to `ExtractedLocation`'s three fields and
+`ExtractedEvent.locations`, since structured-output schemas carry this text straight to the model;
+(3) added a location-level "never invent" grounding check in `persist_extraction`
+(`backend/app/services/extraction.py`) — reusing the existing `quote_found` helper, a location is
+now dropped unless at least one of its non-null `admin1`/`city_regency` values is actually present
+in that event's own `evidence_quote` (country-only locations are trusted, since an ISO code never
+appears literally in prose) — scoped only to AI extraction, not manual add/edit, since raising how
+aggressively the model is asked to extract locations also raises the stakes of it inventing a place
+name. No change to the locked
+[Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md) decision
+(still exact-gazetteer-match only). Verified with 127 backend tests (2 fixed pre-existing fixtures
+that had ungrounded locations predating the new check, 3 new grounding tests), rebuilt and restarted
+the real backend container twice (once per prompt iteration), and had the owner reprocess their real
+document between each iteration ("seems good for now" after the second iteration with the worked
+example added) — a precise before/after location count was not captured in this session, so full
+confirmation is still the owner's to make as they continue reviewing. No Roadmap milestone changed.
 
 ## Previous focus
 
-Fixed the Event Review "Edit" button discoverability gap from the owner's live-testing
-[Feedback Backlog](Feedback-Backlog.md) report ("i want to be able to edit each draft
-intelligence's fields in this menu"). That entry recorded two possible interpretations — a
-discoverability problem versus a request for always-editable inline fields — and needed the
-owner's choice before any code changed; the owner confirmed it was the discoverability problem.
-In `frontend/src/app/event-review/event-card.tsx`, the button is now labeled "Edit fields" instead
-of the bare "Edit", moved to the first position in the action row (ahead of Reject/Approve, so the
-"modify" action reads before the two terminal decisions), and given the same amber `btn-primary`
-accent already used for the equivalent Edit action on the Events detail view, instead of blending
-in with Reject's plain neutral style — the underlying edit form itself was already complete and
-unchanged. No new button color or design-token was introduced. Verified with 127 frontend tests,
-lint, a production build, and a live check against a rebuilt Docker frontend image (the running
-container was a prior build with no source volume mount, so the change was invisible until
-rebuilt) using the owner's real draft events (4 existing drafts): confirmed the relabeled,
-repositioned, accented button reads clearly and still opens the existing full-field edit form —
-read-only, no data changed. The Feedback Backlog entry is marked resolved. No Roadmap phase or
-milestone changed.
+Implemented and verified the first half of the owner-reported
+"[Event locations do not reliably reach the Dashboard globe](Feedback-Backlog.md)" gap, per the
+[Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md):
+pins that share an identical gazetteer coordinate (same city/province/country) now group into one
+numbered cluster marker instead of stacking invisibly, and events whose location never resolved to
+any coordinate are now surfaced as a clickable "Unresolved locations" stat on the Dashboard that
+opens a list of the affected events. Both are frontend-only; the locked
+[Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md) decision
+is unchanged (no fuzzy matching, no manual coordinate override, no invented precision). Clustering
+is done in application code rather than MapLibre's built-in distance-based clustering, since
+co-located pins share the *exact* same coordinate (zooming can never separate them); cluster
+markers render as DOM elements via `maplibregl.Marker` rather than a GeoJSON `symbol` layer, since
+the map style has no configured glyph source and GeoJSON array/object feature properties are
+silently stringified with no decode-side parse. Both the cluster-contents list and the
+unresolved-locations list reuse one new generic `"list"` drawer panel added to
+`LayeredCommandDeck`. `markerCount` ("Markers · N", "Mapped locations") was switched from counting
+GeoJSON features to `countResolvedEventLocations`, so it keeps reflecting the true resolved-location
+count regardless of clustering. Verified with 148 frontend tests across 29 files, clean lint, and a
+successful production build. Since the owner's live database had 0 approved events at the time, full
+visual confirmation used a separate, fully isolated Docker Compose stack (own project name, ports,
+and scratch database; the real containers and database were never touched) seeded with three test
+events via the API (two sharing one Jakarta coordinate, one with an unresolvable location) — this
+confirmed the cluster marker ("2 events at Jakarta, Jakarta, ID"), cluster-click → list → detail
+flow, the "Unresolved locations · 1" stat and its list, and correct "Markers"/"Mapped locations"
+counts, all end to end in a real browser. The isolated stack, its images, and its volume were fully
+torn down afterward. The owner then manually tested the real Dashboard and Event Review themselves,
+which surfaced the still-open root cause now recorded under Current focus above.
 
 ## Recent progress
 
+- Implemented and verified the owner-approved
+  [Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md)
+  direction through the complete
+  [implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md). Terra Space now
+  uses five original, route-specific local amber-on-black WebP backgrounds; the shared status bar
+  and sidebar use restrained dark glass; Dashboard HUD surfaces use slightly stronger glass; and
+  workflow reading/editing surfaces remain nearly opaque. The old blue-gray Dashboard atmosphere
+  was removed. The five `1920 x 1080` assets total `306572` bytes (each below `650 KiB`) and
+  require no external runtime request. The Dashboard now renders inside one `1664 x 872`
+  `CommandDeckViewport` and applies one bounded scale to the complete composition as effective
+  browser zoom increases; Documents, Event Review, Events, and Settings continue to reflow
+  normally. Verified with 137 frontend tests across 27 test files, lint, a successful production
+  build, and the full isolated end-to-end runner (10 Playwright tests plus database verification
+  scripts) after repairing its stale pre-required-field selectors and obsolete bind-mounted
+  database reset. Browser QA covered 90%, 100%, 110%, 125%, and 150% effective zoom: the 150%
+  viewport reported scale `0.8718`, zero horizontal overflow, static background artwork, and a
+  `0.00001s` reduced-motion transition. Read-only QA used an isolated copy of the owner's current
+  database (1 document, 4 draft events, 0 approved events) and copied attachment, so the owner's
+  live database was not changed. No Roadmap milestone changed.
+- Fixed the Event Review "Edit" button discoverability gap from the owner's live-testing
+  [Feedback Backlog](Feedback-Backlog.md) report ("i want to be able to edit each draft
+  intelligence's fields in this menu"). That entry recorded two possible interpretations — a
+  discoverability problem versus a request for always-editable inline fields — and needed the
+  owner's choice before any code changed; the owner confirmed it was the discoverability problem.
+  In `frontend/src/app/event-review/event-card.tsx`, the button is now labeled "Edit fields"
+  instead of the bare "Edit", moved to the first position in the action row (ahead of
+  Reject/Approve, so the "modify" action reads before the two terminal decisions), and given the
+  same amber `btn-primary` accent already used for the equivalent Edit action on the Events detail
+  view, instead of blending in with Reject's plain neutral style — the underlying edit form itself
+  was already complete and unchanged. No new button color or design-token was introduced. Verified
+  with 127 frontend tests, lint, a production build, and a live check against a rebuilt Docker
+  frontend image (the running container was a prior build with no source volume mount, so the
+  change was invisible until rebuilt) using the owner's real draft events (4 existing drafts):
+  confirmed the relabeled, repositioned, accented button reads clearly and still opens the
+  existing full-field edit form — read-only, no data changed. The Feedback Backlog entry is marked
+  resolved. No Roadmap phase or milestone changed.
 - Reduced the Dashboard's pointer-parallax intensity per the owner's live-testing
   [Feedback Backlog](Feedback-Backlog.md) report that the Situation Summary, Recent Signals, and
   Event Register panels moved too much with the mouse pointer. Asked the owner to confirm scope
@@ -436,6 +494,17 @@ milestone changed.
 
 ## Next actions
 
+- Confirm with the owner, with an actual before/after location count, whether the improved
+  extraction prompt reliably populates locations across more than one document — only one real
+  document has been reprocessed against it so far ("seems good for now", not yet precisely
+  measured). If gaps remain, consider whether they're prompt-following limits of the current local
+  model (`qwen/qwen3.5-9b`) rather than something further prompt changes can fix.
+- Once approved events with resolved locations exist in the owner's live database again, do a
+  direct visual check of the cluster marker and "Unresolved locations" list against real data (the
+  only confirmation so far used an isolated, fully torn-down test stack, not the live database).
+- Decide and scope the event-type-description item from the
+  [Feedback Backlog](Feedback-Backlog.md) (the other, related but distinct, owner-approved
+  next item).
 - Review the completed desktop experience at the target resolution. The verified implementation is
   merged into `main` and pushed to GitHub; the temporary implementation branch was removed.
 
@@ -451,3 +520,6 @@ milestone changed.
 - [Visual Design Direction](decisions/Visual-Design-Direction.md)
 - [Design Pass Sequencing](decisions/Design-Pass-Sequencing.md)
 - [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md)
+- [Dashboard Location Visibility Implementation Plan](plans/2026-07-16-dashboard-location-visibility.md)
+- [Extraction Location Prompt Implementation Plan](plans/2026-07-16-extraction-location-prompt.md)
+- [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md)

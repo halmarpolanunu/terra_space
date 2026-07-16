@@ -31,7 +31,15 @@ export type EventPinFeatureCollection = {
   }[];
 };
 
+export type EventPinCluster = {
+  coordinates: [number, number];
+  count: number;
+  eventIds: string[];
+  locationLabel: string;
+};
+
 const EMPTY_EVENT_PINS: EventPinFeatureCollection = { type: "FeatureCollection", features: [] };
+const EMPTY_CLUSTERS: EventPinCluster[] = [];
 
 export type MapProjectionMode = "globe" | "flat" | "unavailable";
 
@@ -99,14 +107,39 @@ export const worldMapStyle: StyleSpecification = {
 };
 
 type WorldMapProps = {
+  clusters?: EventPinCluster[];
   geojson?: EventPinFeatureCollection;
+  onClusterSelect?: (cluster: EventPinCluster) => void;
   onFeatureSelect?: (eventId: string) => void;
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
   selectedEventId?: string;
 };
 
+function syncClusterMarkers(
+  map: maplibregl.Map,
+  clusters: EventPinCluster[],
+  clusterMarkersRef: { current: maplibregl.Marker[] },
+  clusterSelectionRef: { current: ((cluster: EventPinCluster) => void) | undefined },
+) {
+  clusterMarkersRef.current.forEach((marker) => marker.remove());
+  clusterMarkersRef.current = clusters.map((cluster) => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "event-pin-cluster";
+    el.textContent = String(cluster.count);
+    el.setAttribute("aria-label", `${cluster.count} events at ${cluster.locationLabel}`);
+    el.addEventListener("click", (event) => {
+      event.stopPropagation();
+      clusterSelectionRef.current?.(cluster);
+    });
+    return new maplibregl.Marker({ element: el }).setLngLat(cluster.coordinates).addTo(map);
+  });
+}
+
 export function WorldMap({
+  clusters = EMPTY_CLUSTERS,
   geojson = EMPTY_EVENT_PINS,
+  onClusterSelect,
   onFeatureSelect,
   onProjectionModeChange,
   selectedEventId,
@@ -114,6 +147,9 @@ export function WorldMap({
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const pinsRef = useRef(geojson);
+  const clustersRef = useRef(clusters);
+  const clusterSelectionRef = useRef(onClusterSelect);
+  const clusterMarkersRef = useRef<maplibregl.Marker[]>([]);
   const projectionModeChangeRef = useRef(onProjectionModeChange);
   const selectedEventRef = useRef(selectedEventId);
   const selectionRef = useRef(onFeatureSelect);
@@ -228,6 +264,7 @@ export function WorldMap({
           );
         }, 1400);
       }
+      syncClusterMarkers(map, clustersRef.current, clusterMarkersRef, clusterSelectionRef);
       mapLoaded.current = true;
       updateGlobeRingOpacity();
     };
@@ -268,6 +305,8 @@ export function WorldMap({
       map.off("move", pauseRotation);
       map.off("keydown", pauseRotation);
       map.off("idle", resumeRotation);
+      clusterMarkersRef.current.forEach((marker) => marker.remove());
+      clusterMarkersRef.current = [];
       mapLoaded.current = false;
       pinPulseExpanded.current = false;
       mapRef.current = null;
@@ -277,6 +316,8 @@ export function WorldMap({
 
   useEffect(() => {
     pinsRef.current = geojson;
+    clustersRef.current = clusters;
+    clusterSelectionRef.current = onClusterSelect;
     projectionModeChangeRef.current = onProjectionModeChange;
     selectedEventRef.current = selectedEventId;
     selectionRef.current = onFeatureSelect;
@@ -284,7 +325,8 @@ export function WorldMap({
     const source = mapRef.current.getSource(EVENT_PIN_SOURCE_ID) as { setData: (data: EventPinFeatureCollection) => void } | undefined;
     source?.setData(geojson);
     applySelectedPinPaint(mapRef.current, selectedEventId, pinPulseExpanded.current);
-  }, [geojson, onFeatureSelect, onProjectionModeChange, selectedEventId]);
+    syncClusterMarkers(mapRef.current, clusters, clusterMarkersRef, clusterSelectionRef);
+  }, [clusters, geojson, onClusterSelect, onFeatureSelect, onProjectionModeChange, selectedEventId]);
 
   if (unavailable) {
     return <p role="alert">{MAP_UNAVAILABLE_MESSAGE}</p>;

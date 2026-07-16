@@ -49,7 +49,7 @@ def _create_and_process_document(client: TestClient, content: str) -> dict:
 
 
 def test_events_for_document_expose_suggested_type_and_actor_flags(tmp_path: Path) -> None:
-    content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
+    content = "A local militia reportedly attacked the fuel depot near Sana'a on 2026-07-10."
     extraction = ExtractionResult(
         events=[
             ExtractedEvent(

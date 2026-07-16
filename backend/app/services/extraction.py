@@ -12,7 +12,7 @@ from app.db.models import (
     EventType,
     Location,
 )
-from app.schemas.extraction import ExtractedEvent, ExtractionResult
+from app.schemas.extraction import ExtractedEvent, ExtractedLocation, ExtractionResult
 from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
 from app.services.locations import apply_coordinates
@@ -25,9 +25,16 @@ class DroppedEvent:
 
 
 @dataclass
+class DroppedLocation:
+    event_title: str
+    reason: str
+
+
+@dataclass
 class PersistResult:
     saved_events: list[Event] = field(default_factory=list)
     dropped_events: list[DroppedEvent] = field(default_factory=list)
+    dropped_locations: list[DroppedLocation] = field(default_factory=list)
 
 
 def _validate_event(event_data: ExtractedEvent, document_content: str) -> str | None:
@@ -38,6 +45,13 @@ def _validate_event(event_data: ExtractedEvent, document_content: str) -> str | 
     if not quote_found(event_data.evidence_quote, document_content):
         return "Evidence quote not found in the source document."
     return None
+
+
+def _location_grounded(location_data: ExtractedLocation, evidence_quote: str) -> bool:
+    named_fields = [value for value in (location_data.admin1, location_data.city_regency) if value]
+    if not named_fields:
+        return True
+    return any(quote_found(value, evidence_quote) for value in named_fields)
 
 
 def persist_extraction(
@@ -82,14 +96,23 @@ def persist_extraction(
         )
 
         for location_data in event_data.locations:
-            if location_data.country or location_data.admin1 or location_data.city_regency:
-                location = Location(
-                    country=location_data.country,
-                    admin1=location_data.admin1,
-                    city_regency=location_data.city_regency,
+            if not (location_data.country or location_data.admin1 or location_data.city_regency):
+                continue
+            if not _location_grounded(location_data, event_data.evidence_quote):
+                result.dropped_locations.append(
+                    DroppedLocation(
+                        event_title=event_data.title,
+                        reason="Location text not found in the event's evidence quote.",
+                    )
                 )
-                apply_coordinates(location)
-                event.locations.append(location)
+                continue
+            location = Location(
+                country=location_data.country,
+                admin1=location_data.admin1,
+                city_regency=location_data.city_regency,
+            )
+            apply_coordinates(location)
+            event.locations.append(location)
 
         for actor_data in event_data.actors:
             actor = find_by_exact_name(existing_actors, actor_data.name)

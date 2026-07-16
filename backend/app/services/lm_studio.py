@@ -21,7 +21,21 @@ EXTRACTION_SYSTEM_PROMPT = (
     "Only report what the document actually states. Leave a field null rather than guess "
     "or invent a value. Prefer an existing event type or actor over inventing a "
     "near-duplicate. The evidence_quote for every event must be copied verbatim from the "
-    "document text, not paraphrased or summarized."
+    "document text, not paraphrased or summarized.\n\n"
+    "For every event, extract every location the document ties to that specific event: "
+    "country, province/state (admin1), and city/regency, whenever the text states or "
+    "clearly implies one. Do not skip a location just because it is named indirectly "
+    "(a strait, a coastline, a region, 'the capital') if the document ties it to this "
+    "event. Use the ISO 3166-1 alpha-2 country code (for example 'US', 'ID', 'IR'), never "
+    "the full country name. Leave a location field null only when the document truly gives "
+    "no geographic detail for that event.\n\n"
+    "Example: for the sentence \"Rebel forces attacked a checkpoint near Sana'a, Yemen, "
+    "on Monday,\" the event's locations field must be "
+    "[{\"country\": \"YE\", \"admin1\": null, \"city_regency\": \"Sana'a\"}] — the country name "
+    "is converted to its ISO code, the city name is kept as written, and admin1 stays null "
+    "because no province/state was stated. Apply this same treatment to every event, "
+    "including ones where the location is implied by a strait, coastline, or region rather "
+    "than a country name spelled out directly."
 )
 
 

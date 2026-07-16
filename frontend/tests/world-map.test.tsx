@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import maplibregl from "maplibre-gl";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const map = {
   addLayer: vi.fn(),
@@ -18,7 +18,27 @@ const map = {
   setProjection: vi.fn(),
 };
 
-vi.mock("maplibre-gl", () => ({ default: { addProtocol: vi.fn(), Map: vi.fn(function Map() { return map; }) } }));
+const markerInstances: { element: HTMLElement; setLngLat: ReturnType<typeof vi.fn>; addTo: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> }[] = [];
+
+vi.mock("maplibre-gl", () => ({
+  default: {
+    addProtocol: vi.fn(),
+    Map: vi.fn(function Map() { return map; }),
+    Marker: vi.fn(function Marker({ element }: { element: HTMLElement }) {
+      const instance = {
+        element,
+        setLngLat: vi.fn().mockReturnThis(),
+        addTo: vi.fn().mockReturnThis(),
+        remove: vi.fn(() => {
+          const index = markerInstances.indexOf(instance);
+          if (index !== -1) markerInstances.splice(index, 1);
+        }),
+      };
+      markerInstances.push(instance);
+      return instance;
+    }),
+  },
+}));
 
 vi.mock("pmtiles", () => ({
   PMTiles: vi.fn(function PMTiles() {}),
@@ -35,6 +55,8 @@ import {
 } from "@/components/world-map";
 
 describe("offline world map configuration", () => {
+  afterEach(() => { markerInstances.length = 0; });
+
   it("opens at the globe-dominant command-deck scale", () => {
     render(<WorldMap />);
 
@@ -283,5 +305,50 @@ describe("offline world map configuration", () => {
     clearInterval.mockRestore();
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it("renders one DOM marker per cluster with a labeled count and invokes onClusterSelect on click", () => {
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+    const onClusterSelect = vi.fn();
+    const cluster = { coordinates: [106.8, -6.2] as [number, number], count: 3, eventIds: ["a", "b", "c"], locationLabel: "Jakarta, Jakarta, Indonesia" };
+
+    render(<WorldMap clusters={[cluster]} onClusterSelect={onClusterSelect} />);
+
+    expect(markerInstances).toHaveLength(1);
+    expect(markerInstances[0].element.textContent).toBe("3");
+    expect(markerInstances[0].element.getAttribute("aria-label")).toBe("3 events at Jakarta, Jakarta, Indonesia");
+    expect(markerInstances[0].setLngLat).toHaveBeenCalledWith(cluster.coordinates);
+    expect(markerInstances[0].addTo).toHaveBeenCalledWith(map);
+
+    markerInstances[0].element.click();
+    expect(onClusterSelect).toHaveBeenCalledWith(cluster);
+  });
+
+  it("replaces cluster markers when the clusters prop changes and removes them on unmount", () => {
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+    const clusterOne = { coordinates: [106.8, -6.2] as [number, number], count: 2, eventIds: ["a", "b"], locationLabel: "Jakarta" };
+    const clusterTwo = { coordinates: [0, 0] as [number, number], count: 4, eventIds: ["c", "d", "e", "f"], locationLabel: "Null Island" };
+
+    const { rerender, unmount } = render(<WorldMap clusters={[clusterOne]} />);
+    expect(markerInstances).toHaveLength(1);
+    const firstMarker = markerInstances[0];
+    expect(firstMarker.element.textContent).toBe("2");
+
+    rerender(<WorldMap clusters={[clusterTwo]} />);
+    expect(firstMarker.remove).toHaveBeenCalledOnce();
+    expect(markerInstances).toHaveLength(1);
+    expect(markerInstances[0].element.textContent).toBe("4");
+
+    const secondMarker = markerInstances[0];
+    unmount();
+    expect(secondMarker.remove).toHaveBeenCalledOnce();
   });
 });

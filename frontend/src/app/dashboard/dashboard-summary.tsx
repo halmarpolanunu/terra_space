@@ -1,4 +1,5 @@
 import { FramedPanel } from "@/components/framed-panel";
+import { locationIsResolved } from "@/app/dashboard/event-globe";
 import type { EventRead } from "@/lib/events-api";
 
 type DashboardSummaryProps = {
@@ -7,12 +8,21 @@ type DashboardSummaryProps = {
 
 type DashboardSummaryContentProps = DashboardSummaryProps & {
   markerCount: number;
+  onShowUnresolvedLocations?: () => void;
 };
 
 function approvedInLastSevenDays(approvedAt: string | null | undefined): boolean {
   if (!approvedAt) return false;
   const approvedDate = new Date(approvedAt);
   return !Number.isNaN(approvedDate.getTime()) && approvedDate >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+}
+
+export function hasResolvedLocation(event: EventRead): boolean {
+  return event.locations.some(locationIsResolved);
+}
+
+export function unresolvedLocationEvents(events: EventRead[]): EventRead[] {
+  return events.filter((event) => !hasResolvedLocation(event));
 }
 
 export function summarizeDashboardEvents(events: EventRead[]) {
@@ -26,7 +36,7 @@ export function summarizeDashboardEvents(events: EventRead[]) {
     new_events: events.filter((event) => approvedInLastSevenDays(event.approved_at)).length,
     by_event_type: [...byType.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([name, count]) => ({ name, count })),
     incomplete_date_count: events.filter((event) => !event.start_date || event.start_date_precision === "unknown").length,
-    incomplete_location_count: events.filter((event) => !event.locations.some((location) => location.latitude !== null && location.longitude !== null)).length,
+    incomplete_location_count: unresolvedLocationEvents(events).length,
   };
 }
 
@@ -51,7 +61,7 @@ export function DashboardSummary({ events }: DashboardSummaryProps) {
   );
 }
 
-export function DashboardSummaryContent({ events, markerCount }: DashboardSummaryContentProps) {
+export function DashboardSummaryContent({ events, markerCount, onShowUnresolvedLocations }: DashboardSummaryContentProps) {
   const value = summarizeDashboardEvents(events);
 
   return (
@@ -59,6 +69,20 @@ export function DashboardSummaryContent({ events, markerCount }: DashboardSummar
       <div><dt>Total events</dt><dd>{value.total_events}</dd></div>
       <div><dt>New in last 7 days</dt><dd>{value.new_events}</dd></div>
       <div><dt>Mapped locations</dt><dd>{markerCount}</dd></div>
+      <div>
+        <dt>Unresolved locations</dt>
+        <dd>
+          <button
+            aria-label={`Unresolved locations · ${value.incomplete_location_count}`}
+            className="dashboard-summary-stat-button"
+            disabled={value.incomplete_location_count === 0}
+            onClick={onShowUnresolvedLocations}
+            type="button"
+          >
+            {value.incomplete_location_count}
+          </button>
+        </dd>
+      </div>
     </dl>
   );
 }

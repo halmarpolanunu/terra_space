@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { EventDetail } from "@/app/events/event-detail";
-import { DashboardSummaryContent } from "@/app/dashboard/dashboard-summary";
-import { EventGlobe, eventLocationsToFeatureCollection } from "@/app/dashboard/event-globe";
+import { DashboardSummaryContent, unresolvedLocationEvents } from "@/app/dashboard/dashboard-summary";
+import { EventGlobe, countResolvedEventLocations } from "@/app/dashboard/event-globe";
+import { EventListPanel } from "@/app/dashboard/event-list-panel";
 import { LayeredCommandDeck, type CommandDeckPanel } from "@/app/dashboard/layered-command-deck";
 import { CommandDeckViewport } from "@/app/dashboard/command-deck-viewport";
 import { AppShell } from "@/components/app-shell";
@@ -46,6 +47,12 @@ export function DashboardWorkspace() {
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
   const [activePanel, setActivePanel] = useState<CommandDeckPanel>(null);
   const [projectionMode, setProjectionMode] = useState<"globe" | "flat" | "unavailable">("globe");
+  const [listPanel, setListPanel] = useState<{
+    description?: string;
+    emptyMessage?: string;
+    events: EventRead[];
+    title: string;
+  } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -70,6 +77,7 @@ export function DashboardWorkspace() {
 
   function changeFilters(nextFilters: EventFilters) {
     setSelectedEvent(null);
+    setListPanel(null);
     const nextSearch = toEventFilterSearch(nextFilters);
     router.replace(nextSearch ? `/dashboard?${nextSearch}` : "/dashboard");
   }
@@ -83,9 +91,14 @@ export function DashboardWorkspace() {
     setActivePanel("detail");
   }
 
+  function showList(context: { description?: string; emptyMessage?: string; events: EventRead[]; title: string }) {
+    setListPanel(context);
+    setActivePanel("list");
+  }
+
   const dashboardPath = `/dashboard${search ? `?${search}` : ""}`;
   const eventsPath = `/events${search ? `?${search}` : ""}`;
-  const markerCount = eventLocationsToFeatureCollection(events).features.length;
+  const markerCount = countResolvedEventLocations(events);
   const activeFilterCount = ACTIVE_FILTER_KEYS.filter((key) => Boolean(filters[key].trim())).length;
   const sortLabel = EVENT_SORT_OPTIONS.find(([value]) => value === filters.sort)?.[1]
     ?? EVENT_SORT_OPTIONS[0][1];
@@ -127,10 +140,27 @@ export function DashboardWorkspace() {
                 events={events}
                 onProjectionModeChange={setProjectionMode}
                 onSelect={selectEvent}
+                onSelectCluster={(clusterEvents, locationLabel) => showList({
+                  title: `${clusterEvents.length} events at ${locationLabel}`,
+                  events: clusterEvents,
+                })}
                 selectedEventId={selectedEvent?.id}
               />
             </>
           )}
+          list={listPanel ? (
+            <EventListPanel
+              description={listPanel.description}
+              emptyMessage={listPanel.emptyMessage}
+              events={listPanel.events}
+              onClose={() => {
+                setListPanel(null);
+                setActivePanel(null);
+              }}
+              onSelect={selectEvent}
+              title={listPanel.title}
+            />
+          ) : undefined}
           markerCount={markerCount}
           onActivePanelChange={setActivePanel}
           parallaxEnabled={projectionMode === "globe"}
@@ -156,7 +186,18 @@ export function DashboardWorkspace() {
           )}
           sortLabel={sortLabel}
           stageLabel="Global operating picture"
-          summary={<DashboardSummaryContent events={events} markerCount={markerCount} />}
+          summary={(
+            <DashboardSummaryContent
+              events={events}
+              markerCount={markerCount}
+              onShowUnresolvedLocations={() => showList({
+                title: "Unresolved locations",
+                description: "Events with no resolved coordinates on the map.",
+                events: unresolvedLocationEvents(events),
+                emptyMessage: "Every event in this view has a resolved location.",
+              })}
+            />
+          )}
           title="Dashboard"
         />
         </CommandDeckViewport>

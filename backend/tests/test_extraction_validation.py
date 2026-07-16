@@ -191,18 +191,87 @@ def test_location_with_all_fields_null_is_not_attached(tmp_path: Path) -> None:
 
 def test_location_with_a_field_present_is_attached(tmp_path: Path) -> None:
     session = _session(tmp_path)
-    document = _document()
+    document = _document(content="A large protest occurred at the capitol in Jakarta on July 10th.")
     session.add(document)
     session.commit()
 
     extraction = ExtractionResult(
-        events=[_event(locations=[ExtractedLocation(country="ID", admin1=None, city_regency="Jakarta")])]
+        events=[
+            _event(
+                evidence_quote="A large protest occurred at the capitol in Jakarta",
+                locations=[ExtractedLocation(country="ID", admin1=None, city_regency="Jakarta")],
+            )
+        ]
     )
 
     result = persist_extraction(session, document, extraction)
 
     assert len(result.saved_events[0].locations) == 1
     assert result.saved_events[0].locations[0].city_regency == "Jakarta"
+
+
+def test_location_with_ungrounded_admin1_and_city_regency_is_dropped(tmp_path: Path) -> None:
+    session = _session(tmp_path)
+    document = _document()
+    session.add(document)
+    session.commit()
+
+    extraction = ExtractionResult(
+        events=[
+            _event(
+                locations=[
+                    ExtractedLocation(country="ID", admin1="Jakarta", city_regency="Jakarta")
+                ]
+            )
+        ]
+    )
+
+    result = persist_extraction(session, document, extraction)
+
+    assert result.saved_events[0].locations == []
+    assert len(result.dropped_locations) == 1
+    assert result.dropped_locations[0].event_title == "Protest at the capitol"
+
+
+def test_location_with_only_country_is_trusted_without_grounding(tmp_path: Path) -> None:
+    session = _session(tmp_path)
+    document = _document()
+    session.add(document)
+    session.commit()
+
+    extraction = ExtractionResult(
+        events=[_event(locations=[ExtractedLocation(country="ID", admin1=None, city_regency=None)])]
+    )
+
+    result = persist_extraction(session, document, extraction)
+
+    assert len(result.saved_events[0].locations) == 1
+    assert result.saved_events[0].locations[0].country == "ID"
+    assert result.dropped_locations == []
+
+
+def test_location_is_kept_when_only_one_of_two_named_fields_is_grounded(tmp_path: Path) -> None:
+    session = _session(tmp_path)
+    document = _document(content="A large protest occurred at the capitol in Jakarta on July 10th.")
+    session.add(document)
+    session.commit()
+
+    extraction = ExtractionResult(
+        events=[
+            _event(
+                evidence_quote="A large protest occurred at the capitol in Jakarta",
+                locations=[
+                    ExtractedLocation(country="ID", admin1="Unmentioned Province", city_regency="Jakarta")
+                ],
+            )
+        ]
+    )
+
+    result = persist_extraction(session, document, extraction)
+
+    assert len(result.saved_events[0].locations) == 1
+    assert result.saved_events[0].locations[0].admin1 == "Unmentioned Province"
+    assert result.dropped_locations == []
 
 
 def test_persisted_event_links_back_to_document_source_with_evidence_quote(
