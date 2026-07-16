@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Amber glass background and browser zoom design approved
+
+- Recorded the owner's approved
+  [Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md)
+  direction. Terra Space keeps its existing pure-black/amber palette and typography, adds a
+  restrained translucent shell, and gains five original local amber-on-black backgrounds from
+  one visual family with a distinct motif for Dashboard, Documents, Event Review, Events, and
+  Settings. The owner explicitly rejected the explored blue-black atmosphere.
+- Locked browser page-zoom behavior: the Dashboard Layered Command Deck shrinks as one composed
+  unit at 90%, 100%, 110%, 125%, and 150%, while the other menus reflow normally. Updated the two
+  related Feedback Backlog items and moved the continuation point to owner review of the written
+  decision before implementation planning. No application code, North Star, or Roadmap milestone
+  changed.
+
 ## 2026-07-16 - Documents layout and Dashboard globe ring feedback items resolved
 
 - Resolved two open [Feedback Backlog](Feedback-Backlog.md) items. Documents: the "New Document"

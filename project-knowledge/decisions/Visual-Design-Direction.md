@@ -35,7 +35,13 @@ tasteful motion, high readability.
 
 ## Palette (dark only, pure black)
 
-No light mode in the MVP. Background is always pure black.
+The later [Amber Glass Background and Browser Zoom](Amber-Glass-Background-and-Browser-Zoom.md)
+decision supersedes only the rule that every background must remain undecorated pure black. The
+base remains black and the palette below remains authoritative, while approved amber-on-black
+background artwork and restrained glass surfaces may now appear as defined there.
+
+No light mode in the MVP. The base canvas is always pure black; approved amber-on-black artwork
+may decorate it only as defined by the later decision above.
 
 - Base background `#000000`; panel surface `#080b0d`; insets/fields `#0a0f12` / `#0c1215`.
 - Borders: subtle `#182127`, bright `#2b3a41`.

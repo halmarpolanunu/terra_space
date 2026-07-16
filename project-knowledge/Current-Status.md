@@ -10,6 +10,19 @@ status: active
 
 ## Current focus
 
+The owner approved the
+[Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md)
+design after comparing visual alternatives. The chosen direction keeps Terra Space's existing
+black/amber palette and typography, adds restrained glass to the shared status bar/sidebar,
+keeps reading and editing surfaces nearly opaque, and uses five original local amber-on-black
+backgrounds from one family with a distinct motif for each menu. The owner rejected the proposed
+blue-black atmosphere. At browser zoom from 90% through 150%, the Dashboard command deck will
+shrink as one composed unit; the other menus will reflow normally. The design decision is written
+and awaits owner review before a detailed implementation plan is produced. No application code or
+Roadmap milestone changed.
+
+## Previous focus
+
 Fixed the Event Review "Edit" button discoverability gap from the owner's live-testing
 [Feedback Backlog](Feedback-Backlog.md) report ("i want to be able to edit each draft
 intelligence's fields in this menu"). That entry recorded two possible interpretations — a
