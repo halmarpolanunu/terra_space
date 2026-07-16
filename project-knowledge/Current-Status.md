@@ -18,8 +18,12 @@ keeps reading and editing surfaces nearly opaque, and uses five original local a
 backgrounds from one family with a distinct motif for each menu. The owner rejected the proposed
 blue-black atmosphere. At browser zoom from 90% through 150%, the Dashboard command deck will
 shrink as one composed unit; the other menus will reflow normally. The design decision is written
-and awaits owner review before a detailed implementation plan is produced. No application code or
-Roadmap milestone changed.
+and owner-approved. The detailed
+[implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md) is complete and
+validated: six test-first tasks cover original asset generation/normalization, route mapping,
+glass and opaque work surfaces, a dedicated `CommandDeckViewport`, effective-zoom Playwright
+coverage, populated live QA, and final Project Knowledge updates. The continuation point is to
+execute that plan in a fresh session. No application code or Roadmap milestone changed.
 
 ## Previous focus
 

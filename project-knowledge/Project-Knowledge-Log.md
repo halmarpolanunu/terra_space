@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Amber glass and browser zoom implementation plan prepared
+
+- Added the owner-approved
+  [Amber Glass Background and Browser Zoom Implementation Plan](plans/2026-07-16-amber-glass-background-browser-zoom.md).
+  Six test-first tasks now specify the five original local asset prompts and normalization limit,
+  the route-to-background contract, restrained shell/Dashboard glass with opaque work surfaces,
+  one `1664 x 872` Dashboard design canvas with bounded whole-canvas scaling, isolated Playwright
+  coverage, and populated read-only visual QA.
+- Updated the two related Feedback Backlog items to `planned` and moved the continuation point to
+  executing the plan in a fresh session, as requested by the owner. No application code, North
+  Star, or Roadmap milestone changed.
+
 ## 2026-07-16 - Amber glass background and browser zoom design approved
 
 - Recorded the owner's approved
