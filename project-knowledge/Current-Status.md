@@ -10,20 +10,28 @@ status: active
 
 ## Current focus
 
-The owner approved the
+Implemented and verified the owner-approved
 [Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md)
-design after comparing visual alternatives. The chosen direction keeps Terra Space's existing
-black/amber palette and typography, adds restrained glass to the shared status bar/sidebar,
-keeps reading and editing surfaces nearly opaque, and uses five original local amber-on-black
-backgrounds from one family with a distinct motif for each menu. The owner rejected the proposed
-blue-black atmosphere. At browser zoom from 90% through 150%, the Dashboard command deck will
-shrink as one composed unit; the other menus will reflow normally. The design decision is written
-and owner-approved. The detailed
-[implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md) is complete and
-validated: six test-first tasks cover original asset generation/normalization, route mapping,
-glass and opaque work surfaces, a dedicated `CommandDeckViewport`, effective-zoom Playwright
-coverage, populated live QA, and final Project Knowledge updates. The continuation point is to
-execute that plan in a fresh session. No application code or Roadmap milestone changed.
+direction through the complete
+[implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md). Terra Space now
+uses five original, route-specific local amber-on-black WebP backgrounds; the shared status bar
+and sidebar use restrained dark glass; Dashboard HUD surfaces use slightly stronger glass; and
+workflow reading/editing surfaces remain nearly opaque. The old blue-gray Dashboard atmosphere
+was removed. The five `1920 x 1080` assets total `306572` bytes (each below `650 KiB`) and require
+no external runtime request.
+
+The Dashboard now renders inside one `1664 x 872` `CommandDeckViewport` and applies one bounded
+scale to the complete composition as effective browser zoom increases; Documents, Event Review,
+Events, and Settings continue to reflow normally. Verified with 137 frontend tests across 27 test
+files, lint, a successful production build, and the full isolated end-to-end runner (10 Playwright
+tests plus database verification scripts) after repairing its stale pre-required-field selectors
+and obsolete bind-mounted database reset. Browser QA covered 90%, 100%, 110%, 125%, and 150%
+effective zoom: the 150% viewport reported scale `0.8718`, zero horizontal overflow, static
+background artwork, and a `0.00001s` reduced-motion transition. Filters, Event Register, Escape
+dismissal, globe rendering, and pointer movement were exercised without console errors. Nine
+screenshots are saved temporarily under `D:\tmp\terra-space-amber-glass-qa\`. Read-only QA used
+an isolated copy of the owner's current database (1 document, 4 draft events, 0 approved events)
+and copied attachment, so the owner's live database was not changed. No Roadmap milestone changed.
 
 ## Previous focus
 

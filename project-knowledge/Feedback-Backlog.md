@@ -95,12 +95,12 @@ implementation plan or decision, link it from here and mark it resolved instead 
   (e.g., keep pure-black panels but add a subtle starfield/atmosphere texture already used on the
   globe, vs. a bigger palette change), then record the outcome as an update to, or a supersession
   of, the Visual Design Direction decision before implementing.
-- **Status:** Planned; execution has not started. The owner approved
+- **Status:** Resolved; implemented and verified. The owner approved
   [Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md):
   restrained glass on the shared shell, stronger glass only on the Dashboard, and five original
-  pure-black/amber backgrounds from one visual family with a unique motif per menu. The detailed
-  [implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md) is ready for a
-  new execution session. No code has been changed yet.
+  pure-black/amber backgrounds from one visual family with a unique motif per menu. The complete
+  [implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md) is implemented
+  and verified with automated and read-only browser QA. No Roadmap milestone changed.
 
 ### Event types have no description, only a bare name (2026-07-16)
 
@@ -149,13 +149,13 @@ implementation plan or decision, link it from here and mark it resolved instead 
   zoom levels, or which specific components need a targeted fix. This needs an actual live-browser
   pass across a range of zoom levels (e.g. 90%, 110%, 125%, 150%) on each of the five screens
   before scoping any implementation plan.
-- **Status:** Planned; execution has not started. The owner chose proportional
+- **Status:** Resolved; implemented and verified. The owner chose proportional
   shrinking of the complete Dashboard command deck at browser zoom, while the other four menus
-  reflow normally. Verification will cover 90%, 100%, 110%, 125%, and 150% as defined in
+  reflow normally. Verification covered 90%, 100%, 110%, 125%, and 150% as defined in
   [Amber Glass Background and Browser Zoom](decisions/Amber-Glass-Background-and-Browser-Zoom.md).
-  The detailed
-  [implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md) is ready for a
-  new execution session. No code has been changed yet.
+  The complete
+  [implementation plan](plans/2026-07-16-amber-glass-background-browser-zoom.md) is implemented
+  and verified with whole-canvas scale checks, overflow checks, and read-only browser QA.
 
 ### Dashboard panel parallax and globe atmosphere ring during zoom (2026-07-16)
 

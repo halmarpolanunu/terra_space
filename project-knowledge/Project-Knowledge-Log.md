@@ -8,6 +8,25 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-16 - Amber glass backgrounds and browser zoom implemented
+
+- Completed the
+  [Amber Glass Background and Browser Zoom Implementation Plan](plans/2026-07-16-amber-glass-background-browser-zoom.md):
+  five original route-specific local amber-on-black WebP backgrounds, restrained shell and
+  Dashboard glass, opaque workflow surfaces, and one bounded `1664 x 872` whole-canvas Dashboard
+  scale. The five assets total `306572` bytes and make no external runtime request.
+- Verified with 137 frontend tests across 27 files, lint, a production build, the full isolated
+  end-to-end runner (10 Playwright tests plus database verification scripts), and read-only browser
+  QA at 90%, 100%, 110%, 125%, and 150% effective zoom. At the 150% viewport the complete deck
+  reported scale `0.8718` with zero horizontal overflow; reduced-motion kept the background static
+  and reduced transitions to `0.00001s`. Nine screenshots were saved under
+  `D:\tmp\terra-space-amber-glass-qa\`.
+- Repaired the end-to-end runner's database reset after the earlier database move to a
+  Docker-managed volume, and aligned stale browser selectors with the current required-field and
+  Layered Command Deck UI. QA used an isolated copy of the owner's current database and attachment;
+  live data was not changed. Marked both related Feedback Backlog items resolved. No North Star or
+  Roadmap milestone changed.
+
 ## 2026-07-16 - Amber glass and browser zoom implementation plan prepared
 
 - Added the owner-approved
