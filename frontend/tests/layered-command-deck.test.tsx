@@ -116,8 +116,8 @@ describe("LayeredCommandDeck", () => {
     });
 
     fireEvent.pointerMove(stage, { clientX: 75, clientY: 25 });
-    expect(stage.style.getPropertyValue("--deck-parallax-x")).toBe("4.00px");
-    expect(stage.style.getPropertyValue("--deck-parallax-y")).toBe("-2.50px");
+    expect(stage.style.getPropertyValue("--deck-parallax-x")).toBe("1.50px");
+    expect(stage.style.getPropertyValue("--deck-parallax-y")).toBe("-1.00px");
 
     fireEvent.pointerLeave(stage);
     expect(stage.style.getPropertyValue("--deck-parallax-x")).toBe("0px");

@@ -10,30 +10,64 @@ status: active
 
 ## Current focus
 
-Fixed two items from the owner's live-testing
-[Feedback Backlog](Feedback-Backlog.md): the Documents page's disproportionate top/bottom layout,
-and the Dashboard globe's atmosphere ring staying static and covering the globe when zoomed in.
-On Documents, the "New Document" form panel was hard-capped to a `52rem` width inside a page that
-can be up to `86rem` wide, leaving a large empty area to its right while the Document Queue panel
-below it correctly stretched full width; removed the cap so both panels match, and moved the
-Source URL field into the same row as Document date/Publication date (using an auto-fit grid) so
-the reclaimed width is used instead of sitting empty inside the form. On the Dashboard, the amber
-ring drawn by `.command-deck-globe::after` is a fixed-size decorative overlay sized for the
-resting globe view (zoom `2.2`); it does not track the MapLibre globe's own zoom, so zooming in
-made the enlarged globe surface grow past it and appear covered by a static ring. `WorldMap` now
-tracks the map's zoom level and sets a `--globe-ring-opacity` CSS variable on the ring's container,
-fading the ring out over about two zoom levels past resting so it only shows at the intended
-full-globe view. Verified with 127 frontend tests (2 new/updated, covering the ring's zoom-fade
-behavior and the added `zoom` listener cleanup), lint, a production build, and a live desktop
-browser check at `1920 × 1080` (Documents before/after, Dashboard at rest and after a simulated
-wheel-zoom) against the owner's real local database — read-only navigation only, no data changed.
-Both closed items are marked resolved in the Feedback Backlog; the remaining Dashboard panel
-parallax issue in that same entry is still open, since removing parallax conflicts with the locked
-Visual Design Direction decision and needs owner approval first. No Roadmap phase or milestone
-changed.
+Fixed the Event Review "Edit" button discoverability gap from the owner's live-testing
+[Feedback Backlog](Feedback-Backlog.md) report ("i want to be able to edit each draft
+intelligence's fields in this menu"). That entry recorded two possible interpretations — a
+discoverability problem versus a request for always-editable inline fields — and needed the
+owner's choice before any code changed; the owner confirmed it was the discoverability problem.
+In `frontend/src/app/event-review/event-card.tsx`, the button is now labeled "Edit fields" instead
+of the bare "Edit", moved to the first position in the action row (ahead of Reject/Approve, so the
+"modify" action reads before the two terminal decisions), and given the same amber `btn-primary`
+accent already used for the equivalent Edit action on the Events detail view, instead of blending
+in with Reject's plain neutral style — the underlying edit form itself was already complete and
+unchanged. No new button color or design-token was introduced. Verified with 127 frontend tests,
+lint, a production build, and a live check against a rebuilt Docker frontend image (the running
+container was a prior build with no source volume mount, so the change was invisible until
+rebuilt) using the owner's real draft events (4 existing drafts): confirmed the relabeled,
+repositioned, accented button reads clearly and still opens the existing full-field edit form —
+read-only, no data changed. The Feedback Backlog entry is marked resolved. No Roadmap phase or
+milestone changed.
 
 ## Recent progress
 
+- Reduced the Dashboard's pointer-parallax intensity per the owner's live-testing
+  [Feedback Backlog](Feedback-Backlog.md) report that the Situation Summary, Recent Signals, and
+  Event Register panels moved too much with the mouse pointer. Asked the owner to confirm scope
+  first since the locked [Visual Design Direction](decisions/Visual-Design-Direction.md) decision
+  explicitly calls for "small pointer parallax" as part of the Dashboard motion signature; the
+  owner chose to keep parallax but make it subtler rather than remove it, so no decision update
+  was needed. In `frontend/src/app/dashboard/layered-command-deck.tsx`, the pointer-move handler
+  now scales travel to a max of 3px horizontal / 2px vertical (previously 8px / 5px) through the
+  same shared `--deck-parallax-x`/`--deck-parallax-y` CSS variables every affected panel already
+  reads, so all three panels calmed down from one change. Verified with 127 frontend tests (1
+  existing test updated to the new bounded values), lint, a production build, and a live check:
+  rebuilt the frontend Docker image (the running container was a prior build with no source
+  volume mount, so the change was invisible until rebuilt), then drove the real Dashboard at
+  `1920 × 1080` with Playwright to confirm the on-page CSS variables now read the smaller bounds
+  and that the globe, panels, and dock still render correctly — read-only navigation only, no data
+  changed. The Feedback Backlog entry is marked resolved. No Roadmap phase or milestone changed.
+
+- Fixed two items from the owner's live-testing
+  [Feedback Backlog](Feedback-Backlog.md): the Documents page's disproportionate top/bottom layout,
+  and the Dashboard globe's atmosphere ring staying static and covering the globe when zoomed in.
+  On Documents, the "New Document" form panel was hard-capped to a `52rem` width inside a page that
+  can be up to `86rem` wide, leaving a large empty area to its right while the Document Queue panel
+  below it correctly stretched full width; removed the cap so both panels match, and moved the
+  Source URL field into the same row as Document date/Publication date (using an auto-fit grid) so
+  the reclaimed width is used instead of sitting empty inside the form. On the Dashboard, the amber
+  ring drawn by `.command-deck-globe::after` is a fixed-size decorative overlay sized for the
+  resting globe view (zoom `2.2`); it does not track the MapLibre globe's own zoom, so zooming in
+  made the enlarged globe surface grow past it and appear covered by a static ring. `WorldMap` now
+  tracks the map's zoom level and sets a `--globe-ring-opacity` CSS variable on the ring's container,
+  fading the ring out over about two zoom levels past resting so it only shows at the intended
+  full-globe view. Verified with 127 frontend tests (2 new/updated, covering the ring's zoom-fade
+  behavior and the added `zoom` listener cleanup), lint, a production build, and a live desktop
+  browser check at `1920 × 1080` (Documents before/after, Dashboard at rest and after a simulated
+  wheel-zoom) against the owner's real local database — read-only navigation only, no data changed.
+  Both closed items are marked resolved in the Feedback Backlog; the remaining Dashboard panel
+  parallax issue in that same entry is still open, since removing parallax conflicts with the locked
+  Visual Design Direction decision and needs owner approval first. No Roadmap phase or milestone
+  changed.
 - Fixed slow local startup: `Start-TerraSpace.ps1` was taking about 70 seconds because the SQLite
   database lived on the Windows-mounted `data` folder, where Docker Desktop's bind-mount I/O is
   slow for SQLite's frequent small writes. Per the

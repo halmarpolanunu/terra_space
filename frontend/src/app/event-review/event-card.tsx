@@ -365,11 +365,11 @@ export function EventCard({
       </div>
 
       <div className="form-actions">
+        <button className="btn btn-primary" disabled={!isDraft} onClick={startEditing} type="button">
+          Edit fields
+        </button>
         <button className="btn" disabled={!isDraft} onClick={onReject} type="button">
           Reject
-        </button>
-        <button className="btn" disabled={!isDraft} onClick={startEditing} type="button">
-          Edit
         </button>
         <button
           className="btn btn-primary"

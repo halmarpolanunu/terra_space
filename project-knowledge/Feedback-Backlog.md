@@ -62,8 +62,18 @@ implementation plan or decision, link it from here and mark it resolved instead 
   switch triggered by one `Edit` button. These two interpretations lead to different fixes (make
   `Edit` more prominent/obvious vs. redesign the card to always show editable inputs), so this
   needs a clarifying follow-up with the owner before any code changes.
-- **Status:** Reported by owner, not yet actioned. Needs owner clarification on which
-  interpretation is correct before scoping a fix.
+- **Status:** Resolved. When asked to choose between the two interpretations, the owner confirmed
+  interpretation (a): the existing `Edit` control was a discoverability problem, not a missing
+  feature. Fixed in `frontend/src/app/event-review/event-card.tsx`: the button is now labeled
+  "Edit fields" instead of the bare "Edit", moved to the first position in the action row (before
+  Reject/Approve, matching the natural "modify, then decide" order), and given the same amber
+  `btn-primary` accent already used for the equivalent Edit action on the Events detail view
+  (`frontend/src/app/events/event-detail.tsx`), instead of blending in with Reject's plain neutral
+  style. No new button color or design-token was introduced. Verified with 127 frontend tests,
+  lint, a production build, and a live check against a rebuilt Docker frontend image using the
+  owner's real draft events (4 existing drafts) — confirmed the relabeled/repositioned/accented
+  button reads clearly and still opens the existing full-field edit form. Read-only verification,
+  no data changed.
 
 ### Sidebar/Dashboard background feels too empty on pure black (2026-07-16)
 
@@ -109,6 +119,33 @@ implementation plan or decision, link it from here and mark it resolved instead 
   once the owner confirms which of the two they want.
 - **Status:** Reported by owner, not yet actioned.
 
+### UI should adapt to the user's browser zoom level (2026-07-16)
+
+- **Owner's words:** "I want the UI to be able to adapt to the zoom level of user browser."
+  Confirmed this means the browser's own page zoom (e.g. Ctrl +/- or the browser's zoom control in
+  Chrome/Edge), not the MapLibre globe zoom already fixed under the "Dashboard panel parallax and
+  globe atmosphere ring during zoom" entry below. This is a general request, not a specific defect
+  the owner has already reproduced or screenshotted — no concrete breakage has been observed and
+  reported yet.
+- **What's already true in the code (checked, not assumed):** most layout is written in `rem` and
+  relative units (`.app-shell` uses a `16rem` sidebar and `min-height: 100dvh`, not fixed pixel
+  widths), and the locked [Visual Design Direction](decisions/Visual-Design-Direction.md) already
+  permits "Desktop and laptop widths may reflow when the browser is resized." Browser zoom and
+  browser-window resizing both shrink the effective CSS-pixel viewport, so some of this may already
+  be covered by existing reflow behavior — but that has not been verified at non-100% zoom
+  specifically.
+- **Where this is most likely to break (not yet confirmed):** the Dashboard's Layered Command Deck
+  is a one-viewport-height "stage" whose browser-verified viewports are `1920 × 1080` at 100%
+  Windows scale, with `1920 × 930`/`1920 × 900` as the checked maximized-browser sizes (see
+  [Current Status](Current-Status.md)); it has never been checked at a zoomed-in effective
+  viewport (e.g. 125%/150%, which behaves like a much narrower/shorter window). The Documents
+  two-panel layout and Event Review's two-column layout are also candidates worth checking.
+- **Not yet decided:** whether existing reflow behavior is already "good enough" across common
+  zoom levels, or which specific components need a targeted fix. This needs an actual live-browser
+  pass across a range of zoom levels (e.g. 90%, 110%, 125%, 150%) on each of the five screens
+  before scoping any implementation plan.
+- **Status:** Reported by owner, not yet actioned or investigated.
+
 ### Dashboard panel parallax and globe atmosphere ring during zoom (2026-07-16)
 
 - **Owner's words:** "pada bagian ini, saya tidak pingin box Recent Signals, Situation Summary,
@@ -127,14 +164,21 @@ implementation plan or decision, link it from here and mark it resolved instead 
      scale/reposition) when the owner zooms into the globe, ending up covering/obscuring the
      globe's surface. This sounds like a rendering/behavior defect rather than an intentional
      design choice — not yet confirmed against the code.
-- **Status:** Item 2 (atmosphere ring) is resolved — confirmed as a real defect: the ring
-  (`.command-deck-globe::after`) is a fixed-size decorative overlay sized for the resting globe
-  view and never tracked the MapLibre globe's actual zoom. `WorldMap` now fades the ring out via a
-  `--globe-ring-opacity` CSS variable as the user zooms in, so it only shows at the intended
-  full-globe view. Verified with frontend tests, lint, a production build, and a live browser
-  check (see [Current Status](Current-Status.md)). Item 1 (panel parallax) remains open and still
-  needs owner approval before any change, since it conflicts with the locked
-  [Visual Design Direction](decisions/Visual-Design-Direction.md) decision.
+- **Status:** Both items resolved. Item 2 (atmosphere ring): confirmed as a real defect — the
+  ring (`.command-deck-globe::after`) is a fixed-size decorative overlay sized for the resting
+  globe view and never tracked the MapLibre globe's actual zoom. `WorldMap` now fades the ring
+  out via a `--globe-ring-opacity` CSS variable as the user zooms in, so it only shows at the
+  intended full-globe view. Item 1 (panel parallax): the owner confirmed, when asked, that they
+  wanted the parallax intensity reduced rather than removed entirely — keeping it consistent with
+  the locked [Visual Design Direction](decisions/Visual-Design-Direction.md) wording ("small
+  pointer parallax communicates their depth"), so no decision update was needed. The pointer-move
+  handler in `frontend/src/app/dashboard/layered-command-deck.tsx` now scales travel by 3px/2px
+  (horizontal/vertical) instead of 8px/5px, a single shared CSS-variable pair
+  (`--deck-parallax-x`/`--deck-parallax-y`) applied uniformly to Situation Summary, Recent
+  Signals, and the Event Register dock. Verified with 127 frontend tests (1 updated to the new
+  bounded values), lint, a production build, and a live check against a rebuilt Docker frontend
+  image on the owner's real local database — read-only navigation only, no data changed (see
+  [Current Status](Current-Status.md)).
 
 ### Documents page layout composition feels disproportionate (2026-07-16)
 

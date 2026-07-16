@@ -125,8 +125,8 @@ export function LayeredCommandDeck({
     if (bounds.width <= 0 || bounds.height <= 0) return;
     const normalizedX = Math.max(-1, Math.min(1, ((event.clientX - bounds.left) / bounds.width - 0.5) * 2));
     const normalizedY = Math.max(-1, Math.min(1, ((event.clientY - bounds.top) / bounds.height - 0.5) * 2));
-    event.currentTarget.style.setProperty("--deck-parallax-x", `${(normalizedX * 8).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--deck-parallax-y", `${(normalizedY * 5).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--deck-parallax-x", `${(normalizedX * 3).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--deck-parallax-y", `${(normalizedY * 2).toFixed(2)}px`);
   }
 
   function handlePointerLeave(event: PointerEvent<HTMLDivElement>) {
