@@ -89,6 +89,29 @@ describe("EventTypeSettings", () => {
     expect(screen.getByText("Add a description before activating.")).toBeVisible();
   });
 
+  it("keeps activation blocked until the description is saved", () => {
+    render(
+      <EventTypeSettings
+        eventTypes={[
+          {
+            id: "suggested",
+            name: "New type",
+            description: null,
+            is_active: false,
+            in_use: false,
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Description for New type"), {
+      target: { value: "Use for newly classified events." },
+    });
+
+    expect(screen.getByLabelText("Active: New type")).toBeDisabled();
+    expect(screen.getByText("Add a description before activating.")).toBeVisible();
+  });
+
   it("toggles a type active flag", async () => {
     vi.mocked(settingsApi.updateEventType).mockResolvedValue({ ...TYPES[0], is_active: false });
     render(<EventTypeSettings eventTypes={TYPES} />);

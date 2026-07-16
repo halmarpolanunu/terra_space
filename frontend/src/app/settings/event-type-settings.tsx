@@ -149,7 +149,7 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
       <ul className="event-type-list">
         {types.map((type) => {
           const draft = draftFor(type);
-          const activationBlocked = !type.is_active && !draft.description.trim();
+          const activationBlocked = !type.is_active && !type.description?.trim();
 
           return (
             <li className="event-type-row" data-motion-item="event-type-row" key={type.id}>
