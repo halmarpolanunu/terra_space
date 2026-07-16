@@ -15,16 +15,19 @@ class EventTypeRead(BaseModel):
 
     id: str
     name: str
+    description: str | None
     is_active: bool
     in_use: bool = False
 
 
 class EventTypeCreate(BaseModel):
     name: str = Field(min_length=1)
+    description: str = Field(min_length=1, max_length=1000)
 
 
 class EventTypeUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1)
+    description: str | None = Field(default=None, max_length=1000)
     is_active: bool | None = None
 
 

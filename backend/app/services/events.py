@@ -54,6 +54,10 @@ class EventTypeNameConflictError(Exception):
     """Raised when creating or renaming an event type to a name that already exists."""
 
 
+class EventTypeDescriptionRequiredError(Exception):
+    """Raised when an active event type would have no usable description."""
+
+
 class EventTypeInUseError(Exception):
     """Raised when deleting an event type that is still referenced by an event."""
 
@@ -242,14 +246,24 @@ def list_actors(db: Session) -> list[Actor]:
 _UNSET = object()
 
 
-def create_event_type(db: Session, name: str) -> EventType:
+def _clean_description(value: str | None) -> str | None:
+    clean = (value or "").strip()
+    return clean or None
+
+
+def create_event_type(db: Session, name: str, description: str) -> EventType:
     clean_name = name.strip()
     if not clean_name:
         raise EventTypeNameConflictError("Event type name is required.")
     existing = list(db.execute(select(EventType)).scalars())
     if find_by_exact_name(existing, clean_name) is not None:
         raise EventTypeNameConflictError("An event type with this name already exists.")
-    event_type = EventType(name=clean_name, is_active=True)
+    clean_description = _clean_description(description)
+    if clean_description is None:
+        raise EventTypeDescriptionRequiredError(
+            "Add a description before creating this active event type."
+        )
+    event_type = EventType(name=clean_name, description=clean_description, is_active=True)
     db.add(event_type)
     db.commit()
     db.refresh(event_type)
@@ -257,7 +271,12 @@ def create_event_type(db: Session, name: str) -> EventType:
 
 
 def update_event_type(
-    db: Session, event_type: EventType, *, name=_UNSET, is_active=_UNSET
+    db: Session,
+    event_type: EventType,
+    *,
+    name=_UNSET,
+    description=_UNSET,
+    is_active=_UNSET,
 ) -> EventType:
     if name is not _UNSET:
         clean_name = (name or "").strip()
@@ -270,12 +289,33 @@ def update_event_type(
         ]
         if find_by_exact_name(others, clean_name) is not None:
             raise EventTypeNameConflictError("An event type with this name already exists.")
+    next_description = (
+        event_type.description if description is _UNSET else _clean_description(description)
+    )
+    activates = is_active is True and not event_type.is_active
+    clears_active_description = (
+        event_type.is_active and description is not _UNSET and next_description is None
+    )
+    if (activates and next_description is None) or clears_active_description:
+        raise EventTypeDescriptionRequiredError(
+            "Add a description before activating this event type."
+        )
+    if name is not _UNSET:
         event_type.name = clean_name
+    if description is not _UNSET:
+        event_type.description = next_description
     if is_active is not _UNSET and is_active is not None:
         event_type.is_active = is_active
     db.commit()
     db.refresh(event_type)
     return event_type
+
+
+def _require_description_before_type_activation(
+    event_type: EventType | None, message: str
+) -> None:
+    if event_type is not None and not event_type.is_active and not event_type.description:
+        raise EventTypeDescriptionRequiredError(message)
 
 
 def referenced_event_type_ids(db: Session) -> set[str]:
@@ -384,6 +424,11 @@ def approve_event(db: Session, event: Event) -> Event:
     if pending:
         raise PendingDuplicateFlagError(len(pending))
 
+    _require_description_before_type_activation(
+        event.event_type,
+        "Add a description before approving this event type.",
+    )
+
     event.review_status = "approved"
     event.approved_at = utc_now()
     if event.event_type is not None and not event.event_type.is_active:
@@ -441,6 +486,10 @@ def approve_all_for_document(db: Session, document_id: str) -> ApproveAllResult:
         except PendingDuplicateFlagError:
             result.skipped.append(
                 ApproveAllSkip(event_id=event.id, reason="Has a pending duplicate flag.")
+            )
+        except EventTypeDescriptionRequiredError:
+            result.skipped.append(
+                ApproveAllSkip(event_id=event.id, reason="Event type needs a description.")
             )
     return result
 

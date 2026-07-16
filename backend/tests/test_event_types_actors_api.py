@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
+from app.db.models import EventType
 from app.main import create_app
 from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
 
@@ -24,6 +25,67 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
         lm_studio_client=FakeLmStudioClient(outcomes),
     )
     return TestClient(app)
+
+
+def _seed_event_type(
+    client: TestClient,
+    *,
+    name: str,
+    description: str | None,
+    is_active: bool,
+) -> str:
+    with client.app.state.session_factory() as db:
+        event_type = EventType(
+            name=name,
+            description=description,
+            is_active=is_active,
+        )
+        db.add(event_type)
+        db.commit()
+        db.refresh(event_type)
+        return event_type.id
+
+
+def test_create_event_type_requires_and_returns_description(tmp_path: Path) -> None:
+    client = _client(tmp_path, {})
+    missing = client.post("/api/event-types", json={"name": "Airstrike", "description": "   "})
+    assert missing.status_code == 422
+
+    created = client.post(
+        "/api/event-types",
+        json={"name": "Airstrike", "description": "Use for an aerial weapons strike."},
+    )
+    assert created.status_code == 201
+    assert created.json()["description"] == "Use for an aerial weapons strike."
+
+
+def test_inactive_type_requires_description_before_activation(tmp_path: Path) -> None:
+    client = _client(tmp_path, {})
+    type_id = _seed_event_type(client, name="Suggested type", description=None, is_active=False)
+    response = client.patch(f"/api/event-types/{type_id}", json={"is_active": True})
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Add a description before activating this event type."
+
+
+def test_legacy_active_type_can_be_renamed_or_deactivated_without_description(
+    tmp_path: Path,
+) -> None:
+    client = _client(tmp_path, {})
+    type_id = _seed_event_type(client, name="Legacy", description=None, is_active=True)
+    renamed = client.patch(f"/api/event-types/{type_id}", json={"name": "Legacy renamed"})
+    assert renamed.status_code == 200
+    assert renamed.json()["description"] is None
+    assert client.patch(f"/api/event-types/{type_id}", json={"is_active": False}).status_code == 200
+
+
+def test_active_description_cannot_be_cleared(tmp_path: Path) -> None:
+    client = _client(tmp_path, {})
+    created = client.post(
+        "/api/event-types",
+        json={"name": "Protest", "description": "Use for collective public demonstrations."},
+    ).json()
+    response = client.patch(f"/api/event-types/{created['id']}", json={"description": " "})
+    assert response.status_code == 422
 
 
 def test_event_types_and_actors_include_suggested_inactive_rows(tmp_path: Path) -> None:

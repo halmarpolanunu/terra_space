@@ -42,13 +42,23 @@ def _create_and_process_document(client: TestClient, content: str) -> dict:
     return document
 
 
+def _describe_event_type(client: TestClient, type_id: str, description: str) -> None:
+    response = client.patch(
+        f"/api/event-types/{type_id}", json={"description": description}
+    )
+    assert response.status_code == 200
+
+
 def _extraction_with_suggestions(content: str) -> ExtractionResult:
     return ExtractionResult(
         events=[
             ExtractedEvent(
                 title="Depot attack",
                 summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(suggested="Attack"),
+                event_type=ExtractedEventType(
+                    suggested="Attack",
+                    suggested_description="Use for attacks against a target.",
+                ),
                 epistemic_status="claim",
                 evidence_quote=content,
                 actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
@@ -63,6 +73,7 @@ def test_approving_event_flips_suggested_type_and_actor_to_active(tmp_path: Path
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    _describe_event_type(client, event["event_type"]["id"], "Use for attacks against a target.")
 
     response = client.post(f"/api/events/{event['id']}/approve")
     assert response.status_code == 200
@@ -70,6 +81,42 @@ def test_approving_event_flips_suggested_type_and_actor_to_active(tmp_path: Path
     assert body["review_status"] == "approved"
     assert body["event_type"]["is_active"] is True
     assert body["actors"][0]["actor"]["is_active"] is True
+
+
+def test_approval_rejects_a_suggested_type_without_description(tmp_path: Path) -> None:
+    content = "Something happened on 2026-07-10."
+    extraction = ExtractionResult(events=[ExtractedEvent(
+        title="Something",
+        summary="Summary.",
+        event_type=ExtractedEventType(suggested="Report", suggested_description=None),
+        epistemic_status="confirmed",
+        evidence_quote=content,
+    )])
+    client = _client(tmp_path, {content: extraction})
+    document = _create_and_process_document(client, content)
+    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    response = client.post(f"/api/events/{event['id']}/approve")
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Add a description before approving this event type."
+    assert client.get(f"/api/events/{event['id']}").json()["review_status"] == "draft"
+
+
+def test_approve_all_skips_a_suggested_type_without_description(tmp_path: Path) -> None:
+    content = "Something happened on 2026-07-10."
+    extraction = ExtractionResult(events=[ExtractedEvent(
+        title="Something",
+        summary="Summary.",
+        event_type=ExtractedEventType(suggested="Report", suggested_description=None),
+        epistemic_status="confirmed",
+        evidence_quote=content,
+    )])
+    client = _client(tmp_path, {content: extraction})
+    document = _create_and_process_document(client, content)
+    body = client.post(
+        f"/api/documents/{document['id']}/events/approve-all"
+    ).json()
+    assert body["approved_event_ids"] == []
+    assert body["skipped"][0]["reason"] == "Event type needs a description."
 
 
 def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path) -> None:
@@ -146,6 +193,7 @@ def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    _describe_event_type(client, event["event_type"]["id"], "Use for reports of an event.")
     client.post(f"/api/events/{event['id']}/approve")
 
     response = client.patch(f"/api/events/{event['id']}", json={"title": "Nope"})
@@ -232,6 +280,7 @@ def test_document_becomes_completed_only_after_all_draft_events_resolved(
     document = _create_and_process_document(client, content)
     events = client.get(f"/api/documents/{document['id']}/events").json()
     assert len(events) == 2
+    _describe_event_type(client, events[0]["event_type"]["id"], "Use for reports of an event.")
 
     client.post(f"/api/events/{events[0]['id']}/approve")
     mid = client.get(f"/api/documents/{document['id']}").json()
@@ -266,6 +315,7 @@ def test_approve_all_skips_events_with_pending_duplicate_flags(tmp_path: Path) -
     app = client.app
     document = _create_and_process_document(client, content)
     events = client.get(f"/api/documents/{document['id']}/events").json()
+    _describe_event_type(client, events[0]["event_type"]["id"], "Use for reports of an event.")
 
     with app.state.session_factory() as session:
         flagged_event_id = events[0]["id"]

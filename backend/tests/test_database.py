@@ -34,8 +34,43 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                == "0006_lm_studio_timeout"
+                == "0007_event_type_descriptions"
         )
+    event_type_columns = {
+        column["name"]: column for column in inspect(engine).get_columns("event_types")
+    }
+    assert event_type_columns["description"]["nullable"] is True
+
+
+def test_event_type_description_migration_preserves_legacy_rows(tmp_path: Path) -> None:
+    database_file = tmp_path / "migration.db"
+    backend_dir = Path(__file__).resolve().parents[1]
+    config = Config(str(backend_dir / "alembic.ini"))
+    config.set_main_option("script_location", str(backend_dir / "alembic"))
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{database_file}")
+    command.upgrade(config, "0006_lm_studio_timeout")
+    engine = create_engine(f"sqlite:///{database_file}")
+    with engine.begin() as connection:
+        connection.execute(text(
+            "INSERT INTO event_types "
+            "(id, name, is_active, created_at, updated_at) "
+            "VALUES ('legacy', 'Legacy', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+        ))
+
+    command.upgrade(config, "0007_event_type_descriptions")
+    with engine.connect() as connection:
+        assert connection.execute(text(
+            "SELECT description FROM event_types WHERE id = 'legacy'"
+        )).scalar_one() is None
+
+    command.downgrade(config, "0006_lm_studio_timeout")
+    assert "description" not in {
+        column["name"] for column in inspect(engine).get_columns("event_types")
+    }
+    command.upgrade(config, "head")
+    assert "description" in {
+        column["name"] for column in inspect(engine).get_columns("event_types")
+    }
 
 
 def test_foundation_schema_contains_all_required_tables(tmp_path: Path) -> None:

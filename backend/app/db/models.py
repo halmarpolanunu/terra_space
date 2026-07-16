@@ -78,6 +78,7 @@ class EventType(TimestampedModel, Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     name: Mapped[str] = mapped_column(String(255), unique=True)
+    description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     events: Mapped[list["Event"]] = relationship(back_populates="event_type")

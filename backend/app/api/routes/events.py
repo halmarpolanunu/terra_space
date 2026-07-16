@@ -23,6 +23,7 @@ from app.services.documents import get_document
 from app.services.duplicates import DuplicateFlagAlreadyResolvedError, resolve_duplicate_flag
 from app.services.events import (
     EventEditNotAllowedError,
+    EventTypeDescriptionRequiredError,
     EventTypeInUseError,
     EventTypeNameConflictError,
     EvidenceQuoteNotFoundError,
@@ -65,6 +66,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             EventTypeRead(
                 id=event_type.id,
                 name=event_type.name,
+                description=event_type.description,
                 is_active=event_type.is_active,
                 in_use=event_type.id in referenced,
             )
@@ -76,9 +78,11 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         payload: EventTypeCreate, db: Session = Depends(get_db)
     ) -> EventTypeRead:
         try:
-            event_type = create_event_type(db, payload.name)
+            event_type = create_event_type(db, payload.name, payload.description)
         except EventTypeNameConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+        except EventTypeDescriptionRequiredError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         return EventTypeRead.model_validate(event_type)
 
     @router.patch("/api/event-types/{type_id}", response_model=EventTypeRead)
@@ -91,12 +95,16 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         kwargs = {}
         if "name" in payload.model_fields_set:
             kwargs["name"] = payload.name
+        if "description" in payload.model_fields_set:
+            kwargs["description"] = payload.description
         if "is_active" in payload.model_fields_set:
             kwargs["is_active"] = payload.is_active
         try:
             event_type = update_event_type(db, event_type, **kwargs)
         except EventTypeNameConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+        except EventTypeDescriptionRequiredError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         return EventTypeRead.model_validate(event_type)
 
     @router.delete("/api/event-types/{type_id}", status_code=204)
@@ -238,6 +246,8 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             raise HTTPException(status_code=409, detail=str(error)) from error
         except PendingDuplicateFlagError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+        except EventTypeDescriptionRequiredError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         return to_event_read(event)
 
     @router.post("/api/events/{event_id}/reject", response_model=EventRead)

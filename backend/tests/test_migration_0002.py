@@ -30,7 +30,7 @@ def test_migration_reaches_current_head(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "0006_lm_studio_timeout"
+            == "0007_event_type_descriptions"
         )
 
 

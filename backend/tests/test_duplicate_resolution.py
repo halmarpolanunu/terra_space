@@ -61,6 +61,11 @@ def _setup_flagged_pair(
     automatically flagged as a possible duplicate of A's approved event."""
     doc_a = _process(client, content_a)
     event_a = client.get(f"/api/documents/{doc_a['id']}/events").json()[0]
+    described = client.patch(
+        f"/api/event-types/{event_a['event_type']['id']}",
+        json={"description": "Use for attacks against a target."},
+    )
+    assert described.status_code == 200
     approved = client.post(f"/api/events/{event_a['id']}/approve")
     assert approved.status_code == 200
 
