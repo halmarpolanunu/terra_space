@@ -70,13 +70,17 @@ def persist_extraction(
             continue
 
         type_name = event_data.event_type.existing or event_data.event_type.suggested
+        type_is_suggested = (
+            not event_data.event_type.existing
+            and type_name == event_data.event_type.suggested
+        )
         event_type = None
         if type_name:
             event_type = find_by_exact_name(existing_event_types, type_name)
             if event_type is None:
                 suggested_description = (
                     (event_data.event_type.suggested_description or "").strip() or None
-                    if event_data.event_type.suggested
+                    if type_is_suggested
                     else None
                 )
                 event_type = EventType(

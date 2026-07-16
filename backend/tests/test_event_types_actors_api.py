@@ -211,6 +211,36 @@ def test_ai_description_never_overwrites_an_existing_type(tmp_path: Path) -> Non
     assert rows[0]["in_use"] is True
 
 
+def test_existing_name_wins_and_ignores_suggested_description_when_both_are_present(
+    tmp_path: Path,
+) -> None:
+    content = "People held a public protest."
+    extraction = ExtractionResult(
+        events=[
+            ExtractedEvent(
+                title="Public protest",
+                summary=content,
+                event_type=ExtractedEventType(
+                    existing="Protest",
+                    suggested="Demonstration",
+                    suggested_description="Use for public demonstrations.",
+                ),
+                epistemic_status="confirmed",
+                evidence_quote=content,
+            )
+        ]
+    )
+    client = _client(tmp_path, {content: extraction})
+
+    _process_source(client, content)
+
+    rows = client.get("/api/event-types").json()
+    assert len(rows) == 1
+    assert rows[0]["name"] == "Protest"
+    assert rows[0]["description"] is None
+    assert rows[0]["is_active"] is False
+
+
 def test_repeated_ai_type_suggestion_creates_one_type_and_keeps_first_description(
     tmp_path: Path,
 ) -> None:
