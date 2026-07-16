@@ -33,5 +33,10 @@ describe("AppShell", () => {
       "/dashboard",
     );
     expect(screen.getByRole("main")).toHaveAttribute("data-route", "/dashboard");
+    const shell = document.querySelector(".app-shell");
+    expect(shell).toHaveAttribute("data-route", "/dashboard");
+    expect(shell?.getAttribute("style")).toContain(
+      '--workspace-background-image: url("/backgrounds/dashboard.webp")',
+    );
   });
 });

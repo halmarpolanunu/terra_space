@@ -1,15 +1,23 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Navigation } from "@/components/navigation";
 import { ServiceStatusPanel } from "@/components/service-status";
+import { getWorkspaceBackground } from "@/lib/workspace-backgrounds";
 
 type AppShellProps = { currentPath: string; children: ReactNode };
+type WorkspaceShellStyle = CSSProperties & {
+  "--workspace-background-image": string;
+};
 
 export function AppShell({ currentPath, children }: AppShellProps) {
+  const style: WorkspaceShellStyle = {
+    "--workspace-background-image": `url("${getWorkspaceBackground(currentPath)}")`,
+  };
+
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-route={currentPath} style={style}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
