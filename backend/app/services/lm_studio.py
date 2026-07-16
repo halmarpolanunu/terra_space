@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -5,6 +6,19 @@ import httpx2
 from pydantic import ValidationError
 
 from app.schemas.extraction import ExtractionResult
+
+
+@dataclass(frozen=True)
+class KnownEventType:
+    name: str
+    description: str | None
+
+
+def _known_type_json(known_types: list[KnownEventType]) -> str:
+    return json.dumps(
+        [{"name": item.name, "description": item.description} for item in known_types],
+        ensure_ascii=False,
+    )
 
 
 @dataclass(frozen=True)
@@ -115,7 +129,10 @@ class LmStudioClient:
         ]
 
     def extract_events(
-        self, document_text: str, known_types: list[str], known_actors: list[str]
+        self,
+        document_text: str,
+        known_types: list[KnownEventType],
+        known_actors: list[str],
     ) -> ExtractionResult:
         config = self._resolve()
         try:
@@ -174,12 +191,15 @@ class LmStudioClient:
         self,
         model_id: str,
         document_text: str,
-        known_types: list[str],
+        known_types: list[KnownEventType],
         known_actors: list[str],
     ) -> dict:
         system_prompt = (
             f"{EXTRACTION_SYSTEM_PROMPT}\n\n"
-            f"Known event types: {', '.join(known_types) or 'none yet'}\n"
+            f"Known active event types: {_known_type_json(known_types)}\n"
+            "Reuse an existing event type whenever its definition fits. Only suggest a new event "
+            "type when none of these definitions fits; include suggested_description for every "
+            "new suggestion.\n"
             f"Known actors: {', '.join(known_actors) or 'none yet'}"
         )
         return {

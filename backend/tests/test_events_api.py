@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
+from app.db.models import EventType
 from app.main import create_app
 from app.schemas.extraction import (
     ExtractedActor,
@@ -11,6 +12,7 @@ from app.schemas.extraction import (
     ExtractedLocation,
     ExtractionResult,
 )
+from app.services.lm_studio import KnownEventType
 
 
 class FakeLmStudioClient:
@@ -18,10 +20,15 @@ class FakeLmStudioClient:
 
     def __init__(self, outcomes: dict[str, ExtractionResult]) -> None:
         self._outcomes = outcomes
+        self.known_types_seen: list[KnownEventType] = []
 
     def extract_events(
-        self, document_text: str, known_types: list[str], known_actors: list[str]
+        self,
+        document_text: str,
+        known_types: list[KnownEventType],
+        known_actors: list[str],
     ) -> ExtractionResult:
+        self.known_types_seen = known_types
         return self._outcomes[document_text]
 
 
@@ -46,6 +53,36 @@ def _create_and_process_document(client: TestClient, content: str) -> dict:
     )
     assert process_response.status_code == 202
     return document
+
+
+def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) -> None:
+    content = "A public protest occurred."
+    fake = FakeLmStudioClient({content: ExtractionResult(events=[])})
+    app = create_app(
+        settings=Settings(data_dir=tmp_path),
+        lm_studio_check=lambda: True,
+        lm_studio_client=fake,
+    )
+    client = TestClient(app)
+    client.post(
+        "/api/event-types",
+        json={"name": "Protest", "description": "Collective public demonstration."},
+    )
+    with app.state.session_factory() as db:
+        db.add(EventType(name="Unused suggestion", description=None, is_active=False))
+        db.commit()
+    document = client.post(
+        "/api/documents",
+        json={"title": content, "content": content, "document_date": "2026-07-16"},
+    ).json()
+    client.post("/api/documents/process", json={"document_ids": [document["id"]]})
+
+    assert fake.known_types_seen == [
+        KnownEventType(
+            name="Protest",
+            description="Collective public demonstration.",
+        )
+    ]
 
 
 def test_events_for_document_expose_suggested_type_and_actor_flags(tmp_path: Path) -> None:

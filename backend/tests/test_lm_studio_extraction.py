@@ -5,7 +5,12 @@ import httpx2
 import pytest
 
 from app.schemas.extraction import ExtractionResult
-from app.services.lm_studio import LmStudioClient, LmStudioResponseError, LmStudioUnavailableError
+from app.services.lm_studio import (
+    KnownEventType,
+    LmStudioClient,
+    LmStudioResponseError,
+    LmStudioUnavailableError,
+)
 
 WELL_FORMED_CONTENT = json.dumps(
     {
@@ -61,6 +66,26 @@ def test_extract_events_returns_populated_result_for_well_formed_response() -> N
     assert len(result.events) == 1
     assert result.events[0].evidence_quote == "A large protest occurred at the capitol."
     assert result.events[0].event_type.existing == "Protest"
+
+
+def test_extract_events_sends_active_type_definitions_and_reuse_instruction() -> None:
+    seen: dict = {}
+
+    def chat(request: httpx2.Request) -> httpx2.Response:
+        seen.update(json.loads(request.content))
+        return _chat_completion(WELL_FORMED_CONTENT)
+
+    client = _client_for(_models_ok(), chat)
+    client.extract_events(
+        "A large protest occurred.",
+        [KnownEventType(name="Protest", description="Collective public demonstration.")],
+        [],
+    )
+
+    prompt = seen["messages"][0]["content"]
+    assert '"name": "Protest"' in prompt
+    assert '"description": "Collective public demonstration."' in prompt
+    assert "Only suggest a new event type when none of these definitions fits" in prompt
 
 
 def test_extract_events_rejects_response_missing_required_fields() -> None:

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.models import Actor, Document, Event, EventSource, EventType, Source
 from app.services.extraction import persist_extraction
-from app.services.lm_studio import ExtractionError, LmStudioClient
+from app.services.lm_studio import ExtractionError, KnownEventType, LmStudioClient
 
 ACTIVE_PROCESSING_STATUSES = {"queued", "processing"}
 
@@ -41,9 +41,11 @@ def _process_document(
 
         try:
             active_types = [
-                event_type.name
+                KnownEventType(name=event_type.name, description=event_type.description)
                 for event_type in db.execute(
-                    select(EventType).where(EventType.is_active.is_(True))
+                    select(EventType)
+                    .where(EventType.is_active.is_(True))
+                    .order_by(EventType.name)
                 ).scalars()
             ]
             active_actors = [

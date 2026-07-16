@@ -6,6 +6,7 @@ from app.core.config import Settings
 from app.db.models import EventType
 from app.main import create_app
 from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
+from app.services.lm_studio import KnownEventType
 
 SOURCE_TEXT = "Aircraft struck the depot."
 
@@ -15,7 +16,10 @@ class FakeLmStudioClient:
         self._outcomes = outcomes
 
     def extract_events(
-        self, document_text: str, known_types: list[str], known_actors: list[str]
+        self,
+        document_text: str,
+        known_types: list[KnownEventType],
+        known_actors: list[str],
     ) -> ExtractionResult:
         return self._outcomes[document_text]
 
