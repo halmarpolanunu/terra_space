@@ -462,7 +462,6 @@ body {
 .dashboard-type-distribution h3 { margin: 0 0 0.5rem; font: 0.78rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
 .dashboard-type-distribution ul { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0; padding: 0; list-style: none; color: var(--text); }
 .dashboard-type-distribution p { margin: 0; color: var(--text-muted); }
-.dashboard-globe-panel .world-map { margin-top: 0; min-height: 30rem; }
 .map-flat-fallback { margin: 0 0 0.65rem; color: var(--text-muted); font: 0.72rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
 
 /* Settings: LM Studio connection and simple event-type management. */
@@ -815,24 +814,6 @@ body {
 }
 .dashboard-type-distribution h3 { flex: 0 0 auto; margin: 0; }
 .dashboard-type-distribution li { font-size: 0.85rem; }
-.dashboard-primary-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(19rem, 0.7fr);
-  gap: 1.15rem;
-  align-items: stretch;
-}
-.dashboard-primary-grid > .panel { min-width: 0; }
-.dashboard-globe-panel { padding: 0; overflow: hidden; }
-.dashboard-globe-panel .panel-heading { margin: 0; padding: 1.15rem 1.35rem 0.9rem; }
-.dashboard-globe-panel .world-map {
-  min-height: 28rem;
-  margin: 0;
-  border: 0;
-  border-top: 1px solid var(--border);
-}
-.dashboard-timeline-panel { max-height: 31.7rem; overflow: auto; }
-.dashboard-event-list-panel { min-width: 0; }
-.dashboard-event-list-panel .panel-heading { margin-bottom: 0.8rem; }
 .maplibregl-ctrl-bottom-right,
 .maplibregl-ctrl-bottom-left { opacity: 0.5; }
 
@@ -1506,7 +1487,6 @@ body {
 }
 
 @media (max-width: 72rem) {
-  .dashboard-primary-grid { grid-template-columns: minmax(0, 1.35fr) minmax(17rem, 0.65fr); }
   .event-filter-options { grid-template-columns: 1fr; }
   .event-filter-options > .filter-group { grid-column: auto; }
   .event-list-header,
@@ -1514,9 +1494,7 @@ body {
 }
 
 @media (max-width: 60rem) {
-  .dashboard-primary-grid,
   .event-review-columns { grid-template-columns: 1fr; }
-  .dashboard-timeline-panel { max-height: none; }
   .document-row { grid-template-columns: auto minmax(0, 1fr); }
   .document-row-actions { grid-column: 2; justify-content: flex-start; }
 }
