@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-17 - Five owner-requested follow-up initiatives documented
+
+- Recorded five planned follow-ups: a [local Supabase migration](plans/2026-07-17-local-supabase-migration.md),
+  [event-detection reconsideration](plans/2026-07-17-event-detection-reconsideration.md),
+  [UI background re-polish](plans/2026-07-17-ui-background-repolish.md),
+  [globe halo zoom behavior](plans/2026-07-17-globe-halo-zoom-behavior.md), and
+  [far-side globe-node visibility](plans/2026-07-17-globe-backside-node-visibility.md).
+- Added the active [Local Supabase Storage Direction](decisions/Local-Supabase-Storage-Direction.md):
+  Supabase must be hosted locally, existing SQLite data remains untouched until a tested migration
+  and rollback plan are accepted, and no cloud or multi-user capability is implied.
+- No application code, database, roadmap milestone, or North Star statement changed.
+
 ## 2026-07-17 - Event type descriptions implemented and verified
 
 - Completed the

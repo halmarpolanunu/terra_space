@@ -10,6 +10,14 @@ status: active
 
 ## Current focus
 
+The MVP remains implemented and verified. Five owner-requested follow-up initiatives are now
+documented but **not implemented**: a locally hosted Supabase migration, a full reconsideration
+of event detection, a re-polish of route-specific UI backgrounds, corrected halo behavior while
+globe zoom changes, and hiding nodes on the globe's far side. See the linked plans in the
+[Project Knowledge Index](Project-knowledge-Index.md). The Supabase direction preserves the North
+Star's local-first boundary; detailed deployment, migration, and rollback choices remain planned
+work.
+
 Implemented and verified the
 [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md). Event
 types now carry normalized descriptions through the database and API; new active types and

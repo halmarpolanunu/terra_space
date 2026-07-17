@@ -42,6 +42,12 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md) — approved rules for described event types, human activation, and description-aware local AI classification
 - [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md) — test-first database, API, extraction, Settings, selection guidance, and verification plan
 
+- [Local Supabase Migration Plan](plans/2026-07-17-local-supabase-migration.md) - safe local migration from SQLite to owner-hosted Supabase
+- [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md) - investigate and redesign the document-to-draft-event workflow before implementation
+- [UI Background Re-polish Plan](plans/2026-07-17-ui-background-repolish.md) - reassess the unique amber-on-black route backgrounds
+- [Globe Halo Zoom Behavior Plan](plans/2026-07-17-globe-halo-zoom-behavior.md) - make the globe halo behave correctly while zooming in and out
+- [Globe Backside Node Visibility Plan](plans/2026-07-17-globe-backside-node-visibility.md) - hide location nodes on the far side of the globe
+
 ## Reading rule
 
 Read the North Star and Current Status before substantial work. Read the Roadmap or related

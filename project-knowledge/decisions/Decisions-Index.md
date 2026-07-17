@@ -16,6 +16,7 @@ status: active
 - [Design Pass Sequencing and Tailwind Plus Reference](Design-Pass-Sequencing.md) - Defers any further aesthetic design pass until after Phase 5, and records which Tailwind Plus Application UI patterns should inform Phase 5's Settings screen and the eventual pass.
 - [Database Storage Moved to a Docker-Managed Volume](Database-Storage-Location.md) - Moves only the SQLite database out of the Windows-mounted `data` folder and into a Docker-managed volume, fixing a slow (~70s) container startup down to ~8.5s.
 - [Event Type Descriptions and AI Classification](Event-Type-Descriptions-and-AI-Classification.md) - Adds human-reviewed event-type definitions for user guidance and local AI classification.
+- [Local Supabase Storage Direction](Local-Supabase-Storage-Direction.md) - Plans a safe transition from SQLite to Supabase hosted on the owner's computer while preserving local-first operation.
 
 # Navigation
 
