@@ -10,10 +10,11 @@ status: active
 
 ## Current focus
 
-The MVP remains implemented and verified. Five owner-requested follow-up initiatives are now
+The MVP remains implemented and verified. Six owner-requested follow-up initiatives are now
 documented but **not implemented**: a locally hosted Supabase migration, a full reconsideration
 of event detection, a re-polish of route-specific UI backgrounds, corrected halo behavior while
-globe zoom changes, and hiding nodes on the globe's far side. See the linked plans in the
+globe zoom changes, hiding nodes on the globe's far side, and a simplified Settings user
+experience. See the linked plans in the
 [Project Knowledge Index](Project-knowledge-Index.md). The Supabase direction preserves the North
 Star's local-first boundary; detailed deployment, migration, and rollback choices remain planned
 work.

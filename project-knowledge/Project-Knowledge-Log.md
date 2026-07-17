@@ -8,6 +8,14 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-17 - Settings UI and UX polish planned
+
+- Added the [Settings UI and UX Polish Plan](plans/2026-07-17-settings-ui-ux-polish.md) after the
+  owner reported that the current screen exposes too much at once. The future design will put
+  everyday actions first and progressively disclose advanced technical controls, without removing
+  access to existing settings or changing any setting silently.
+- No application code, database, roadmap milestone, or North Star statement changed.
+
 ## 2026-07-17 - Five owner-requested follow-up initiatives documented
 
 - Recorded five planned follow-ups: a [local Supabase migration](plans/2026-07-17-local-supabase-migration.md),

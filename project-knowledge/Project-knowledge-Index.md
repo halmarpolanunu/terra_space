@@ -47,6 +47,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [UI Background Re-polish Plan](plans/2026-07-17-ui-background-repolish.md) - reassess the unique amber-on-black route backgrounds
 - [Globe Halo Zoom Behavior Plan](plans/2026-07-17-globe-halo-zoom-behavior.md) - make the globe halo behave correctly while zooming in and out
 - [Globe Backside Node Visibility Plan](plans/2026-07-17-globe-backside-node-visibility.md) - hide location nodes on the far side of the globe
+- [Settings UI and UX Polish Plan](plans/2026-07-17-settings-ui-ux-polish.md) - simplify Settings so essential user choices appear before technical details
 
 ## Reading rule
 
