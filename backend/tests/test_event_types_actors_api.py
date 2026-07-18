@@ -17,11 +17,11 @@ class FakeLmStudioClient:
 
     def extract_events(
         self,
-        document_text: str,
+        document_context: object,
         known_types: list[KnownEventType],
         known_actors: list[str],
     ) -> ExtractionResult:
-        return self._outcomes[document_text]
+        return self._outcomes[document_context.content]
 
 
 def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient:

@@ -14,6 +14,7 @@ class FakeLmStudioClient:
 
     def __init__(self, outcomes: dict[str, ExtractionResult | Exception]) -> None:
         self._outcomes = outcomes
+        self.calls: list[object] = []
 
     def extract_events(
         self,
@@ -21,7 +22,9 @@ class FakeLmStudioClient:
         known_types: list[KnownEventType],
         known_actors: list[str],
     ) -> ExtractionResult:
-        outcome = self._outcomes[document_text]
+        self.calls.append(document_text)
+        content = document_text.content if hasattr(document_text, "content") else document_text
+        outcome = self._outcomes[content]
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
@@ -57,6 +60,36 @@ def _create_document(client: TestClient, content: str) -> dict:
     )
     assert response.status_code == 201
     return response.json()
+
+
+def test_processing_passes_document_metadata_to_lm_studio(tmp_path: Path) -> None:
+    content = "Evidence text."
+    fake_client = FakeLmStudioClient({content: _extraction_for(content)})
+    app = create_app(
+        settings=Settings(data_dir=tmp_path),
+        lm_studio_check=lambda: True,
+        lm_studio_client=fake_client,
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/api/documents",
+        json={
+            "title": "Naval blockade update",
+            "content": content,
+            "document_date": "2026-07-10",
+            "publication_date": "2026-07-12",
+        },
+    )
+    document = response.json()
+
+    processed = client.post("/api/documents/process", json={"document_ids": [document["id"]]})
+
+    assert processed.status_code == 202
+    context = fake_client.calls[0]
+    assert getattr(context, "title", None) == "Naval blockade update"
+    assert getattr(context, "document_date", None) == "2026-07-10"
+    assert getattr(context, "publication_date", None) == "2026-07-12"
+    assert getattr(context, "content", None) == content
 
 
 def test_batch_where_second_document_fails_still_completes_first_and_third(

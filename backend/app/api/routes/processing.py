@@ -7,7 +7,12 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.models import Actor, Document, Event, EventSource, EventType, Source
 from app.services.extraction import persist_extraction
-from app.services.lm_studio import ExtractionError, KnownEventType, LmStudioClient
+from app.services.lm_studio import (
+    DocumentExtractionContext,
+    ExtractionError,
+    KnownEventType,
+    LmStudioClient,
+)
 
 ACTIVE_PROCESSING_STATUSES = {"queued", "processing"}
 
@@ -53,7 +58,14 @@ def _process_document(
                 for actor in db.execute(select(Actor).where(Actor.is_active.is_(True))).scalars()
             ]
             extraction_result = lm_studio_client.extract_events(
-                document.content, active_types, active_actors
+                DocumentExtractionContext(
+                    title=document.title,
+                    document_date=document.document_date,
+                    publication_date=document.publication_date,
+                    content=document.content,
+                ),
+                active_types,
+                active_actors,
             )
             persist_extraction(db, document, extraction_result)
             document.processing_status = "ready_for_review"

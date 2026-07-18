@@ -14,6 +14,14 @@ class KnownEventType:
     description: str | None
 
 
+@dataclass(frozen=True)
+class DocumentExtractionContext:
+    title: str
+    document_date: str
+    publication_date: str | None
+    content: str
+
+
 def _known_type_json(known_types: list[KnownEventType]) -> str:
     return json.dumps(
         [{"name": item.name, "description": item.description} for item in known_types],
@@ -130,7 +138,7 @@ class LmStudioClient:
 
     def extract_events(
         self,
-        document_text: str,
+        document_context: DocumentExtractionContext,
         known_types: list[KnownEventType],
         known_actors: list[str],
     ) -> ExtractionResult:
@@ -144,7 +152,7 @@ class LmStudioClient:
                 model_id = config.model or self._discover_model(client)
                 response = client.post(
                     "/v1/chat/completions",
-                    json=self._build_request(model_id, document_text, known_types, known_actors),
+                    json=self._build_request(model_id, document_context, known_types, known_actors),
                 )
                 if not response.is_success:
                     raise LmStudioResponseError(
@@ -190,7 +198,7 @@ class LmStudioClient:
     def _build_request(
         self,
         model_id: str,
-        document_text: str,
+        document_context: DocumentExtractionContext,
         known_types: list[KnownEventType],
         known_actors: list[str],
     ) -> dict:
@@ -206,7 +214,19 @@ class LmStudioClient:
             "temperature": 0,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": document_text},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Source title: {document_context.title}\n"
+                        f"Document date: {document_context.document_date}\n"
+                        "Publication date: "
+                        f"{document_context.publication_date or 'Not provided'}\n\n"
+                        "Source content:\n"
+                        f"{document_context.content}\n\n"
+                        "The source title and dates are context only. Set an event date only when "
+                        "the source content and evidence quote support that event date."
+                    ),
+                },
             ],
             "response_format": {
                 "type": "json_schema",

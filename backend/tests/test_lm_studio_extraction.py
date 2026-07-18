@@ -6,6 +6,7 @@ import pytest
 
 from app.schemas.extraction import ExtractionResult
 from app.services.lm_studio import (
+    DocumentExtractionContext,
     KnownEventType,
     LmStudioClient,
     LmStudioResponseError,
@@ -60,12 +61,49 @@ def _client_for(
 def test_extract_events_returns_populated_result_for_well_formed_response() -> None:
     client = _client_for(_models_ok(), _chat_completion(WELL_FORMED_CONTENT))
 
-    result = client.extract_events("A large protest occurred at the capitol.", [], [])
+    result = client.extract_events(
+        DocumentExtractionContext(
+            title="Protest report",
+            document_date="2026-07-10",
+            publication_date=None,
+            content="A large protest occurred at the capitol.",
+        ),
+        [],
+        [],
+    )
 
     assert isinstance(result, ExtractionResult)
     assert len(result.events) == 1
     assert result.events[0].evidence_quote == "A large protest occurred at the capitol."
     assert result.events[0].event_type.existing == "Protest"
+
+
+def test_extract_events_sends_labelled_source_metadata_and_date_grounding_rule() -> None:
+    seen: dict = {}
+
+    def chat(request: httpx2.Request) -> httpx2.Response:
+        seen.update(json.loads(request.content))
+        return _chat_completion(WELL_FORMED_CONTENT)
+
+    client = _client_for(_models_ok(), chat)
+    client.extract_events(
+        DocumentExtractionContext(
+            title="Naval blockade update",
+            document_date="2026-07-10",
+            publication_date="2026-07-12",
+            content="Evidence text.",
+        ),
+        [],
+        [],
+    )
+
+    user_message = seen["messages"][1]["content"]
+    assert "Source title: Naval blockade update" in user_message
+    assert "Document date: 2026-07-10" in user_message
+    assert "Publication date: 2026-07-12" in user_message
+    assert "Source content:\nEvidence text." in user_message
+    assert "context only" in user_message
+    assert "only when the source content and evidence quote support that event date" in user_message
 
 
 def test_extract_events_only_allows_active_type_names_or_null() -> None:
@@ -77,7 +115,12 @@ def test_extract_events_only_allows_active_type_names_or_null() -> None:
 
     client = _client_for(_models_ok(), chat)
     client.extract_events(
-        "A large protest occurred.",
+        DocumentExtractionContext(
+            title="Protest report",
+            document_date="2026-07-10",
+            publication_date=None,
+            content="A large protest occurred.",
+        ),
         [KnownEventType(name="Protest", description="Collective public demonstration.")],
         [],
     )
@@ -97,7 +140,9 @@ def test_extract_events_rejects_response_missing_required_fields() -> None:
     client = _client_for(_models_ok(), _chat_completion(incomplete))
 
     with pytest.raises(LmStudioResponseError):
-        client.extract_events("Some text.", [], [])
+        client.extract_events(
+            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        )
 
 
 def test_extract_events_raises_typed_error_on_timeout() -> None:
@@ -107,7 +152,9 @@ def test_extract_events_raises_typed_error_on_timeout() -> None:
     client = LmStudioClient("http://lm-studio:1234", transport=httpx2.MockTransport(raise_timeout))
 
     with pytest.raises(LmStudioUnavailableError):
-        client.extract_events("Some text.", [], [])
+        client.extract_events(
+            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        )
 
 
 def test_extract_events_raises_typed_error_on_connection_error() -> None:
@@ -119,18 +166,24 @@ def test_extract_events_raises_typed_error_on_connection_error() -> None:
     )
 
     with pytest.raises(LmStudioUnavailableError):
-        client.extract_events("Some text.", [], [])
+        client.extract_events(
+            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        )
 
 
 def test_extract_events_raises_typed_error_on_malformed_json() -> None:
     client = _client_for(_models_ok(), _chat_completion(b"not json", as_json=False))
 
     with pytest.raises(LmStudioResponseError):
-        client.extract_events("Some text.", [], [])
+        client.extract_events(
+            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        )
 
 
 def test_extract_events_fails_when_no_model_is_loaded() -> None:
     client = _client_for(httpx2.Response(200, json={"data": []}), httpx2.Response(200, json={}))
 
     with pytest.raises(LmStudioUnavailableError):
-        client.extract_events("Some text.", [], [])
+        client.extract_events(
+            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        )

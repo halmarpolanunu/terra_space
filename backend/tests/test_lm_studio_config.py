@@ -2,7 +2,7 @@ import json
 
 import httpx2
 
-from app.services.lm_studio import LmStudioClient, LmStudioRuntimeConfig
+from app.services.lm_studio import DocumentExtractionContext, LmStudioClient, LmStudioRuntimeConfig
 
 WELL_FORMED_CONTENT = json.dumps(
     {
@@ -44,14 +44,18 @@ def test_client_targets_configured_base_url_and_model(monkeypatch=None) -> None:
         config_provider=lambda: state["config"],
     )
 
-    client.extract_events("A large protest occurred.", [], [])
+    client.extract_events(
+        DocumentExtractionContext("Source", "2026-07-10", None, "A large protest occurred."), [], []
+    )
     assert seen["host"] == "configured"
     assert seen["port"] == 5000
     assert seen["model"] == "chosen"
 
     # Changing what the provider returns changes the next call without rebuilding the client.
     state["config"] = LmStudioRuntimeConfig(base_url="http://switched:6000", model=None)
-    client.extract_events("A large protest occurred.", [], [])
+    client.extract_events(
+        DocumentExtractionContext("Source", "2026-07-10", None, "A large protest occurred."), [], []
+    )
     assert seen["host"] == "switched"
     assert seen["port"] == 6000
     assert seen["model"] == "discovered"
