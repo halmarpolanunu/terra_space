@@ -150,6 +150,13 @@ export async function listEvents(filters: EventFilters): Promise<EventRead[]> {
   return parseOrThrow<EventRead[]>(response);
 }
 
+export async function listEventsByReviewStatus(
+  reviewStatus: ReviewStatus,
+): Promise<EventRead[]> {
+  const response = await fetch(`${API_ROOT}/events?review_status=${reviewStatus}`);
+  return parseOrThrow<EventRead[]>(response);
+}
+
 export async function getDashboardSummary(filters: EventFilters): Promise<DashboardSummaryRead> {
   const search = toEventFilterSearch(filters);
   const response = await fetch(
