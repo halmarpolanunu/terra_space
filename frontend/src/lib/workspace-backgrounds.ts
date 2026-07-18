@@ -4,6 +4,8 @@ const WORKSPACE_BACKGROUNDS = {
   "/event-review": "/backgrounds/event-review.webp",
   "/events": "/backgrounds/events.webp",
   "/settings": "/backgrounds/settings.webp",
+  "/sense": "/backgrounds/sense.webp",
+  "/sense/event-types": "/backgrounds/sense.webp",
 } as const;
 
 export function getWorkspaceBackground(currentPath: string): string {

@@ -673,6 +673,16 @@ body {
 }
 .sidebar-label { margin-bottom: 0.8rem; color: var(--accent); }
 .sidebar-note { margin-top: auto; line-height: 1.6; }
+.sidebar nav { display: grid; gap: 1.1rem; }
+.sidebar nav section { display: grid; gap: 0.45rem; min-width: 0; }
+.sidebar nav h2 {
+  margin: 0;
+  padding: 0 0.75rem;
+  color: var(--text-muted);
+  font: 600 0.65rem var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
 .nav-list { gap: 0.35rem; }
 .nav-link {
   display: grid;
@@ -1017,6 +1027,50 @@ body {
   .settings-add-type,
   .event-type-row { grid-template-columns: 1fr; }
   .event-type-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 48rem) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    overflow-x: clip;
+  }
+
+  .top-status-bar {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .brand { border-right: 0; min-height: 3.65rem; }
+  .system-readouts { display: none; }
+
+  .sidebar {
+    position: relative;
+    top: auto;
+    grid-column: 1;
+    grid-row: 2;
+    height: auto;
+    padding: 1rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar nav { gap: 0.9rem; }
+  .sidebar nav section { gap: 0.35rem; }
+  .nav-list { grid-template-columns: minmax(0, 1fr); overflow: visible; }
+  .sidebar-note { display: none; }
+
+  .main-content {
+    grid-column: 1;
+    grid-row: 3;
+    min-width: 0;
+    padding: 1.25rem;
+  }
+
+  .sense-flow-stages { gap: 0.75rem; }
+  .sense-flow-stages > li > article { padding: 1rem; }
 }
 
 /* Restrained workflow motion: state changes arrive with direction, never with layout shift. */
@@ -1797,4 +1851,5 @@ body {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+  .sense-flow-connection { transform: none; }
 }

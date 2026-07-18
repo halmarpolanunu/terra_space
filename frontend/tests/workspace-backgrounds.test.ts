@@ -9,6 +9,8 @@ describe("getWorkspaceBackground", () => {
     ["/event-review", "/backgrounds/event-review.webp"],
     ["/events", "/backgrounds/events.webp"],
     ["/settings", "/backgrounds/settings.webp"],
+    ["/sense", "/backgrounds/sense.webp"],
+    ["/sense/event-types", "/backgrounds/sense.webp"],
   ])("maps %s to its local visual-family asset", (route, asset) => {
     expect(getWorkspaceBackground(route)).toBe(asset);
   });

@@ -6,6 +6,8 @@ const pages = [
   ["/event-review", "Event Review"],
   ["/events", "Events"],
   ["/settings", "Settings"],
+  ["/sense", "Terra Sense"],
+  ["/sense/event-types", "Event Types"],
 ] as const;
 
 test("the local foundation stays usable without LM Studio or internet", async ({ page }) => {
@@ -24,7 +26,7 @@ test("the local foundation stays usable without LM Studio or internet", async ({
 
   for (const [path, heading] of pages) {
     await page.goto(path);
-    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+    await expect(page.getByRole("heading", { name: heading, level: 1 })).toBeVisible();
   }
 
   await page.goto("/dashboard");
