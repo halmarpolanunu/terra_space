@@ -17,6 +17,23 @@ vi.mock("@/lib/api", async () => {
 import { AppShell } from "@/components/app-shell";
 
 describe("AppShell", () => {
+  it("includes the grouped navigation without changing the shell landmarks", () => {
+    render(
+      <AppShell currentPath="/sense/event-types">
+        <h1>Event Types</h1>
+      </AppShell>,
+    );
+
+    expect(screen.getByText("Terra Insight")).toBeVisible();
+    expect(screen.getByText("Terra Sense")).toBeVisible();
+    expect(screen.getByText("Settings")).toBeVisible();
+    expect(screen.getByRole("link", { current: "page" })).toHaveAttribute(
+      "href",
+      "/sense/event-types",
+    );
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+  });
+
   it("renders the permanent local and LM Studio readouts above every page", async () => {
     render(
       <AppShell currentPath="/dashboard">
