@@ -25,9 +25,10 @@ export function calculatePipelineCounts(
     failedProcessing: documents.filter((document) => document.processing_status === "failed").length,
     reviewDocuments: documents.filter((document) => document.processing_status === "ready_for_review").length,
     draftEvents: draftEvents.length,
-    pendingDuplicates: draftEvents.filter((event) =>
-      event.duplicate_flags.some((flag) => flag.resolution === "pending"),
-    ).length,
+    pendingDuplicates: draftEvents.reduce(
+      (count, event) => count + event.duplicate_flags.filter((flag) => flag.resolution === "pending").length,
+      0,
+    ),
     approvedEvents: approvedEvents.length,
   };
 }

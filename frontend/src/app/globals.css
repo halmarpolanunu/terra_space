@@ -1737,6 +1737,50 @@ body {
   .document-row-actions { grid-column: 2; justify-content: flex-start; }
 }
 
+.sense-page,
+.sense-flow {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sense-flow-stages {
+  display: flex;
+  align-items: stretch;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 0;
+  overflow-x: clip;
+  list-style: none;
+}
+
+.sense-flow-stages > li:not(.sense-flow-connection) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.sense-flow-stages > li > article {
+  min-width: 0;
+  height: 100%;
+  overflow-wrap: anywhere;
+}
+
+.sense-flow-connection {
+  align-self: center;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 60rem) {
+  .sense-flow-stages {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sense-flow-connection {
+    align-self: center;
+    transform: rotate(90deg);
+  }
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .top-status-bar { background: rgba(0, 0, 0, 0.97); }
   .sidebar { background: #050708; }

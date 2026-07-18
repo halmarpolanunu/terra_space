@@ -91,6 +91,12 @@ describe("Terra Sense pipeline data", () => {
           matched_reason: "Similar report.",
           resolution: "pending",
           resolved_at: null,
+        }, {
+          id: "flag-2",
+          matched_event_id: "approved-2",
+          matched_reason: "Another similar report.",
+          resolution: "pending",
+          resolved_at: null,
         }],
       }),
     ];
@@ -106,7 +112,7 @@ describe("Terra Sense pipeline data", () => {
       failedProcessing: 1,
       reviewDocuments: 1,
       draftEvents: 2,
-      pendingDuplicates: 1,
+      pendingDuplicates: 2,
       approvedEvents: 3,
     });
   });
