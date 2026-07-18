@@ -8,6 +8,15 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-18 - Terra Insight and Terra Sense product organization approved
+
+- The owner clarified that Terra Space should focus on presenting and analysing trusted data. The
+  approved [product organization decision](decisions/Terra-Insight-and-Terra-Sense-Product-Organization.md)
+  establishes Terra Insight for analysis and Terra Sense for source intake, local AI processing,
+  pipeline visibility, duplicate checks, and Event Review.
+- Updated the North Star and Roadmap to reflect the approved direction. No application code,
+  database, deployed-service boundary, or automatic external ingestion capability changed.
+
 ## 2026-07-17 - Settings UI and UX polish planned
 
 - Added the [Settings UI and UX Polish Plan](plans/2026-07-17-settings-ui-ux-polish.md) after the

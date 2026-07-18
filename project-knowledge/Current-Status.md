@@ -19,6 +19,12 @@ experience. See the linked plans in the
 Star's local-first boundary; detailed deployment, migration, and rollback choices remain planned
 work.
 
+The owner has also approved a new product organization direction, documented in
+[Terra Insight and Terra Sense Product Organization](decisions/Terra-Insight-and-Terra-Sense-Product-Organization.md).
+Terra Insight will be the workspace for presenting and analysing approved data, while Terra Sense
+will cover source intake, processing visibility, and Event Review. This is not implemented yet;
+the existing menu stays unchanged until a dedicated implementation plan is approved.
+
 Implemented and verified the
 [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md). Event
 types now carry normalized descriptions through the database and API; new active types and
@@ -559,6 +565,8 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 
 ## Next actions
 
+- When the owner is ready to change the application navigation, write an implementation plan for
+  the approved Terra Insight / Terra Sense product organization before changing screens or routes.
 - Confirm with the owner, with an actual before/after location count, whether the improved
   extraction prompt reliably populates locations across more than one document — only one real
   document has been reprocessed against it so far ("seems good for now", not yet precisely

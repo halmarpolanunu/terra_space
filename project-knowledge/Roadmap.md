@@ -52,6 +52,13 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 - [x] **Verify end-to-end flow** - document draft, batch processing, review, approval, Events, and Dashboard are exercised across the documents, event-review, and events-dashboard browser scenarios. Status: completed.
 - [x] **Verify offline and failure cases** - LM Studio offline (foundation scenario), partial batch failure and retry recovery (settings scenario and backend tests), reprocessing confirmation, and incomplete time/location and duplicate handling (events-dashboard and event-review scenarios) are all covered. Status: completed.
 
+## Planned Product Organization
+
+- [ ] **Organize the product around Terra Insight and Terra Sense** - group approved-event
+  presentation and analysis under Terra Insight; group source intake, processing visibility, and
+  Event Review under Terra Sense. The currently implemented navigation remains unchanged until a
+  dedicated implementation plan is approved. Status: planned.
+
 ## Deferred Beyond MVP
 
 - Terra Brief module integration.

@@ -10,7 +10,13 @@ status: active
 
 ## Overarching objective
 
-Build Terra Space as a local-first intelligence workspace for one user. The MVP lets the user manually add documents, process selected documents in batches through a local LM Studio LLM endpoint, review extracted events, prevent accidental duplicate event counting, approve valid events, and explore approved events through dashboard, map, timeline, and list views.
+Build Terra Space as a local-first intelligence workspace for one user. Terra Space has two major
+workspaces: **Terra Sense**, where the user prepares trusted data from source documents through
+normalization, local AI processing, duplicate checks, and human review; and **Terra Insight**, where
+the user explores and analyses approved events through dashboard, map, timeline, list, and future
+analysis views. The MVP lets the user manually add documents, process selected documents in batches
+through a local LM Studio LLM endpoint, review extracted events, prevent accidental duplicate
+event counting, approve valid events, and explore approved events.
 
 Terra Space must stand on its own. Terra Brief is not part of the MVP; later, Terra Brief may become a module inside Terra Space and use Terra Space's event database.
 
@@ -29,6 +35,8 @@ The MVP succeeds when:
 - The system can flag possible duplicate events without merging them automatically.
 - Approved events appear in Events and Dashboard views.
 - Dashboard supports summary, map, timeline, event list, event detail, and filters.
+- Terra Sense makes the document-to-approved-event workflow understandable, while Terra Insight
+  keeps analysis focused on approved, traceable data.
 - Claims, rumors, denials, and other uncertainty states remain visible through epistemic status.
 - AI does not invent dates, locations, actors, or other missing facts.
 - The app can still be opened when LM Studio is offline.
@@ -73,6 +81,8 @@ Outside MVP:
 - Do not let reprocessing automatically delete or overwrite approved events.
 - Do not merge possible duplicate events automatically.
 - Preserve room for later growth without building advanced features now.
+- Keep the data-preparation workflow distinct from the analysis workspace, while avoiding a
+  premature split into separately deployed applications.
 - Inspect the existing codebase and stack before implementation, then reuse existing patterns when they still fit.
 - Keep explanations simple because the project owner is new to coding.
 

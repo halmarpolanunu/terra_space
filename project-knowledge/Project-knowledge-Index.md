@@ -43,6 +43,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md) — test-first database, API, extraction, Settings, selection guidance, and verification plan
 
 - [Local Supabase Migration Plan](plans/2026-07-17-local-supabase-migration.md) - safe local migration from SQLite to owner-hosted Supabase
+- [Terra Insight and Terra Sense Product Organization](decisions/Terra-Insight-and-Terra-Sense-Product-Organization.md) - approved product organization: Terra Insight presents and analyses trusted data; Terra Sense collects, processes, and reviews it
 - [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md) - investigate and redesign the document-to-draft-event workflow before implementation
 - [UI Background Re-polish Plan](plans/2026-07-17-ui-background-repolish.md) - reassess the unique amber-on-black route backgrounds
 - [Globe Halo Zoom Behavior Plan](plans/2026-07-17-globe-halo-zoom-behavior.md) - make the globe halo behave correctly while zooming in and out
