@@ -197,9 +197,8 @@ class LmStudioClient:
         system_prompt = (
             f"{EXTRACTION_SYSTEM_PROMPT}\n\n"
             f"Known active event types: {_known_type_json(known_types)}\n"
-            "Reuse an existing event type whenever its definition fits. Only suggest a new event "
-            "type when none of these definitions fits; include suggested_description for every "
-            "new suggestion.\n"
+            "Use an exact supplied active event type name only when it fits. Otherwise set "
+            "existing to null. Never invent, suggest, or describe a new event type.\n"
             f"Known actors: {', '.join(known_actors) or 'none yet'}"
         )
         return {

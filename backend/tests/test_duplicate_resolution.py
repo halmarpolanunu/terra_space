@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
+from app.db.models import EventType
 from app.main import create_app
 from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
 from app.services.lm_studio import KnownEventType
@@ -27,7 +28,11 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
         lm_studio_check=lambda: True,
         lm_studio_client=FakeLmStudioClient(outcomes),
     )
-    return TestClient(app)
+    client = TestClient(app)
+    with app.state.session_factory() as db:
+        db.add(EventType(name="Attack", description="Use for attacks against a target.", is_active=True))
+        db.commit()
+    return client
 
 
 def _process(client: TestClient, content: str) -> dict:
@@ -48,7 +53,7 @@ def _attack_extraction(content: str, start_date: str) -> ExtractionResult:
             ExtractedEvent(
                 title="Depot attack",
                 summary="A militia group attacked a fuel depot.",
-                event_type=ExtractedEventType(suggested="Attack"),
+                event_type=ExtractedEventType(existing="Attack"),
                 epistemic_status="claim",
                 evidence_quote=content,
                 start_date=start_date,

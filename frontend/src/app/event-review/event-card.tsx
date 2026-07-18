@@ -74,7 +74,9 @@ export function EventCard({
   const [endPrecision, setEndPrecision] = useState<DatePrecision | "">(
     event.end_date_precision ?? "",
   );
-  const [eventTypeName, setEventTypeName] = useState(event.event_type?.name ?? "");
+  const [eventTypeName, setEventTypeName] = useState(
+    event.event_type?.is_active ? event.event_type.name : "",
+  );
   const [actorRows, setActorRows] = useState<ActorInput[]>(toActorInputs(event));
   const [locationRows, setLocationRows] = useState<LocationInput[]>(toLocationInputs(event));
 
@@ -83,6 +85,7 @@ export function EventCard({
   const selectedType = eventTypeOptions.find(
     (type) => type.name.toLocaleLowerCase() === eventTypeName.trim().toLocaleLowerCase(),
   );
+  const activeEventTypeOptions = eventTypeOptions.filter((type) => type.is_active);
 
   function startEditing() {
     setTitle(event.title);
@@ -91,7 +94,7 @@ export function EventCard({
     setStartPrecision(event.start_date_precision ?? "");
     setEndDate(event.end_date ?? "");
     setEndPrecision(event.end_date_precision ?? "");
-    setEventTypeName(event.event_type?.name ?? "");
+    setEventTypeName(event.event_type?.is_active ? event.event_type.name : "");
     setActorRows(toActorInputs(event));
     setLocationRows(toLocationInputs(event));
     setEditing(true);
@@ -106,7 +109,7 @@ export function EventCard({
       start_date_precision: (startPrecision || null) as DatePrecision | null,
       end_date: endDate || null,
       end_date_precision: (endPrecision || null) as DatePrecision | null,
-      event_type: eventTypeName.trim() ? { suggested: eventTypeName.trim() } : undefined,
+      event_type: eventTypeName.trim() ? { existing: eventTypeName.trim() } : undefined,
       actors: actorRows.filter((row) => row.name.trim() !== ""),
       locations: locationRows.filter((row) => row.country || row.admin1 || row.city_regency),
     });
@@ -211,21 +214,17 @@ export function EventCard({
           </div>
           <div className="field">
             <label htmlFor="event-type">Event type</label>
-            <input
+            <select
               id="event-type"
-              list="event-type-options"
               onChange={(e) => setEventTypeName(e.target.value)}
               value={eventTypeName}
-            />
-            <datalist id="event-type-options">
-              {eventTypeOptions.map((eventType) => (
-                <option key={eventType.id} value={eventType.name} />
+            >
+              <option value="">Select an active Event Type</option>
+              {activeEventTypeOptions.map((eventType) => (
+                <option key={eventType.id} value={eventType.name}>{eventType.name}</option>
               ))}
-            </datalist>
-            <EventTypeDescription
-              eventType={selectedType}
-              unmatchedName={selectedType ? undefined : eventTypeName}
-            />
+            </select>
+            <EventTypeDescription eventType={selectedType} />
           </div>
 
           <div className="field">
@@ -321,11 +320,11 @@ export function EventCard({
           <span className="field-label">Type</span>
           <p>
             {event.event_type ? event.event_type.name : "Not stated"}
-            {event.event_type && !event.event_type.is_active && (
-              <span className="suggested-tag"> — Suggested, confirmed on approve</span>
-            )}
           </p>
-          <EventTypeDescription eventType={event.event_type ?? undefined} />
+          <EventTypeDescription
+            eventType={event.event_type ?? undefined}
+            needsSelection={!event.event_type}
+          />
         </div>
         <div>
           <span className="field-label">Start</span>

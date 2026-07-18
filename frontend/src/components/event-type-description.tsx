@@ -2,24 +2,17 @@ import type { EventTypeRead } from "@/lib/events-api";
 
 type Props = {
   eventType?: EventTypeRead;
-  unmatchedName?: string;
+  needsSelection?: boolean;
 };
 
-export function EventTypeDescription({ eventType, unmatchedName }: Props) {
+export function EventTypeDescription({ eventType, needsSelection = false }: Props) {
   if (eventType?.description) {
     return <p className="event-type-description">{eventType.description}</p>;
   }
-  if (eventType && !eventType.is_active) {
+  if (needsSelection) {
     return (
       <p className="event-type-description event-type-description-required">
-        Suggested type — description required before activation.
-      </p>
-    );
-  }
-  if (unmatchedName?.trim()) {
-    return (
-      <p className="event-type-description event-type-description-required">
-        New type — add its description in Settings before activation.
+        Select an active Event Type during review if appropriate.
       </p>
     );
   }

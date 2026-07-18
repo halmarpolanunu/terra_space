@@ -121,14 +121,14 @@ def test_active_description_cannot_be_cleared(tmp_path: Path) -> None:
     assert response.status_code == 422
 
 
-def test_event_types_and_actors_include_suggested_inactive_rows(tmp_path: Path) -> None:
+def test_unknown_ai_type_creates_no_event_type_but_keeps_the_draft_untyped(tmp_path: Path) -> None:
     content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
     extraction = ExtractionResult(
         events=[
             ExtractedEvent(
                 title="Depot attack",
                 summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(suggested="Attack"),
+                event_type=ExtractedEventType(existing="Attack"),
                 epistemic_status="claim",
                 evidence_quote=content,
                 actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
@@ -147,10 +147,10 @@ def test_event_types_and_actors_include_suggested_inactive_rows(tmp_path: Path) 
 
     types_response = client.get("/api/event-types")
     assert types_response.status_code == 200
-    types = types_response.json()
-    assert len(types) == 1
-    assert types[0]["name"] == "Attack"
-    assert types[0]["is_active"] is False
+    assert types_response.json() == []
+
+    events = client.get(f"/api/documents/{document['id']}/events").json()
+    assert events[0]["event_type"] is None
 
     actors_response = client.get("/api/actors")
     assert actors_response.status_code == 200
@@ -160,41 +160,14 @@ def test_event_types_and_actors_include_suggested_inactive_rows(tmp_path: Path) 
     assert actors[0]["is_active"] is False
 
 
-def test_ai_suggested_event_type_keeps_its_draft_description(tmp_path: Path) -> None:
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Depot strike",
-                summary="Aircraft struck the depot.",
-                event_type=ExtractedEventType(
-                    suggested="Airstrike",
-                    suggested_description="Use for attacks delivered by military aircraft.",
-                ),
-                epistemic_status="confirmed",
-                evidence_quote=SOURCE_TEXT,
-            )
-        ]
-    )
-    client = _client(tmp_path, {SOURCE_TEXT: extraction})
-
-    _process_source(client, SOURCE_TEXT)
-
-    event_type = client.get("/api/event-types").json()[0]
-    assert event_type["description"] == "Use for attacks delivered by military aircraft."
-    assert event_type["is_active"] is False
-
-
-def test_ai_description_never_overwrites_an_existing_type(tmp_path: Path) -> None:
+def test_ai_output_uses_an_active_existing_type_without_changing_its_definition(tmp_path: Path) -> None:
     content = "People held a public protest."
     extraction = ExtractionResult(
         events=[
             ExtractedEvent(
                 title="Public protest",
                 summary=content,
-                event_type=ExtractedEventType(
-                    existing="Protest",
-                    suggested_description="AI replacement must be ignored.",
-                ),
+                event_type=ExtractedEventType(existing="Protest"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -213,78 +186,3 @@ def test_ai_description_never_overwrites_an_existing_type(tmp_path: Path) -> Non
     assert rows[0]["id"] == existing["id"]
     assert rows[0]["description"] == "Human definition."
     assert rows[0]["in_use"] is True
-
-
-def test_existing_name_wins_and_ignores_suggested_description_when_both_are_present(
-    tmp_path: Path,
-) -> None:
-    content = "People held a public protest."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Public protest",
-                summary=content,
-                event_type=ExtractedEventType(
-                    existing="Protest",
-                    suggested="Demonstration",
-                    suggested_description="Use for public demonstrations.",
-                ),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
-    client = _client(tmp_path, {content: extraction})
-
-    _process_source(client, content)
-
-    rows = client.get("/api/event-types").json()
-    assert len(rows) == 1
-    assert rows[0]["name"] == "Protest"
-    assert rows[0]["description"] is None
-    assert rows[0]["is_active"] is False
-
-
-def test_repeated_ai_type_suggestion_creates_one_type_and_keeps_first_description(
-    tmp_path: Path,
-) -> None:
-    events = [
-        ExtractedEvent(
-            title=f"Strike {index}",
-            summary=SOURCE_TEXT,
-            event_type=ExtractedEventType(
-                suggested="Airstrike",
-                suggested_description=description,
-            ),
-            epistemic_status="confirmed",
-            evidence_quote=SOURCE_TEXT,
-        )
-        for index, description in enumerate(("  First definition.  ", "Second definition."), 1)
-    ]
-    client = _client(tmp_path, {SOURCE_TEXT: ExtractionResult(events=events)})
-
-    _process_source(client, SOURCE_TEXT)
-
-    rows = client.get("/api/event-types").json()
-    assert len(rows) == 1
-    assert rows[0]["description"] == "First definition."
-
-
-def test_blank_ai_description_is_null_on_inactive_suggestion(tmp_path: Path) -> None:
-    event = ExtractedEvent(
-        title="Depot strike",
-        summary=SOURCE_TEXT,
-        event_type=ExtractedEventType(
-            suggested="Airstrike",
-            suggested_description="   ",
-        ),
-        epistemic_status="confirmed",
-        evidence_quote=SOURCE_TEXT,
-    )
-    client = _client(tmp_path, {SOURCE_TEXT: ExtractionResult(events=[event])})
-
-    _process_source(client, SOURCE_TEXT)
-
-    row = client.get("/api/event-types").json()[0]
-    assert row["description"] is None
-    assert row["is_active"] is False

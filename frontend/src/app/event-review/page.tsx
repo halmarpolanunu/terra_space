@@ -9,7 +9,6 @@ import { EventCard } from "@/app/event-review/event-card";
 import { ReviewBar } from "@/app/event-review/review-bar";
 import { SourcePanel } from "@/app/event-review/source-panel";
 import { AppShell } from "@/components/app-shell";
-import { eventTypeNeedsDescription } from "@/components/event-type-description";
 import { FramedPanel } from "@/components/framed-panel";
 import { PageHeader } from "@/components/page-header";
 import type { Document } from "@/lib/documents-api";
@@ -222,9 +221,7 @@ export default function EventReviewPage() {
   const approveDisabledReason =
     currentEvent?.duplicate_flags.some((flag) => flag.resolution === "pending")
       ? "Resolve the duplicate flag below first."
-      : eventTypeNeedsDescription(currentEvent?.event_type)
-        ? "Add a description in Settings before approving this suggested type."
-        : null;
+      : null;
 
   return (
     <AppShell currentPath="/event-review">

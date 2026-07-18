@@ -16,14 +16,12 @@ describe("EventTypeDescription", () => {
     expect(screen.getByText("Collective public demonstration.")).toBeVisible();
   });
 
-  it("marks a blank suggested definition as requiring review", () => {
-    render(<EventTypeDescription eventType={{
-      id: "new", name: "New type", description: null, is_active: false,
-    }} />);
-    expect(screen.getByText("Suggested type — description required before activation.")).toBeVisible();
+  it("guides the reviewer to choose an active type for an untyped draft", () => {
+    render(<EventTypeDescription needsSelection />);
+    expect(screen.getByText("Select an active Event Type during review if appropriate.")).toBeVisible();
   });
 
-  it("requires a definition only for an inactive blank type", () => {
+  it("detects only legacy inactive types that lack a definition", () => {
     const base = { id: "type", name: "Type", description: null, is_active: false };
     expect(eventTypeNeedsDescription(base)).toBe(true);
     expect(eventTypeNeedsDescription({ ...base, is_active: true })).toBe(false);

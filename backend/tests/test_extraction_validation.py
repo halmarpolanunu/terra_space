@@ -40,7 +40,7 @@ def _event(**overrides: object) -> ExtractedEvent:
     defaults: dict = {
         "title": "Protest at the capitol",
         "summary": "A large protest occurred.",
-        "event_type": ExtractedEventType(suggested="Protest"),
+        "event_type": ExtractedEventType(existing="Protest"),
         "start_date": "2026-07-10",
         "start_date_precision": "exact",
         "end_date": None,
@@ -54,9 +54,9 @@ def _event(**overrides: object) -> ExtractedEvent:
     return ExtractedEvent(**defaults)
 
 
-def test_suggested_event_type_description_is_limited_to_1000_characters() -> None:
+def test_extracted_event_type_does_not_accept_suggestions() -> None:
     with pytest.raises(ValidationError):
-        ExtractedEventType(suggested="Airstrike", suggested_description="x" * 1001)
+        ExtractedEventType.model_validate({"suggested": "Airstrike"})
 
 
 def test_event_with_evidence_quote_not_found_is_dropped_but_others_are_saved(
@@ -114,7 +114,7 @@ def test_every_saved_event_is_a_draft(tmp_path: Path) -> None:
     assert result.saved_events[0].review_status == "draft"
 
 
-def test_existing_event_type_reference_that_does_not_exist_falls_back_to_suggested(
+def test_unknown_or_inactive_event_type_is_saved_blank_without_creating_a_type(
     tmp_path: Path,
 ) -> None:
     session = _session(tmp_path)
@@ -122,16 +122,18 @@ def test_existing_event_type_reference_that_does_not_exist_falls_back_to_suggest
     session.add(document)
     session.commit()
 
-    extraction = ExtractionResult(
-        events=[_event(event_type=ExtractedEventType(existing="Nonexistent Type"))]
-    )
+    inactive_type = EventType(name="Inactive type", is_active=False)
+    session.add(inactive_type)
+    session.commit()
+    extraction = ExtractionResult(events=[
+        _event(event_type=ExtractedEventType(existing="Nonexistent Type")),
+        _event(title="Inactive type event", event_type=ExtractedEventType(existing="Inactive type")),
+    ])
 
     result = persist_extraction(session, document, extraction)
 
-    event_type = result.saved_events[0].event_type
-    assert event_type is not None
-    assert event_type.name == "Nonexistent Type"
-    assert event_type.is_active is False
+    assert [event.event_type for event in result.saved_events] == [None, None]
+    assert session.execute(select(EventType)).scalars().all() == [inactive_type]
 
 
 def test_existing_event_type_reference_matches_case_insensitively_and_trims_whitespace(

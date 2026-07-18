@@ -104,9 +104,8 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
   return (
     <FramedPanel className="settings-panel" title="Event types">
       <p className="settings-hint">
-        Active types guide extraction and appear in the review and edit pickers. Suggested types
-        came from the AI and stay inactive until you activate them. Deactivating keeps events that
-        already use a type. A type can be deleted only when no event uses it.
+        Active types guide extraction and appear in the review and edit pickers. Deactivating keeps
+        events that already use a type. A type can be deleted only when no event uses it.
       </p>
 
       <div className="settings-add-type">
@@ -143,7 +142,7 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
       {types.length === 0 ? (
         <div className="event-empty-state event-type-empty-state">
           <p>No event types yet — add one above.</p>
-          <p>Types suggested by the AI will also appear here for activation.</p>
+          <p>Add an Event Type here before using it in Event Review.</p>
         </div>
       ) : (
       <ul className="event-type-list">
@@ -171,8 +170,8 @@ export function EventTypeSettings({ eventTypes }: EventTypeSettingsProps) {
               <div className="event-type-state">
                 <StatusChip
                   colorVar={type.is_active ? "--status-confirmed" : undefined}
-                  label={type.is_active ? "Active" : "Suggested"}
-                  value={type.is_active ? "active" : "suggested"}
+                  label={type.is_active ? "Active" : "Inactive"}
+                  value={type.is_active ? "active" : "inactive"}
                 />
                 <label className="event-type-toggle">
                   <input

@@ -68,7 +68,7 @@ def test_extract_events_returns_populated_result_for_well_formed_response() -> N
     assert result.events[0].event_type.existing == "Protest"
 
 
-def test_extract_events_sends_active_type_definitions_and_reuse_instruction() -> None:
+def test_extract_events_only_allows_active_type_names_or_null() -> None:
     seen: dict = {}
 
     def chat(request: httpx2.Request) -> httpx2.Response:
@@ -85,7 +85,11 @@ def test_extract_events_sends_active_type_definitions_and_reuse_instruction() ->
     prompt = seen["messages"][0]["content"]
     assert '"name": "Protest"' in prompt
     assert '"description": "Collective public demonstration."' in prompt
-    assert "Only suggest a new event type when none of these definitions fits" in prompt
+    assert "Use an exact supplied active event type name only when it fits." in prompt
+    assert "Otherwise set existing to null." in prompt
+    assert "Never invent, suggest, or describe a new event type." in prompt
+    event_type_schema = seen["response_format"]["json_schema"]["schema"]["$defs"]["ExtractedEventType"]
+    assert set(event_type_schema["properties"]) == {"existing"}
 
 
 def test_extract_events_rejects_response_missing_required_fields() -> None:

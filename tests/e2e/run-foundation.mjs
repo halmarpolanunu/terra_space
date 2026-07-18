@@ -101,7 +101,7 @@ function singleEventExtraction(evidenceQuote, overrides = {}) {
       {
         title: "Stub extracted event",
         summary: "Extracted by the local LM Studio stub for end-to-end verification.",
-        event_type: { suggested: "Report" },
+        event_type: { existing: null },
         start_date: null,
         start_date_precision: null,
         end_date: null,
@@ -163,61 +163,19 @@ print("Verified: a draft event backed by the expected evidence quote exists, and
 }
 
 async function runEventReviewScenario() {
-  // Kept in sync with the quotes/titles in event-review.spec.ts.
-  const AIRSTRIKE_QUOTE = "An airstrike hit the fuel depot in Sana'a on 2026-07-10";
-  const CEASEFIRE_QUOTE = "A ceasefire negotiation began in the capital on 2026-09-01";
-  const SECOND_AIRSTRIKE_QUOTE = "A second airstrike hit the fuel depot in Sana'a on 2026-07-11";
-  const THIRD_AIRSTRIKE_QUOTE = "A third airstrike hit the fuel depot in Sana'a on 2026-07-07";
+  // Kept in sync with UNMATCHED_QUOTE in event-review.spec.ts.
+  const UNMATCHED_QUOTE = "A local official announced new port rules on 2026-07-10";
 
   const responseTable = [
     {
-      match: AIRSTRIKE_QUOTE,
-      extraction: singleEventExtraction(AIRSTRIKE_QUOTE, {
-        title: "Depot airstrike",
-        summary: "An airstrike reportedly hit a fuel depot in Sana'a.",
-        event_type: { suggested: "Airstrike" },
+      match: UNMATCHED_QUOTE,
+      extraction: singleEventExtraction(UNMATCHED_QUOTE, {
+        title: "Untyped port-rules announcement",
+        summary: "A local official announced new port rules.",
+        event_type: { existing: null },
         start_date: "2026-07-10",
         start_date_precision: "exact",
         epistemic_status: "claim",
-        locations: [{ country: "YE", admin1: "Sana'a", city_regency: null }],
-        actors: [{ name: "Air Force", role: "source", existing: false }],
-      }),
-    },
-    {
-      match: CEASEFIRE_QUOTE,
-      extraction: singleEventExtraction(CEASEFIRE_QUOTE, {
-        title: "Ceasefire talks",
-        summary: "Ceasefire negotiations reportedly began in the capital.",
-        event_type: { suggested: "Negotiation" },
-        start_date: "2026-09-01",
-        start_date_precision: "exact",
-        epistemic_status: "claim",
-      }),
-    },
-    {
-      match: SECOND_AIRSTRIKE_QUOTE,
-      extraction: singleEventExtraction(SECOND_AIRSTRIKE_QUOTE, {
-        title: "Second depot airstrike",
-        summary: "A second airstrike reportedly hit the same fuel depot.",
-        event_type: { suggested: "Airstrike" },
-        start_date: "2026-07-11",
-        start_date_precision: "exact",
-        epistemic_status: "claim",
-        locations: [{ country: "YE", admin1: "Sana'a", city_regency: null }],
-        actors: [{ name: "Air Force", role: "source", existing: false }],
-      }),
-    },
-    {
-      match: THIRD_AIRSTRIKE_QUOTE,
-      extraction: singleEventExtraction(THIRD_AIRSTRIKE_QUOTE, {
-        title: "Third depot airstrike",
-        summary: "A third airstrike reportedly hit the same fuel depot.",
-        event_type: { suggested: "Airstrike" },
-        start_date: "2026-07-07",
-        start_date_precision: "exact",
-        epistemic_status: "claim",
-        locations: [{ country: "YE", admin1: "Sana'a", city_regency: null }],
-        actors: [{ name: "Air Force", role: "source", existing: false }],
       }),
     },
   ];
@@ -231,33 +189,13 @@ import sqlite3
 
 conn = sqlite3.connect("/data/database/terra-space.db")
 
-event_type = conn.execute("SELECT is_active FROM event_types WHERE name = 'Airstrike'").fetchone()
-assert event_type is not None and event_type[0] == 1, f"expected Airstrike type to be active, got {event_type}"
+types = conn.execute("SELECT name FROM event_types").fetchall()
+assert types == [("Diplomatic Statement",)], f"AI created an unexpected Event Type: {types}"
 
-actor = conn.execute("SELECT is_active FROM actors WHERE name = 'Air Force'").fetchone()
-assert actor is not None and actor[0] == 1, f"expected Air Force actor to be active, got {actor}"
+event = conn.execute("SELECT review_status, event_type_id FROM events WHERE title = 'Untyped port-rules announcement'").fetchone()
+assert event is not None and event[0] == "approved" and event[1] is not None, event
 
-rows = conn.execute("SELECT title, review_status FROM events").fetchall()
-statuses = {title: status for title, status in rows}
-assert statuses.get("Depot airstrike") == "approved", statuses
-assert statuses.get("Ceasefire talks") == "rejected", statuses
-assert statuses.get("Second depot airstrike") == "approved", statuses
-assert statuses.get("Third depot airstrike") == "merged", statuses
-
-flags = conn.execute("SELECT resolution FROM duplicate_flags ORDER BY resolution").fetchall()
-resolutions = sorted(row[0] for row in flags)
-assert resolutions == ["kept_separate", "linked"], resolutions
-
-moved = conn.execute(
-    """
-    SELECT COUNT(*) FROM event_sources es
-    JOIN events e ON e.id = es.event_id
-    WHERE e.title = 'Depot airstrike' AND es.evidence_quote LIKE '%third airstrike%'
-    """
-).fetchone()[0]
-assert moved == 1, "expected the merged event's evidence quote to move onto the approved event"
-
-print("Verified: approve, reject, keep-separate, and link duplicate resolution all persisted correctly.")
+print("Verified: an unmatched AI type stayed blank, no AI Event Type was created, and the reviewer assigned the approved type manually.")
 `.trim();
 
   try {
@@ -285,7 +223,7 @@ async function runEventsDashboardScenario() {
       extraction: singleEventExtraction(JAKARTA_QUOTE, {
         title: "Jakarta field observation",
         summary: "A confirmed observation from Jakarta.",
-        event_type: { suggested: "Observation" },
+        event_type: { existing: null },
         start_date: "2026-07-10",
         start_date_precision: "exact",
         epistemic_status: "confirmed",
@@ -297,7 +235,7 @@ async function runEventsDashboardScenario() {
       extraction: singleEventExtraction(LOS_ANGELES_QUOTE, {
         title: "Los Angeles field observation",
         summary: "A confirmed observation from California.",
-        event_type: { existing: "Observation" },
+        event_type: { existing: null },
         start_date: "2026-07-12",
         start_date_precision: "exact",
         epistemic_status: "confirmed",
@@ -309,7 +247,7 @@ async function runEventsDashboardScenario() {
       extraction: singleEventExtraction(UNKNOWN_DATE_QUOTE, {
         title: "Unknown-date briefing",
         summary: "A briefing whose date was not stated.",
-        event_type: { suggested: "Briefing" },
+        event_type: { existing: null },
         start_date: null,
         start_date_precision: "unknown",
         epistemic_status: "claim",
@@ -321,7 +259,7 @@ async function runEventsDashboardScenario() {
       extraction: singleEventExtraction(UNMATCHED_QUOTE, {
         title: "Unmatched location report",
         summary: "A report with a location that cannot be resolved locally.",
-        event_type: { suggested: "Assessment" },
+        event_type: { existing: null },
         start_date: "2026-07-14",
         start_date_precision: "exact",
         epistemic_status: "rumor",
@@ -333,7 +271,7 @@ async function runEventsDashboardScenario() {
       extraction: singleEventExtraction(REJECTED_QUOTE, {
         title: "Rejected observation",
         summary: "An observation deliberately rejected during review.",
-        event_type: { existing: "Observation" },
+        event_type: { existing: null },
         start_date: "2026-07-15",
         start_date_precision: "exact",
         epistemic_status: "denied",

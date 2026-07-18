@@ -33,7 +33,7 @@ def _extraction_for(content: str) -> ExtractionResult:
             ExtractedEvent(
                 title="Extracted event",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing=None),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )

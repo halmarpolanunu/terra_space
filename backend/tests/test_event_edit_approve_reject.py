@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
-from app.db.models import DuplicateFlag
+from app.db.models import DuplicateFlag, EventType
 from app.main import create_app
 from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
 from app.services.lm_studio import KnownEventType
@@ -29,7 +29,14 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
         lm_studio_check=lambda: True,
         lm_studio_client=FakeLmStudioClient(outcomes),
     )
-    return TestClient(app)
+    client = TestClient(app)
+    with app.state.session_factory() as db:
+        db.add_all([
+            EventType(name="Attack", description="Use for attacks against a target.", is_active=True),
+            EventType(name="Report", description="Use for reports of an event.", is_active=True),
+        ])
+        db.commit()
+    return client
 
 
 def _create_and_process_document(client: TestClient, content: str) -> dict:
@@ -53,16 +60,13 @@ def _describe_event_type(client: TestClient, type_id: str, description: str) -> 
     assert response.status_code == 200
 
 
-def _extraction_with_suggestions(content: str) -> ExtractionResult:
+def _extraction_with_existing_type(content: str) -> ExtractionResult:
     return ExtractionResult(
         events=[
             ExtractedEvent(
                 title="Depot attack",
                 summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(
-                    suggested="Attack",
-                    suggested_description="Use for attacks against a target.",
-                ),
+                event_type=ExtractedEventType(existing="Attack"),
                 epistemic_status="claim",
                 evidence_quote=content,
                 actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
@@ -71,13 +75,12 @@ def _extraction_with_suggestions(content: str) -> ExtractionResult:
     )
 
 
-def test_approving_event_flips_suggested_type_and_actor_to_active(tmp_path: Path) -> None:
+def test_approving_event_keeps_existing_type_active_and_activates_actor(tmp_path: Path) -> None:
     content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
-    extraction = _extraction_with_suggestions(content)
+    extraction = _extraction_with_existing_type(content)
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
-    _describe_event_type(client, event["event_type"]["id"], "Use for attacks against a target.")
 
     response = client.post(f"/api/events/{event['id']}/approve")
     assert response.status_code == 200
@@ -87,12 +90,12 @@ def test_approving_event_flips_suggested_type_and_actor_to_active(tmp_path: Path
     assert body["actors"][0]["actor"]["is_active"] is True
 
 
-def test_approval_rejects_a_suggested_type_without_description(tmp_path: Path) -> None:
+def test_approval_allows_an_untyped_draft(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
     extraction = ExtractionResult(events=[ExtractedEvent(
         title="Something",
         summary="Summary.",
-        event_type=ExtractedEventType(suggested="Report", suggested_description=None),
+        event_type=ExtractedEventType(existing=None),
         epistemic_status="confirmed",
         evidence_quote=content,
     )])
@@ -100,17 +103,16 @@ def test_approval_rejects_a_suggested_type_without_description(tmp_path: Path) -
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
     response = client.post(f"/api/events/{event['id']}/approve")
-    assert response.status_code == 422
-    assert response.json()["detail"] == "Add a description before approving this event type."
-    assert client.get(f"/api/events/{event['id']}").json()["review_status"] == "draft"
+    assert response.status_code == 200
+    assert response.json()["event_type"] is None
 
 
-def test_approve_all_skips_a_suggested_type_without_description(tmp_path: Path) -> None:
+def test_approve_all_allows_untyped_drafts(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
     extraction = ExtractionResult(events=[ExtractedEvent(
         title="Something",
         summary="Summary.",
-        event_type=ExtractedEventType(suggested="Report", suggested_description=None),
+        event_type=ExtractedEventType(existing=None),
         epistemic_status="confirmed",
         evidence_quote=content,
     )])
@@ -119,8 +121,8 @@ def test_approve_all_skips_a_suggested_type_without_description(tmp_path: Path) 
     body = client.post(
         f"/api/documents/{document['id']}/events/approve-all"
     ).json()
-    assert body["approved_event_ids"] == []
-    assert body["skipped"][0]["reason"] == "Event type needs a description."
+    assert len(body["approved_event_ids"]) == 1
+    assert body["skipped"] == []
 
 
 def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path) -> None:
@@ -130,7 +132,7 @@ def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path)
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -162,7 +164,7 @@ def test_rejecting_event_never_deletes_it(tmp_path: Path) -> None:
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -188,7 +190,7 @@ def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -246,15 +248,15 @@ def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None
             "title": "Checkpoint closure",
             "summary": "A checkpoint was closed near the bridge.",
             "epistemic_status": "confirmed",
-            "event_type": {"suggested": "Checkpoint"},
+            "event_type": {"existing": "Report"},
             "actors": [{"name": "Local Authority", "role": "source"}],
         },
     )
     assert response.status_code == 201
     body = response.json()
     assert body["review_status"] == "draft"
-    assert body["event_type"]["name"] == "Checkpoint"
-    assert body["event_type"]["is_active"] is False
+    assert body["event_type"]["name"] == "Report"
+    assert body["event_type"]["is_active"] is True
     assert body["sources"][0]["document_id"] == document["id"]
 
 
@@ -267,14 +269,14 @@ def test_document_becomes_completed_only_after_all_draft_events_resolved(
             ExtractedEvent(
                 title="First thing",
                 summary="Summary one.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             ),
             ExtractedEvent(
                 title="Second thing",
                 summary="Summary two.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             ),
@@ -302,14 +304,14 @@ def test_approve_all_skips_events_with_pending_duplicate_flags(tmp_path: Path) -
             ExtractedEvent(
                 title="First thing",
                 summary="Summary one.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             ),
             ExtractedEvent(
                 title="Second thing",
                 summary="Summary two.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             ),
@@ -347,7 +349,7 @@ def test_deleting_draft_event_removes_it_but_preserves_document(tmp_path: Path) 
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -371,7 +373,7 @@ def test_deleting_approved_event_removes_it_but_preserves_document(tmp_path: Pat
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -402,7 +404,7 @@ def test_deleting_rejected_or_merged_event_returns_409(tmp_path: Path, review_st
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )

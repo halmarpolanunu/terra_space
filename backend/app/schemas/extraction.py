@@ -1,24 +1,17 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 EpistemicStatus = Literal["confirmed", "claim", "rumor", "denied"]
 DatePrecision = Literal["exact", "month", "year", "unknown"]
 
 
 class ExtractedEventType(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     existing: str | None = Field(
         default=None,
-        description="Exact name of a supplied active event type; prefer this whenever it fits.",
-    )
-    suggested: str | None = Field(
-        default=None,
-        description="New type name only when no supplied active definition fits.",
-    )
-    suggested_description: str | None = Field(
-        default=None,
-        max_length=1000,
-        description="Draft definition for suggested; null when existing is used.",
+        description="Exact name of a supplied active event type, or null when none fits.",
     )
 
 

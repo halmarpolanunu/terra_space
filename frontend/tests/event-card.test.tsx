@@ -67,6 +67,24 @@ describe("EventCard", () => {
     expect(screen.getAllByText("Not stated").length).toBeGreaterThan(0);
   });
 
+  it("keeps an untyped draft editable without showing a suggested-type label", () => {
+    render(
+      <EventCard
+        actorOptions={[]}
+        approveDisabledReason={null}
+        event={makeEvent({ event_type: null })}
+        eventTypeOptions={[{ id: "active", name: "Diplomatic Statement", description: "Official statement.", is_active: true }]}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Select an active Event Type during review if appropriate.")).toBeVisible();
+    expect(screen.queryByText(/Suggested/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit fields" })).toBeEnabled();
+  });
+
   it("disables Approve when a duplicate flag is pending and enables it when not", () => {
     const { rerender } = render(
       <EventCard
@@ -99,7 +117,7 @@ describe("EventCard", () => {
     render(
       <EventCard
         actorOptions={[]}
-        approveDisabledReason="Add a description in Settings before approving this suggested type."
+        approveDisabledReason="Resolve the duplicate flag below first."
         event={makeEvent()}
         eventTypeOptions={[]}
         onApprove={vi.fn()}
@@ -109,7 +127,7 @@ describe("EventCard", () => {
     );
     expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
     expect(screen.getByText(
-      "Add a description in Settings before approving this suggested type.",
+      "Resolve the duplicate flag below first.",
     )).toBeVisible();
   });
 
@@ -210,5 +228,22 @@ describe("AddEventForm", () => {
       epistemic_status: "claim",
       event_type: undefined,
     });
+  });
+
+  it("submits only a selected active event type", () => {
+    const onSubmit = vi.fn();
+    render(<AddEventForm eventTypeOptions={[
+      { id: "active", name: "Diplomatic Statement", description: "Official statement.", is_active: true },
+      { id: "inactive", name: "Legacy", description: null, is_active: false },
+    ]} onCancel={vi.fn()} onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: "Statement" } });
+    fireEvent.change(screen.getByLabelText(/summary/i), { target: { value: "A statement was issued." } });
+    fireEvent.change(screen.getByLabelText(/evidence quote/i), { target: { value: "statement was issued" } });
+    fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "Diplomatic Statement" } });
+    fireEvent.click(screen.getByRole("button", { name: /add event/i }));
+
+    expect(onSubmit.mock.calls[0][0].event_type).toEqual({ existing: "Diplomatic Statement" });
+    expect(screen.queryByRole("option", { name: "Legacy" })).not.toBeInTheDocument();
   });
 });

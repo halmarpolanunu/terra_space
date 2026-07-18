@@ -26,6 +26,7 @@ export function AddEventForm({ eventTypeOptions, onSubmit, onCancel }: AddEventF
   const selectedType = eventTypeOptions.find(
     (type) => type.name.toLocaleLowerCase() === eventTypeName.trim().toLocaleLowerCase(),
   );
+  const activeEventTypeOptions = eventTypeOptions.filter((type) => type.is_active);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -37,7 +38,7 @@ export function AddEventForm({ eventTypeOptions, onSubmit, onCancel }: AddEventF
       summary,
       evidence_quote: evidenceQuote,
       epistemic_status: epistemicStatus,
-      event_type: eventTypeName.trim() ? { suggested: eventTypeName.trim() } : undefined,
+      event_type: eventTypeName.trim() ? { existing: eventTypeName.trim() } : undefined,
     });
   }
 
@@ -71,21 +72,17 @@ export function AddEventForm({ eventTypeOptions, onSubmit, onCancel }: AddEventF
         </div>
         <div className="field">
           <label htmlFor="add-event-type">Event type</label>
-          <input
+          <select
             id="add-event-type"
-            list="add-event-type-options"
             onChange={(event) => setEventTypeName(event.target.value)}
             value={eventTypeName}
-          />
-          <datalist id="add-event-type-options">
-            {eventTypeOptions.map((eventType) => (
-              <option key={eventType.id} value={eventType.name} />
+          >
+            <option value="">Select an active Event Type</option>
+            {activeEventTypeOptions.map((eventType) => (
+              <option key={eventType.id} value={eventType.name}>{eventType.name}</option>
             ))}
-          </datalist>
-          <EventTypeDescription
-            eventType={selectedType}
-            unmatchedName={selectedType ? undefined : eventTypeName}
-          />
+          </select>
+          <EventTypeDescription eventType={selectedType} />
         </div>
         <div className="field">
           <label>Epistemic status</label>

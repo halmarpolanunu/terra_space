@@ -31,11 +31,11 @@ const TYPES: EventTypeRead[] = [
 describe("EventTypeSettings", () => {
   afterEach(() => vi.clearAllMocks());
 
-  it("distinguishes active and suggested types", () => {
+  it("distinguishes active and inactive types", () => {
     render(<EventTypeSettings eventTypes={TYPES} />);
 
     expect(screen.getByText("Active")).toBeVisible();
-    expect(screen.getByText("Suggested")).toBeVisible();
+    expect(screen.getByText("Inactive")).toBeVisible();
     expect(screen.getByLabelText("Rename Protest").closest("li")).toHaveAttribute(
       "data-motion-item",
       "event-type-row",
@@ -46,7 +46,7 @@ describe("EventTypeSettings", () => {
     render(<EventTypeSettings eventTypes={[]} />);
 
     expect(screen.getByText(/no event types yet/i)).toBeVisible();
-    expect(screen.getByText(/types suggested by the AI/i)).toBeVisible();
+    expect(screen.getByText(/add an event type here before using it in event review/i)).toBeVisible();
     expect(screen.getByLabelText("New event type")).toBeVisible();
   });
 

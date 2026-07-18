@@ -60,7 +60,9 @@ def persist_extraction(
     result = PersistResult()
     source = get_or_create_document_source(db, document)
 
-    existing_event_types = list(db.execute(select(EventType)).scalars())
+    active_event_types = list(
+        db.execute(select(EventType).where(EventType.is_active.is_(True))).scalars()
+    )
     existing_actors = list(db.execute(select(Actor)).scalars())
 
     for event_data in extraction_result.events:
@@ -69,27 +71,9 @@ def persist_extraction(
             result.dropped_events.append(DroppedEvent(title=event_data.title, reason=reason))
             continue
 
-        type_name = event_data.event_type.existing or event_data.event_type.suggested
-        type_is_suggested = (
-            not event_data.event_type.existing
-            and type_name == event_data.event_type.suggested
+        event_type = find_by_exact_name(
+            active_event_types, event_data.event_type.existing or ""
         )
-        event_type = None
-        if type_name:
-            event_type = find_by_exact_name(existing_event_types, type_name)
-            if event_type is None:
-                suggested_description = (
-                    (event_data.event_type.suggested_description or "").strip() or None
-                    if type_is_suggested
-                    else None
-                )
-                event_type = EventType(
-                    name=type_name,
-                    description=suggested_description,
-                    is_active=False,
-                )
-                db.add(event_type)
-                existing_event_types.append(event_type)
 
         event = Event(
             title=event_data.title,

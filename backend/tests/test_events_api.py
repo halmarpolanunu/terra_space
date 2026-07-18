@@ -38,7 +38,14 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
         lm_studio_check=lambda: True,
         lm_studio_client=FakeLmStudioClient(outcomes),
     )
-    return TestClient(app)
+    client = TestClient(app)
+    with app.state.session_factory() as db:
+        db.add_all([
+            EventType(name="Attack", description="Use for attacks against a target.", is_active=True),
+            EventType(name="Report", description="Use for reports of an event.", is_active=True),
+        ])
+        db.commit()
+    return client
 
 
 def _create_and_process_document(client: TestClient, content: str) -> dict:
@@ -85,14 +92,14 @@ def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) ->
     ]
 
 
-def test_events_for_document_expose_suggested_type_and_actor_flags(tmp_path: Path) -> None:
+def test_events_for_document_expose_active_type_and_inactive_actor_flags(tmp_path: Path) -> None:
     content = "A local militia reportedly attacked the fuel depot near Sana'a on 2026-07-10."
     extraction = ExtractionResult(
         events=[
             ExtractedEvent(
                 title="Depot attack",
                 summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(suggested="Attack"),
+                event_type=ExtractedEventType(existing="Attack"),
                 epistemic_status="claim",
                 evidence_quote=content,
                 actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
@@ -110,7 +117,7 @@ def test_events_for_document_expose_suggested_type_and_actor_flags(tmp_path: Pat
     event = events[0]
     assert event["review_status"] == "draft"
     assert event["event_type"]["name"] == "Attack"
-    assert event["event_type"]["is_active"] is False
+    assert event["event_type"]["is_active"] is True
     assert event["actors"][0]["actor"]["name"] == "Local Militia"
     assert event["actors"][0]["actor"]["is_active"] is False
     assert event["actors"][0]["role"] == "source"
@@ -130,7 +137,7 @@ def test_list_for_document_only_returns_events_sourced_from_that_document(
             ExtractedEvent(
                 title="Event A",
                 summary="Summary A.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content_a,
             )
@@ -141,7 +148,7 @@ def test_list_for_document_only_returns_events_sourced_from_that_document(
             ExtractedEvent(
                 title="Event B",
                 summary="Summary B.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content_b,
             )
@@ -164,7 +171,7 @@ def test_get_event_by_id_and_404_when_missing(tmp_path: Path) -> None:
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
@@ -189,7 +196,7 @@ def test_list_all_events_filters_by_review_status(tmp_path: Path) -> None:
             ExtractedEvent(
                 title="Something",
                 summary="Summary.",
-                event_type=ExtractedEventType(suggested="Report"),
+                event_type=ExtractedEventType(existing="Report"),
                 epistemic_status="confirmed",
                 evidence_quote=content,
             )
