@@ -6,8 +6,15 @@ vi.mock("@/lib/settings-api", async () => {
   return { ...actual, createEventType: vi.fn(), updateEventType: vi.fn(), deleteEventType: vi.fn() };
 });
 
+vi.mock("@/lib/events-api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
+  return { ...actual, listEventTypes: vi.fn() };
+});
+
 import { EventTypeSettings } from "@/app/settings/event-type-settings";
+import { EventTypesWorkspace } from "@/app/sense/event-types-workspace";
 import * as settingsApi from "@/lib/settings-api";
+import * as eventsApi from "@/lib/events-api";
 import type { EventTypeRead } from "@/lib/events-api";
 
 const TYPES: EventTypeRead[] = [
@@ -151,5 +158,22 @@ describe("EventTypeSettings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Delete Skirmish" }));
 
     await waitFor(() => expect(settingsApi.deleteEventType).toHaveBeenCalledWith("type-suggested"));
+  });
+});
+
+describe("EventTypesWorkspace", () => {
+  afterEach(() => vi.clearAllMocks());
+
+  it("loads existing types and provides their management controls in Terra Sense", async () => {
+    vi.mocked(eventsApi.listEventTypes).mockResolvedValue(TYPES);
+
+    render(<EventTypesWorkspace />);
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Event Types" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Add event type" })).toBeVisible();
+    expect(screen.getByLabelText("Rename Protest")).toBeVisible();
+    expect(screen.getByLabelText("Active: Protest")).toBeVisible();
+    expect(screen.getByLabelText("Active: Skirmish")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Delete Skirmish" })).toBeVisible();
   });
 });

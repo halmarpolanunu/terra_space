@@ -4,23 +4,19 @@ import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
-import { EventTypeSettings } from "@/app/settings/event-type-settings";
 import { LmStudioSettings } from "@/app/settings/lm-studio-settings";
-import { listEventTypes, type EventTypeRead } from "@/lib/events-api";
 import { getSettings, type Settings } from "@/lib/settings-api";
 
 export function SettingsWorkspace() {
   const [settings, setSettings] = useState<Settings>();
-  const [eventTypes, setEventTypes] = useState<EventTypeRead[]>();
   const [error, setError] = useState<string>();
 
   useEffect(() => {
     let active = true;
-    void Promise.all([getSettings(), listEventTypes()])
-      .then(([nextSettings, nextTypes]) => {
+    void getSettings()
+      .then((nextSettings) => {
         if (!active) return;
         setSettings(nextSettings);
-        setEventTypes(nextTypes);
         setError(undefined);
       })
       .catch(() => {
@@ -31,13 +27,13 @@ export function SettingsWorkspace() {
     };
   }, []);
 
-  const loaded = settings !== undefined && eventTypes !== undefined;
+  const loaded = settings !== undefined;
 
   return (
     <AppShell currentPath="/settings">
       <section aria-labelledby="settings-title" className="settings-page">
         <PageHeader
-          description="Configure local processing and manage the event types used across Terra Space."
+          description="Configure the local LM Studio connection used to process documents."
           eyebrow="Local configuration"
           title="Settings"
           titleId="settings-title"
@@ -47,7 +43,10 @@ export function SettingsWorkspace() {
         {loaded && (
           <div className="settings-grid">
             <LmStudioSettings onSaved={setSettings} settings={settings} />
-            <EventTypeSettings eventTypes={eventTypes} />
+            <p className="settings-hint">
+              Event types affect local AI classification and are managed in Terra Sense. {" "}
+              <a href="/sense/event-types">Manage Event Types in Terra Sense</a>
+            </p>
           </div>
         )}
       </section>

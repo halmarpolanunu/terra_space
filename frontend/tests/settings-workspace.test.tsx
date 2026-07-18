@@ -18,7 +18,6 @@ vi.mock("@/lib/api", async () => {
 
 import { SettingsWorkspace } from "@/app/settings/settings-workspace";
 import * as settingsApi from "@/lib/settings-api";
-import * as eventsApi from "@/lib/events-api";
 
 const SETTINGS = {
   lm_studio_base_url: "http://host.docker.internal:1234",
@@ -31,7 +30,6 @@ describe("SettingsWorkspace", () => {
 
   it("keeps a single Settings heading while loading", () => {
     vi.mocked(settingsApi.getSettings).mockReturnValue(new Promise(() => {}));
-    vi.mocked(eventsApi.listEventTypes).mockReturnValue(new Promise(() => {}));
 
     render(<SettingsWorkspace />);
 
@@ -39,22 +37,23 @@ describe("SettingsWorkspace", () => {
     expect(screen.getByText(/loading settings/i)).toBeVisible();
   });
 
-  it("shows the panels once settings and types load", async () => {
+  it("shows LM Studio settings and links Event Types to Terra Sense", async () => {
     vi.mocked(settingsApi.getSettings).mockResolvedValue(SETTINGS);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([
-      { id: "type-1", name: "Protest", description: null, is_active: true, in_use: false },
-    ]);
 
     render(<SettingsWorkspace />);
 
     expect(await screen.findByLabelText(/base url/i)).toBeVisible();
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-    expect(screen.getByLabelText("Rename Protest")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "LM Studio connection" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Event types" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /manage event types in terra sense/i })).toHaveAttribute(
+      "href",
+      "/sense/event-types",
+    );
   });
 
   it("keeps the heading and shows an error when loading fails", async () => {
     vi.mocked(settingsApi.getSettings).mockRejectedValue(new Error("backend down"));
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
 
     render(<SettingsWorkspace />);
 
