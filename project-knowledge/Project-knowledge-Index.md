@@ -52,11 +52,9 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Document Metadata Extraction Context Plan](plans/2026-07-18-document-metadata-extraction-context.md) - sends title and source dates to local AI without treating them as event facts
 - [Single Source Date and Event Date Implementation Plan](plans/2026-07-18-single-source-date-event-date.md) - approved simplification to one document date and one event date, ready for implementation
 - [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md) - implementation plan for grouped navigation, a read-only Terra Sense flow monitor, and Event Types inside Terra Sense
-- [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md) - investigate and redesign the document-to-draft-event workflow before implementation
-- [UI Background Re-polish Plan](plans/2026-07-17-ui-background-repolish.md) - reassess the unique amber-on-black route backgrounds
+- [Deferred UI Polish Plan (Backgrounds and Settings)](plans/2026-07-17-ui-polish-deferred.md) - merged plan covering both the route backgrounds and the Settings layout
 - [Globe Halo Zoom Behavior Plan](plans/2026-07-17-globe-halo-zoom-behavior.md) - make the globe halo behave correctly while zooming in and out
 - [Globe Backside Node Visibility Plan](plans/2026-07-17-globe-backside-node-visibility.md) - hide location nodes on the far side of the globe
-- [Settings UI and UX Polish Plan](plans/2026-07-17-settings-ui-ux-polish.md) - simplify Settings so essential user choices appear before technical details
 
 ## Reading rule
 

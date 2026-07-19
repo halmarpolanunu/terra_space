@@ -8,6 +8,31 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-19 - UI Background Re-polish and Settings UI/UX Polish plans merged
+
+- At the owner's request ("merge point 4 & 5, since its the same"), merged
+  [UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
+  [Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md) into one new
+  [Deferred UI Polish Plan (Backgrounds and Settings)](plans/2026-07-17-ui-polish-deferred.md),
+  since both were the same kind of item: a deferred visual/UX polish pass shown to the owner once as
+  a concrete review artifact and put off without a direction ("nanti saja" for each). The two
+  original plans are marked `status: superseded` with their content preserved and a pointer to the
+  merged plan, rather than deleted. Updated the Project Knowledge Index, and both places in Current
+  Status that referenced the two separate plans, to point at the merged plan instead. No code
+  changed; the actual scope of the two original plans is unchanged, only their tracking is combined.
+
+## 2026-07-19 - Event Detection Reconsideration Plan scrapped
+
+- At the owner's explicit request ("scrap point number 7 ... since its should had been done"),
+  marked the [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md)
+  `status: superseded` instead of deleting it. Its own investigation questions were effectively
+  already answered by separate completed work: the extraction location prompt and document
+  metadata context fixes, the Event Type Descriptions and Closed Event Type Taxonomy decisions, and
+  the Event Taxonomy Tree. Removed it from the Project Knowledge Index's active reading list and
+  from Current Status's list of not-yet-started initiatives (now just the Local Supabase Migration).
+  No diagram or baseline measurement set was ever produced under this plan, so this is a scope call,
+  not a literal completion of every original deliverable.
+
 ## 2026-07-19 - Globe fixes shipped, repository tidied to a single `main` branch
 
 - Fixed [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md) (symmetric fade

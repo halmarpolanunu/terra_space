@@ -35,17 +35,18 @@ plan's own Resolution note for detail. **Owner follow-up still open:** neither f
 confirmed by the owner in their real browser yet — recommend checking once approved events with
 resolved locations exist again (see Next actions).
 
-**Two backlog items are explicitly deferred at the owner's request, not abandoned:**
-[UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
-[Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md). A concrete side-by-side
-review artifact was prepared and shown to the owner (all six current route backgrounds together,
-plus a current-vs-proposed Settings mockup separating everyday controls — connection status, model
-choice — from an "Advanced connection settings" disclosure holding the base URL, test-connection
-button, and processing timeout). The owner looked at it and said "background nanti saja" then
-"nanti saja juga" for Settings — **both plans remain `status: planned`, no code changed for either,
+**One backlog item is explicitly deferred at the owner's request, not abandoned:** the
+[Deferred UI Polish Plan (Backgrounds and Settings)](plans/2026-07-17-ui-polish-deferred.md) —
+merged from two separate plans at the owner's request ("merge point 4 & 5, since its the same") — a
+route-backgrounds scope and a Settings-layout scope. A concrete side-by-side review artifact was
+prepared and shown to the owner (all six current route backgrounds together, plus a
+current-vs-proposed Settings mockup separating everyday controls — connection status, model choice
+— from an "Advanced connection settings" disclosure holding the base URL, test-connection button,
+and processing timeout). The owner looked at it and said "background nanti saja" then "nanti saja
+juga" for Settings — **the merged plan remains `status: planned`, no code changed for either scope,
 and no owner decision was recorded on the actual direction.** When picked back up, start by asking
 the owner for their reaction to that same review artifact (or a fresh one) rather than assuming a
-direction — neither plan's own required "show the owner concrete options" step has been completed
+direction — neither scope's own required "show the owner concrete options" step has been completed
 yet, only attempted.
 
 **Also fixed this session:** two roadmap/plan documents were stale relative to the actual shipped
@@ -757,12 +758,12 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 
 ## Next actions
 
-- When the owner is ready to resume the UI-polish backlog: for
-  [UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
-  [Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md), start by asking what
-  specifically they want different (or showing a review artifact again) — both were only shown
-  once, not yet discussed in any detail, and the owner deferred both without giving a direction.
-  Do not guess a direction and start generating assets or changing the Settings layout.
+- When the owner is ready to resume the UI-polish backlog: for the
+  [Deferred UI Polish Plan (Backgrounds and Settings)](plans/2026-07-17-ui-polish-deferred.md),
+  start by asking what specifically they want different (or showing a review artifact again) — both
+  scopes were only shown once, not yet discussed in any detail, and the owner deferred both without
+  giving a direction. Do not guess a direction and start generating assets or changing the Settings
+  layout.
 - Ask the owner to check the two deployed globe fixes
   ([Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md),
   [Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md)) in their
@@ -780,10 +781,13 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
   only confirmation so far used an isolated, fully torn-down test stack, not the live database) —
   this is the same blocker as the globe-fix confirmation above, so one round of approving real
   events would unblock both checks at once.
-- Two larger, not-yet-started owner-requested initiatives remain further out:
-  [Local Supabase Migration](plans/2026-07-17-local-supabase-migration.md) and
-  [Event Detection Reconsideration](plans/2026-07-17-event-detection-reconsideration.md) (the
-  latter is an open-ended investigation, not yet a concrete plan).
+- One larger, not-yet-started owner-requested initiative remains further out:
+  [Local Supabase Migration](plans/2026-07-17-local-supabase-migration.md).
+  The [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md)
+  was scrapped at the owner's request on 2026-07-19 (`status: superseded`): its own questions were
+  effectively already answered by other, already-completed work (extraction prompt/grounding fixes,
+  event type descriptions and classification rules, the Event Taxonomy Tree). See the plan's own
+  "Superseded" note for the specific items that covered it.
 
 ## Related knowledge
 

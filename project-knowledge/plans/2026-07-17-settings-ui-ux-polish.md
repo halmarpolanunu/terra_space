@@ -3,11 +3,18 @@ type: Design Plan
 title: Settings UI and UX Polish Plan
 description: Simplify the Settings menu so everyday users see essential choices first and technical controls appear only when needed.
 tags: [settings, ui, ux, design]
-status: planned
+status: superseded
 okf_version: "0.1"
 ---
 
 # Settings UI and UX Polish Plan
+
+## Superseded (2026-07-19)
+
+Merged with [UI Background Re-polish](2026-07-17-ui-background-repolish.md) into the
+[Deferred UI Polish Plan](2026-07-17-ui-polish-deferred.md) at the owner's request ("merge point 4
+& 5, since its the same") - both were the same kind of deferred, not-yet-directed polish item. This
+file's content is preserved below unchanged; continue work in the merged plan instead.
 
 ## Goal
 
