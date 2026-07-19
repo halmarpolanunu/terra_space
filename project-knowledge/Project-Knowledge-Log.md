@@ -8,6 +8,32 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-19 - Globe fixes shipped, repository tidied to a single `main` branch
+
+- Fixed [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md) (symmetric fade
+  zooming in or out from rest, not just zoom-in) and
+  [Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md) (pins and
+  clusters on the far side of the globe now hidden via a self-built spherical-geometry check, after
+  finding MapLibre's own occlusion API does not work in this app's setup). Verified with 190
+  frontend tests, clean lint, and a successful build; deployed to the owner's live containers.
+  Neither has been visually confirmed by the owner in their real browser yet (see
+  [Current Status](Current-Status.md) for why — no approved events with locations exist right now).
+- Prepared and showed the owner a side-by-side review artifact for the two remaining backlog items
+  ([UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
+  [Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md)): all six current route
+  backgrounds together, and a current-vs-proposed Settings mockup. The owner deferred both without
+  giving a direction ("nanti saja") — both plans remain `status: planned` with no code changed.
+- Fixed two stale Project Knowledge records found while investigating what to work on next: the
+  [Terra Insight and Terra Sense Organization](plans/2026-07-18-terra-insight-terra-sense-organization.md)
+  plan was still marked `planned` despite being fully implemented and shipped, and `Roadmap.md`'s
+  "Deferred Beyond MVP" list still named hierarchical taxonomy as deferred despite the Event
+  Taxonomy Tree now being in the MVP.
+- At the owner's explicit request ("saya ingin rapi"), tidied the repository: committed the globe
+  fixes plus the Event Taxonomy Tree work (previous entry below) as two commits on
+  `terra-insight-sense`, fast-forward merged that branch into `main` (clean, no conflicts), pushed
+  `main` to GitHub, then deleted `terra-insight-sense` on both GitHub and locally. The repository
+  now has only `main` and the pre-existing `Terra-Space-V1-backup` branch.
+
 ## 2026-07-19 - Event Taxonomy tree delivered and applied to the live database
 
 - Completed the [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md):

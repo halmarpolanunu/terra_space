@@ -3,7 +3,7 @@ type: Implementation Plan
 title: Event Taxonomy Tree Implementation Plan
 description: Safely introduces the approved four-level Event Taxonomy tree and tree-plus-inspector workspace.
 tags: [project-knowledge, plan, event-types, taxonomy, terra-sense]
-status: in-progress
+status: completed
 okf_version: "0.1"
 ---
 
@@ -266,16 +266,13 @@ nodes (3 domains, 6 categories, 12 subcategories, 12 leaves), no Airstrike, empt
 \`PRAGMA foreign_key_check\`, and unchanged event/event-type/document counts. Inspected
 \`/sense/event-types\`, \`/events\`, and \`/event-review\` read-only in the owner's real browser.
 
-- [ ] **Step 4: Final documentation and commit**
+- [x] **Step 4: Final documentation and commit**
 
-Documentation is recorded in Current-Status.md. Commit is intentionally **not done yet** — the owner
-has not asked for one. When ready:
-
-~~~powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Validate-ProjectKnowledge.ps1
-git add project-knowledge
-git commit -m "feat: deliver event taxonomy tree"
-~~~
+Documentation recorded in Current-Status.md. Committed as `feat: deliver Event Taxonomy tree and
+prior uncommitted feature work` (`0973b2d`), merged to `main`, and pushed to GitHub at the owner's
+request. The commit message notes it bundles this plan with several earlier, already-verified
+features that had also accumulated uncommitted — see Current-Status.md for why they couldn't be
+split into separate commits.
 
 ## Self-review
 
@@ -285,12 +282,10 @@ git commit -m "feat: deliver event taxonomy tree"
 - Task 5 covers backup, migration, automated verification, and documentation.
 - Types appear before use: \`TaxonomyNode\`, \`TaxonomyPathSegment\`, \`EventTypeRead.taxonomy_path\`, then \`KnownEventType.path\`.
 
-## Pause and continuation note (2026-07-19)
+## Completion note (2026-07-19)
 
-All five tasks are now implemented and verified, including the live migration (see
-[Current-Status.md](../Current-Status.md) for full detail). The only remaining step is Task 5's
-own Step 4 commit, which is deliberately deferred until the owner asks for it — nothing in this
-plan (Tasks 1–5) is committed to git yet.
+All five tasks are implemented, verified, applied to the owner's live database, committed, merged
+to `main`, and pushed to GitHub (see [Current-Status.md](../Current-Status.md) for full detail).
 
 Summary of what happened, in order: Tasks 1–3 (backend) were reviewed/verified first (187/187
 backend tests, including a fix for 6 stale test fixtures and a confirmed-correct approval guard).

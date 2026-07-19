@@ -10,10 +10,15 @@ status: active
 
 ## Current focus
 
-After the Event Taxonomy Tree work (below) was committed and pushed, the owner asked to tackle the
-small remaining UI-polish backlog. Two of the four items are done and verified but **not yet
-committed, not yet deployed to the owner's live containers, and not yet visually confirmed by the
-owner**:
+**Everything below in this section is done, committed, merged to `main`, pushed to GitHub, and
+(where it touches the running app) deployed to the owner's live containers.** Git housekeeping: all
+of this session's work landed as two commits on the `terra-insight-sense` branch, that branch was
+fast-forward merged into `main` (no conflicts — `main` was a strict ancestor), `main` was pushed to
+GitHub, and `terra-insight-sense` was deleted both on GitHub and locally at the owner's explicit
+request ("saya ingin rapi"). The repository now has only `main` and the pre-existing
+`Terra-Space-V1-backup` branch. Nothing about this housekeeping changed application code or data.
+
+Two small UI-polish items are done and deployed:
 
 - [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md): the decorative globe
   ring now fades out symmetrically whether the user zooms in or out from rest, not just zoom-in as
@@ -23,15 +28,25 @@ owner**:
   check (`isBehindGlobe` in `frontend/src/components/world-map.tsx`) after discovering MapLibre's
   own `isLocationOccluded` occlusion API does not work in this app's setup.
 
-Both verified with the full 190-test frontend suite, clean lint, a successful production build, and
-focused new tests. A live-browser pixel check for the backside-visibility fix was attempted in an
-isolated container but blocked by unrelated environment friction (the test map's tiles never
-finished loading); see the plan's own Resolution note for detail and the recommended owner
-follow-up check. The remaining two backlog items —
+Both verified with the full 190-test frontend suite, clean lint, and a successful production build.
+A live-browser pixel check for the backside-visibility fix was attempted in an isolated container
+but blocked by unrelated environment friction (the test map's tiles never finished loading); see the
+plan's own Resolution note for detail. **Owner follow-up still open:** neither fix has been visually
+confirmed by the owner in their real browser yet — recommend checking once approved events with
+resolved locations exist again (see Next actions).
+
+**Two backlog items are explicitly deferred at the owner's request, not abandoned:**
 [UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
-[Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md) — are genuine design-taste
-decisions and have **not started**; both explicitly require showing the owner concrete options
-before implementing.
+[Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md). A concrete side-by-side
+review artifact was prepared and shown to the owner (all six current route backgrounds together,
+plus a current-vs-proposed Settings mockup separating everyday controls — connection status, model
+choice — from an "Advanced connection settings" disclosure holding the base URL, test-connection
+button, and processing timeout). The owner looked at it and said "background nanti saja" then
+"nanti saja juga" for Settings — **both plans remain `status: planned`, no code changed for either,
+and no owner decision was recorded on the actual direction.** When picked back up, start by asking
+the owner for their reaction to that same review artifact (or a fresh one) rather than assuming a
+direction — neither plan's own required "show the owner concrete options" step has been completed
+yet, only attempted.
 
 **Also fixed this session:** two roadmap/plan documents were stale relative to the actual shipped
 code — [Terra Insight and Terra Sense Organization](plans/2026-07-18-terra-insight-terra-sense-organization.md)
@@ -44,9 +59,9 @@ frontmatter.
 ---
 
 The owner-approved [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md)
-is now **fully implemented, verified, and applied to the owner's live database**. Work happened in
-the shared dirty `terra-insight-sense` workspace by owner approval. **None of it is committed to git
-yet** — the owner has not asked for a commit.
+is now **fully implemented, verified, applied to the owner's live database, and committed** (see the
+git housekeeping note above — this landed in the first of two commits, `feat: deliver Event Taxonomy
+tree and prior uncommitted feature work`).
 
 Backend (Tasks 1–3), all verified with the full 187-test isolated backend suite:
 
@@ -139,9 +154,11 @@ Task 5 (verify, back up, and safely migrate the live database) is **complete**:
   confirmed read-only in the owner's real browser, alongside the new Event Taxonomy page rendering
   correctly with live data.
 
-Not yet done: committing any of this work to git (deliberately deferred — the owner has not asked for
-a commit) and marking this plan `completed` (see the plan file's own pause/update notes for the exact
-remaining documentation step).
+This work is now committed, merged to `main`, and pushed (see the git housekeeping note at the top
+of this section). The plan file's own status is `in-progress`, not yet flipped to `completed` — its
+Task 5 Step 4 checklist still shows the commit step unchecked even though the commit happened as
+part of a combined commit with other pending work; update that plan's checkbox in a future session
+if it matters, but the substance is done and live.
 
 The owner-approved [Single Source Date and Event Date Implementation Plan](plans/2026-07-18-single-source-date-event-date.md)
 is implemented, verified, and applied safely to the owner's live database. Documents now use one required, non-blank `Publication Date` (defined
@@ -740,9 +757,19 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 
 ## Next actions
 
-- Ask the owner to review and approve the
-  [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md).
-  Do not change screens, navigation, routes, backend behavior, or data until approval is explicit.
+- When the owner is ready to resume the UI-polish backlog: for
+  [UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
+  [Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md), start by asking what
+  specifically they want different (or showing a review artifact again) — both were only shown
+  once, not yet discussed in any detail, and the owner deferred both without giving a direction.
+  Do not guess a direction and start generating assets or changing the Settings layout.
+- Ask the owner to check the two deployed globe fixes
+  ([Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md),
+  [Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md)) in their
+  real browser — neither has been visually confirmed there yet, only via automated tests and manual
+  geometry verification. This needs at least one approved event with a resolved location; all 12 of
+  the owner's current events are `rejected`, so there is nothing on the globe to check against right
+  now unless the owner approves something first.
 - Confirm with the owner, with an actual before/after location count, whether the improved
   extraction prompt reliably populates locations across more than one document — only one real
   document has been reprocessed against it so far ("seems good for now", not yet precisely
@@ -750,8 +777,13 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
   model (`qwen/qwen3.5-9b`) rather than something further prompt changes can fix.
 - Once approved events with resolved locations exist in the owner's live database again, do a
   direct visual check of the cluster marker and "Unresolved locations" list against real data (the
-  only confirmation so far used an isolated, fully torn-down test stack, not the live database).
-- Review the completed desktop experience at the target resolution when the owner is ready.
+  only confirmation so far used an isolated, fully torn-down test stack, not the live database) —
+  this is the same blocker as the globe-fix confirmation above, so one round of approving real
+  events would unblock both checks at once.
+- Two larger, not-yet-started owner-requested initiatives remain further out:
+  [Local Supabase Migration](plans/2026-07-17-local-supabase-migration.md) and
+  [Event Detection Reconsideration](plans/2026-07-17-event-detection-reconsideration.md) (the
+  latter is an open-ended investigation, not yet a concrete plan).
 
 ## Related knowledge
 
