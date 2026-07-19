@@ -52,12 +52,22 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 - [x] **Verify end-to-end flow** - document draft, batch processing, review, approval, Events, and Dashboard are exercised across the documents, event-review, and events-dashboard browser scenarios. Status: completed.
 - [x] **Verify offline and failure cases** - LM Studio offline (foundation scenario), partial batch failure and retry recovery (settings scenario and backend tests), reprocessing confirmation, and incomplete time/location and duplicate handling (events-dashboard and event-review scenarios) are all covered. Status: completed.
 
-## Planned Product Organization
+## Product Organization
 
-- [ ] **Organize the product around Terra Insight and Terra Sense** - group approved-event
-  presentation and analysis under Terra Insight; group source intake, processing visibility, and
-  Event Review under Terra Sense. The currently implemented navigation remains unchanged until a
-  dedicated implementation plan is approved. Status: planned.
+- [x] **Organize the product around Terra Insight and Terra Sense** - navigation is grouped into
+  Terra Insight (Dashboard, Events), Terra Sense (Overview, Sources, Event Review, Event Taxonomy),
+  and Settings (Local AI). Terra Sense has a read-only pipeline overview at `/sense`. See the
+  [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md).
+  Status: completed.
+
+## Event Taxonomy Tree
+
+- [x] **Owner-managed hierarchical Event Taxonomy** - a Domain -> Category -> Subcategory -> Event
+  Type tree replaces the flat Event Type list in Terra Sense. Only the Event Type leaf is
+  assignable to an event or selectable by local AI; local AI may never suggest or create a new
+  type. See the [Event Taxonomy Tree and Management](decisions/Event-Taxonomy-Tree-and-Management.md)
+  decision and its [implementation plan](plans/2026-07-19-event-taxonomy-tree.md), applied to the
+  owner's live database. Status: completed.
 
 ## Deferred Beyond MVP
 
@@ -67,7 +77,8 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 - OCR, image recognition, VLM processing, PDF upload, and DOCX upload.
 - Cloud AI fallback.
 - Knowledge graph and complex actor relationships.
-- Hierarchical taxonomy, synonyms, taxonomy merge, and taxonomy versioning.
+- Taxonomy synonyms, taxonomy merge, and taxonomy versioning (the tree structure itself is now in
+  the MVP; only these further extensions remain deferred).
 - Automatic event merge.
 - Specific address, building, village, road, or point-of-interest geocoding.
 - Automatic ingestion from websites or APIs.

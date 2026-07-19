@@ -10,6 +10,39 @@ status: active
 
 ## Current focus
 
+After the Event Taxonomy Tree work (below) was committed and pushed, the owner asked to tackle the
+small remaining UI-polish backlog. Two of the four items are done and verified but **not yet
+committed, not yet deployed to the owner's live containers, and not yet visually confirmed by the
+owner**:
+
+- [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md): the decorative globe
+  ring now fades out symmetrically whether the user zooms in or out from rest, not just zoom-in as
+  before.
+- [Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md): event pins
+  and clusters on the far side of the globe are now hidden, using a self-built spherical-geometry
+  check (`isBehindGlobe` in `frontend/src/components/world-map.tsx`) after discovering MapLibre's
+  own `isLocationOccluded` occlusion API does not work in this app's setup.
+
+Both verified with the full 190-test frontend suite, clean lint, a successful production build, and
+focused new tests. A live-browser pixel check for the backside-visibility fix was attempted in an
+isolated container but blocked by unrelated environment friction (the test map's tiles never
+finished loading); see the plan's own Resolution note for detail and the recommended owner
+follow-up check. The remaining two backlog items —
+[UI Background Re-polish](plans/2026-07-17-ui-background-repolish.md) and
+[Settings UI and UX Polish](plans/2026-07-17-settings-ui-ux-polish.md) — are genuine design-taste
+decisions and have **not started**; both explicitly require showing the owner concrete options
+before implementing.
+
+**Also fixed this session:** two roadmap/plan documents were stale relative to the actual shipped
+code — [Terra Insight and Terra Sense Organization](plans/2026-07-18-terra-insight-terra-sense-organization.md)
+was still marked `planned` despite being fully implemented (grouped navigation, `/sense` overview,
+Event Types moved into Terra Sense, all confirmed present in the running code and git history), and
+`Roadmap.md`'s "Deferred Beyond MVP" list still named hierarchical taxonomy as deferred despite the
+Event Taxonomy Tree now being in the MVP. Both are corrected in `Roadmap.md` and the plan's own
+frontmatter.
+
+---
+
 The owner-approved [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md)
 is now **fully implemented, verified, and applied to the owner's live database**. Work happened in
 the shared dirty `terra-insight-sense` workspace by owner approval. **None of it is committed to git

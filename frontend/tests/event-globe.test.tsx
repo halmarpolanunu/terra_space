@@ -7,12 +7,15 @@ const map = {
   addSource: vi.fn(),
   getBearing: vi.fn(() => 0),
   getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
+  getCenter: vi.fn(() => ({ lng: 0, lat: 20 })),
+  getLayer: vi.fn(() => true),
   getSource: vi.fn(() => source),
   getZoom: vi.fn(() => 2.2),
   off: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),
   rotateTo: vi.fn(),
+  setFilter: vi.fn(),
   setPaintProperty: vi.fn(),
   setSky: vi.fn(),
   setProjection: vi.fn(),
@@ -28,6 +31,7 @@ vi.mock("maplibre-gl", () => ({
         element,
         setLngLat: vi.fn().mockReturnThis(),
         addTo: vi.fn().mockReturnThis(),
+        getElement: vi.fn(() => element),
         remove: vi.fn(() => {
           const index = markerInstances.indexOf(instance);
           if (index !== -1) markerInstances.splice(index, 1);

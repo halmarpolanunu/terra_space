@@ -3,7 +3,7 @@ type: Implementation Plan
 title: Terra Insight and Terra Sense Organization Implementation Plan
 description: Safely reorganize the existing single local-first application into Terra Insight and Terra Sense, with a read-only Terra Sense pipeline monitor and event-type settings inside Terra Sense.
 tags: [terra-insight, terra-sense, navigation, pipeline, event-types, mvp]
-status: planned
+status: completed
 okf_version: "0.1"
 ---
 

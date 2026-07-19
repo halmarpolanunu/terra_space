@@ -66,6 +66,24 @@ function wrapLongitude(lng: number): number {
   return ((lng + 180) % 360 + 360) % 360 - 180;
 }
 
+type LngLat = { lng: number; lat: number };
+
+// A point is on the far side of the globe from the viewer when it is more than a
+// quarter-turn (90 degrees) of great-circle angle away from the point currently facing
+// the viewer (the map's center, for this orthographic-style globe view). MapLibre's own
+// `transform.isLocationOccluded` does not reliably report this for our circle-layer pins
+// and marker-based clusters in this setup, so this is computed directly instead.
+export function isBehindGlobe(center: LngLat, point: LngLat): boolean {
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const centerLatRad = toRadians(center.lat);
+  const pointLatRad = toRadians(point.lat);
+  const deltaLngRad = toRadians(point.lng - center.lng);
+  const cosAngle =
+    Math.sin(centerLatRad) * Math.sin(pointLatRad) +
+    Math.cos(centerLatRad) * Math.cos(pointLatRad) * Math.cos(deltaLngRad);
+  return cosAngle < 0;
+}
+
 function applySelectedPinPaint(
   map: maplibregl.Map,
   selectedEventId: string | undefined,
@@ -154,6 +172,8 @@ export function WorldMap({
   const clustersRef = useRef(clusters);
   const clusterSelectionRef = useRef(onClusterSelect);
   const clusterMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const isGlobeModeRef = useRef(true);
+  const updatePinOcclusionRef = useRef<() => void>(() => {});
   const projectionModeChangeRef = useRef(onProjectionModeChange);
   const selectedEventRef = useRef(selectedEventId);
   const selectionRef = useRef(onFeatureSelect);
@@ -231,15 +251,38 @@ export function WorldMap({
       const wrapper = container.current?.parentElement;
       if (!wrapper) return;
       // The decorative ring is sized for the resting globe view; fade it out as the
-      // user zooms in so it stops sitting on top of the enlarged globe surface.
-      const opacity = Math.max(0, Math.min(1, 1 - (map.getZoom() - restingZoom) / 2));
+      // user zooms away from that view in either direction, so it never sits on top of
+      // an enlarged globe surface (zoomed in) or floats oversized around a shrunken one
+      // (zoomed out).
+      const opacity = Math.max(0, Math.min(1, 1 - Math.abs(map.getZoom() - restingZoom) / 2));
       wrapper.style.setProperty("--globe-ring-opacity", opacity.toString());
     };
+    const updatePinOcclusion = () => {
+      if (!isGlobeModeRef.current) return;
+      const center = map.getCenter();
+      const visibleEventIds = pinsRef.current.features
+        .filter((feature) => !isBehindGlobe(center, {
+          lng: feature.geometry.coordinates[0],
+          lat: feature.geometry.coordinates[1],
+        }))
+        .map((feature) => feature.properties.eventId);
+      const pinFilter: ExpressionSpecification = ["in", ["get", "eventId"], ["literal", visibleEventIds]];
+      if (map.getLayer(EVENT_PIN_LAYER_ID)) map.setFilter(EVENT_PIN_LAYER_ID, pinFilter);
+      if (map.getLayer(EVENT_PIN_HALO_LAYER_ID)) map.setFilter(EVENT_PIN_HALO_LAYER_ID, pinFilter);
+      clusterMarkersRef.current.forEach((marker, index) => {
+        const cluster = clustersRef.current[index];
+        if (!cluster) return;
+        const occluded = isBehindGlobe(center, { lng: cluster.coordinates[0], lat: cluster.coordinates[1] });
+        marker.getElement().style.display = occluded ? "none" : "";
+      });
+    };
+    updatePinOcclusionRef.current = updatePinOcclusion;
     const handleLoad = () => {
       try {
         map.setProjection({ type: "globe" });
         projectionModeChangeRef.current?.("globe");
       } catch {
+        isGlobeModeRef.current = false;
         setFlatFallback(true);
         projectionModeChangeRef.current?.("flat");
       }
@@ -302,11 +345,13 @@ export function WorldMap({
       syncClusterMarkers(map, clustersRef.current, clusterMarkersRef, clusterSelectionRef);
       mapLoaded.current = true;
       updateGlobeRingOpacity();
+      updatePinOcclusion();
     };
 
     map.on("error", handleMapError);
     map.on("load", handleLoad);
     map.on("zoom", updateGlobeRingOpacity);
+    map.on("move", updatePinOcclusion);
 
     // Tracks genuine user input only (not MapLibre's "idle"/"move" events, which the
     // continuous pin-halo style transition and the rotation's own camera movement would
@@ -349,6 +394,7 @@ export function WorldMap({
       map.off("error", handleMapError);
       map.off("load", handleLoad);
       map.off("zoom", updateGlobeRingOpacity);
+      map.off("move", updatePinOcclusion);
       map.off("click", EVENT_PIN_LAYER_ID, handlePinClick);
       map.off("mouseenter", EVENT_PIN_LAYER_ID, handlePinMouseEnter);
       map.off("mouseleave", EVENT_PIN_LAYER_ID, handlePinMouseLeave);
@@ -378,6 +424,7 @@ export function WorldMap({
     source?.setData(geojson);
     applySelectedPinPaint(mapRef.current, selectedEventId, pinPulseExpanded.current);
     syncClusterMarkers(mapRef.current, clusters, clusterMarkersRef, clusterSelectionRef);
+    updatePinOcclusionRef.current();
   }, [clusters, geojson, onClusterSelect, onFeatureSelect, onProjectionModeChange, selectedEventId]);
 
   if (unavailable) {

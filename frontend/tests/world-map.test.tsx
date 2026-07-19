@@ -9,6 +9,7 @@ const map = {
   addSource: vi.fn(),
   getCanvas: vi.fn(() => ({ style: { cursor: "" } })),
   getCenter: vi.fn(() => mapCenter),
+  getLayer: vi.fn(() => true),
   getSource: vi.fn(),
   getZoom: vi.fn(() => 2.2),
   jumpTo: vi.fn((options: { center: [number, number] }) => {
@@ -17,6 +18,7 @@ const map = {
   off: vi.fn(),
   on: vi.fn(),
   remove: vi.fn(),
+  setFilter: vi.fn(),
   setPaintProperty: vi.fn(),
   setSky: vi.fn(),
   setProjection: vi.fn(),
@@ -33,6 +35,7 @@ vi.mock("maplibre-gl", () => ({
         element,
         setLngLat: vi.fn().mockReturnThis(),
         addTo: vi.fn().mockReturnThis(),
+        getElement: vi.fn(() => element),
         remove: vi.fn(() => {
           const index = markerInstances.indexOf(instance);
           if (index !== -1) markerInstances.splice(index, 1);
@@ -50,6 +53,7 @@ vi.mock("pmtiles", () => ({
 }));
 
 import {
+  isBehindGlobe,
   EVENT_PIN_HALO_LAYER_ID,
   EVENT_PIN_LAYER_ID,
   MAP_UNAVAILABLE_MESSAGE,
@@ -370,6 +374,75 @@ describe("offline world map configuration", () => {
     expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0");
   });
 
+  it("also fades the decorative globe ring symmetrically as the user zooms out from rest", () => {
+    let zoom = 2.2;
+    let zoomListener: (() => void) | undefined;
+    map.getZoom.mockImplementation(() => zoom);
+    map.setProjection.mockImplementation(() => undefined);
+    map.setSky.mockImplementation(() => undefined);
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      if (event === "zoom" && typeof listener === "function") zoomListener = listener as () => void;
+      return map;
+    });
+
+    const { container } = render(<WorldMap />);
+    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("1");
+
+    zoom = 1.2;
+    zoomListener?.();
+    expect(Number(container.style.getPropertyValue("--globe-ring-opacity"))).toBeCloseTo(0.5, 5);
+
+    zoom = 0.2;
+    zoomListener?.();
+    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0");
+  });
+
+  it("computes whether a point is more than a quarter-turn away from the viewer-facing center", () => {
+    const center = { lng: 0, lat: 20 };
+    expect(isBehindGlobe(center, { lng: -0.1, lat: 51.5 })).toBe(false);
+    expect(isBehindGlobe(center, { lng: 180, lat: -20 })).toBe(true);
+    expect(isBehindGlobe(center, { lng: 106.8, lat: -6.2 })).toBe(true);
+  });
+
+  it("hides pins and cluster markers on the far side of the globe as it rotates", () => {
+    let moveListener: (() => void) | undefined;
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      if (event === "move" && typeof listener === "function") moveListener = listener as () => void;
+      return map;
+    });
+
+    const nearPin = { eventId: "near", lng: -0.1, lat: 51.5 };
+    const farPin = { eventId: "far", lng: 106.8, lat: -6.2 };
+    const geojson = {
+      type: "FeatureCollection" as const,
+      features: [nearPin, farPin].map((pin) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [pin.lng, pin.lat] as [number, number] },
+        properties: {
+          eventId: pin.eventId,
+          title: pin.eventId,
+          locationLabel: pin.eventId,
+          epistemicStatus: "confirmed",
+          coordinatePrecision: "city_regency",
+        },
+      })),
+    };
+    const farCluster = { coordinates: [106.8, -6.2] as [number, number], count: 2, eventIds: ["a", "b"], locationLabel: "Jakarta" };
+
+    render(<WorldMap clusters={[farCluster]} geojson={geojson} />);
+
+    expect(moveListener).toBeTypeOf("function");
+    moveListener?.();
+
+    expect(map.setFilter).toHaveBeenCalledWith(EVENT_PIN_LAYER_ID, ["in", ["get", "eventId"], ["literal", ["near"]]]);
+    expect(map.setFilter).toHaveBeenCalledWith(EVENT_PIN_HALO_LAYER_ID, ["in", ["get", "eventId"], ["literal", ["near"]]]);
+    expect(markerInstances[0].element.style.display).toBe("none");
+  });
+
   it("clears ambient intervals and registered listeners on unmount", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
@@ -389,9 +462,10 @@ describe("offline world map configuration", () => {
 
     expect(clearInterval).toHaveBeenCalledTimes(1);
     expect(cancelAnimationFrame).toHaveBeenCalled();
-    expect(map.off).toHaveBeenCalledTimes(11);
+    expect(map.off).toHaveBeenCalledTimes(12);
     expect(map.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("load", expect.any(Function));
+    expect(map.off).toHaveBeenCalledWith("move", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("click", EVENT_PIN_LAYER_ID, expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("dragstart", expect.any(Function));
     expect(map.remove).toHaveBeenCalled();
