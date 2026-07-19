@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { EpistemicStatusControl } from "@/app/event-review/epistemic-status-control";
 import { EventTypeDescription } from "@/components/event-type-description";
 import { FramedPanel } from "@/components/framed-panel";
+import { isFullTaxonomyLeaf } from "@/lib/events-api";
 import type {
   ActorInput,
   ActorRead,
@@ -66,16 +67,12 @@ export function EventCard({
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(event.title);
   const [summary, setSummary] = useState(event.summary);
-  const [startDate, setStartDate] = useState(event.start_date ?? "");
-  const [startPrecision, setStartPrecision] = useState<DatePrecision | "">(
-    event.start_date_precision ?? "",
-  );
-  const [endDate, setEndDate] = useState(event.end_date ?? "");
-  const [endPrecision, setEndPrecision] = useState<DatePrecision | "">(
-    event.end_date_precision ?? "",
+  const [eventDate, setEventDate] = useState(event.event_date ?? "");
+  const [eventDatePrecision, setEventDatePrecision] = useState<DatePrecision | "">(
+    event.event_date_precision ?? "",
   );
   const [eventTypeName, setEventTypeName] = useState(
-    event.event_type?.is_active ? event.event_type.name : "",
+    event.event_type && isFullTaxonomyLeaf(event.event_type) ? event.event_type.name : "",
   );
   const [actorRows, setActorRows] = useState<ActorInput[]>(toActorInputs(event));
   const [locationRows, setLocationRows] = useState<LocationInput[]>(toLocationInputs(event));
@@ -85,16 +82,14 @@ export function EventCard({
   const selectedType = eventTypeOptions.find(
     (type) => type.name.toLocaleLowerCase() === eventTypeName.trim().toLocaleLowerCase(),
   );
-  const activeEventTypeOptions = eventTypeOptions.filter((type) => type.is_active);
+  const activeEventTypeOptions = eventTypeOptions.filter(isFullTaxonomyLeaf);
 
   function startEditing() {
     setTitle(event.title);
     setSummary(event.summary);
-    setStartDate(event.start_date ?? "");
-    setStartPrecision(event.start_date_precision ?? "");
-    setEndDate(event.end_date ?? "");
-    setEndPrecision(event.end_date_precision ?? "");
-    setEventTypeName(event.event_type?.is_active ? event.event_type.name : "");
+    setEventDate(event.event_date ?? "");
+    setEventDatePrecision(event.event_date_precision ?? "");
+    setEventTypeName(event.event_type && isFullTaxonomyLeaf(event.event_type) ? event.event_type.name : "");
     setActorRows(toActorInputs(event));
     setLocationRows(toLocationInputs(event));
     setEditing(true);
@@ -105,10 +100,8 @@ export function EventCard({
     onSave({
       title,
       summary,
-      start_date: startDate || null,
-      start_date_precision: (startPrecision || null) as DatePrecision | null,
-      end_date: endDate || null,
-      end_date_precision: (endPrecision || null) as DatePrecision | null,
+      event_date: eventDate || null,
+      event_date_precision: (eventDatePrecision || null) as DatePrecision | null,
       event_type: eventTypeName.trim() ? { existing: eventTypeName.trim() } : undefined,
       actors: actorRows.filter((row) => row.name.trim() !== ""),
       locations: locationRows.filter((row) => row.country || row.admin1 || row.city_regency),
@@ -162,46 +155,21 @@ export function EventCard({
           </div>
           <div className="field-row">
             <div className="field">
-              <label htmlFor="event-start-date">Start date</label>
+              <label htmlFor="event-date">Event date</label>
               <input
-                id="event-start-date"
-                onChange={(e) => setStartDate(e.target.value)}
-                placeholder="YYYY-MM-DD"
-                value={startDate}
+                id="event-date"
+                onChange={(e) => setEventDate(e.target.value)}
+                placeholder="YYYY-MM-DD, YYYY-MM, or YYYY"
+                type="text"
+                value={eventDate}
               />
             </div>
             <div className="field">
-              <label htmlFor="event-start-precision">Start date precision</label>
+              <label htmlFor="event-date-precision">Event date precision</label>
               <select
-                id="event-start-precision"
-                onChange={(e) => setStartPrecision(e.target.value as DatePrecision | "")}
-                value={startPrecision}
-              >
-                <option value="">Unknown / not set</option>
-                {DATE_PRECISIONS.map((precision) => (
-                  <option key={precision} value={precision}>
-                    {precision}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="field-row">
-            <div className="field">
-              <label htmlFor="event-end-date">End date</label>
-              <input
-                id="event-end-date"
-                onChange={(e) => setEndDate(e.target.value)}
-                placeholder="YYYY-MM-DD"
-                value={endDate}
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="event-end-precision">End date precision</label>
-              <select
-                id="event-end-precision"
-                onChange={(e) => setEndPrecision(e.target.value as DatePrecision | "")}
-                value={endPrecision}
+                id="event-date-precision"
+                onChange={(e) => setEventDatePrecision(e.target.value as DatePrecision | "")}
+                value={eventDatePrecision}
               >
                 <option value="">Unknown / not set</option>
                 {DATE_PRECISIONS.map((precision) => (
@@ -327,12 +295,8 @@ export function EventCard({
           />
         </div>
         <div>
-          <span className="field-label">Start</span>
-          <p>{formatDate(event.start_date, event.start_date_precision)}</p>
-        </div>
-        <div>
-          <span className="field-label">End</span>
-          <p>{formatDate(event.end_date, event.end_date_precision)}</p>
+          <span className="field-label">Event date</span>
+          <p>{formatDate(event.event_date, event.event_date_precision)}</p>
         </div>
         <div>
           <span className="field-label">Locations</span>

@@ -16,23 +16,31 @@ def _valid_payload(**overrides: object) -> dict:
     payload = {
         "title": "Field report",
         "content": "Something happened on 2026-07-10 in the capital.",
-        "document_date": "2026-07-10",
+        "publication_date": "2026-07-10",
     }
     payload.update(overrides)
     return payload
 
 
-def test_create_document_requires_title_content_and_document_date(tmp_path: Path) -> None:
+def test_create_document_requires_title_content_and_publication_date(tmp_path: Path) -> None:
     client = _client(tmp_path)
 
-    for missing in ("title", "content", "document_date"):
+    for missing in ("title", "content", "publication_date"):
         payload = _valid_payload()
         del payload[missing]
         response = client.post("/api/documents", json=payload)
         assert response.status_code == 422, missing
 
 
-def test_create_document_allows_optional_publication_date_and_source_url(
+def test_create_document_rejects_a_blank_publication_date(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+
+    response = client.post("/api/documents", json=_valid_payload(publication_date="   "))
+
+    assert response.status_code == 422
+
+
+def test_create_document_exposes_required_publication_date_and_optional_source_url(
     tmp_path: Path,
 ) -> None:
     client = _client(tmp_path)
@@ -41,7 +49,8 @@ def test_create_document_allows_optional_publication_date_and_source_url(
 
     assert response.status_code == 201
     body = response.json()
-    assert body["publication_date"] is None
+    assert body["publication_date"] == "2026-07-10"
+    assert "document_date" not in body
     assert body["source_url"] is None
 
 
@@ -92,6 +101,28 @@ def test_editing_draft_or_failed_document_succeeds(tmp_path: Path) -> None:
     response = client.patch(f"/api/documents/{created['id']}", json={"title": "Updated title"})
     assert response.status_code == 200
     assert response.json()["title"] == "Updated title"
+
+
+def test_editing_document_rejects_a_null_publication_date(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    created = client.post("/api/documents", json=_valid_payload()).json()
+
+    response = client.patch(
+        f"/api/documents/{created['id']}", json={"publication_date": None}
+    )
+
+    assert response.status_code == 422
+
+
+def test_editing_document_rejects_a_blank_publication_date(tmp_path: Path) -> None:
+    client = _client(tmp_path)
+    created = client.post("/api/documents", json=_valid_payload()).json()
+
+    response = client.patch(
+        f"/api/documents/{created['id']}", json={"publication_date": "  "}
+    )
+
+    assert response.status_code == 422
 
 
 def test_editing_queued_or_processing_document_returns_409(tmp_path: Path) -> None:

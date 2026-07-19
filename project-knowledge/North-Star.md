@@ -53,6 +53,8 @@ Inside MVP:
 - Batch document processing through local LM Studio.
 - Event extraction, validation, deduplication recommendation, approval, rejection, and manual event addition.
 - Dynamic event types stored as data, not permanent hard-coded enums.
+- Owner-managed hierarchical Event Taxonomy with Domain, Category, Subcategory, and Event Type levels;
+  only the Event Type leaf is assignable to an event.
 - Simple actor and location matching that can grow later.
 - Dashboard, Documents, Event Review, Events, and Settings navigation.
 
@@ -63,7 +65,7 @@ Outside MVP:
 - Cloud deployment and multi-device sync.
 - OCR, image recognition, VLM processing, PDF upload, and DOCX upload.
 - OpenAI, Gemini, or other cloud AI fallback.
-- Knowledge graph, complex actor relationships, and hierarchical taxonomy management.
+- Knowledge graph and complex actor relationships.
 - Automatic event merge.
 - Specific address, building, village, road, or point-of-interest geocoding.
 - Automatic website/API ingestion.

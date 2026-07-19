@@ -44,6 +44,14 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 - [Local Supabase Migration Plan](plans/2026-07-17-local-supabase-migration.md) - safe local migration from SQLite to owner-hosted Supabase
 - [Terra Insight and Terra Sense Product Organization](decisions/Terra-Insight-and-Terra-Sense-Product-Organization.md) - approved product organization: Terra Insight presents and analyses trusted data; Terra Sense collects, processes, and reviews it
+- [Initial Global International Relations Event Taxonomy](decisions/Initial-Global-IR-Event-Taxonomy.md) - approved initial monitoring taxonomy for global security/conflict, diplomacy, and economy/energy
+- [Initial Global IR Event Types Configuration Plan](plans/2026-07-18-initial-global-ir-event-types.md) - creates the twelve approved active Event Types through Terra Sense
+- [Closed Event Type Taxonomy Implementation Plan](plans/2026-07-18-closed-event-type-taxonomy.md) - prevents local AI event-type suggestions and leaves unmatched draft types blank
+- [Event Taxonomy Tree and Management](decisions/Event-Taxonomy-Tree-and-Management.md) - approved four-level Domain, Category, Subcategory, and Event Type structure for Terra Sense
+- [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md) - test-first plan for the taxonomy migration, closed local-AI selection, and calm tree-plus-inspector workspace
+- [Document Metadata Extraction Context Plan](plans/2026-07-18-document-metadata-extraction-context.md) - sends title and source dates to local AI without treating them as event facts
+- [Single Source Date and Event Date Implementation Plan](plans/2026-07-18-single-source-date-event-date.md) - approved simplification to one document date and one event date, ready for implementation
+- [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md) - implementation plan for grouped navigation, a read-only Terra Sense flow monitor, and Event Types inside Terra Sense
 - [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md) - investigate and redesign the document-to-draft-event workflow before implementation
 - [UI Background Re-polish Plan](plans/2026-07-17-ui-background-repolish.md) - reassess the unique amber-on-black route backgrounds
 - [Globe Halo Zoom Behavior Plan](plans/2026-07-17-globe-halo-zoom-behavior.md) - make the globe halo behave correctly while zooming in and out

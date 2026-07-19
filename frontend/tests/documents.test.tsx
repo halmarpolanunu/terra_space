@@ -11,8 +11,7 @@ function makeDocument(overrides: Partial<Document> = {}): Document {
     id: "doc-1",
     title: "Field report",
     content: "Something happened.",
-    document_date: "2026-07-10",
-    publication_date: null,
+    publication_date: "2026-07-10",
     source_url: null,
     input_date: "2026-07-14T00:00:00Z",
     processing_status: "draft",
@@ -25,7 +24,7 @@ function makeDocument(overrides: Partial<Document> = {}): Document {
 }
 
 describe("DocumentForm", () => {
-  it("keeps submit disabled until title, content, and document date are filled", () => {
+  it("keeps submit disabled until title, content, and publication date are filled", () => {
     render(<DocumentForm onSubmit={vi.fn()} />);
 
     const submit = screen.getByRole("button", { name: /save/i });
@@ -37,7 +36,7 @@ describe("DocumentForm", () => {
     fireEvent.change(screen.getByLabelText(/content/i), { target: { value: "Body text" } });
     expect(submit).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText(/document date/i), {
+    fireEvent.change(screen.getByLabelText("Publication date"), {
       target: { value: "2026-07-10" },
     });
     expect(submit).toBeEnabled();
@@ -49,7 +48,7 @@ describe("DocumentForm", () => {
 
     fireEvent.change(screen.getByLabelText(/title/i), { target: { value: "Field report" } });
     fireEvent.change(screen.getByLabelText(/content/i), { target: { value: "Body text" } });
-    fireEvent.change(screen.getByLabelText(/document date/i), {
+    fireEvent.change(screen.getByLabelText("Publication date"), {
       target: { value: "2026-07-10" },
     });
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
@@ -57,8 +56,7 @@ describe("DocumentForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       title: "Field report",
       content: "Body text",
-      document_date: "2026-07-10",
-      publication_date: null,
+      publication_date: "2026-07-10",
       source_url: null,
     });
   });

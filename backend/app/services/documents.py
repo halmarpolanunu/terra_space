@@ -21,7 +21,6 @@ def create_document(db: Session, payload: DocumentCreate) -> Document:
     document = Document(
         title=payload.title,
         content=payload.content,
-        document_date=payload.document_date,
         publication_date=payload.publication_date,
         source_url=payload.source_url,
         processing_status="draft",

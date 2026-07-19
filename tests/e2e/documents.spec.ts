@@ -18,7 +18,7 @@ test("processing a document against LM Studio creates a draft event backed by it
 
   await page.getByLabel("Title *", { exact: true }).fill("Stub extraction report");
   await page.getByLabel("Content *", { exact: true }).fill(STUB_DOCUMENT_CONTENT);
-  await page.getByLabel("Document date *", { exact: true }).fill("2026-07-10");
+  await page.getByLabel("Publication date *", { exact: true }).fill("2026-07-10");
   await page.getByRole("button", { name: "Add document" }).click();
 
   await expect(page.getByText("Stub extraction report")).toBeVisible();

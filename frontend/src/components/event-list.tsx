@@ -37,12 +37,12 @@ function formatLocation(location: LocationRead): string {
 }
 
 function formatDate(event: EventRead): string {
-  if (!event.start_date || event.start_date_precision === "unknown") {
+  if (!event.event_date || event.event_date_precision === "unknown") {
     return "Date unknown";
   }
-  return event.start_date_precision && event.start_date_precision !== "exact"
-    ? `${event.start_date} (${event.start_date_precision})`
-    : event.start_date;
+  return event.event_date_precision && event.event_date_precision !== "exact"
+    ? `${event.event_date} (${event.event_date_precision})`
+    : event.event_date;
 }
 
 export function EventList({

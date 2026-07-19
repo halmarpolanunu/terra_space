@@ -61,7 +61,7 @@ export function DocumentList({
             />
             <div className="document-row-main">
               <span className="document-title">{document.title}</span>
-              <span className="document-meta">Dated {document.document_date} · {document.attachments.length} attachment{document.attachments.length === 1 ? "" : "s"}</span>
+              <span className="document-meta">Publication date: {document.publication_date} · {document.attachments.length} attachment{document.attachments.length === 1 ? "" : "s"}</span>
               {document.processing_status === "failed" && document.processing_error && (
                 <span className="document-error">{document.processing_error}</span>
               )}

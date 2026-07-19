@@ -34,12 +34,20 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                == "0007_event_type_descriptions"
+                == "0009_event_taxonomy_tree"
         )
     event_type_columns = {
         column["name"]: column for column in inspect(engine).get_columns("event_types")
     }
     assert event_type_columns["description"]["nullable"] is True
+    document_columns = {
+        column["name"]: column for column in inspect(engine).get_columns("documents")
+    }
+    event_columns = {column["name"] for column in inspect(engine).get_columns("events")}
+    assert document_columns["publication_date"]["nullable"] is False
+    assert "document_date" not in document_columns
+    assert {"event_date", "event_date_precision"} <= event_columns
+    assert not {"start_date", "end_date", "start_date_precision", "end_date_precision"} & event_columns
 
 
 def test_event_type_description_migration_preserves_legacy_rows(tmp_path: Path) -> None:
@@ -113,7 +121,7 @@ def test_approved_event_can_reference_multiple_actors_locations_and_sources(
         document = Document(
             title="Source document",
             content="Evidence",
-            document_date="2026-07-13",
+            publication_date="2026-07-13",
             input_date=datetime.now(UTC),
             processing_status="completed",
         )
@@ -151,7 +159,7 @@ def test_deleting_source_document_does_not_delete_approved_event(tmp_path: Path)
         document = Document(
             title="Source document",
             content="Evidence",
-            document_date="2026-07-13",
+            publication_date="2026-07-13",
             input_date=datetime.now(UTC),
             processing_status="completed",
         )

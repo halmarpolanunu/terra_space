@@ -33,21 +33,26 @@ def _seed_type_with_event(app, *, name: str, is_active: bool = True) -> str:
         db.close()
 
 
-def test_create_event_type_is_active_and_rejects_duplicate_name(tmp_path: Path) -> None:
+def _seed_type(app, *, name: str, description: str | None = None, is_active: bool = True) -> str:
+    factory = app.state.session_factory
+    db = factory()
+    try:
+        event_type = EventType(name=name, description=description, is_active=is_active)
+        db.add(event_type)
+        db.commit()
+        return event_type.id
+    finally:
+        db.close()
+
+
+def test_create_event_type_route_is_retired_in_favor_of_taxonomy_nodes(tmp_path: Path) -> None:
     client = TestClient(_app(tmp_path))
 
     created = client.post(
         "/api/event-types",
         json={"name": "Airstrike", "description": "Use for aerial weapons strikes."},
     )
-    assert created.status_code == 201
-    assert created.json()["is_active"] is True
-
-    duplicate = client.post(
-        "/api/event-types",
-        json={"name": "  airstrike ", "description": "A duplicate description."},
-    )
-    assert duplicate.status_code == 409
+    assert created.status_code == 410
 
 
 def test_rename_keeps_existing_event_links(tmp_path: Path) -> None:
@@ -70,17 +75,12 @@ def test_rename_keeps_existing_event_links(tmp_path: Path) -> None:
 
 
 def test_rename_to_an_existing_name_conflicts(tmp_path: Path) -> None:
-    client = TestClient(_app(tmp_path))
-    client.post(
-        "/api/event-types",
-        json={"name": "Protest", "description": "Use for public demonstrations."},
-    )
-    other = client.post(
-        "/api/event-types",
-        json={"name": "Riot", "description": "Use for violent public disorder."},
-    ).json()
+    app = _app(tmp_path)
+    _seed_type(app, name="Protest", description="Use for public demonstrations.")
+    other_id = _seed_type(app, name="Riot", description="Use for violent public disorder.")
+    client = TestClient(app)
 
-    conflict = client.patch(f"/api/event-types/{other['id']}", json={"name": "protest"})
+    conflict = client.patch(f"/api/event-types/{other_id}", json={"name": "protest"})
     assert conflict.status_code == 409
 
 
@@ -109,10 +109,7 @@ def test_delete_unreferenced_type_succeeds_but_referenced_type_conflicts(tmp_pat
     app = _app(tmp_path)
     referenced_id = _seed_type_with_event(app, name="Bombing")
     client = TestClient(app)
-    unused_id = client.post(
-        "/api/event-types",
-        json={"name": "Unused", "description": "Use for an unused test type."},
-    ).json()["id"]
+    unused_id = _seed_type(app, name="Unused", description="Use for an unused test type.")
 
     assert client.delete(f"/api/event-types/{unused_id}").status_code == 204
     assert client.delete(f"/api/event-types/{referenced_id}").status_code == 409
@@ -122,10 +119,7 @@ def test_list_reports_in_use_flag(tmp_path: Path) -> None:
     app = _app(tmp_path)
     referenced_id = _seed_type_with_event(app, name="Bombing")
     client = TestClient(app)
-    unused_id = client.post(
-        "/api/event-types",
-        json={"name": "Unused", "description": "Use for an unused test type."},
-    ).json()["id"]
+    unused_id = _seed_type(app, name="Unused", description="Use for an unused test type.")
 
     by_id = {row["id"]: row for row in client.get("/api/event-types").json()}
     assert by_id[referenced_id]["in_use"] is True

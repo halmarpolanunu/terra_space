@@ -1,4 +1,4 @@
-import type { EventTypeRead } from "@/lib/events-api";
+import type { TaxonomyLevel, TaxonomyNodeRead } from "@/lib/events-api";
 
 export type Settings = {
   lm_studio_base_url: string;
@@ -51,29 +51,42 @@ export async function testLmStudio(baseUrl?: string): Promise<LmStudioTestResult
   return parseOrThrow<LmStudioTestResult>(response);
 }
 
-export async function createEventType(name: string, description: string): Promise<EventTypeRead> {
-  const response = await fetch(`${API_ROOT}/event-types`, {
+export type TaxonomyNodeCreate = {
+  name: string;
+  level: TaxonomyLevel;
+  parent_id?: string | null;
+  description?: string | null;
+};
+
+export type TaxonomyNodeUpdatePatch = Partial<{
+  name: string;
+  description: string | null;
+  is_active: boolean;
+}>;
+
+export async function createTaxonomyNode(payload: TaxonomyNodeCreate): Promise<TaxonomyNodeRead> {
+  const response = await fetch(`${API_ROOT}/event-taxonomy/nodes`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, description }),
+    body: JSON.stringify(payload),
   });
-  return parseOrThrow<EventTypeRead>(response);
+  return parseOrThrow<TaxonomyNodeRead>(response);
 }
 
-export async function updateEventType(
+export async function updateTaxonomyNode(
   id: string,
-  patch: Partial<{ name: string; description: string | null; is_active: boolean }>,
-): Promise<EventTypeRead> {
-  const response = await fetch(`${API_ROOT}/event-types/${id}`, {
+  patch: TaxonomyNodeUpdatePatch,
+): Promise<TaxonomyNodeRead> {
+  const response = await fetch(`${API_ROOT}/event-taxonomy/nodes/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
-  return parseOrThrow<EventTypeRead>(response);
+  return parseOrThrow<TaxonomyNodeRead>(response);
 }
 
-export async function deleteEventType(id: string): Promise<void> {
-  const response = await fetch(`${API_ROOT}/event-types/${id}`, { method: "DELETE" });
+export async function deleteTaxonomyNode(id: string): Promise<void> {
+  const response = await fetch(`${API_ROOT}/event-taxonomy/nodes/${id}`, { method: "DELETE" });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(body?.detail ?? `Request failed with status ${response.status}`);

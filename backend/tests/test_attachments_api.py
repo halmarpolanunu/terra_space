@@ -19,7 +19,7 @@ def _client(tmp_path: Path) -> TestClient:
 def _draft_document(client: TestClient) -> dict:
     response = client.post(
         "/api/documents",
-        json={"title": "Doc", "content": "Body text.", "document_date": "2026-07-10"},
+        json={"title": "Doc", "content": "Body text.", "publication_date": "2026-07-10"},
     )
     assert response.status_code == 201
     return response.json()

@@ -10,10 +10,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     id: "event-1",
     title: "Depot attack",
     summary: "A militia group reportedly attacked a fuel depot.",
-    start_date: null,
-    start_date_precision: null,
-    end_date: null,
-    end_date_precision: null,
+    event_date: null,
+    event_date_precision: null,
     epistemic_status: "claim",
     review_status: "draft",
     event_type: { id: "type-1", name: "Attack", description: null, is_active: false },
@@ -63,7 +61,12 @@ describe("EventCard", () => {
       />,
     );
 
-    expect(screen.getAllByText("Date unknown — kept blank").length).toBe(2);
+    expect(screen.getByText("Event date")).toBeVisible();
+    expect(screen.queryByText("Start")).not.toBeInTheDocument();
+    expect(screen.queryByText("End")).not.toBeInTheDocument();
+    expect(screen.queryByText("Start date")).not.toBeInTheDocument();
+    expect(screen.queryByText("End date")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Date unknown — kept blank")).toHaveLength(1);
     expect(screen.getAllByText("Not stated").length).toBeGreaterThan(0);
   });
 
@@ -137,7 +140,7 @@ describe("EventCard", () => {
       <EventCard
         actorOptions={[]}
         approveDisabledReason={null}
-        event={makeEvent()}
+        event={makeEvent({ event_date: "2026-07-10", event_date_precision: "exact" })}
         eventTypeOptions={[]}
         onApprove={vi.fn()}
         onReject={vi.fn()}
@@ -150,7 +153,37 @@ describe("EventCard", () => {
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
 
     expect(onSave).toHaveBeenCalledTimes(1);
-    expect(onSave.mock.calls[0][0]).toMatchObject({ title: "Updated title" });
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      title: "Updated title",
+      event_date: "2026-07-10",
+      event_date_precision: "exact",
+    });
+  });
+
+  it("accepts a month-only event date in the review editor", () => {
+    const onSave = vi.fn();
+    render(
+      <EventCard
+        actorOptions={[]}
+        approveDisabledReason={null}
+        event={makeEvent()}
+        eventTypeOptions={[]}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /edit/i }));
+    expect(screen.getByLabelText("Event date")).toHaveAttribute("type", "text");
+    fireEvent.change(screen.getByLabelText("Event date"), { target: { value: "2026-07" } });
+    fireEvent.change(screen.getByLabelText("Event date precision"), { target: { value: "month" } });
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      event_date: "2026-07",
+      event_date_precision: "month",
+    }));
   });
 
   it("calls onApprove and onReject when their buttons are clicked", () => {
@@ -182,6 +215,12 @@ describe("AddEventForm", () => {
       id: "protest", name: "Protest",
       description: "Collective public demonstration.",
       is_active: true,
+      taxonomy_path: [
+        { id: "d", name: "Test Domain", level: "domain" as const },
+        { id: "c", name: "Test Category", level: "category" as const },
+        { id: "s", name: "Test Subcategory", level: "subcategory" as const },
+        { id: "protest", name: "Protest", level: "event_type" as const },
+      ],
     };
     render(<AddEventForm eventTypeOptions={[eventType]} onCancel={vi.fn()} onSubmit={vi.fn()} />);
     fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "Protest" } });
@@ -230,20 +269,30 @@ describe("AddEventForm", () => {
     });
   });
 
-  it("submits only a selected active event type", () => {
+  it("submits only a selected full-leaf active event type", () => {
     const onSubmit = vi.fn();
+    const taxonomyPath = [
+      { id: "domain-1", name: "Diplomacy", level: "domain" as const },
+      { id: "category-1", name: "Diplomatic Engagement", level: "category" as const },
+      { id: "subcategory-1", name: "Diplomatic Communication", level: "subcategory" as const },
+      { id: "active", name: "Diplomatic Statement", level: "event_type" as const },
+    ];
     render(<AddEventForm eventTypeOptions={[
-      { id: "active", name: "Diplomatic Statement", description: "Official statement.", is_active: true },
+      { id: "active", name: "Diplomatic Statement", description: "Official statement.", is_active: true, taxonomy_path: taxonomyPath },
       { id: "inactive", name: "Legacy", description: null, is_active: false },
+      { id: "unlinked", name: "Unlinked active", description: "Not part of the tree.", is_active: true },
     ]} onCancel={vi.fn()} onSubmit={onSubmit} />);
+
+    expect(screen.queryByRole("option", { name: "Legacy" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Unlinked active" })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/title/i), { target: { value: "Statement" } });
     fireEvent.change(screen.getByLabelText(/summary/i), { target: { value: "A statement was issued." } });
     fireEvent.change(screen.getByLabelText(/evidence quote/i), { target: { value: "statement was issued" } });
     fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "Diplomatic Statement" } });
+    expect(screen.getByText("Diplomacy › Diplomatic Engagement › Diplomatic Communication › Diplomatic Statement")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /add event/i }));
 
     expect(onSubmit.mock.calls[0][0].event_type).toEqual({ existing: "Diplomatic Statement" });
-    expect(screen.queryByRole("option", { name: "Legacy" })).not.toBeInTheDocument();
   });
 });

@@ -14,7 +14,7 @@ async function createAndProcessDocument(page: Page) {
   await page.goto("/documents");
   await page.getByLabel("Title *", { exact: true }).fill("Untyped extraction report");
   await page.getByLabel("Content *", { exact: true }).fill(`${UNMATCHED_QUOTE}.`);
-  await page.getByLabel("Document date *", { exact: true }).fill("2026-07-10");
+  await page.getByLabel("Publication date *", { exact: true }).fill("2026-07-10");
   await page.getByRole("button", { name: "Add document" }).click();
   await page.getByLabel("Select Untyped extraction report").check();
   await page.getByRole("button", { name: /Process \d+ selected/ }).click();

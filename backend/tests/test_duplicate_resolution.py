@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
-from app.db.models import EventType
+from app.db.models import EventType, TaxonomyNode
 from app.main import create_app
 from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
 from app.services.lm_studio import KnownEventType
@@ -30,7 +30,16 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
     )
     client = TestClient(app)
     with app.state.session_factory() as db:
-        db.add(EventType(name="Attack", description="Use for attacks against a target.", is_active=True))
+        domain = TaxonomyNode(name="Test domain", level="domain")
+        category = TaxonomyNode(name="Test category", level="category", parent=domain)
+        subcategory = TaxonomyNode(
+            name="Test subcategory", level="subcategory", parent=category
+        )
+        attack = EventType(name="Attack", description="Use for attacks against a target.", is_active=True)
+        db.add_all([
+            attack,
+            TaxonomyNode(name="Attack", level="event_type", parent=subcategory, event_type=attack),
+        ])
         db.commit()
     return client
 
@@ -38,7 +47,7 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
 def _process(client: TestClient, content: str) -> dict:
     document = client.post(
         "/api/documents",
-        json={"title": content, "content": content, "document_date": "2026-07-10"},
+        json={"title": content, "content": content, "publication_date": "2026-07-10"},
     ).json()
     process_response = client.post(
         "/api/documents/process", json={"document_ids": [document["id"]]}
@@ -47,7 +56,7 @@ def _process(client: TestClient, content: str) -> dict:
     return document
 
 
-def _attack_extraction(content: str, start_date: str) -> ExtractionResult:
+def _attack_extraction(content: str, event_date: str) -> ExtractionResult:
     return ExtractionResult(
         events=[
             ExtractedEvent(
@@ -56,7 +65,8 @@ def _attack_extraction(content: str, start_date: str) -> ExtractionResult:
                 event_type=ExtractedEventType(existing="Attack"),
                 epistemic_status="claim",
                 evidence_quote=content,
-                start_date=start_date,
+                event_date=event_date,
+                event_date_precision="exact",
                 actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
             )
         ]

@@ -18,8 +18,7 @@ export type Document = {
   id: string;
   title: string;
   content: string;
-  document_date: string;
-  publication_date: string | null;
+  publication_date: string;
   source_url: string | null;
   input_date: string;
   processing_status: ProcessingStatus;
@@ -32,8 +31,7 @@ export type Document = {
 export type DocumentDraft = {
   title: string;
   content: string;
-  document_date: string;
-  publication_date: string | null;
+  publication_date: string;
   source_url: string | null;
 };
 

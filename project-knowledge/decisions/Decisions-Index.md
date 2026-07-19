@@ -18,6 +18,10 @@ status: active
 - [Event Type Descriptions and AI Classification](Event-Type-Descriptions-and-AI-Classification.md) - Adds human-reviewed event-type definitions for user guidance and local AI classification.
 - [Local Supabase Storage Direction](Local-Supabase-Storage-Direction.md) - Plans a safe transition from SQLite to Supabase hosted on the owner's computer while preserving local-first operation.
 - [Terra Insight and Terra Sense Product Organization](Terra-Insight-and-Terra-Sense-Product-Organization.md) - Organizes the product into an analysis workspace and a separate local data-processing workflow.
+- [Initial Global International Relations Event Taxonomy](Initial-Global-IR-Event-Taxonomy.md) - Defines the initial concise domain-first event types for global international-relations monitoring.
+- [Closed Event Type Taxonomy](Closed-Event-Type-Taxonomy.md) - Prevents local AI from suggesting types; unmatched extracted events keep a blank type for human review.
+- [Single Source Date and Event Date](Single-Source-Date-and-Event-Date.md) - Proposed simplification to one Publication Date for documents and one Event Date for extracted events.
+- [Event Taxonomy Tree and Management](Event-Taxonomy-Tree-and-Management.md) - Replaces flat Event Type management with a four-level owner-managed tree and a calmer Terra Sense taxonomy workspace.
 
 # Navigation
 

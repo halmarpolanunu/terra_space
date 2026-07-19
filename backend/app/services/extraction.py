@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from app.db.models import (
     Actor,
@@ -11,6 +11,7 @@ from app.db.models import (
     EventSource,
     EventType,
     Location,
+    TaxonomyNode,
 )
 from app.schemas.extraction import ExtractedEvent, ExtractedLocation, ExtractionResult
 from app.services.duplicates import detect_duplicates
@@ -60,8 +61,25 @@ def persist_extraction(
     result = PersistResult()
     source = get_or_create_document_source(db, document)
 
+    taxonomy_leaf = aliased(TaxonomyNode)
+    taxonomy_subcategory = aliased(TaxonomyNode)
+    taxonomy_category = aliased(TaxonomyNode)
+    taxonomy_domain = aliased(TaxonomyNode)
     active_event_types = list(
-        db.execute(select(EventType).where(EventType.is_active.is_(True))).scalars()
+        db.execute(
+            select(EventType)
+            .join(taxonomy_leaf, taxonomy_leaf.event_type_id == EventType.id)
+            .join(taxonomy_subcategory, taxonomy_leaf.parent_id == taxonomy_subcategory.id)
+            .join(taxonomy_category, taxonomy_subcategory.parent_id == taxonomy_category.id)
+            .join(taxonomy_domain, taxonomy_category.parent_id == taxonomy_domain.id)
+            .where(
+                EventType.is_active.is_(True),
+                taxonomy_leaf.level == "event_type",
+                taxonomy_subcategory.level == "subcategory",
+                taxonomy_category.level == "category",
+                taxonomy_domain.level == "domain",
+            )
+        ).scalars()
     )
     existing_actors = list(db.execute(select(Actor)).scalars())
 
@@ -78,10 +96,8 @@ def persist_extraction(
         event = Event(
             title=event_data.title,
             summary=event_data.summary,
-            start_date=event_data.start_date,
-            start_date_precision=event_data.start_date_precision,
-            end_date=event_data.end_date,
-            end_date_precision=event_data.end_date_precision,
+            event_date=event_data.event_date,
+            event_date_precision=event_data.event_date_precision,
             epistemic_status=event_data.epistemic_status,
             review_status="draft",
             event_type=event_type,

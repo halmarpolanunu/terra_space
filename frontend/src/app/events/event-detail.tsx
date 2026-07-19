@@ -32,6 +32,15 @@ function formatLocation(location: LocationRead): string {
   return precision ? `${name} (${precision} coordinates)` : name;
 }
 
+function formatEventDate(event: EventRead): string {
+  if (!event.event_date) {
+    return "Date unknown — kept blank";
+  }
+  return event.event_date_precision && event.event_date_precision !== "exact"
+    ? `${event.event_date} (${event.event_date_precision})`
+    : event.event_date;
+}
+
 export function EventDetail({ event, eventsPath, onClose, onEdit, onDelete }: EventDetailProps) {
   const editable = event.review_status === "draft" || event.review_status === "approved";
   const deletable = editable;
@@ -52,8 +61,7 @@ export function EventDetail({ event, eventsPath, onClose, onEdit, onDelete }: Ev
             value={event.epistemic_status}
           />
         </div>
-        <div><span className="field-label">Start date</span><p>{event.start_date ?? "Date unknown"}</p></div>
-        <div><span className="field-label">End date</span><p>{event.end_date ?? "Not stated"}</p></div>
+        <div><span className="field-label">Event date</span><p>{formatEventDate(event)}</p></div>
         <div><span className="field-label">Actors</span><p>{event.actors.length ? event.actors.map(({ actor, role }) => `${actor.name} (${role})`).join("; ") : "Not stated"}</p></div>
         <div><span className="field-label">Locations</span><p>{event.locations.length ? event.locations.map(formatLocation).join("; ") : "Not stated"}</p></div>
       </div>

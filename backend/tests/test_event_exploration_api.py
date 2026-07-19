@@ -20,15 +20,15 @@ def _seed_events(client: TestClient) -> dict[str, str]:
         document = Document(
             title="Yemen report",
             content="Source text.",
-            document_date="2026-07-10",
+            publication_date="2026-07-10",
             processing_status="completed",
         )
         source = Source(document=document, reference_label=document.title)
         matching = Event(
             title="Depot airstrike",
             summary="Air Force struck a depot.",
-            start_date="2026-07-10",
-            start_date_precision="exact",
+            event_date="2026-07-10",
+            event_date_precision="exact",
             epistemic_status="claim",
             review_status="approved",
             approved_at=datetime.now(UTC),
@@ -42,8 +42,8 @@ def _seed_events(client: TestClient) -> dict[str, str]:
         other = Event(
             title="City protest",
             summary="People protested.",
-            start_date="2026-07",
-            start_date_precision="month",
+            event_date="2026-07",
+            event_date_precision="month",
             epistemic_status="confirmed",
             review_status="approved",
             approved_at=datetime.now(UTC),

@@ -20,10 +20,8 @@ WELL_FORMED_CONTENT = json.dumps(
                 "title": "Protest at capitol",
                 "summary": "A large protest occurred.",
                 "event_type": {"existing": "Protest"},
-                "start_date": "2026-07-10",
-                "start_date_precision": "exact",
-                "end_date": None,
-                "end_date_precision": None,
+                "event_date": "2026-07-10",
+                "event_date_precision": "exact",
                 "epistemic_status": "confirmed",
                 "locations": [{"country": "ID", "admin1": None, "city_regency": "Jakarta"}],
                 "actors": [{"name": "Students", "role": "source", "existing": False}],
@@ -64,8 +62,7 @@ def test_extract_events_returns_populated_result_for_well_formed_response() -> N
     result = client.extract_events(
         DocumentExtractionContext(
             title="Protest report",
-            document_date="2026-07-10",
-            publication_date=None,
+            publication_date="2026-07-10",
             content="A large protest occurred at the capitol.",
         ),
         [],
@@ -76,6 +73,7 @@ def test_extract_events_returns_populated_result_for_well_formed_response() -> N
     assert len(result.events) == 1
     assert result.events[0].evidence_quote == "A large protest occurred at the capitol."
     assert result.events[0].event_type.existing == "Protest"
+    assert result.events[0].event_date == "2026-07-10"
 
 
 def test_extract_events_sends_labelled_source_metadata_and_date_grounding_rule() -> None:
@@ -89,7 +87,6 @@ def test_extract_events_sends_labelled_source_metadata_and_date_grounding_rule()
     client.extract_events(
         DocumentExtractionContext(
             title="Naval blockade update",
-            document_date="2026-07-10",
             publication_date="2026-07-12",
             content="Evidence text.",
         ),
@@ -99,8 +96,8 @@ def test_extract_events_sends_labelled_source_metadata_and_date_grounding_rule()
 
     user_message = seen["messages"][1]["content"]
     assert "Source title: Naval blockade update" in user_message
-    assert "Document date: 2026-07-10" in user_message
-    assert "Publication date: 2026-07-12" in user_message
+    assert "Publication Date: 2026-07-12" in user_message
+    assert "Document date:" not in user_message
     assert "Source content:\nEvidence text." in user_message
     assert "context only" in user_message
     assert "only when the source content and evidence quote support that event date" in user_message
@@ -117,17 +114,24 @@ def test_extract_events_only_allows_active_type_names_or_null() -> None:
     client.extract_events(
         DocumentExtractionContext(
             title="Protest report",
-            document_date="2026-07-10",
-            publication_date=None,
+            publication_date="2026-07-10",
             content="A large protest occurred.",
         ),
-        [KnownEventType(name="Protest", description="Collective public demonstration.")],
+        [
+            KnownEventType(
+                name="Protest",
+                description="Collective public demonstration.",
+                path="Security & Conflict > Signalling & Posture > Security Signalling > Protest",
+            )
+        ],
         [],
     )
 
     prompt = seen["messages"][0]["content"]
     assert '"name": "Protest"' in prompt
     assert '"description": "Collective public demonstration."' in prompt
+    assert '"path": "Security & Conflict > Signalling & Posture > Security Signalling > Protest"' in prompt
+    assert "classification context" in prompt
     assert "Use an exact supplied active event type name only when it fits." in prompt
     assert "Otherwise set existing to null." in prompt
     assert "Never invent, suggest, or describe a new event type." in prompt
@@ -141,7 +145,7 @@ def test_extract_events_rejects_response_missing_required_fields() -> None:
 
     with pytest.raises(LmStudioResponseError):
         client.extract_events(
-            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        DocumentExtractionContext("Source", "2026-07-10", "Some text."), [], []
         )
 
 
@@ -153,7 +157,7 @@ def test_extract_events_raises_typed_error_on_timeout() -> None:
 
     with pytest.raises(LmStudioUnavailableError):
         client.extract_events(
-            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        DocumentExtractionContext("Source", "2026-07-10", "Some text."), [], []
         )
 
 
@@ -167,7 +171,7 @@ def test_extract_events_raises_typed_error_on_connection_error() -> None:
 
     with pytest.raises(LmStudioUnavailableError):
         client.extract_events(
-            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        DocumentExtractionContext("Source", "2026-07-10", "Some text."), [], []
         )
 
 
@@ -176,7 +180,7 @@ def test_extract_events_raises_typed_error_on_malformed_json() -> None:
 
     with pytest.raises(LmStudioResponseError):
         client.extract_events(
-            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        DocumentExtractionContext("Source", "2026-07-10", "Some text."), [], []
         )
 
 
@@ -185,5 +189,5 @@ def test_extract_events_fails_when_no_model_is_loaded() -> None:
 
     with pytest.raises(LmStudioUnavailableError):
         client.extract_events(
-            DocumentExtractionContext("Source", "2026-07-10", None, "Some text."), [], []
+        DocumentExtractionContext("Source", "2026-07-10", "Some text."), [], []
         )

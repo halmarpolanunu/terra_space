@@ -9,10 +9,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     id: "event-1",
     title: "Bridge crossing reported",
     summary: "A convoy crossed the bridge.",
-    start_date: null,
-    start_date_precision: null,
-    end_date: null,
-    end_date_precision: null,
+    event_date: null,
+    event_date_precision: null,
     epistemic_status: "claim",
     review_status: "approved",
     event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
@@ -47,6 +45,20 @@ describe("EventList", () => {
     expect(screen.getByText("Date unknown")).toBeInTheDocument();
     expect(screen.getByText("Not stated")).toBeInTheDocument();
     expect(screen.getByText("2 sources")).toBeInTheDocument();
+  });
+
+  it("displays a known Event Date", () => {
+    render(
+      <EventList
+        events={[makeEvent({ event_date: "2026-07-10", event_date_precision: "exact" })]}
+        hasActiveFilters={false}
+        onSelect={vi.fn()}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
+
+    expect(screen.getByText("2026-07-10")).toBeInTheDocument();
   });
 
   it("selects an event from its list row", () => {

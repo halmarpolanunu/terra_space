@@ -5,7 +5,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.db.models import DuplicateFlag, EventType
+from app.db.models import DuplicateFlag, EventType, TaxonomyNode
 from app.schemas.duplicate import DuplicateResolveRequest
 from app.schemas.event import (
     ActorRead,
@@ -13,11 +13,13 @@ from app.schemas.event import (
     ApproveAllSkipped,
     EventCreate,
     EventRead,
-    EventTypeCreate,
     EventTypeRead,
     EventTypeUpdate,
     EventUpdate,
     DashboardSummaryRead,
+    TaxonomyNodeCreate,
+    TaxonomyNodeRead,
+    TaxonomyNodeUpdate,
 )
 from app.services.documents import get_document
 from app.services.duplicates import DuplicateFlagAlreadyResolvedError, resolve_duplicate_flag
@@ -26,17 +28,19 @@ from app.services.events import (
     EventTypeDescriptionRequiredError,
     EventTypeInUseError,
     EventTypeNameConflictError,
+    EventTypeTaxonomyRequiredError,
+    EventTypeSelectionError,
     EvidenceQuoteNotFoundError,
     PendingDuplicateFlagError,
     approve_all_for_document,
     approve_event,
-    create_event_type,
     create_manual_event,
     delete_event,
     delete_event_type,
     get_event,
     list_actors,
     list_event_types,
+    list_event_taxonomy,
     list_events,
     list_filtered_events,
     list_events_for_document,
@@ -44,8 +48,16 @@ from app.services.events import (
     reject_event,
     dashboard_summary,
     to_event_read,
+    to_event_type_read,
+    to_taxonomy_node_read,
+    create_taxonomy_node,
+    delete_taxonomy_node,
+    update_taxonomy_node,
     update_event,
     update_event_type,
+    TaxonomyNodeDefinitionError,
+    TaxonomyNodeHasChildrenError,
+    TaxonomyNodeParentError,
 )
 
 
@@ -63,27 +75,72 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
     def list_event_types_route(db: Session = Depends(get_db)) -> list[EventTypeRead]:
         referenced = referenced_event_type_ids(db)
         return [
-            EventTypeRead(
-                id=event_type.id,
-                name=event_type.name,
-                description=event_type.description,
-                is_active=event_type.is_active,
-                in_use=event_type.id in referenced,
-            )
+            to_event_type_read(event_type, in_use=event_type.id in referenced)
             for event_type in list_event_types(db)
         ]
 
-    @router.post("/api/event-types", response_model=EventTypeRead, status_code=201)
-    def create_event_type_route(
-        payload: EventTypeCreate, db: Session = Depends(get_db)
-    ) -> EventTypeRead:
+    @router.get("/api/event-taxonomy", response_model=list[TaxonomyNodeRead])
+    def list_event_taxonomy_route(db: Session = Depends(get_db)) -> list[TaxonomyNodeRead]:
+        return list_event_taxonomy(db)
+
+    @router.post("/api/event-taxonomy/nodes", response_model=TaxonomyNodeRead, status_code=201)
+    def create_taxonomy_node_route(
+        payload: TaxonomyNodeCreate, db: Session = Depends(get_db)
+    ) -> TaxonomyNodeRead:
         try:
-            event_type = create_event_type(db, payload.name, payload.description)
+            node = create_taxonomy_node(
+                db,
+                name=payload.name,
+                level=payload.level,
+                parent_id=payload.parent_id,
+                description=payload.description,
+            )
+        except LookupError as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+        except (TaxonomyNodeParentError, TaxonomyNodeDefinitionError, EventTypeDescriptionRequiredError) as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         except EventTypeNameConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        except EventTypeDescriptionRequiredError as error:
+        return to_taxonomy_node_read(db, node)
+
+    @router.patch("/api/event-taxonomy/nodes/{node_id}", response_model=TaxonomyNodeRead)
+    def update_taxonomy_node_route(
+        node_id: str, payload: TaxonomyNodeUpdate, db: Session = Depends(get_db)
+    ) -> TaxonomyNodeRead:
+        node = db.get(TaxonomyNode, node_id)
+        if node is None:
+            raise HTTPException(status_code=404, detail="Taxonomy node not found.")
+        kwargs = {}
+        if "name" in payload.model_fields_set:
+            kwargs["name"] = payload.name
+        if "description" in payload.model_fields_set:
+            kwargs["description"] = payload.description
+        if "is_active" in payload.model_fields_set:
+            kwargs["is_active"] = payload.is_active
+        try:
+            node = update_taxonomy_node(db, node, **kwargs)
+        except (TaxonomyNodeDefinitionError, EventTypeDescriptionRequiredError) as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        return EventTypeRead.model_validate(event_type)
+        except EventTypeNameConflictError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+        return to_taxonomy_node_read(db, node)
+
+    @router.delete("/api/event-taxonomy/nodes/{node_id}", status_code=204)
+    def delete_taxonomy_node_route(node_id: str, db: Session = Depends(get_db)) -> None:
+        node = db.get(TaxonomyNode, node_id)
+        if node is None:
+            raise HTTPException(status_code=404, detail="Taxonomy node not found.")
+        try:
+            delete_taxonomy_node(db, node)
+        except (TaxonomyNodeHasChildrenError, EventTypeInUseError) as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
+
+    @router.post("/api/event-types", response_model=EventTypeRead, status_code=201)
+    def create_event_type_route() -> EventTypeRead:
+        raise HTTPException(
+            status_code=410,
+            detail="Create Event Types through the Event Taxonomy tree.",
+        )
 
     @router.patch("/api/event-types/{type_id}", response_model=EventTypeRead)
     def update_event_type_route(
@@ -103,9 +160,9 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             event_type = update_event_type(db, event_type, **kwargs)
         except EventTypeNameConflictError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        except EventTypeDescriptionRequiredError as error:
+        except (EventTypeDescriptionRequiredError, EventTypeTaxonomyRequiredError) as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        return EventTypeRead.model_validate(event_type)
+        return to_event_type_read(event_type)
 
     @router.delete("/api/event-types/{type_id}", status_code=204)
     def delete_event_type_route(type_id: str, db: Session = Depends(get_db)) -> None:
@@ -210,7 +267,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             raise HTTPException(status_code=404, detail="Document not found.")
         try:
             event = create_manual_event(db, document, payload)
-        except EvidenceQuoteNotFoundError as error:
+        except (EvidenceQuoteNotFoundError, EventTypeSelectionError) as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         return to_event_read(event)
 
@@ -223,6 +280,8 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             event = update_event(db, event, payload)
         except EventEditNotAllowedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+        except EventTypeSelectionError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         return to_event_read(event)
 
     @router.delete("/api/events/{event_id}", status_code=204)
@@ -247,6 +306,8 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         except PendingDuplicateFlagError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         except EventTypeDescriptionRequiredError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        except EventTypeSelectionError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         return to_event_read(event)
 

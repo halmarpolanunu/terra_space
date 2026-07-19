@@ -18,7 +18,7 @@ def _session(tmp_path: Path) -> Session:
 
 def _approved_event(
     event_type: EventType,
-    start_date: str | None = "2026-07-10",
+    event_date: str | None = "2026-07-10",
     actor: Actor | None = None,
     location: Location | None = None,
 ) -> Event:
@@ -28,7 +28,7 @@ def _approved_event(
         epistemic_status="confirmed",
         review_status="approved",
         event_type=event_type,
-        start_date=start_date,
+        event_date=event_date,
     )
     if actor is not None:
         event.event_actors.append(EventActor(actor=actor, role="source"))
@@ -39,7 +39,7 @@ def _approved_event(
 
 def _draft_event(
     event_type: EventType,
-    start_date: str | None = "2026-07-11",
+    event_date: str | None = "2026-07-11",
     actor: Actor | None = None,
     location: Location | None = None,
 ) -> Event:
@@ -49,7 +49,7 @@ def _draft_event(
         epistemic_status="claim",
         review_status="draft",
         event_type=event_type,
-        start_date=start_date,
+        event_date=event_date,
     )
     if actor is not None:
         event.event_actors.append(EventActor(actor=actor, role="source"))
@@ -120,11 +120,11 @@ def test_does_not_flag_when_dates_are_far_apart(tmp_path: Path) -> None:
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
         actor = Actor(name="Air Force", is_active=True)
-        approved = _approved_event(event_type, start_date="2026-01-01", actor=actor)
+        approved = _approved_event(event_type, event_date="2026-01-01", actor=actor)
         session.add(approved)
         session.commit()
 
-        draft = _draft_event(event_type, start_date="2026-07-11", actor=actor)
+        draft = _draft_event(event_type, event_date="2026-07-11", actor=actor)
         session.add(draft)
 
         flags = detect_duplicates(session, draft)

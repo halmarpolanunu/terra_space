@@ -3,9 +3,10 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
-from app.db.models import Document, Event, EventSource, Source
+from app.db.models import Document, Event, EventSource, EventType, Source, TaxonomyNode
 from app.main import create_app
 from app.schemas.extraction import ExtractedEvent, ExtractedEventType, ExtractionResult
+from app.services.extraction import persist_extraction
 from app.services.lm_studio import KnownEventType, LmStudioResponseError
 
 
@@ -15,6 +16,7 @@ class FakeLmStudioClient:
     def __init__(self, outcomes: dict[str, ExtractionResult | Exception]) -> None:
         self._outcomes = outcomes
         self.calls: list[object] = []
+        self.known_type_calls: list[list[KnownEventType]] = []
 
     def extract_events(
         self,
@@ -23,6 +25,7 @@ class FakeLmStudioClient:
         known_actors: list[str],
     ) -> ExtractionResult:
         self.calls.append(document_text)
+        self.known_type_calls.append(known_types)
         content = document_text.content if hasattr(document_text, "content") else document_text
         outcome = self._outcomes[content]
         if isinstance(outcome, Exception):
@@ -56,7 +59,7 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult | Exception]) -
 def _create_document(client: TestClient, content: str) -> dict:
     response = client.post(
         "/api/documents",
-        json={"title": content, "content": content, "document_date": "2026-07-10"},
+        json={"title": content, "content": content, "publication_date": "2026-07-10"},
     )
     assert response.status_code == 201
     return response.json()
@@ -76,7 +79,6 @@ def test_processing_passes_document_metadata_to_lm_studio(tmp_path: Path) -> Non
         json={
             "title": "Naval blockade update",
             "content": content,
-            "document_date": "2026-07-10",
             "publication_date": "2026-07-12",
         },
     )
@@ -87,9 +89,95 @@ def test_processing_passes_document_metadata_to_lm_studio(tmp_path: Path) -> Non
     assert processed.status_code == 202
     context = fake_client.calls[0]
     assert getattr(context, "title", None) == "Naval blockade update"
-    assert getattr(context, "document_date", None) == "2026-07-10"
     assert getattr(context, "publication_date", None) == "2026-07-12"
     assert getattr(context, "content", None) == content
+
+
+def test_processing_sends_only_active_taxonomy_leaves_with_full_paths_to_lm_studio(
+    tmp_path: Path,
+) -> None:
+    content = "A military unit mobilized."
+    fake_client = FakeLmStudioClient({content: _extraction_for(content)})
+    app = create_app(
+        settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: True, lm_studio_client=fake_client
+    )
+    client = TestClient(app)
+    document = _create_document(client, content)
+
+    with app.state.session_factory() as session:
+        linked_type = EventType(
+            name="Military Mobilization", description="Use for a military buildup.", is_active=True
+        )
+        legacy_type = EventType(
+            name="Legacy Active Type", description="Never offer this to AI.", is_active=True
+        )
+        inactive_type = EventType(
+            name="Inactive Leaf", description="Do not offer inactive leaves.", is_active=False
+        )
+        domain = TaxonomyNode(name="Security & Conflict", level="domain")
+        category = TaxonomyNode(name="Signalling & Posture", level="category", parent=domain)
+        subcategory = TaxonomyNode(name="Military Readiness", level="subcategory", parent=category)
+        linked_leaf = TaxonomyNode(
+            name="Military Mobilization", level="event_type", parent=subcategory, event_type=linked_type
+        )
+        inactive_leaf = TaxonomyNode(
+            name="Inactive Leaf", level="event_type", parent=subcategory, event_type=inactive_type
+        )
+        session.add_all([legacy_type, linked_leaf, inactive_leaf])
+        session.commit()
+
+    response = client.post("/api/documents/process", json={"document_ids": [document["id"]]})
+
+    assert response.status_code == 202
+    assert fake_client.known_type_calls == [
+        [
+            KnownEventType(
+                name="Military Mobilization",
+                description="Use for a military buildup.",
+                path="Security & Conflict > Signalling & Posture > Military Readiness > Military Mobilization",
+            )
+        ]
+    ]
+
+
+def test_persisting_extraction_leaves_malformed_taxonomy_leaf_untyped(tmp_path: Path) -> None:
+    """AI output cannot assign a leaf unless its complete taxonomy path exists."""
+    content = "A military unit mobilized."
+    client = _client(tmp_path, {})
+    app = client.app
+    document_payload = _create_document(client, content)
+
+    with app.state.session_factory() as session:
+        document = session.get(Document, document_payload["id"])
+        assert document is not None
+        event_type = EventType(
+            name="Malformed Leaf", description="This leaf has the wrong parent.", is_active=True
+        )
+        domain = TaxonomyNode(name="Security & Conflict", level="domain")
+        malformed_leaf = TaxonomyNode(
+            name="Malformed Leaf", level="event_type", parent=domain, event_type=event_type
+        )
+        session.add(malformed_leaf)
+        session.commit()
+
+        result = persist_extraction(
+            session,
+            document,
+            ExtractionResult(
+                events=[
+                    ExtractedEvent(
+                        title="Mobilization",
+                        summary="A military unit mobilized.",
+                        event_type=ExtractedEventType(existing="Malformed Leaf"),
+                        epistemic_status="confirmed",
+                        evidence_quote=content,
+                    )
+                ]
+            ),
+        )
+
+        assert len(result.saved_events) == 1
+        assert result.saved_events[0].event_type is None
 
 
 def test_batch_where_second_document_fails_still_completes_first_and_third(

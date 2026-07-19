@@ -28,4 +28,21 @@ describe("EventTypeDescription", () => {
     expect(eventTypeNeedsDescription({ ...base, description: "Defined." })).toBe(false);
     expect(eventTypeNeedsDescription(null)).toBe(false);
   });
+
+  it("shows the taxonomy leaf's path beneath its definition", () => {
+    render(<EventTypeDescription eventType={{
+      id: "leaf", name: "Diplomatic Statement",
+      description: "Official statement.",
+      is_active: true,
+      taxonomy_path: [
+        { id: "d", name: "Diplomacy", level: "domain" },
+        { id: "c", name: "Diplomatic Engagement", level: "category" },
+        { id: "s", name: "Diplomatic Communication", level: "subcategory" },
+        { id: "leaf", name: "Diplomatic Statement", level: "event_type" },
+      ],
+    }} />);
+    expect(
+      screen.getByText("Diplomacy › Diplomatic Engagement › Diplomatic Communication › Diplomatic Statement"),
+    ).toBeVisible();
+  });
 });

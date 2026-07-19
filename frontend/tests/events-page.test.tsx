@@ -34,21 +34,32 @@ import { EventEditor } from "@/app/events/event-editor";
 import DocumentSourcePage from "@/app/documents/[documentId]/page";
 import * as eventsApi from "@/lib/events-api";
 import * as documentsApi from "@/lib/documents-api";
-import type { EventRead } from "@/lib/events-api";
+import type { EventRead, TaxonomyPathSegment } from "@/lib/events-api";
 import type { Document } from "@/lib/documents-api";
+
+const TEST_TAXONOMY_PATH: TaxonomyPathSegment[] = [
+  { id: "domain-1", name: "Test Domain", level: "domain" },
+  { id: "category-1", name: "Test Category", level: "category" },
+  { id: "subcategory-1", name: "Test Subcategory", level: "subcategory" },
+  { id: "type-1", name: "Movement", level: "event_type" },
+];
 
 function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
   return {
     id: "event-1",
     title: "Bridge crossing reported",
     summary: "A convoy crossed the bridge.",
-    start_date: "2026-07-10",
-    start_date_precision: "exact",
-    end_date: null,
-    end_date_precision: null,
+    event_date: "2026-07-10",
+    event_date_precision: "exact",
     epistemic_status: "claim",
     review_status: "approved",
-    event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
+    event_type: {
+      id: "type-1",
+      name: "Movement",
+      description: null,
+      is_active: true,
+      taxonomy_path: TEST_TAXONOMY_PATH,
+    },
     actors: [],
     locations: [],
     sources: [],
@@ -60,7 +71,7 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 }
 
 function makeDocument(overrides: Partial<Document> = {}): Document {
-  return { id: "doc-1", title: "Field report", content: "The full source report.", document_date: "2026-07-10", publication_date: "2026-07-11", source_url: "https://example.test/report", input_date: "2026-07-14T00:00:00Z", processing_status: "completed", processing_error: null, created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", attachments: [], ...overrides };
+  return { id: "doc-1", title: "Field report", content: "The full source report.", publication_date: "2026-07-11", source_url: "https://example.test/report", input_date: "2026-07-14T00:00:00Z", processing_status: "completed", processing_error: null, created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", attachments: [], ...overrides };
 }
 
 describe("EventsPage", () => {
@@ -107,6 +118,8 @@ describe("EventsPage", () => {
 
     expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
     expect(screen.getByText(event.summary)).toBeVisible();
+    expect(screen.getByText("Event date")).toBeVisible();
+    expect(screen.getByText("2026-07-10")).toBeVisible();
     expect(screen.getByText("North Unit (source)")).toBeVisible();
     expect(screen.getByText("Jakarta, Jakarta, Indonesia (city/regency coordinates)")).toBeVisible();
     expect(screen.getByText("Claim", { selector: ".event-detail .status-badge" })).toHaveAttribute(
@@ -251,6 +264,18 @@ describe("DocumentSourcePage", () => {
 });
 
 describe("EventDetail edit permissions", () => {
+  it("shows a non-exact event date together with its precision", () => {
+    render(
+      <EventDetail
+        event={makeEvent({ event_date: "2026-07-10", event_date_precision: "month" })}
+        eventsPath="/events"
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("2026-07-10 (month)")).toBeVisible();
+  });
+
   it("does not expose Edit for rejected or merged audit records", () => {
     const { rerender } = render(<EventDetail event={makeEvent({ review_status: "rejected" })} eventsPath="/events" onClose={vi.fn()} onEdit={vi.fn()} />);
     expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
@@ -275,14 +300,44 @@ describe("EventDetail edit permissions", () => {
 });
 
 describe("EventEditor type selection", () => {
+  it("accepts year-only event dates in the approved-event editor", async () => {
+    const onSave = vi.fn();
+    render(
+      <EventEditor
+        actorOptions={[]}
+        event={makeEvent()}
+        eventTypeOptions={[makeEvent().event_type!]}
+        onCancel={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(screen.getByLabelText("Event date")).toHaveAttribute("type", "text");
+    fireEvent.change(screen.getByLabelText("Event date"), { target: { value: "2026" } });
+    fireEvent.change(screen.getByLabelText("Event date precision"), { target: { value: "year" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
+      event_date: "2026",
+      event_date_precision: "year",
+    })));
+  });
+
   it("updates the definition when the approved-event type changes", () => {
     const movement = {
       id: "movement", name: "Movement",
       description: "Movement of people or equipment.", is_active: true,
+      taxonomy_path: TEST_TAXONOMY_PATH,
     };
     const protest = {
       id: "protest", name: "Protest",
       description: "Collective public demonstration.", is_active: true,
+      taxonomy_path: [
+        { id: "domain-2", name: "Test Domain", level: "domain" as const },
+        { id: "category-2", name: "Test Category", level: "category" as const },
+        { id: "subcategory-2", name: "Test Subcategory", level: "subcategory" as const },
+        { id: "protest", name: "Protest", level: "event_type" as const },
+      ],
     };
     render(
       <EventEditor
@@ -293,8 +348,48 @@ describe("EventEditor type selection", () => {
         onSave={vi.fn()}
       />,
     );
-    fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "protest" } });
+    fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "Protest" } });
     expect(screen.getByText("Collective public demonstration.")).toBeVisible();
+    expect(screen.getByLabelText("Event date")).toBeVisible();
+    expect(screen.getByLabelText("Event date precision")).toBeVisible();
+    expect(screen.queryByLabelText(/start date/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/end date/i)).not.toBeInTheDocument();
+  });
+
+  it("submits the selected type by name, not id, so it resolves to the correct taxonomy leaf", async () => {
+    const movement = {
+      id: "movement", name: "Movement",
+      description: "Movement of people or equipment.", is_active: true,
+      taxonomy_path: TEST_TAXONOMY_PATH,
+    };
+    const protest = {
+      id: "protest", name: "Protest",
+      description: "Collective public demonstration.", is_active: true,
+      taxonomy_path: [
+        { id: "domain-2", name: "Test Domain", level: "domain" as const },
+        { id: "category-2", name: "Test Category", level: "category" as const },
+        { id: "subcategory-2", name: "Test Subcategory", level: "subcategory" as const },
+        { id: "protest", name: "Protest", level: "event_type" as const },
+      ],
+    };
+    const onSave = vi.fn();
+    render(
+      <EventEditor
+        actorOptions={[]}
+        event={makeEvent({ event_type: movement })}
+        eventTypeOptions={[movement, protest]}
+        onCancel={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Event type"), { target: { value: "Protest" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({ event_type: { existing: "Protest" } }),
+      ),
+    );
   });
 
   it("offers only supported active event types", () => {

@@ -4,15 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { EventTimeline } from "@/components/event-timeline";
 import type { EventRead } from "@/lib/events-api";
 
-function makeEvent(id: string, title: string, startDate: string | null): EventRead {
+function makeEvent(id: string, title: string, eventDate: string | null): EventRead {
   return {
     id,
     title,
     summary: "Summary",
-    start_date: startDate,
-    start_date_precision: startDate ? "exact" : null,
-    end_date: null,
-    end_date_precision: null,
+    event_date: eventDate,
+    event_date_precision: eventDate ? "exact" : null,
     epistemic_status: "confirmed",
     review_status: "approved",
     event_type: null,
@@ -41,6 +39,7 @@ describe("EventTimeline", () => {
 
     const titles = screen.getAllByRole("listitem").map((item) => item.textContent);
     expect(titles).toEqual(["Newer event", "Older event", "Undated event"]);
+    expect(screen.getByRole("heading", { name: "Known dates" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Date unknown" })).toBeInTheDocument();
   });
 

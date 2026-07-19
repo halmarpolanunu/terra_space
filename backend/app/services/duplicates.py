@@ -18,8 +18,8 @@ def _parse_date(value: str | None) -> date | None:
 
 
 def _dates_close_enough(a: Event, b: Event) -> bool:
-    date_a = _parse_date(a.start_date)
-    date_b = _parse_date(b.start_date)
+    date_a = _parse_date(a.event_date)
+    date_b = _parse_date(b.event_date)
     if date_a is None or date_b is None:
         return True
     return abs((date_a - date_b).days) <= DATE_PROXIMITY_DAYS
@@ -66,8 +66,8 @@ def _build_matched_reason(
 ) -> str:
     parts = [f"same type ({draft.event_type.name})"]
 
-    date_a = _parse_date(draft.start_date)
-    date_b = _parse_date(approved.start_date)
+    date_a = _parse_date(draft.event_date)
+    date_b = _parse_date(approved.event_date)
     if date_a is not None and date_b is not None:
         diff = abs((date_a - date_b).days)
         parts.append("same date" if diff == 0 else f"dates {diff} day(s) apart")

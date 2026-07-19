@@ -35,7 +35,7 @@ export function summarizeDashboardEvents(events: EventRead[]) {
     total_events: events.length,
     new_events: events.filter((event) => approvedInLastSevenDays(event.approved_at)).length,
     by_event_type: [...byType.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([name, count]) => ({ name, count })),
-    incomplete_date_count: events.filter((event) => !event.start_date || event.start_date_precision === "unknown").length,
+    incomplete_date_count: events.filter((event) => !event.event_date || event.event_date_precision === "unknown").length,
     incomplete_location_count: unresolvedLocationEvents(events).length,
   };
 }

@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
-from app.db.models import EventType
+from app.db.models import EventType, TaxonomyNode
 from app.main import create_app
 from app.schemas.extraction import (
     ExtractedActor,
@@ -40,9 +40,18 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
     )
     client = TestClient(app)
     with app.state.session_factory() as db:
+        domain = TaxonomyNode(name="Test domain", level="domain")
+        category = TaxonomyNode(name="Test category", level="category", parent=domain)
+        subcategory = TaxonomyNode(
+            name="Test subcategory", level="subcategory", parent=category
+        )
+        attack = EventType(name="Attack", description="Use for attacks against a target.", is_active=True)
+        report = EventType(name="Report", description="Use for reports of an event.", is_active=True)
         db.add_all([
-            EventType(name="Attack", description="Use for attacks against a target.", is_active=True),
-            EventType(name="Report", description="Use for reports of an event.", is_active=True),
+            attack,
+            report,
+            TaxonomyNode(name="Attack", level="event_type", parent=subcategory, event_type=attack),
+            TaxonomyNode(name="Report", level="event_type", parent=subcategory, event_type=report),
         ])
         db.commit()
     return client
@@ -51,7 +60,7 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
 def _create_and_process_document(client: TestClient, content: str) -> dict:
     response = client.post(
         "/api/documents",
-        json={"title": content, "content": content, "document_date": "2026-07-10"},
+        json={"title": content, "content": content, "publication_date": "2026-07-10"},
     )
     assert response.status_code == 201
     document = response.json()
@@ -71,16 +80,22 @@ def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) ->
         lm_studio_client=fake,
     )
     client = TestClient(app)
-    client.post(
-        "/api/event-types",
-        json={"name": "Protest", "description": "Collective public demonstration."},
-    )
     with app.state.session_factory() as db:
-        db.add(EventType(name="Unused suggestion", description=None, is_active=False))
+        domain = TaxonomyNode(name="Civil Unrest", level="domain")
+        category = TaxonomyNode(name="Public Order", level="category", parent=domain)
+        subcategory = TaxonomyNode(name="Demonstrations", level="subcategory", parent=category)
+        protest = EventType(
+            name="Protest", description="Collective public demonstration.", is_active=True
+        )
+        db.add_all([
+            protest,
+            TaxonomyNode(name="Protest", level="event_type", parent=subcategory, event_type=protest),
+            EventType(name="Unused suggestion", description=None, is_active=False),
+        ])
         db.commit()
     document = client.post(
         "/api/documents",
-        json={"title": content, "content": content, "document_date": "2026-07-16"},
+        json={"title": content, "content": content, "publication_date": "2026-07-16"},
     ).json()
     client.post("/api/documents/process", json={"document_ids": [document["id"]]})
 
@@ -88,6 +103,7 @@ def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) ->
         KnownEventType(
             name="Protest",
             description="Collective public demonstration.",
+            path="Civil Unrest > Public Order > Demonstrations > Protest",
         )
     ]
 

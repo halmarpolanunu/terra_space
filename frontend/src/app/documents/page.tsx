@@ -27,7 +27,6 @@ function toDraft(document: Document): DocumentDraft {
   return {
     title: document.title,
     content: document.content,
-    document_date: document.document_date,
     publication_date: document.publication_date,
     source_url: document.source_url,
   };

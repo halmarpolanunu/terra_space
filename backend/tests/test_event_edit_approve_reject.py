@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import Settings
-from app.db.models import DuplicateFlag, EventType
+from app.db.models import DuplicateFlag, EventType, TaxonomyNode
 from app.main import create_app
 from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
 from app.services.lm_studio import KnownEventType
@@ -31,9 +31,18 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
     )
     client = TestClient(app)
     with app.state.session_factory() as db:
+        domain = TaxonomyNode(name="Test domain", level="domain")
+        category = TaxonomyNode(name="Test category", level="category", parent=domain)
+        subcategory = TaxonomyNode(
+            name="Test subcategory", level="subcategory", parent=category
+        )
+        attack = EventType(name="Attack", description="Use for attacks against a target.", is_active=True)
+        report = EventType(name="Report", description="Use for reports of an event.", is_active=True)
         db.add_all([
-            EventType(name="Attack", description="Use for attacks against a target.", is_active=True),
-            EventType(name="Report", description="Use for reports of an event.", is_active=True),
+            attack,
+            report,
+            TaxonomyNode(name="Attack", level="event_type", parent=subcategory, event_type=attack),
+            TaxonomyNode(name="Report", level="event_type", parent=subcategory, event_type=report),
         ])
         db.commit()
     return client
@@ -42,7 +51,7 @@ def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient
 def _create_and_process_document(client: TestClient, content: str) -> dict:
     response = client.post(
         "/api/documents",
-        json={"title": content, "content": content, "document_date": "2026-07-10"},
+        json={"title": content, "content": content, "publication_date": "2026-07-10"},
     )
     assert response.status_code == 201
     document = response.json()
@@ -202,9 +211,17 @@ def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
     _describe_event_type(client, event["event_type"]["id"], "Use for reports of an event.")
     client.post(f"/api/events/{event['id']}/approve")
 
-    response = client.patch(f"/api/events/{event['id']}", json={"title": "Nope"})
+    response = client.patch(
+        f"/api/events/{event['id']}",
+        json={
+            "title": "Nope",
+            "event_date": "2026-07-10",
+            "event_date_precision": "exact",
+        },
+    )
     assert response.status_code == 200
     assert response.json()["title"] == "Nope"
+    assert response.json()["event_date"] == "2026-07-10"
     assert response.json()["review_status"] == "approved"
 
 
@@ -215,7 +232,7 @@ def test_manual_add_with_quote_not_in_document_is_rejected(tmp_path: Path) -> No
         json={
             "title": "Field note",
             "content": "Reported a checkpoint closure near the bridge.",
-            "document_date": "2026-07-10",
+            "publication_date": "2026-07-10",
         },
     ).json()
 
@@ -237,7 +254,7 @@ def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None
     content = "Reported a checkpoint closure near the bridge."
     document = client.post(
         "/api/documents",
-        json={"title": "Field note", "content": content, "document_date": "2026-07-10"},
+        json={"title": "Field note", "content": content, "publication_date": "2026-07-10"},
     ).json()
 
     response = client.post(
@@ -248,6 +265,8 @@ def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None
             "title": "Checkpoint closure",
             "summary": "A checkpoint was closed near the bridge.",
             "epistemic_status": "confirmed",
+            "event_date": "2026-07-10",
+            "event_date_precision": "exact",
             "event_type": {"existing": "Report"},
             "actors": [{"name": "Local Authority", "role": "source"}],
         },
@@ -257,6 +276,9 @@ def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None
     assert body["review_status"] == "draft"
     assert body["event_type"]["name"] == "Report"
     assert body["event_type"]["is_active"] is True
+    assert body["event_date"] == "2026-07-10"
+    assert body["event_date_precision"] == "exact"
+    assert "start_date" not in body
     assert body["sources"][0]["document_id"] == document["id"]
 
 

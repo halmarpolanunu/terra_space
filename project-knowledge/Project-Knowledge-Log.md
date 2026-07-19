@@ -8,6 +8,118 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-19 - Event Taxonomy tree delivered and applied to the live database
+
+- Completed the [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md):
+  reviewed and confirmed the Task 3 approval guard (fixing 6 unrelated stale test regressions found
+  by a full-suite run), built and verified the Task 4 tree-plus-inspector UI (finding and fixing a
+  real pre-existing bug where the Events approved-event editor sent a type's id instead of its name),
+  then ran Task 5's backup and live migration.
+- Task 5 uncovered a pre-existing issue not caused by this session: the live database already held
+  an incomplete, unrecorded partial application of this same migration (an empty `taxonomy_nodes`
+  table with `alembic_version` still at `0008`) from an earlier, untracked attempt. Fixed by safely
+  dropping the empty table, then re-verified and re-applied the migration cleanly. See
+  [Current Status](Current-Status.md) for full detail, backup path, and verification counts.
+- The owner's live database is now on revision `0009_event_taxonomy_tree` with the full 33-node
+  approved tree; no event, event type, or document data was altered. None of this work (Tasks 1–5)
+  is committed to git yet — the owner has not asked for a commit.
+
+## 2026-07-19 - Event Taxonomy backend paused before UI and deployment
+
+- Began the approved [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md)
+  in the owner-approved shared dirty workspace. No commit, Docker rebuild, live Alembic migration,
+  UI change, or owner-data write was performed.
+- Added the uncommitted `0009_event_taxonomy_tree` migration and taxonomy model. It uses a
+  validate-before-write sequence, preserves data on rejected preconditions, creates/links the
+  twelve approved leaves, handles absent/draft/non-draft Airstrike safely, and has 9 passing
+  isolated migration tests.
+- Added the uncommitted taxonomy API and closed-taxonomy guards. Focused API work reached 21
+  passing tests; focused local-AI work reached 43 passing tests and the later path regression set
+  reached 21 passing tests. Legacy direct creation is blocked, only full active leaves reach local
+  AI, and malformed outputs remain untyped.
+- Paused at the explicit owner request before starting the selected calm tree-plus-inspector UI.
+  The first required continuation check is the uncommitted approval guard in
+  `backend/app/services/events.py`: rerun focused approval tests and independently review that
+  inactive or incomplete-path types cannot be approved. See [Current Status](Current-Status.md).
+
+## 2026-07-19 - Event taxonomy tree direction approved
+
+- The owner approved a real four-level `Domain → Category → Subcategory → Event Type` taxonomy
+  tree for Terra Sense, with only Event Type leaves assignable to events or local AI.
+- The approved delivery replaces the cluttered flat Event Type list with a calm tree-plus-inspector
+  workspace. It permits controlled node management but excludes drag-and-drop and free workflow
+  editing.
+- The twelve approved global IR Event Types will move into the new tree. The legacy `Airstrike`
+  Event Type will be removed safely: affected draft events remain and become untyped for review.
+- This direction brings hierarchical taxonomy management into the MVP while preserving the
+  closed-taxonomy rule. See [Event Taxonomy Tree and Management](decisions/Event-Taxonomy-Tree-and-Management.md).
+- Added the test-first [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md).
+  It covers the safe database migration, 12-leaf seed tree, Airstrike handling, closed local-AI
+  path context, calm tree-plus-inspector UI, and owner-data backup/verification sequence.
+
+- Completed the approved [Single Source Date and Event Date Implementation Plan](plans/2026-07-18-single-source-date-event-date.md).
+  Document intake now has one required, non-blank Publication Date, defined as the date the source
+  document was made. Events now have one optional Event Date and precision rather than a start/end
+  range. The local AI receives Publication Date only as source context and may not infer Event Date
+  from it without supporting source content and evidence.
+- Added a migration safety regression covering a full linked SQLite graph with foreign keys enabled.
+  The migration preserves and restores source links, attachments, event-source evidence, actor and
+  location links, and duplicate flags while SQLite rebuilds the affected parent tables. It checks
+  foreign-key integrity after upgrade and downgrade. After creating a consistent backup, the live
+  database was migrated to `0008_single_source_event_date`; read-only counts and
+  `PRAGMA foreign_key_check` confirmed that relationships remain intact.
+
+## 2026-07-18 - Document metadata added to local AI extraction context
+
+- LM Studio extraction now receives the source title, document date, publication date when present,
+  and source content as labelled context. The prompt expressly keeps source dates from becoming
+  event dates unless the document evidence supports them.
+- A missing publication date is represented as `Not provided`; no owner data was changed during
+  verification. The [implementation plan](plans/2026-07-18-document-metadata-extraction-context.md)
+  is complete. Backend verification passed with 141 tests; frontend lint and the production build
+  also passed.
+
+## 2026-07-18 - Closed Event Type taxonomy implemented pending isolated browser verification
+
+- LM Studio extraction now accepts only an exact active Event Type name or `null`. Unknown and
+  inactive names are saved as untyped drafts; extraction never creates or describes an Event Type.
+- Event Review now makes an untyped event clear, limits manual assignment to active owner-managed
+  types, and removes Event Type suggestion wording from the relevant interface.
+- Verified with 139 backend tests, 177 frontend tests, frontend lint, and a production build. A
+  focused Playwright scenario is present and syntax-checked but remains unrun because the current
+  runner resets Docker data; it must be isolated before browser execution. See the
+  [implementation plan](plans/2026-07-18-closed-event-type-taxonomy.md).
+
+## 2026-07-18 - Initial global IR event type names shortened
+
+- Renamed the twelve active event types into concise English titles for consistent use in the
+  English interface and compact filters. Their descriptions, active state, and taxonomy meaning
+  did not change.
+
+## 2026-07-18 - Initial global IR event types configured
+
+- Created the twelve active Event Types from the approved [Initial Global IR Event Types
+  Configuration Plan](plans/2026-07-18-initial-global-ir-event-types.md), each with an AI guidance
+  description.
+- Kept the existing suggested `Airstrike` type because it is already used by a draft event. The
+  local API reported 13 total types and 12 active approved taxonomy types after configuration.
+
+## 2026-07-18 - Initial global IR event taxonomy decided
+
+- The owner selected a concise, domain-first initial taxonomy for global monitoring: Security &
+  Conflict, Diplomacy, and Economy & Energy, with four event types under each domain.
+- Signals such as official statements and threats are recorded separately from later material
+  actions. Existing flat Event Type storage remains in place for the first delivery.
+
+## 2026-07-18 - Terra Insight and Terra Sense implementation plan prepared
+
+- Added the [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md), based on the current navigation, routes, document
+  statuses, event review statuses, and local API contracts.
+- The proposed first delivery keeps existing routes, adds a read-only `/sense` flow monitor, groups
+  navigation into Terra Insight, Terra Sense, and Settings, and moves Event Type management into
+  Terra Sense. It excludes external automatic ingestion, a second app, and a workflow editor.
+- No application code, route, UI, database, roadmap milestone, or North Star statement changed.
+
 ## 2026-07-18 - Terra Insight and Terra Sense product organization approved
 
 - The owner clarified that Terra Space should focus on presenting and analysing trusted data. The

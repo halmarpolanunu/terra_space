@@ -10,6 +10,146 @@ status: active
 
 ## Current focus
 
+The owner-approved [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md)
+is now **fully implemented, verified, and applied to the owner's live database**. Work happened in
+the shared dirty `terra-insight-sense` workspace by owner approval. **None of it is committed to git
+yet** — the owner has not asked for a commit.
+
+Backend (Tasks 1–3), all verified with the full 187-test isolated backend suite:
+
+- `0009_event_taxonomy_tree` and `TaxonomyNode` introduce the approved
+  `Domain → Category → Subcategory → Event Type` tree. The migration validates all prerequisites
+  before any write, seeds/links the twelve approved leaves, safely no-ops when legacy `Airstrike`
+  is absent, clears draft-only Airstrike references before removal when present, rejects non-draft
+  Airstrike references, and retains Event Types/events on downgrade.
+- Taxonomy API endpoints and legacy Event Type guards are implemented. Direct legacy creation is
+  blocked (`POST /api/event-types` now returns `410`), linked leaf renames synchronize the tree,
+  linked leaf deletion must go through the tree, and legacy unlinked records remain manageable
+  without becoming active taxonomy choices.
+- The local-AI pipeline now supplies only active leaves with a complete four-level path and persists
+  malformed/unlinked outputs as untyped drafts.
+- Manual Event APIs reject `suggested`, unknown, inactive, unlinked, and incomplete-path types; an
+  explicitly null Event Type clears the type. The approval guard (`approve_event`, mirrored in
+  `_resolve_event_type`) raises `EventTypeSelectionError` when an event's type is set and is either
+  inactive or not a full active taxonomy leaf; `approve_all_for_document` skips the same case. This
+  guard was the one open item flagged at the start of this session (a prior reviewer had found an
+  approval bypass) — reviewed and confirmed correct, with dedicated regression tests already covering
+  both failure shapes.
+- Fixed 6 stale-fixture regressions surfaced only by a full-suite run (not the focused files run
+  earlier), unrelated to the guard itself: `test_event_edit_approve_reject.py`, `test_events_api.py`,
+  and `test_duplicate_resolution.py` each had a `_client()` fixture creating plain unlinked
+  `EventType` rows, which no longer resolve under Task 3's full-path AI matching;
+  `test_events_api.py`'s legacy-route test needed the new `KnownEventType.path` field; `test_database.py`
+  / `test_migration_0002.py` asserted the old `0008` head revision.
+
+Frontend (Task 4), all verified with the full 187-test frontend suite, clean lint, and a successful
+production build (including a clean TypeScript pass):
+
+- Added `frontend/src/app/sense/taxonomy-tree.tsx` (search filters and expands matching ancestors,
+  default-expands domains) and `frontend/src/app/sense/taxonomy-inspector.tsx` (per-node
+  details/actions only, edit fields hidden until Edit, confirmation required for delete and
+  deactivate, only the next valid child level offered, add-child blocked on an `event_type` leaf).
+- `event-type-settings.tsx` was rewritten from the old flat list into the composed tree+inspector
+  container (`nodes: TaxonomyNodeRead[]`); `event-types-workspace.tsx` fetches `listEventTaxonomy()`
+  and the page heading is now "Event Taxonomy"; the Terra Sense nav label was renamed to match.
+- `events-api.ts` and `settings-api.ts` gained the taxonomy types/CRUD (`listEventTaxonomy`,
+  `createTaxonomyNode`, `updateTaxonomyNode`, `deleteTaxonomyNode`, `isFullTaxonomyLeaf`,
+  `formatTaxonomyPath`); the old `createEventType`/`updateEventType`/`deleteEventType` frontend calls
+  were removed as dead code.
+- `EventTypeDescription` now also shows the selected leaf's path. Event Review's and Events' three
+  type pickers (`event-card.tsx`, `add-event-form.tsx`, `event-editor.tsx`) now filter to only full,
+  active taxonomy leaves via `isFullTaxonomyLeaf` and display the path; implementing this surfaced
+  and fixed a real pre-existing bug in `event-editor.tsx` (the approved-event editor was sending the
+  selected type's **id** as `existing`, which can never match a type name — it silently created
+  garbage `suggested` types before Task 3's stricter guard, and would have hard-failed every type
+  change after it).
+- Visually confirmed twice in a real browser: once against an isolated scratch database (tree
+  renders, category click selects+expands, inspector shows only valid actions, search filters and
+  expands ancestors), and once read-only against the owner's own migrated live database (see below).
+
+**Interruption note:** mid-session the owner's laptop crashed under process load (their normal
+`docker compose` containers plus this session's first, heavier isolated QA stack running at once).
+Recovered by tearing down the extra QA container/process and, per the owner's choice, restarting
+only their normal containers (no rebuild) before pausing Task 5 for their go-ahead.
+
+Task 5 (verify, back up, and safely migrate the live database) is **complete**:
+
+- Full isolated verification: 187/187 backend tests, 187/187 frontend tests, clean lint, successful
+  production build (all done before touching live data).
+- **Important safety finding, not caused by this session's work:** the live database's
+  `db-data` volume already contained a stray, empty `taxonomy_nodes` table with `alembic_version`
+  still at `0008` — the leftover of an earlier, unrecorded `alembic upgrade head` attempt against the
+  live database by some prior session (Current-Status had no record of this ever happening; it must
+  have failed silently on a machine where nobody checked the exit code). Discovered when the first
+  backup taken this session (`data/database-backups/2026-07-19_135200/`, since removed from active
+  use — kept on disk since deleting inside `data/` is blocked by this environment's safety
+  classifier, but it reflects that broken pre-existing state, not this session's migration, so **do
+  not restore from it**) turned out to already contain the stray table. Fixed by dropping the empty,
+  unreferenced table from the live database (verified empty first; no event, event type, or document
+  row was touched), confirmed a clean `PRAGMA foreign_key_check` and revision `0008` afterward, then
+  took a fresh, genuinely clean backup.
+- **Valid backup:** `data/database-backups/2026-07-19_140115/terra-space.db` — taken immediately
+  before the migration, confirmed by direct schema inspection to have no `taxonomy_nodes` table.
+- Before migrating: confirmed by direct query that the live database has no `Airstrike` Event Type at
+  all (so the migration's Airstrike-removal path is a safe no-op), 12 event types (all active,
+  described, exactly the approved set), 12 events, 1 document, revision `0008`.
+- The migration itself was proven correct first, in isolation, against a copy of the clean backup
+  (completed cleanly: revision became `0009_event_taxonomy_tree`, exactly 33 taxonomy nodes — 3
+  domains, 6 categories, 12 subcategories, 12 event-type leaves — empty `PRAGMA foreign_key_check`,
+  event/event-type/document counts unchanged) before being applied to the real live database with
+  `docker compose up -d --build`.
+- **Live database migration applied and verified**: revision `0009_event_taxonomy_tree`, 33 taxonomy
+  nodes in the exact expected shape, empty `PRAGMA foreign_key_check`, event types/events/documents
+  counts unchanged (12/12/1) from before migration. Both containers healthy.
+  All 12 of the owner's existing events were already `rejected` before this migration (unrelated,
+  pre-existing state) — 0 approved events and an empty Event Review queue are expected and were
+  confirmed read-only in the owner's real browser, alongside the new Event Taxonomy page rendering
+  correctly with live data.
+
+Not yet done: committing any of this work to git (deliberately deferred — the owner has not asked for
+a commit) and marking this plan `completed` (see the plan file's own pause/update notes for the exact
+remaining documentation step).
+
+The owner-approved [Single Source Date and Event Date Implementation Plan](plans/2026-07-18-single-source-date-event-date.md)
+is implemented, verified, and applied safely to the owner's live database. Documents now use one required, non-blank `Publication Date` (defined
+as the date the source document was made), while events use one optional `Event Date` plus a
+matching precision. Local AI receives only the source title, Publication Date, and content; it may
+set Event Date only when content and evidence quote support it. The schema migration safely maps
+legacy source/start dates and removes old range fields. Because SQLite rebuilds parent tables for
+this change, the migration now snapshots and restores source links, attachments, event evidence,
+actors, locations, and duplicate flags, then checks foreign-key integrity in an isolated regression
+test. A consistent SQLite backup was created before deployment, then the live database was migrated
+to revision `0008_single_source_event_date`. Read-only post-migration checks confirmed the expected
+data counts and an empty `PRAGMA foreign_key_check`. Verification: 162 isolated backend tests, 182
+frontend tests, frontend lint, production build, E2E fixture static checks, and Project Knowledge
+validation passed. No owner document, event, attachment, or setting was deleted.
+
+The approved [Document Metadata Extraction Context Plan](plans/2026-07-18-document-metadata-extraction-context.md)
+is implemented. Every LM Studio extraction now receives the source title, document date, optional
+publication date, and content in clearly labelled context. Source dates remain source context only:
+the prompt requires event dates to be supported by the source content and each event's evidence
+quote. A missing publication date is sent as `Not provided`. Verified with 141 backend tests,
+frontend lint, a production build, and isolated test data only; no owner document or event data was
+changed.
+
+The approved [Closed Event Type Taxonomy Implementation Plan](plans/2026-07-18-closed-event-type-taxonomy.md)
+is implemented through backend and frontend automated verification, with one safe-browser-verification
+step still pending. LM Studio's extraction contract now accepts only an exact active Event Type name
+or `null`; unknown, inactive, or absent names persist as untyped draft events and never create an
+Event Type. Event Review shows an untyped event as `Not stated`, guides the reviewer to choose an
+active type where appropriate, and limits its manual pickers to active owner-managed types. The
+full backend suite (139 tests), full frontend suite (177 tests), frontend lint, and production build
+pass. A focused Playwright scenario exists and is syntax-checked, but has not run because the
+existing end-to-end runner resets Docker data; it must be isolated before execution so it cannot
+touch owner data.
+
+The owner-approved [Initial Global IR Event Types Configuration Plan](plans/2026-07-18-initial-global-ir-event-types.md)
+is complete. Terra Sense now contains twelve active, described Event Types across Security &
+Conflict, Diplomacy, and Economy & Energy. The existing suggested `Airstrike` type remains because
+it is used by a draft event; it was not altered or deleted. The local API confirmed 13 total types
+and 12 active approved taxonomy types. No application code, database schema, or LM Studio setting
+changed.
+
 The MVP remains implemented and verified. Six owner-requested follow-up initiatives are now
 documented but **not implemented**: a locally hosted Supabase migration, a full reconsideration
 of event detection, a re-polish of route-specific UI backgrounds, corrected halo behavior while
@@ -21,9 +161,11 @@ work.
 
 The owner has also approved a new product organization direction, documented in
 [Terra Insight and Terra Sense Product Organization](decisions/Terra-Insight-and-Terra-Sense-Product-Organization.md).
-Terra Insight will be the workspace for presenting and analysing approved data, while Terra Sense
-will cover source intake, processing visibility, and Event Review. This is not implemented yet;
-the existing menu stays unchanged until a dedicated implementation plan is approved.
+The detailed [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md)
+is ready for owner approval. It preserves existing routes and local data, groups approved analysis
+under Terra Insight and document preparation under Terra Sense, adds a first read-only visual
+monitor, and places Event Type management in Terra Sense. No application code, UI, route,
+database, or automatic ingestion has changed; wait for the owner's approval before implementation.
 
 Implemented and verified the
 [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md). Event
@@ -565,8 +707,9 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 
 ## Next actions
 
-- When the owner is ready to change the application navigation, write an implementation plan for
-  the approved Terra Insight / Terra Sense product organization before changing screens or routes.
+- Ask the owner to review and approve the
+  [Terra Insight and Terra Sense Organization Implementation Plan](plans/2026-07-18-terra-insight-terra-sense-organization.md).
+  Do not change screens, navigation, routes, backend behavior, or data until approval is explicit.
 - Confirm with the owner, with an actual before/after location count, whether the improved
   extraction prompt reliably populates locations across more than one document — only one real
   document has been reprocessed against it so far ("seems good for now", not yet precisely

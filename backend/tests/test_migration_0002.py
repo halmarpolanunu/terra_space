@@ -7,14 +7,14 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
 
-def _migrated_engine(tmp_path: Path):
+def _migrated_engine(tmp_path: Path, revision: str = "0002_phase2_data_model"):
     database_file = tmp_path / "migrated.db"
     backend_dir = Path(__file__).resolve().parents[1]
     config = Config(str(backend_dir / "alembic.ini"))
     config.set_main_option("script_location", str(backend_dir / "alembic"))
     config.set_main_option("sqlalchemy.url", f"sqlite:///{database_file}")
 
-    command.upgrade(config, "head")
+    command.upgrade(config, revision)
 
     return create_engine(f"sqlite:///{database_file}")
 
@@ -26,11 +26,11 @@ def _column(engine, table: str, name: str) -> dict:
 
 
 def test_migration_reaches_current_head(tmp_path: Path) -> None:
-    engine = _migrated_engine(tmp_path)
+    engine = _migrated_engine(tmp_path, "head")
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "0007_event_type_descriptions"
+            == "0009_event_taxonomy_tree"
         )
 
 

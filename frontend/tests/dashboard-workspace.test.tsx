@@ -78,10 +78,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     id: "event-1",
     title: "Bridge crossing reported",
     summary: "A convoy crossed the bridge.",
-    start_date: "2026-07-10",
-    start_date_precision: "exact",
-    end_date: null,
-    end_date_precision: null,
+    event_date: "2026-07-10",
+    event_date_precision: "exact",
     epistemic_status: "claim",
     review_status: "approved",
     event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
@@ -117,7 +115,7 @@ describe("Dashboard workspace", () => {
 
   it("uses one URL filter value and derives every displayed Dashboard view from the event response when summary differs", async () => {
     const pinReady = makeEvent();
-    const unknownDate = makeEvent({ id: "event-2", title: "Undated event", start_date: null, start_date_precision: "unknown", locations: [] });
+    const unknownDate = makeEvent({ id: "event-2", title: "Undated event", event_date: null, event_date_precision: "unknown", locations: [] });
     const missingCoordinates = makeEvent({ id: "event-3", title: "Unlocated event", locations: [{ id: "location-3", country: "Indonesia", admin1: null, city_regency: null, latitude: null, longitude: null }] });
     vi.mocked(eventsApi.listEvents).mockImplementation(async (filters) => filters.q === "convoy" ? [pinReady] : [pinReady, unknownDate, missingCoordinates]);
     vi.mocked(eventsApi.getDashboardSummary).mockImplementation(async (filters) => filters.q === "convoy" ? { ...summary, total_events: 1, new_events: 0, by_event_type: [{ name: "Movement", count: 1 }], incomplete_date_count: 0, incomplete_location_count: 0 } : summary);

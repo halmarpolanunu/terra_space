@@ -24,7 +24,7 @@ export function DocumentSourceWorkspace({ documentId, backToEvents }: DocumentSo
     <Link className="btn" href={backToEvents}>Back to Events</Link>
     {error ? <><h1 id="source-document-title">Source document</h1><p className="document-error">{error}</p></> : document ? <>
       <p className="eyebrow">Read-only source</p><h1 id="source-document-title">{document.title}</h1>
-      <p className="document-meta">Document date: {document.document_date}{document.publication_date ? ` · Published: ${document.publication_date}` : ""}</p>
+      <p className="document-meta">Publication date: {document.publication_date}</p>
       {document.source_url && <p><a href={document.source_url} rel="noreferrer" target="_blank">Open original source</a></p>}
       <article className="source-document">{document.content}</article>
     </> : <><h1 id="source-document-title">Source document</h1><p>Loading source document…</p></>}

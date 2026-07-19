@@ -12,13 +12,13 @@ type EventTimelineProps = {
   onSelect?: (event: EventRead) => void;
 };
 
-function isKnownDate(event: EventRead): event is EventRead & { start_date: string } {
-  return Boolean(event.start_date && event.start_date_precision !== "unknown");
+function isKnownDate(event: EventRead): event is EventRead & { event_date: string } {
+  return Boolean(event.event_date && event.event_date_precision !== "unknown");
 }
 
 export function EventTimeline({ events, sort, hasActiveFilters, limit, onClearFilters, onSelect }: EventTimelineProps) {
   const knownEvents = events.filter(isKnownDate).sort((left, right) => {
-    const comparison = left.start_date.localeCompare(right.start_date);
+    const comparison = left.event_date.localeCompare(right.event_date);
     return sort === "date_asc" ? comparison : -comparison;
   });
   const unknownEvents = events

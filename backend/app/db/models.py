@@ -46,8 +46,7 @@ class Document(TimestampedModel, Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(500))
     content: Mapped[str] = mapped_column(Text)
-    document_date: Mapped[str] = mapped_column(String(10))
-    publication_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    publication_date: Mapped[str] = mapped_column(String(10))
     source_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     input_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     processing_status: Mapped[str] = mapped_column(String(32), default="draft")
@@ -82,6 +81,27 @@ class EventType(TimestampedModel, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     events: Mapped[list["Event"]] = relationship(back_populates="event_type")
+    taxonomy_node: Mapped["TaxonomyNode | None"] = relationship(back_populates="event_type")
+
+
+class TaxonomyNode(TimestampedModel, Base):
+    __tablename__ = "taxonomy_nodes"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    name: Mapped[str] = mapped_column(String(255))
+    level: Mapped[str] = mapped_column(String(16))
+    parent_id: Mapped[str | None] = mapped_column(
+        ForeignKey("taxonomy_nodes.id", ondelete="RESTRICT"), nullable=True
+    )
+    event_type_id: Mapped[str | None] = mapped_column(
+        ForeignKey("event_types.id", ondelete="SET NULL"), unique=True, nullable=True
+    )
+
+    parent: Mapped["TaxonomyNode | None"] = relationship(
+        back_populates="children", remote_side="TaxonomyNode.id"
+    )
+    children: Mapped[list["TaxonomyNode"]] = relationship(back_populates="parent")
+    event_type: Mapped[EventType | None] = relationship(back_populates="taxonomy_node")
 
 
 class Actor(TimestampedModel, Base):
@@ -130,10 +150,8 @@ class Event(TimestampedModel, Base):
     )
     title: Mapped[str] = mapped_column(String(500))
     summary: Mapped[str] = mapped_column(Text)
-    start_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    end_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    start_date_precision: Mapped[str | None] = mapped_column(String(16), nullable=True)
-    end_date_precision: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    event_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    event_date_precision: Mapped[str | None] = mapped_column(String(16), nullable=True)
     epistemic_status: Mapped[str] = mapped_column(String(32))
     review_status: Mapped[str] = mapped_column(String(32), default="draft")
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -6,13 +6,43 @@ export type ReviewStatus = "draft" | "approved" | "rejected" | "merged";
 export type ActorRole = "source" | "target";
 export type DuplicateResolution = "pending" | "kept_separate" | "linked";
 
+export type TaxonomyLevel = "domain" | "category" | "subcategory" | "event_type";
+
+export type TaxonomyPathSegment = {
+  id: string;
+  name: string;
+  level: TaxonomyLevel;
+};
+
 export type EventTypeRead = {
   id: string;
   name: string;
   description: string | null;
   is_active: boolean;
   in_use?: boolean;
+  taxonomy_path?: TaxonomyPathSegment[];
 };
+
+export type TaxonomyNodeRead = {
+  id: string;
+  name: string;
+  level: TaxonomyLevel;
+  parent_id: string | null;
+  event_type: EventTypeRead | null;
+  children: TaxonomyNodeRead[];
+};
+
+export function isFullTaxonomyLeaf(eventType: EventTypeRead): boolean {
+  return (
+    eventType.is_active &&
+    (eventType.taxonomy_path?.length ?? 0) === 4 &&
+    eventType.taxonomy_path![3].level === "event_type"
+  );
+}
+
+export function formatTaxonomyPath(path: TaxonomyPathSegment[]): string {
+  return path.map((segment) => segment.name).join(" › ");
+}
 
 export type ActorRead = {
   id: string;
@@ -54,10 +84,8 @@ export type EventRead = {
   id: string;
   title: string;
   summary: string;
-  start_date: string | null;
-  start_date_precision: DatePrecision | null;
-  end_date: string | null;
-  end_date_precision: DatePrecision | null;
+  event_date: string | null;
+  event_date_precision: DatePrecision | null;
   epistemic_status: EpistemicStatus;
   review_status: ReviewStatus;
   event_type: EventTypeRead | null;
@@ -100,10 +128,8 @@ export type EventCreate = {
   title: string;
   summary: string;
   event_type?: EventTypeInput | null;
-  start_date?: string | null;
-  start_date_precision?: DatePrecision | null;
-  end_date?: string | null;
-  end_date_precision?: DatePrecision | null;
+  event_date?: string | null;
+  event_date_precision?: DatePrecision | null;
   epistemic_status: EpistemicStatus;
   locations?: LocationInput[];
   actors?: ActorInput[];
@@ -113,10 +139,8 @@ export type EventUpdate = Partial<{
   title: string;
   summary: string;
   event_type: EventTypeInput;
-  start_date: string | null;
-  start_date_precision: DatePrecision | null;
-  end_date: string | null;
-  end_date_precision: DatePrecision | null;
+  event_date: string | null;
+  event_date_precision: DatePrecision | null;
   epistemic_status: EpistemicStatus;
   locations: LocationInput[];
   actors: ActorInput[];
@@ -229,6 +253,11 @@ export async function resolveDuplicateFlag(
 export async function listEventTypes(): Promise<EventTypeRead[]> {
   const response = await fetch(`${API_ROOT}/event-types`);
   return parseOrThrow<EventTypeRead[]>(response);
+}
+
+export async function listEventTaxonomy(): Promise<TaxonomyNodeRead[]> {
+  const response = await fetch(`${API_ROOT}/event-taxonomy`);
+  return parseOrThrow<TaxonomyNodeRead[]>(response);
 }
 
 export async function listActors(): Promise<ActorRead[]> {

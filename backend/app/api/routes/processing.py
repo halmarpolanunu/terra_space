@@ -3,9 +3,9 @@ from collections.abc import Iterator
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, aliased, sessionmaker
 
-from app.db.models import Actor, Document, Event, EventSource, EventType, Source
+from app.db.models import Actor, Document, Event, EventSource, EventType, Source, TaxonomyNode
 from app.services.extraction import persist_extraction
 from app.services.lm_studio import (
     DocumentExtractionContext,
@@ -45,13 +45,37 @@ def _process_document(
         db.commit()
 
         try:
+            leaf = aliased(TaxonomyNode)
+            subcategory = aliased(TaxonomyNode)
+            category = aliased(TaxonomyNode)
+            domain = aliased(TaxonomyNode)
             active_types = [
-                KnownEventType(name=event_type.name, description=event_type.description)
-                for event_type in db.execute(
-                    select(EventType)
-                    .where(EventType.is_active.is_(True))
+                KnownEventType(
+                    name=event_type.name,
+                    description=event_type.description,
+                    path=" > ".join((domain_name, category_name, subcategory_name, leaf_name)),
+                )
+                for event_type, domain_name, category_name, subcategory_name, leaf_name in db.execute(
+                    select(
+                        EventType,
+                        domain.name,
+                        category.name,
+                        subcategory.name,
+                        leaf.name,
+                    )
+                    .join(leaf, leaf.event_type_id == EventType.id)
+                    .join(subcategory, leaf.parent_id == subcategory.id)
+                    .join(category, subcategory.parent_id == category.id)
+                    .join(domain, category.parent_id == domain.id)
+                    .where(
+                        EventType.is_active.is_(True),
+                        leaf.level == "event_type",
+                        subcategory.level == "subcategory",
+                        category.level == "category",
+                        domain.level == "domain",
+                    )
                     .order_by(EventType.name)
-                ).scalars()
+                ).all()
             ]
             active_actors = [
                 actor.name
@@ -60,7 +84,6 @@ def _process_document(
             extraction_result = lm_studio_client.extract_events(
                 DocumentExtractionContext(
                     title=document.title,
-                    document_date=document.document_date,
                     publication_date=document.publication_date,
                     content=document.content,
                 ),

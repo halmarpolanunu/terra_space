@@ -14,7 +14,7 @@ export const NAV_GROUPS = [
       { href: "/sense", label: "Overview" },
       { href: "/documents", label: "Sources" },
       { href: "/event-review", label: "Event Review" },
-      { href: "/sense/event-types", label: "Event Types" },
+      { href: "/sense/event-types", label: "Event Taxonomy" },
     ],
   },
   {

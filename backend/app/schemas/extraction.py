@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 EpistemicStatus = Literal["confirmed", "claim", "rumor", "denied"]
 DatePrecision = Literal["exact", "month", "year", "unknown"]
@@ -46,10 +46,8 @@ class ExtractedEvent(BaseModel):
     title: str
     summary: str
     event_type: ExtractedEventType
-    start_date: str | None = None
-    start_date_precision: DatePrecision | None = None
-    end_date: str | None = None
-    end_date_precision: DatePrecision | None = None
+    event_date: str | None = None
+    event_date_precision: DatePrecision | None = None
     epistemic_status: EpistemicStatus
     locations: list[ExtractedLocation] = Field(
         default_factory=list,
@@ -62,6 +60,13 @@ class ExtractedEvent(BaseModel):
     )
     actors: list[ExtractedActor] = Field(default_factory=list)
     evidence_quote: str
+
+    @model_validator(mode="after")
+    def validate_date_and_precision(self) -> "ExtractedEvent":
+        from .date_validation import validate_event_date
+
+        validate_event_date(self.event_date, self.event_date_precision)
+        return self
 
 
 class ExtractionResult(BaseModel):

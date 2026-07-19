@@ -12,19 +12,22 @@ from app.schemas.extraction import ExtractionResult
 class KnownEventType:
     name: str
     description: str | None
+    path: str
 
 
 @dataclass(frozen=True)
 class DocumentExtractionContext:
     title: str
-    document_date: str
-    publication_date: str | None
+    publication_date: str
     content: str
 
 
 def _known_type_json(known_types: list[KnownEventType]) -> str:
     return json.dumps(
-        [{"name": item.name, "description": item.description} for item in known_types],
+        [
+            {"name": item.name, "description": item.description, "path": item.path}
+            for item in known_types
+        ],
         ensure_ascii=False,
     )
 
@@ -204,7 +207,8 @@ class LmStudioClient:
     ) -> dict:
         system_prompt = (
             f"{EXTRACTION_SYSTEM_PROMPT}\n\n"
-            f"Known active event types: {_known_type_json(known_types)}\n"
+            "Known active Event Type leaves (their paths are classification context only): "
+            f"{_known_type_json(known_types)}\n"
             "Use an exact supplied active event type name only when it fits. Otherwise set "
             "existing to null. Never invent, suggest, or describe a new event type.\n"
             f"Known actors: {', '.join(known_actors) or 'none yet'}"
@@ -218,13 +222,12 @@ class LmStudioClient:
                     "role": "user",
                     "content": (
                         f"Source title: {document_context.title}\n"
-                        f"Document date: {document_context.document_date}\n"
-                        "Publication date: "
-                        f"{document_context.publication_date or 'Not provided'}\n\n"
+                        f"Publication Date: {document_context.publication_date}\n\n"
                         "Source content:\n"
                         f"{document_context.content}\n\n"
-                        "The source title and dates are context only. Set an event date only when "
-                        "the source content and evidence quote support that event date."
+                        "Publication Date is when the source document was made. It is source "
+                        "context only. Set Event Date only when the source content and evidence "
+                        "quote support that event date."
                     ),
                 },
             ],

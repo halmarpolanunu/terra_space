@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { EpistemicStatusControl } from "@/app/event-review/epistemic-status-control";
 import { EventTypeDescription } from "@/components/event-type-description";
 import { FramedPanel } from "@/components/framed-panel";
+import { isFullTaxonomyLeaf } from "@/lib/events-api";
 import type { EpistemicStatus, EventCreate, EventTypeRead } from "@/lib/events-api";
 
 type AddEventFormValues = Omit<EventCreate, "document_id">;
@@ -26,7 +27,7 @@ export function AddEventForm({ eventTypeOptions, onSubmit, onCancel }: AddEventF
   const selectedType = eventTypeOptions.find(
     (type) => type.name.toLocaleLowerCase() === eventTypeName.trim().toLocaleLowerCase(),
   );
-  const activeEventTypeOptions = eventTypeOptions.filter((type) => type.is_active);
+  const activeEventTypeOptions = eventTypeOptions.filter(isFullTaxonomyLeaf);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();

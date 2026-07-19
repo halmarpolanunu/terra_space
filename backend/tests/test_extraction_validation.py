@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.db.models import Actor, Document, Event, EventType
+from app.db.models import Actor, Document, Event, EventType, TaxonomyNode
 from app.db.session import configure_sqlite_connection
 from app.schemas.extraction import (
     ExtractedActor,
@@ -29,7 +29,7 @@ def _document(**overrides: object) -> Document:
     defaults: dict = {
         "title": "Field report",
         "content": "A large protest occurred at the capitol on July 10th.",
-        "document_date": "2026-07-10",
+        "publication_date": "2026-07-10",
         "processing_status": "processing",
     }
     defaults.update(overrides)
@@ -41,10 +41,8 @@ def _event(**overrides: object) -> ExtractedEvent:
         "title": "Protest at the capitol",
         "summary": "A large protest occurred.",
         "event_type": ExtractedEventType(existing="Protest"),
-        "start_date": "2026-07-10",
-        "start_date_precision": "exact",
-        "end_date": None,
-        "end_date_precision": None,
+        "event_date": "2026-07-10",
+        "event_date_precision": "exact",
         "epistemic_status": "confirmed",
         "locations": [],
         "actors": [],
@@ -78,6 +76,8 @@ def test_event_with_evidence_quote_not_found_is_dropped_but_others_are_saved(
 
     assert len(result.saved_events) == 1
     assert result.saved_events[0].title == "Real event"
+    assert result.saved_events[0].event_date == "2026-07-10"
+    assert result.saved_events[0].event_date_precision == "exact"
     assert len(result.dropped_events) == 1
     assert result.dropped_events[0].title == "Fabricated event"
     assert session.execute(select(Event)).scalars().all() == result.saved_events
@@ -136,13 +136,36 @@ def test_unknown_or_inactive_event_type_is_saved_blank_without_creating_a_type(
     assert session.execute(select(EventType)).scalars().all() == [inactive_type]
 
 
+def test_active_unlinked_event_type_from_ai_is_saved_blank(tmp_path: Path) -> None:
+    session = _session(tmp_path)
+    document = _document()
+    legacy_type = EventType(name="Legacy Active Type", is_active=True)
+    session.add_all([document, legacy_type])
+    session.commit()
+
+    result = persist_extraction(
+        session,
+        document,
+        ExtractionResult(events=[_event(event_type=ExtractedEventType(existing="Legacy Active Type"))]),
+    )
+
+    assert result.saved_events[0].event_type is None
+    assert session.execute(select(EventType)).scalars().all() == [legacy_type]
+
+
 def test_existing_event_type_reference_matches_case_insensitively_and_trims_whitespace(
     tmp_path: Path,
 ) -> None:
     session = _session(tmp_path)
     document = _document()
     confirmed_type = EventType(name="Protest", is_active=True)
-    session.add_all([document, confirmed_type])
+    domain = TaxonomyNode(name="Civic", level="domain")
+    category = TaxonomyNode(name="Public activity", level="category", parent=domain)
+    subcategory = TaxonomyNode(name="Demonstrations", level="subcategory", parent=category)
+    leaf = TaxonomyNode(
+        name="Protest", level="event_type", parent=subcategory, event_type=confirmed_type
+    )
+    session.add_all([document, leaf])
     session.commit()
 
     extraction = ExtractionResult(

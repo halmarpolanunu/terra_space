@@ -13,6 +13,7 @@ from app.db.models import (
     EventType,
     Location,
     Source,
+    TaxonomyNode,
     utc_now,
 )
 from app.schemas.event import (
@@ -26,6 +27,8 @@ from app.schemas.event import (
     EventTypeRead,
     EventUpdate,
     LocationRead,
+    TaxonomyNodeRead,
+    TaxonomyPathSegment,
 )
 from app.services.duplicates import detect_duplicates
 from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
@@ -58,12 +61,58 @@ class EventTypeDescriptionRequiredError(Exception):
     """Raised when an active event type would have no usable description."""
 
 
+class EventTypeTaxonomyRequiredError(Exception):
+    """Raised when a legacy Event Type is activated outside the taxonomy tree."""
+
+
+class EventTypeSelectionError(Exception):
+    """Raised when a manual event does not select an active taxonomy leaf."""
+
+
 class EventTypeInUseError(Exception):
     """Raised when deleting an event type that is still referenced by an event."""
 
 
+class TaxonomyNodeParentError(Exception):
+    """Raised when a taxonomy node is attached at an invalid level."""
+
+
+class TaxonomyNodeHasChildrenError(Exception):
+    """Raised when deleting a taxonomy node that still groups other nodes."""
+
+
+class TaxonomyNodeDefinitionError(Exception):
+    """Raised when a non-leaf taxonomy node receives leaf-only fields."""
+
+
 class EvidenceQuoteNotFoundError(Exception):
     """Raised when a manually added event's evidence quote is not in the document's content."""
+
+
+def taxonomy_path_for_event_type(event_type: EventType) -> list[TaxonomyPathSegment]:
+    node = event_type.taxonomy_node
+    if node is None:
+        return []
+    path: list[TaxonomyPathSegment] = []
+    seen: set[str] = set()
+    while node is not None:
+        if node.id in seen:
+            return []
+        seen.add(node.id)
+        path.append(TaxonomyPathSegment(id=node.id, name=node.name, level=node.level))
+        node = node.parent
+    return list(reversed(path))
+
+
+def to_event_type_read(event_type: EventType, *, in_use: bool = False) -> EventTypeRead:
+    return EventTypeRead(
+        id=event_type.id,
+        name=event_type.name,
+        description=event_type.description,
+        is_active=event_type.is_active,
+        in_use=in_use,
+        taxonomy_path=taxonomy_path_for_event_type(event_type),
+    )
 
 
 def to_event_read(event: Event) -> EventRead:
@@ -71,13 +120,11 @@ def to_event_read(event: Event) -> EventRead:
         id=event.id,
         title=event.title,
         summary=event.summary,
-        start_date=event.start_date,
-        start_date_precision=event.start_date_precision,
-        end_date=event.end_date,
-        end_date_precision=event.end_date_precision,
+        event_date=event.event_date,
+        event_date_precision=event.event_date_precision,
         epistemic_status=event.epistemic_status,
         review_status=event.review_status,
-        event_type=EventTypeRead.model_validate(event.event_type) if event.event_type else None,
+        event_type=to_event_type_read(event.event_type) if event.event_type else None,
         actors=[
             EventActorRead(role=event_actor.role, actor=ActorRead.model_validate(event_actor.actor))
             for event_actor in event.event_actors
@@ -110,18 +157,18 @@ def list_events(db: Session, review_status: str | None) -> list[Event]:
 
 
 def _event_date_interval(event: Event) -> tuple[date, date] | None:
-    if not event.start_date or event.start_date_precision == "unknown":
+    if not event.event_date or event.event_date_precision == "unknown":
         return None
     try:
-        if event.start_date_precision == "year":
-            year = int(event.start_date)
+        if event.event_date_precision == "year":
+            year = int(event.event_date)
             return date(year, 1, 1), date(year, 12, 31)
-        if event.start_date_precision == "month":
-            year, month = (int(value) for value in event.start_date.split("-"))
+        if event.event_date_precision == "month":
+            year, month = (int(value) for value in event.event_date.split("-"))
             first = date(year, month, 1)
             next_month = date(year + (month == 12), 1 if month == 12 else month + 1, 1)
             return first, next_month - timedelta(days=1)
-        parsed = date.fromisoformat(event.start_date)
+        parsed = date.fromisoformat(event.event_date)
         return parsed, parsed
     except ValueError:
         return None
@@ -239,6 +286,46 @@ def list_event_types(db: Session) -> list[EventType]:
     return list(db.execute(select(EventType).order_by(EventType.name)).scalars())
 
 
+def list_event_taxonomy(db: Session) -> list[TaxonomyNodeRead]:
+    nodes = list(db.execute(select(TaxonomyNode).order_by(TaxonomyNode.name)).scalars())
+    children_by_parent: dict[str | None, list[TaxonomyNode]] = {}
+    for node in nodes:
+        children_by_parent.setdefault(node.parent_id, []).append(node)
+    referenced = referenced_event_type_ids(db)
+
+    def to_node_read(node: TaxonomyNode) -> TaxonomyNodeRead:
+        return TaxonomyNodeRead(
+            id=node.id,
+            name=node.name,
+            level=node.level,
+            parent_id=node.parent_id,
+            event_type=(
+                to_event_type_read(node.event_type, in_use=node.event_type.id in referenced)
+                if node.event_type is not None
+                else None
+            ),
+            children=[to_node_read(child) for child in children_by_parent.get(node.id, [])],
+        )
+
+    return [to_node_read(node) for node in children_by_parent.get(None, [])]
+
+
+def to_taxonomy_node_read(db: Session, node: TaxonomyNode) -> TaxonomyNodeRead:
+    referenced = referenced_event_type_ids(db)
+    return TaxonomyNodeRead(
+        id=node.id,
+        name=node.name,
+        level=node.level,
+        parent_id=node.parent_id,
+        event_type=(
+            to_event_type_read(node.event_type, in_use=node.event_type.id in referenced)
+            if node.event_type is not None
+            else None
+        ),
+        children=[],
+    )
+
+
 def list_actors(db: Session) -> list[Actor]:
     return list(db.execute(select(Actor).order_by(Actor.name)).scalars())
 
@@ -251,7 +338,7 @@ def _clean_description(value: str | None) -> str | None:
     return clean or None
 
 
-def create_event_type(db: Session, name: str, description: str) -> EventType:
+def _new_event_type(db: Session, name: str, description: str | None) -> EventType:
     clean_name = name.strip()
     if not clean_name:
         raise EventTypeNameConflictError("Event type name is required.")
@@ -263,11 +350,100 @@ def create_event_type(db: Session, name: str, description: str) -> EventType:
         raise EventTypeDescriptionRequiredError(
             "Add a description before creating this active event type."
         )
-    event_type = EventType(name=clean_name, description=clean_description, is_active=True)
+    return EventType(name=clean_name, description=clean_description, is_active=True)
+
+
+def create_event_type(db: Session, name: str, description: str) -> EventType:
+    event_type = _new_event_type(db, name, description)
     db.add(event_type)
     db.commit()
     db.refresh(event_type)
     return event_type
+
+
+_EXPECTED_TAXONOMY_PARENTS: dict[str, str | None] = {
+    "domain": None,
+    "category": "domain",
+    "subcategory": "category",
+    "event_type": "subcategory",
+}
+
+
+def _validate_taxonomy_parent(
+    db: Session, *, level: str, parent_id: str | None
+) -> TaxonomyNode | None:
+    expected_level = _EXPECTED_TAXONOMY_PARENTS[level]
+    if expected_level is None:
+        if parent_id is not None:
+            raise TaxonomyNodeParentError("A domain node must not have a parent.")
+        return None
+    if parent_id is None:
+        raise TaxonomyNodeParentError(f"An {level} node requires a {expected_level} parent.")
+    parent = db.get(TaxonomyNode, parent_id)
+    if parent is None:
+        raise LookupError("Taxonomy parent not found.")
+    if parent.level != expected_level:
+        raise TaxonomyNodeParentError(f"An {level} node requires a {expected_level} parent.")
+    return parent
+
+
+def create_taxonomy_node(
+    db: Session,
+    *,
+    name: str,
+    level: str,
+    parent_id: str | None,
+    description: str | None,
+) -> TaxonomyNode:
+    parent = _validate_taxonomy_parent(db, level=level, parent_id=parent_id)
+    clean_name = name.strip()
+    if not clean_name:
+        raise TaxonomyNodeDefinitionError("Taxonomy node name is required.")
+    if level != "event_type" and description is not None:
+        raise TaxonomyNodeDefinitionError("Only an event_type node can have a description.")
+    event_type = _new_event_type(db, clean_name, description) if level == "event_type" else None
+    node = TaxonomyNode(name=clean_name, level=level, parent=parent, event_type=event_type)
+    db.add(node)
+    db.commit()
+    db.refresh(node)
+    return node
+
+
+def update_taxonomy_node(
+    db: Session,
+    node: TaxonomyNode,
+    *,
+    name=_UNSET,
+    description=_UNSET,
+    is_active=_UNSET,
+) -> TaxonomyNode:
+    if node.level != "event_type":
+        if description is not _UNSET or is_active is not _UNSET:
+            raise TaxonomyNodeDefinitionError(
+                "Only an event_type node can have a description or active status."
+            )
+        if name is not _UNSET:
+            clean_name = (name or "").strip()
+            if not clean_name:
+                raise TaxonomyNodeDefinitionError("Taxonomy node name is required.")
+            node.name = clean_name
+        db.commit()
+        db.refresh(node)
+        return node
+
+    if node.event_type is None:
+        raise TaxonomyNodeDefinitionError("This event_type node is missing its linked Event Type.")
+    event_type = update_event_type(
+        db,
+        node.event_type,
+        name=name,
+        description=description,
+        is_active=is_active,
+    )
+    node.name = event_type.name
+    db.commit()
+    db.refresh(node)
+    return node
 
 
 def update_event_type(
@@ -303,8 +479,14 @@ def update_event_type(
         raise EventTypeDescriptionRequiredError(
             "Add a description before activating this event type."
         )
+    if activates and event_type.taxonomy_node is None:
+        raise EventTypeTaxonomyRequiredError(
+            "Activate Event Types through an Event Taxonomy leaf."
+        )
     if name is not _UNSET:
         event_type.name = clean_name
+        if event_type.taxonomy_node is not None:
+            event_type.taxonomy_node.name = clean_name
     if description is not _UNSET:
         event_type.description = next_description
     if is_active is not _UNSET and is_active is not None:
@@ -330,7 +512,13 @@ def referenced_event_type_ids(db: Session) -> set[str]:
     }
 
 
-def delete_event_type(db: Session, event_type: EventType) -> None:
+def delete_event_type(
+    db: Session, event_type: EventType, *, through_taxonomy_leaf: bool = False
+) -> None:
+    if event_type.taxonomy_node is not None and not through_taxonomy_leaf:
+        raise EventTypeInUseError(
+            "Delete this Event Type through its Event Taxonomy leaf."
+        )
     referenced = db.execute(
         select(Event.id).where(Event.event_type_id == event_type.id).limit(1)
     ).first()
@@ -340,15 +528,43 @@ def delete_event_type(db: Session, event_type: EventType) -> None:
     db.commit()
 
 
-def _resolve_event_type(db: Session, type_input: EventTypeInput) -> EventType | None:
-    type_name = type_input.existing or type_input.suggested
-    if not type_name:
+def delete_taxonomy_node(db: Session, node: TaxonomyNode) -> None:
+    child = db.execute(
+        select(TaxonomyNode.id).where(TaxonomyNode.parent_id == node.id).limit(1)
+    ).first()
+    if child is not None:
+        raise TaxonomyNodeHasChildrenError("This taxonomy node has children and cannot be deleted.")
+    if node.event_type is not None:
+        delete_event_type(db, node.event_type, through_taxonomy_leaf=True)
+    db.delete(node)
+    db.commit()
+
+
+def _is_full_taxonomy_leaf(event_type: EventType) -> bool:
+    path = taxonomy_path_for_event_type(event_type)
+    return (
+        event_type.taxonomy_node is not None
+        and event_type.taxonomy_node.level == "event_type"
+        and event_type.taxonomy_node.event_type_id == event_type.id
+        and [segment.level for segment in path]
+        == ["domain", "category", "subcategory", "event_type"]
+    )
+
+
+def _resolve_event_type(db: Session, type_input: EventTypeInput | None) -> EventType | None:
+    type_name = type_input.existing if type_input is not None else None
+    if not type_name or not type_name.strip():
         return None
     existing_types = list(db.execute(select(EventType)).scalars())
     event_type = find_by_exact_name(existing_types, type_name)
-    if event_type is None:
-        event_type = EventType(name=type_name, is_active=False)
-        db.add(event_type)
+    if (
+        event_type is None
+        or not event_type.is_active
+        or not _is_full_taxonomy_leaf(event_type)
+    ):
+        raise EventTypeSelectionError(
+            "Choose an active Event Type leaf from the Event Taxonomy."
+        )
     return event_type
 
 
@@ -393,7 +609,7 @@ def update_event(db: Session, event: Event, payload: EventUpdate) -> Event:
     for field_name, value in data.items():
         setattr(event, field_name, value)
 
-    if payload.event_type is not None:
+    if "event_type" in payload.model_fields_set:
         event.event_type = _resolve_event_type(db, payload.event_type)
 
     if payload.actors is not None:
@@ -427,6 +643,17 @@ def approve_event(db: Session, event: Event) -> Event:
     if pending:
         raise PendingDuplicateFlagError(len(pending))
 
+    if (
+        event.event_type is not None
+        and (
+            not event.event_type.is_active
+            or not _is_full_taxonomy_leaf(event.event_type)
+        )
+    ):
+        raise EventTypeSelectionError(
+            "Choose an active Event Type leaf from the Event Taxonomy."
+        )
+
     _require_description_before_type_activation(
         event.event_type,
         "Add a description before approving this event type.",
@@ -434,8 +661,6 @@ def approve_event(db: Session, event: Event) -> Event:
 
     event.review_status = "approved"
     event.approved_at = utc_now()
-    if event.event_type is not None and not event.event_type.is_active:
-        event.event_type.is_active = True
     for event_actor in event.event_actors:
         if not event_actor.actor.is_active:
             event_actor.actor.is_active = True
@@ -494,6 +719,13 @@ def approve_all_for_document(db: Session, document_id: str) -> ApproveAllResult:
             result.skipped.append(
                 ApproveAllSkip(event_id=event.id, reason="Event type needs a description.")
             )
+        except EventTypeSelectionError:
+            result.skipped.append(
+                ApproveAllSkip(
+                    event_id=event.id,
+                    reason="Event type is not an active Event Taxonomy leaf.",
+                )
+            )
     return result
 
 
@@ -504,15 +736,13 @@ def create_manual_event(db: Session, document: Document, payload: EventCreate) -
         )
 
     source = get_or_create_document_source(db, document)
-    event_type = _resolve_event_type(db, payload.event_type) if payload.event_type else None
+    event_type = _resolve_event_type(db, payload.event_type)
 
     event = Event(
         title=payload.title,
         summary=payload.summary,
-        start_date=payload.start_date,
-        start_date_precision=payload.start_date_precision,
-        end_date=payload.end_date,
-        end_date_precision=payload.end_date_precision,
+        event_date=payload.event_date,
+        event_date_precision=payload.event_date_precision,
         epistemic_status=payload.epistemic_status,
         review_status="draft",
         event_type=event_type,

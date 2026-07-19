@@ -4,13 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import { DocumentForm } from "@/app/documents/document-form";
 
 describe("DocumentForm", () => {
-  it("marks the three required document fields semantically", () => {
+  it("requires one publication date and explains what it means", () => {
     render(<DocumentForm onSubmit={vi.fn()} />);
 
     expect(screen.getByLabelText(/title/i)).toBeRequired();
     expect(screen.getByLabelText(/content/i)).toBeRequired();
-    expect(screen.getByLabelText(/document date/i)).toBeRequired();
-    expect(screen.getByLabelText(/publication date/i)).not.toBeRequired();
+    expect(screen.getByLabelText("Publication date")).toBeRequired();
+    expect(screen.queryByLabelText(/document date/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Date the source document was made.")).toBeVisible();
     expect(screen.getByLabelText(/source url/i)).not.toBeRequired();
   });
 });

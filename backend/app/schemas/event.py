@@ -1,13 +1,20 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 EpistemicStatus = Literal["confirmed", "claim", "rumor", "denied"]
 DatePrecision = Literal["exact", "month", "year", "unknown"]
 ReviewStatus = Literal["draft", "approved", "rejected", "merged"]
 ActorRole = Literal["source", "target"]
 DuplicateResolution = Literal["pending", "kept_separate", "linked"]
+TaxonomyLevel = Literal["domain", "category", "subcategory", "event_type"]
+
+
+class TaxonomyPathSegment(BaseModel):
+    id: str
+    name: str
+    level: TaxonomyLevel
 
 
 class EventTypeRead(BaseModel):
@@ -18,6 +25,7 @@ class EventTypeRead(BaseModel):
     description: str | None
     is_active: bool
     in_use: bool = False
+    taxonomy_path: list[TaxonomyPathSegment] = Field(default_factory=list)
 
 
 class EventTypeCreate(BaseModel):
@@ -29,6 +37,28 @@ class EventTypeUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1)
     description: str | None = Field(default=None, max_length=1000)
     is_active: bool | None = None
+
+
+class TaxonomyNodeCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    level: TaxonomyLevel
+    parent_id: str | None = None
+    description: str | None = Field(default=None, max_length=1000)
+
+
+class TaxonomyNodeUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=1000)
+    is_active: bool | None = None
+
+
+class TaxonomyNodeRead(BaseModel):
+    id: str
+    name: str
+    level: TaxonomyLevel
+    parent_id: str | None
+    event_type: EventTypeRead | None = None
+    children: list["TaxonomyNodeRead"] = Field(default_factory=list)
 
 
 class ActorRead(BaseModel):
@@ -74,8 +104,9 @@ class DuplicateFlagRead(BaseModel):
 
 
 class EventTypeInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     existing: str | None = None
-    suggested: str | None = None
 
 
 class ActorInput(BaseModel):
@@ -95,26 +126,41 @@ class EventCreate(BaseModel):
     title: str
     summary: str
     event_type: EventTypeInput | None = None
-    start_date: str | None = None
-    start_date_precision: DatePrecision | None = None
-    end_date: str | None = None
-    end_date_precision: DatePrecision | None = None
+    event_date: str | None = None
+    event_date_precision: DatePrecision | None = None
     epistemic_status: EpistemicStatus
     locations: list[LocationInput] = Field(default_factory=list)
     actors: list[ActorInput] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_date_and_precision(self) -> "EventCreate":
+        from .date_validation import validate_event_date
+
+        validate_event_date(self.event_date, self.event_date_precision)
+        return self
 
 
 class EventUpdate(BaseModel):
     title: str | None = None
     summary: str | None = None
     event_type: EventTypeInput | None = None
-    start_date: str | None = None
-    start_date_precision: DatePrecision | None = None
-    end_date: str | None = None
-    end_date_precision: DatePrecision | None = None
+    event_date: str | None = None
+    event_date_precision: DatePrecision | None = None
     epistemic_status: EpistemicStatus | None = None
     locations: list[LocationInput] | None = None
     actors: list[ActorInput] | None = None
+
+    @model_validator(mode="after")
+    def validate_date_and_precision(self) -> "EventUpdate":
+        date_fields = {"event_date", "event_date_precision"}
+        supplied_date_fields = date_fields & self.model_fields_set
+        if supplied_date_fields and supplied_date_fields != date_fields:
+            raise ValueError("Event date and its precision must be updated together.")
+        if supplied_date_fields:
+            from .date_validation import validate_event_date
+
+            validate_event_date(self.event_date, self.event_date_precision)
+        return self
 
 
 class ApproveAllSkipped(BaseModel):
@@ -144,10 +190,8 @@ class EventRead(BaseModel):
     id: str
     title: str
     summary: str
-    start_date: str | None
-    start_date_precision: DatePrecision | None
-    end_date: str | None
-    end_date_precision: DatePrecision | None
+    event_date: str | None
+    event_date_precision: DatePrecision | None
     epistemic_status: EpistemicStatus
     review_status: ReviewStatus
     event_type: EventTypeRead | None

@@ -14,8 +14,7 @@ type DocumentFormProps = {
 const EMPTY_DRAFT: DocumentDraft = {
   title: "",
   content: "",
-  document_date: "",
-  publication_date: null,
+  publication_date: "",
   source_url: null,
 };
 
@@ -32,7 +31,7 @@ export function DocumentForm({
   const canSubmit =
     values.title.trim() !== "" &&
     values.content.trim() !== "" &&
-    values.document_date.trim() !== "";
+    values.publication_date.trim() !== "";
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -42,8 +41,7 @@ export function DocumentForm({
     onSubmit({
       title: values.title,
       content: values.content,
-      document_date: values.document_date,
-      publication_date: values.publication_date || null,
+      publication_date: values.publication_date,
       source_url: values.source_url || null,
     });
   }
@@ -76,27 +74,17 @@ export function DocumentForm({
       </div>
       <div className="field-row">
         <div className="field">
-          <label htmlFor="document-date">Document date *</label>
-          <input
-            id="document-date"
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, document_date: event.target.value }))
-            }
-            required
-            type="date"
-            value={values.document_date}
-          />
-        </div>
-        <div className="field">
           <label htmlFor="publication-date">Publication date</label>
           <input
             id="publication-date"
             onChange={(event) =>
-              setValues((prev) => ({ ...prev, publication_date: event.target.value || null }))
+              setValues((prev) => ({ ...prev, publication_date: event.target.value }))
             }
+            required
             type="date"
-            value={values.publication_date ?? ""}
+            value={values.publication_date}
           />
+          <p className="field-help">Date the source document was made.</p>
         </div>
         <div className="field">
           <label htmlFor="source-url">Source URL</label>

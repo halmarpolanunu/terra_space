@@ -1,4 +1,4 @@
-import type { EventTypeRead } from "@/lib/events-api";
+import { formatTaxonomyPath, type EventTypeRead } from "@/lib/events-api";
 
 type Props = {
   eventType?: EventTypeRead;
@@ -6,8 +6,18 @@ type Props = {
 };
 
 export function EventTypeDescription({ eventType, needsSelection = false }: Props) {
+  const path = eventType?.taxonomy_path;
+  const pathLine = path && path.length > 0 && (
+    <p className="event-type-path">{formatTaxonomyPath(path)}</p>
+  );
+
   if (eventType?.description) {
-    return <p className="event-type-description">{eventType.description}</p>;
+    return (
+      <>
+        <p className="event-type-description">{eventType.description}</p>
+        {pathLine}
+      </>
+    );
   }
   if (needsSelection) {
     return (
@@ -16,7 +26,7 @@ export function EventTypeDescription({ eventType, needsSelection = false }: Prop
       </p>
     );
   }
-  return null;
+  return pathLine ?? null;
 }
 
 export function eventTypeNeedsDescription(eventType?: EventTypeRead | null): boolean {
