@@ -155,6 +155,10 @@ implementation plan or decision, link it from here and mark it resolved instead 
 4. `PersistResult.dropped_locations` (in `backend/app/services/extraction.py`) is still never logged
    or surfaced anywhere; adding that would make future silent-drop-vs-never-extracted questions
    answerable without a manual diagnostic session like this one.
+5. Before scaling up document *volume* via automated ingestion, see the
+   [Automated news and social media ingestion](#automated-news-and-social-media-ingestion-google-news-rss-scraping-telegram-future-direction-2026-07-20)
+   entry below — it argues this reliability problem should be resolved (or at least instrumented)
+   before, not after, ingestion volume increases.
 
 ### Event Review card should let every draft field be edited in place (2026-07-16)
 
@@ -335,6 +339,78 @@ implementation plan or decision, link it from here and mark it resolved instead 
   change to the [Visual Design Direction](decisions/Visual-Design-Direction.md) palette or motion
   system. Verified with frontend tests, lint, a production build, and a live browser check (see
   [Current Status](Current-Status.md)).
+
+### Automated news and social media ingestion (Google News RSS, scraping, Telegram) — future direction (2026-07-20)
+
+- **Context:** owner brainstorming session (no code changed) on automating population of Documents
+  from external sources, matching a diagram the owner sketched (Data Base Social Media / Data Base
+  News Media / Data Base Input Manual → Data Normalizer & Standardizer → Data Base Documents →
+  Terra Sense → Terra Database → Terra Space). This is explicitly **outside MVP scope** today: both
+  the [North Star](North-Star.md) ("Automatic website/API ingestion") and
+  [Roadmap](Roadmap.md) ("Automatic ingestion from websites or APIs") list it as a deferred
+  boundary, not yet approved for implementation.
+- **Proposed shape, as discussed:**
+  1. **News media:** use Google News RSS (free, no API key, built by URL query per topic/region) as
+     a discovery/funnel layer only — it returns headline + snippet + publisher link, not full
+     article text. Cluster/dedup near-identical headlines covering the same story rather than
+     discarding down to one, since the existing data model already supports multiple source
+     documents per event. Then attempt to scrape the full article text from each surviving link,
+     falling back to the RSS headline+snippet as the document when a scrape fails (paywalled or
+     anti-bot-protected outlets will not be scrapable for free). Clean scraped HTML with a
+     boilerplate-removal/readability-style library rather than hand-written per-site parsing. Feed
+     the cleaned result into the existing Documents/Terra Sense flow as the "Data Normalizer &
+     Standardizer" stage.
+  2. **Social media:** Telegram public channels, read via Telegram's own free MTProto client API
+     (register at `my.telegram.org`, e.g. via the Telethon Python library) — free and technically
+     equivalent to a normal user reading a public channel, though bulk/automated collection is a
+     gray area under Telegram's ToS. A dedicated automation account (not the owner's personal one)
+     was flagged as safer, since machine-paced request patterns on a personal account risk
+     Telegram's own anti-abuse throttling/flood-wait handling. Further detail discussed
+     (2026-07-20), not yet decided on:
+     - Telegram behaves as a **live stream**, not a periodic digest like RSS — ingestion would need
+       to listen for new messages continuously rather than poll on a fixed schedule, and would need
+       its own noise filtering (real reporting mixed with memes, ads, reposts, off-topic chatter).
+     - Content is heavily **media-first** (photo/video plus a short caption, often little or no
+       other text), which collides directly with the North Star's MVP exclusion of OCR/image
+       recognition/VLM processing — only a channel post's caption text (if any) would be usable
+       input; caption-less media posts would not be usable at all under the current MVP boundary.
+     - Many of the most relevant channels post in languages other than English (Arabic, Russian,
+       Ukrainian, Hebrew, Farsi, etc.), so a translation step would likely be needed before content
+       reaches extraction — this stacks another lossy step in front of a local extraction model
+       that is already unreliable on clean English text (see the coupling argument above), making
+       it a reason to sequence Telegram ingestion even further behind the reliability fix than
+       Google News RSS ingestion.
+     - The real bottleneck is editorial **channel curation**, not the technical setup: building a
+       trusted channel list by tracing which channels mainstream journalists/existing OSINT
+       trackers cite, and following "hub" channels that repost/aggregate primary sources. Each
+       channel would likely need its own trust weighting, which could set the *default* epistemic
+       status (claim/rumor/confirmed) suggested during review — an unverified channel defaulting
+       toward "claim," a known-reliable one not — rather than every Telegram-sourced event starting
+       from the same blank epistemic slate.
+     Twitter/X's free API tier and Facebook/Instagram (CrowdTangle shut down 2024) are not
+     realistically usable for free; Reddit's API has a workable free tier but lower relevance;
+     GDELT was also flagged as a strong free option specifically because it already
+     aggregates/structures global news events, closely overlapping what Terra Sense's own
+     extraction step tries to do.
+- **Key argument raised — this plan is coupled to an existing open issue, not independent of it:**
+  automating ingestion would substantially increase both the volume and the variety of document
+  shapes (RSS snippets, scraped articles, Telegram messages) reaching the same local-AI extraction
+  step that is currently the subject of the paused
+  [event-location extraction reliability investigation](#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16) —
+  the local model (`qwen/qwen3.5-9b`) has shown non-deterministic location-extraction failures on
+  manually-entered documents alone (same document, same prompt, three different outcomes). Scaling
+  ingestion before that is resolved would very likely: (a) grow the review backlog (nothing
+  auto-approves, so more input volume means more manual review, not less owner effort), and (b)
+  widen the existing observability blind spot, since `PersistResult.dropped_locations` is still
+  never logged — an automated pipeline's silent extraction failures would be much harder to notice
+  than a manually-reprocessed document's.
+- **Recommendation discussed:** sequence this after, or at minimum alongside, resuming the paused
+  reliability investigation (see that entry's "Where to resume this investigation" checklist) —
+  particularly logging `dropped_locations` first, since that is a small, low-risk change that would
+  make ingestion-scale failures visible instead of silent.
+- **Status:** Not yet decided or scheduled. No code, decision, or plan has been written; this entry
+  only records the brainstorming discussion and the argument for sequencing, for a future
+  implementation plan to pick up.
 
 ## Navigation
 
