@@ -71,8 +71,27 @@ correct each time). See
 [Feedback Backlog](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16)
 for full detail, including an unconfirmed hypothesis that the system prompt's growth to ~4925
 characters (all 12 active Event Types' descriptions and taxonomy paths, added 2026-07-19) may be
-crowding out the model's attention on location/date-precision instructions. Recommend raising this
-directly with the owner as a model-capability question rather than continuing prompt micro-tuning.
+crowding out the model's attention on location/date-precision instructions.
+
+**Second follow-up, same day — the prompt-length hypothesis was tested and disproven.** Ran a
+controlled A/B comparison directly against LM Studio (read-only, nothing persisted): the real
+4925-character production prompt versus a 3632-character variant with the taxonomy-path text removed
+entirely, 3 trials attempted per side. Both sides produced **zero locations in every trial that
+completed** (one trial returned an empty response body outright; one `NO-PATH` trial did not finish
+before a 10-minute command timeout). A shorter prompt did not help at all, so prompt length is not the
+cause. Roughly 8 calls total today (2 production reprocesses, 6 diagnostic calls) all failed to
+extract any location or failed schema validation outright — a sharp contrast with the two clean
+successes on 2026-07-18. The leading remaining explanation is something changed on the **LM
+Studio/model side itself** between those two dates (different model or quantization now loaded under
+the same `qwen/qwen3.5-9b` name, a context-length limit silently truncating the request, or a changed
+server-side sampling setting) — none of which is visible or checkable from the application side.
+
+**Owner's decision:** pause here rather than keep troubleshooting LM Studio settings live; resume in a
+dedicated future session. See the
+[Feedback Backlog entry](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16)
+for the full trial-by-trial log and a "Where to resume this investigation" checklist (starts with
+checking LM Studio's loaded model/context-length/sampling settings directly, which requires the owner
+since it's not visible to a coding agent).
 
 **Everything below in this section is done, committed, merged to `main`, pushed to GitHub, and
 (where it touches the running app) deployed to the owner's live containers.** Git housekeeping: all
@@ -822,29 +841,22 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 
 ## Next actions
 
+- **Top priority for the next session:** resume the local-model location-extraction reliability
+  investigation. Paused at the owner's request on 2026-07-20 after a controlled A/B test disproved
+  the leading code-side hypothesis (prompt length) — see the "Second follow-up" note above and the
+  [Feedback Backlog entry](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16)'s
+  "Where to resume this investigation" checklist. Start by asking the owner to check LM Studio's
+  loaded model/quantization, context-length limit, and sampling settings directly (not visible to a
+  coding agent) before writing any more code.
+- The globe halo/ring and atmosphere-glow removal ([Globe Halo Zoom Behavior
+  Plan](plans/2026-07-17-globe-halo-zoom-behavior.md)) is now fully resolved and owner-confirmed live
+  ("Oke saya sudah lihat, sip") — no further action needed there.
 - When the owner is ready to resume the UI-polish backlog: for the
   [Deferred UI Polish Plan (Backgrounds and Settings)](plans/2026-07-17-ui-polish-deferred.md),
   start by asking what specifically they want different (or showing a review artifact again) — both
   scopes were only shown once, not yet discussed in any detail, and the owner deferred both without
   giving a direction. Do not guess a direction and start generating assets or changing the Settings
   layout.
-- Ask the owner to check the two deployed globe fixes
-  ([Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md),
-  [Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md)) in their
-  real browser — neither has been visually confirmed there yet, only via automated tests and manual
-  geometry verification. This needs at least one approved event with a resolved location; all 12 of
-  the owner's current events are `rejected`, so there is nothing on the globe to check against right
-  now unless the owner approves something first.
-- Confirm with the owner, with an actual before/after location count, whether the improved
-  extraction prompt reliably populates locations across more than one document — only one real
-  document has been reprocessed against it so far ("seems good for now", not yet precisely
-  measured). If gaps remain, consider whether they're prompt-following limits of the current local
-  model (`qwen/qwen3.5-9b`) rather than something further prompt changes can fix.
-- Once approved events with resolved locations exist in the owner's live database again, do a
-  direct visual check of the cluster marker and "Unresolved locations" list against real data (the
-  only confirmation so far used an isolated, fully torn-down test stack, not the live database) —
-  this is the same blocker as the globe-fix confirmation above, so one round of approving real
-  events would unblock both checks at once.
 - One larger, not-yet-started owner-requested initiative remains further out:
   [Local Supabase Migration](plans/2026-07-17-local-supabase-migration.md).
   The [Event Detection Reconsideration Plan](plans/2026-07-17-event-detection-reconsideration.md)

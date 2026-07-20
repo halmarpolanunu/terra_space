@@ -113,6 +113,48 @@ implementation plan or decision, link it from here and mark it resolved instead 
   the practical limit of a small local model on this kind of multi-field structured extraction task,
   and worth a direct conversation about model choice, prompt simplification, or accepting more manual
   review overhead — rather than another round of prompt micro-tuning.
+- **A/B test of the prompt-length hypothesis (same day, 2026-07-20) — hypothesis disproven.** Ran a
+  controlled comparison, read-only, against the real LM Studio server: the exact production request
+  (`WITH-PATH`, 4925-character system prompt, includes all 12 active Event Types' descriptions and
+  full taxonomy paths) versus a stripped variant (`NO-PATH`, 3632 characters, same types/descriptions
+  but the `path` field and its explanatory sentence removed entirely) — same document, same
+  `temperature: 0`, 3 trials attempted per condition (one `NO-PATH` trial did not finish before a
+  10-minute command timeout cut the run short). Results:
+  - `WITH-PATH` trial 1: **empty response body**, failed JSON parsing entirely.
+  - `WITH-PATH` trial 2: 4 events, **0 with any location**.
+  - `WITH-PATH` trial 3: 4 events, **0 with any location**.
+  - `NO-PATH` trial 1: 5 events, **0 with any location**.
+  - `NO-PATH` trial 2: did not complete (command timeout).
+  - The shorter `NO-PATH` prompt performed **no better** than the full prompt — both conditions
+    produced zero locations in every trial that completed. **The prompt-length/taxonomy-path
+    hypothesis is disproven**; something else explains why every call today (2 production reprocesses
+    + up to 6 diagnostic calls, roughly 8 calls total) failed to extract any location or failed schema
+    validation outright, when the same document produced correct IR/KW/BH locations twice on
+    2026-07-18.
+  - **Leading remaining hypothesis, not yet checked:** something changed on the LM Studio/model side
+    itself between 2026-07-18 and 2026-07-20 — a different model or quantization now loaded under the
+    same `qwen/qwen3.5-9b` name, a changed context-length limit that could be silently truncating the
+    ~4-5 paragraph document plus a ~4-5k character system prompt, or a changed sampling/generation
+    setting in LM Studio's own server config (separate from the app's `temperature: 0` request
+    parameter, which LM Studio may or may not fully honor depending on server settings). None of this
+    is visible from the application side — it requires checking the LM Studio desktop app directly.
+  - **Owner's decision (2026-07-20):** pause this investigation here rather than continue
+    troubleshooting LM Studio settings in this session; pick it up in a dedicated future session ("kita
+    perlu duduk lebih lama untuk membenahi proses deteksi").
+
+**Where to resume this investigation:**
+1. In LM Studio itself (not visible to any coding agent): confirm the exact model/quantization
+   currently loaded still matches what was loaded on 2026-07-18, check the configured context-length
+   limit against the actual request size (system prompt + document, currently ~5-6k characters plus
+   the JSON schema), and check whether any sampling/generation settings changed server-side.
+2. If the model/settings turn out to be unchanged, the next diagnostic step would be testing with a
+   *much* shorter document (a single sentence with one obvious location) to isolate whether this is a
+   document-length/complexity problem or a truly global model regression.
+3. Only after ruling out an LM Studio-side explanation should further prompt engineering be
+   considered — the 2026-07-20 A/B test already shows prompt length alone is not the cause.
+4. `PersistResult.dropped_locations` (in `backend/app/services/extraction.py`) is still never logged
+   or surfaced anywhere; adding that would make future silent-drop-vs-never-extracted questions
+   answerable without a manual diagnostic session like this one.
 
 ### Event Review card should let every draft field be edited in place (2026-07-16)
 
