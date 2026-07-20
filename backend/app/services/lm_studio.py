@@ -1,12 +1,22 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TypeVar
 
 import httpx2
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.schemas.extraction import ExtractionResult
-from app.schemas.staged_extraction import SignalParseResult
+from app.schemas.staged_extraction import (
+    ClassifiedActors,
+    ClassifiedDate,
+    ClassifiedEventType,
+    ClassifiedLocations,
+    SignalCandidate,
+    SignalParseResult,
+)
+
+StructuredModel = TypeVar("StructuredModel", bound=BaseModel)
 
 
 @dataclass(frozen=True)
@@ -74,6 +84,47 @@ SIGNAL_PARSER_SYSTEM_PROMPT = (
     "its epistemic_status (confirmed, claim, rumor, or denied, based only on how the "
     "document itself presents it); and an evidence_quote copied verbatim from the document "
     "text, not paraphrased or summarized."
+)
+
+EVENT_TYPE_CLASSIFIER_SYSTEM_PROMPT = (
+    "You are an intelligence analyst choosing an Event Type for one signal candidate drawn "
+    "from a source document. Your only task: pick one active Event Type leaf, by its exact "
+    "supplied name, that best fits this specific candidate — or null if none fits. Never "
+    "invent, suggest, or describe a new event type."
+)
+
+DATE_CLASSIFIER_SYSTEM_PROMPT = (
+    "You are an intelligence analyst determining the event date for one signal candidate "
+    "drawn from a source document. Your only task: state the candidate's event date and its "
+    "precision (exact, month, or year), or leave both null when the source content does not "
+    "support a date, based only on the source content and the candidate's evidence quote."
+)
+
+LOCATIONS_CLASSIFIER_SYSTEM_PROMPT = (
+    "You are an intelligence analyst identifying every location tied to one signal "
+    "candidate drawn from a source document. Your only task: list every location — country, "
+    "province/state (admin1), and city/regency — the source content ties to this specific "
+    "candidate, whenever the text states or clearly implies one. Do not skip a location just "
+    "because it is named indirectly (a strait, a coastline, a region, 'the capital') if the "
+    "source content ties it to this candidate. Use the ISO 3166-1 alpha-3 country code (for "
+    "example 'USA', 'IDN', 'IRN'), never the full country name. Leave a location field null "
+    "only when the source content truly gives no geographic detail for that field. Return an "
+    "empty list only when the source content gives no geographic detail for this candidate "
+    "at all.\n\n"
+    "Example: for the sentence \"Rebel forces attacked a checkpoint near Sana'a, Yemen, on "
+    "Monday,\" the locations field must be "
+    "[{\"country\": \"YEM\", \"admin1\": null, \"city_regency\": \"Sana'a\"}] — the country "
+    "name is converted to its ISO code, the city name is kept as written, and admin1 stays "
+    "null because no province/state was stated."
+)
+
+ACTORS_CLASSIFIER_SYSTEM_PROMPT = (
+    "You are an intelligence analyst identifying the actors tied to one signal candidate "
+    "drawn from a source document. Your only task: list source_actors (who initiated or "
+    "executed this candidate) and recipient_actors (who it was directed at or who was "
+    "affected), based only on the source content and the candidate's evidence quote. Prefer "
+    "an exact supplied known actor name over inventing a near-duplicate. Leave a list empty "
+    "when the source content does not identify that role for this candidate."
 )
 
 
@@ -163,23 +214,65 @@ class LmStudioClient:
                 model_id, document_context, known_types, known_actors
             )
         )
-        try:
-            return ExtractionResult.model_validate_json(content)
-        except ValidationError as error:
-            raise LmStudioResponseError(
-                "LM Studio's structured output did not match the expected schema."
-            ) from error
-        except ValueError as error:
-            raise LmStudioResponseError(
-                "LM Studio's structured output was not valid JSON."
-            ) from error
+        return self._parse_structured_content(content, ExtractionResult)
 
     def parse_signals(self, document_context: DocumentExtractionContext) -> SignalParseResult:
         content = self._call_structured(
             lambda model_id: self._build_signal_parser_request(model_id, document_context)
         )
+        return self._parse_structured_content(content, SignalParseResult)
+
+    def classify_event_type(
+        self,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+        known_types: list[KnownEventType],
+    ) -> ClassifiedEventType:
+        content = self._call_structured(
+            lambda model_id: self._build_event_type_classifier_request(
+                model_id, document_context, candidate, known_types
+            )
+        )
+        return self._parse_structured_content(content, ClassifiedEventType)
+
+    def classify_date(
+        self, document_context: DocumentExtractionContext, candidate: SignalCandidate
+    ) -> ClassifiedDate:
+        content = self._call_structured(
+            lambda model_id: self._build_date_classifier_request(
+                model_id, document_context, candidate
+            )
+        )
+        return self._parse_structured_content(content, ClassifiedDate)
+
+    def classify_locations(
+        self, document_context: DocumentExtractionContext, candidate: SignalCandidate
+    ) -> ClassifiedLocations:
+        content = self._call_structured(
+            lambda model_id: self._build_locations_classifier_request(
+                model_id, document_context, candidate
+            )
+        )
+        return self._parse_structured_content(content, ClassifiedLocations)
+
+    def classify_actors(
+        self,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+        known_actors: list[str],
+    ) -> ClassifiedActors:
+        content = self._call_structured(
+            lambda model_id: self._build_actors_classifier_request(
+                model_id, document_context, candidate, known_actors
+            )
+        )
+        return self._parse_structured_content(content, ClassifiedActors)
+
+    def _parse_structured_content(
+        self, content: str, model_cls: type[StructuredModel]
+    ) -> StructuredModel:
         try:
-            return SignalParseResult.model_validate_json(content)
+            return model_cls.model_validate_json(content)
         except ValidationError as error:
             raise LmStudioResponseError(
                 "LM Studio's structured output did not match the expected schema."
@@ -297,6 +390,148 @@ class LmStudioClient:
                 "json_schema": {
                     "name": "signal_parse_result",
                     "schema": SignalParseResult.model_json_schema(),
+                },
+            },
+        }
+
+    def _document_and_candidate_message(
+        self,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+        *,
+        trailing: str = "",
+    ) -> str:
+        message = (
+            f"Source title: {document_context.title}\n"
+            f"Publication Date: {document_context.publication_date}\n\n"
+            "Source content:\n"
+            f"{document_context.content}\n\n"
+            "Signal candidate:\n"
+            f"Working title: {candidate.working_title}\n"
+            f"Summary: {candidate.summary}\n"
+            f"Evidence quote: {candidate.evidence_quote}"
+        )
+        if trailing:
+            message += f"\n\n{trailing}"
+        return message
+
+    def _build_event_type_classifier_request(
+        self,
+        model_id: str,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+        known_types: list[KnownEventType],
+    ) -> dict:
+        system_prompt = (
+            f"{EVENT_TYPE_CLASSIFIER_SYSTEM_PROMPT}\n\n"
+            "Known active Event Type leaves (their paths are classification context only): "
+            f"{_known_type_json(known_types)}\n"
+            "Use an exact supplied active event type name only when it fits this specific "
+            "signal candidate. Otherwise set existing to null."
+        )
+        return {
+            "model": model_id,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": self._document_and_candidate_message(document_context, candidate),
+                },
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "classified_event_type",
+                    "schema": ClassifiedEventType.model_json_schema(),
+                },
+            },
+        }
+
+    def _build_date_classifier_request(
+        self,
+        model_id: str,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+    ) -> dict:
+        return {
+            "model": model_id,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": DATE_CLASSIFIER_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": self._document_and_candidate_message(
+                        document_context,
+                        candidate,
+                        trailing=(
+                            "Publication Date is when the source document was made. It is "
+                            "context only. Set the event date only when the source content "
+                            "and evidence quote support that event date."
+                        ),
+                    ),
+                },
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "classified_date",
+                    "schema": ClassifiedDate.model_json_schema(),
+                },
+            },
+        }
+
+    def _build_locations_classifier_request(
+        self,
+        model_id: str,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+    ) -> dict:
+        return {
+            "model": model_id,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": LOCATIONS_CLASSIFIER_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": self._document_and_candidate_message(document_context, candidate),
+                },
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "classified_locations",
+                    "schema": ClassifiedLocations.model_json_schema(),
+                },
+            },
+        }
+
+    def _build_actors_classifier_request(
+        self,
+        model_id: str,
+        document_context: DocumentExtractionContext,
+        candidate: SignalCandidate,
+        known_actors: list[str],
+    ) -> dict:
+        system_prompt = (
+            f"{ACTORS_CLASSIFIER_SYSTEM_PROMPT}\n\n"
+            f"Known actors: {', '.join(known_actors) or 'none yet'}"
+        )
+        return {
+            "model": model_id,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": self._document_and_candidate_message(document_context, candidate),
+                },
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "classified_actors",
+                    "schema": ClassifiedActors.model_json_schema(),
                 },
             },
         }

@@ -99,9 +99,34 @@ Task 8, gated on the owner's approval).
   tests (unchanged — Task 3 is backend-only), clean lint, a successful production build, and
   Project Knowledge validation. Isolated test databases only.
 
-**Next action:** Task 4 (four per-candidate classifiers) of the same plan, in the same fresh
-session per the owner's instruction to proceed task-by-task through Task 7 and then stop for
-approval before Task 8's live rollout.
+**Task 4 (four per-candidate classifiers) is also done and committed**, test-first:
+- Four new schemas in `staged_extraction.py`: `ClassifiedEventType`, `ClassifiedDate` (reuses
+  the existing `validate_event_date` validator), `ClassifiedLocations` (alpha-3, same grounding
+  language as the old single-call prompt), and `ClassifiedActors` (`source_actors`/
+  `recipient_actors`).
+- Four new narrow `LmStudioClient` methods (`classify_event_type`, `classify_date`,
+  `classify_locations`, `classify_actors`), each its own single-task system prompt and its own
+  structured-output schema; each receives the full document context plus the candidate's
+  working title/summary/evidence quote, and the event-type/actors classifiers additionally
+  receive known active types/known actor names, matching the decision's contract. Added a
+  `_parse_structured_content` helper so all six call methods (the two from Tasks 3 and the
+  pre-existing single-call path, plus these four) share one schema-parsing error path instead of
+  repeating it.
+- New `backend/app/services/classifiers.py` with one orchestrating wrapper per classifier
+  (`run_event_type_classifier`, etc.): on success, logs `outcome=ok` with a short summary and
+  returns the value; on any `ExtractionError`, logs `outcome=failed` with the error detail and
+  returns `None` instead of raising — so a caller (Task 5) can save the event with just that one
+  attribute blank rather than losing the whole candidate. A shared `_run_classifier` helper
+  keeps the four wrappers to a few lines each.
+- Verified: 229 backend tests (209 + 20 new: 12 client-level — success-with-context-and-schema
+  check, transport-failure, and schema-garbage per classifier — and 8 orchestrator-level —
+  success-logs-ok and failure-logs-and-returns-None per classifier), 187 frontend tests
+  (unchanged — Task 4 is backend-only), clean lint, a successful production build, and Project
+  Knowledge validation. Isolated test databases only.
+
+**Next action:** Task 5 (orchestration and persistence rewrite) of the same plan, in the same
+fresh session per the owner's instruction to proceed task-by-task through Task 7 and then stop
+for approval before Task 8's live rollout.
 
 ---
 
