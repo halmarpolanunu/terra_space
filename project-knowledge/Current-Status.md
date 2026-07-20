@@ -76,9 +76,32 @@ Task 8, gated on the owner's approval).
   frontend tests (unchanged — Task 2 is backend-only), clean lint, a successful production build,
   and Project Knowledge validation. Isolated test databases only.
 
-**Next action:** Task 3 (Signal Parser stage) of the same plan, in the same fresh session per the
-owner's instruction to proceed task-by-task through Task 7 and then stop for approval before
-Task 8's live rollout.
+**Task 3 (Signal Parser stage) is also done and committed**, test-first:
+- New `SignalCandidate`/`SignalParseResult` schemas in
+  `backend/app/schemas/staged_extraction.py` (reuses the existing `EpistemicStatus` type rather
+  than duplicating it).
+- New `LmStudioClient.parse_signals(...)` with its own single-task system prompt ("split this
+  document into distinct signal candidates"), reusing the existing labelled title/Publication
+  Date/content user-message format. While adding this, refactored the client's shared
+  HTTP-call/error-handling block (previously duplicated inline in `extract_events`) into one
+  `_call_structured` helper, since Task 4 is about to add four more near-identical calls; the
+  existing `extract_events` tests pass unchanged, confirming this was a pure refactor.
+- New `parse_and_validate_signals(db, document, lm_studio_client)` orchestrator in
+  `backend/app/services/signal_parser.py`: calls `parse_signals`, then drops any candidate whose
+  `evidence_quote` is not verbatim in the document (reusing the existing `quote_found` grounding
+  helper) and logs each drop (`stage=signal_parser`, `outcome=dropped`); a transport or
+  schema-validation failure still raises out of `parse_signals` unchanged (document fails and
+  stays retryable, matching today's behavior) rather than being caught here. Nothing calls this
+  orchestrator from the real processing pipeline yet — that wiring is Task 5.
+- Verified: 209 backend tests (201 + 8 new: 5 client-level covering a clean parse, the sent
+  prompt/schema, a schema-mismatch failure, a timeout, and malformed JSON; 3 orchestrator-level
+  covering all-grounded-kept, one-ungrounded-dropped-and-logged, and all-ungrounded), 187 frontend
+  tests (unchanged — Task 3 is backend-only), clean lint, a successful production build, and
+  Project Knowledge validation. Isolated test databases only.
+
+**Next action:** Task 4 (four per-candidate classifiers) of the same plan, in the same fresh
+session per the owner's instruction to proceed task-by-task through Task 7 and then stop for
+approval before Task 8's live rollout.
 
 ---
 

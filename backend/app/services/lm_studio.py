@@ -6,6 +6,7 @@ import httpx2
 from pydantic import ValidationError
 
 from app.schemas.extraction import ExtractionResult
+from app.schemas.staged_extraction import SignalParseResult
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,18 @@ EXTRACTION_SYSTEM_PROMPT = (
     "because no province/state was stated. Apply this same treatment to every event, "
     "including ones where the location is implied by a strait, coastline, or region rather "
     "than a country name spelled out directly."
+)
+
+SIGNAL_PARSER_SYSTEM_PROMPT = (
+    "You are an intelligence analyst splitting a single source document into distinct "
+    "signal candidates: separate, observable occurrences the document describes. Only "
+    "split out occurrences the document actually describes; do not invent one. A document "
+    "describing one occurrence produces one candidate; a document describing several "
+    "distinct occurrences produces one candidate per occurrence.\n\n"
+    "For every candidate, provide: a short working_title; a one- or two-sentence summary; "
+    "its epistemic_status (confirmed, claim, rumor, or denied, based only on how the "
+    "document itself presents it); and an evidence_quote copied verbatim from the document "
+    "text, not paraphrased or summarized."
 )
 
 
@@ -145,6 +158,41 @@ class LmStudioClient:
         known_types: list[KnownEventType],
         known_actors: list[str],
     ) -> ExtractionResult:
+        content = self._call_structured(
+            lambda model_id: self._build_request(
+                model_id, document_context, known_types, known_actors
+            )
+        )
+        try:
+            return ExtractionResult.model_validate_json(content)
+        except ValidationError as error:
+            raise LmStudioResponseError(
+                "LM Studio's structured output did not match the expected schema."
+            ) from error
+        except ValueError as error:
+            raise LmStudioResponseError(
+                "LM Studio's structured output was not valid JSON."
+            ) from error
+
+    def parse_signals(self, document_context: DocumentExtractionContext) -> SignalParseResult:
+        content = self._call_structured(
+            lambda model_id: self._build_signal_parser_request(model_id, document_context)
+        )
+        try:
+            return SignalParseResult.model_validate_json(content)
+        except ValidationError as error:
+            raise LmStudioResponseError(
+                "LM Studio's structured output did not match the expected schema."
+            ) from error
+        except ValueError as error:
+            raise LmStudioResponseError(
+                "LM Studio's structured output was not valid JSON."
+            ) from error
+
+    def _call_structured(self, build_payload: Callable[[str], dict]) -> str:
+        """Resolve config/model, POST a structured chat-completion request built by
+        ``build_payload(model_id)``, and return the raw message content. Raises a typed
+        ``ExtractionError`` on any transport, HTTP, or JSON-decoding failure."""
         config = self._resolve()
         try:
             with httpx2.Client(
@@ -153,10 +201,7 @@ class LmStudioClient:
                 transport=self._transport,
             ) as client:
                 model_id = config.model or self._discover_model(client)
-                response = client.post(
-                    "/v1/chat/completions",
-                    json=self._build_request(model_id, document_context, known_types, known_actors),
-                )
+                response = client.post("/v1/chat/completions", json=build_payload(model_id))
                 if not response.is_success:
                     raise LmStudioResponseError(
                         f"LM Studio returned HTTP {response.status_code}."
@@ -170,18 +215,7 @@ class LmStudioClient:
             raise LmStudioResponseError(
                 "LM Studio returned a response that was not valid JSON."
             ) from error
-
-        content = self._extract_message_content(payload)
-        try:
-            return ExtractionResult.model_validate_json(content)
-        except ValidationError as error:
-            raise LmStudioResponseError(
-                "LM Studio's structured output did not match the expected schema."
-            ) from error
-        except ValueError as error:
-            raise LmStudioResponseError(
-                "LM Studio's structured output was not valid JSON."
-            ) from error
+        return self._extract_message_content(payload)
 
     def _discover_model(self, client: httpx2.Client) -> str:
         response = client.get("/v1/models")
@@ -236,6 +270,33 @@ class LmStudioClient:
                 "json_schema": {
                     "name": "extraction_result",
                     "schema": ExtractionResult.model_json_schema(),
+                },
+            },
+        }
+
+    def _build_signal_parser_request(
+        self, model_id: str, document_context: DocumentExtractionContext
+    ) -> dict:
+        return {
+            "model": model_id,
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": SIGNAL_PARSER_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": (
+                        f"Source title: {document_context.title}\n"
+                        f"Publication Date: {document_context.publication_date}\n\n"
+                        "Source content:\n"
+                        f"{document_context.content}"
+                    ),
+                },
+            ],
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "signal_parse_result",
+                    "schema": SignalParseResult.model_json_schema(),
                 },
             },
         }
