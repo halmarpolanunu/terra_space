@@ -10,20 +10,60 @@ status: active
 
 ## Current focus
 
-**2026-07-20 (later same day): event detection redesign approved and planned, ready for
-execution.** The owner asked to redesign event detection, sharing their own staged "SMC" (Signal,
-Mechanism, Context) framework as inspiration. The approved
+**2026-07-20 (later same day): executing the Staged Event Detection Pipeline implementation
+plan, Task 1 of 8 complete.** The owner asked to redesign event detection, sharing their own
+staged "SMC" (Signal, Mechanism, Context) framework as inspiration. The approved
 [Staged Event Detection Pipeline](decisions/Staged-Event-Detection-Pipeline.md) decision replaces
 the single LM Studio extraction call with a Signal Parser plus four narrow per-candidate
 classifiers, keeps the existing deterministic resolution stage, and adds ISO alpha-3 country codes,
 owner-managed actor aliases (with a first actor-management workspace), a per-stage extraction log,
 and per-attribute failure tolerance. Mechanism/Context classification is explicitly deferred. The
-[implementation plan](plans/2026-07-20-staged-event-detection-pipeline.md) (8 checkpointed,
-test-first tasks, self-contained for a fresh session — the owner intends to execute it in a
-separate session, possibly with a different model) is `planned`; **no code has changed yet**. The
-next action for a new session is Task 1 of that plan. This work supersedes the single-call prompt
-approach but does not resolve the paused LM-Studio-side investigation below — the new extraction
-log is designed to make that investigation easier.
+[implementation plan](plans/2026-07-20-staged-event-detection-pipeline.md) is 8 checkpointed,
+test-first tasks; a fresh session began executing it task-by-task per the owner's instruction, only
+against isolated test databases (no live database or container touched — that is reserved for
+Task 8, gated on the owner's approval).
+
+**Task 1 (ISO alpha-3 country codes) is done and committed**, test-first:
+- Added a checked-in `backend/app/data/iso3166_alpha2_to_alpha3.py` table (246 codes, covering
+  every country/admin1/city prefix actually present in the gazetteer, including three codes with
+  no entry in the old `countries` dict — `BQ`, `PW`, `TK` — found only by scanning admin1/city key
+  prefixes, not the countries list alone).
+- Regenerated `backend/app/data/location-gazetteer.json` in place with alpha-3 keys via a new
+  one-off script, `backend/scripts/convert_gazetteer_to_alpha3.py` (no gazetteer generator exists
+  in this repo to rerun from source GeoNames files, confirmed by search before writing the plan).
+- `_country_key` in `locations.py` now requires exactly 3 alpha characters (was 2); `Location.country`
+  is now `String(3)` (was `String(2)`); the extraction schema's field description and the
+  system prompt's worked example were updated to alpha-3 (the prompt itself is fully rewritten in
+  Task 3, so this was a minimal find-and-replace only, confirmed no test depends on the prompt's
+  literal text).
+- New migration `0010_iso_alpha3_country_codes` converts stored `Location.country` alpha-2 values
+  to alpha-3 (case/whitespace-insensitive match against the table; unmapped values pass through
+  unchanged), alters the column length inside the same SQLite batch-rebuild, and — after the
+  format change — re-runs the existing idempotent `backfill_missing_coordinates` so rows that were
+  previously unresolved only because their code was still alpha-2 get backfilled in the same
+  migration; downgrade reverses the country-code mapping and column length but intentionally does
+  not touch coordinates (mirrors 0004's own precedent: coordinates are deterministically
+  re-derivable, not worth reversing). Snapshots and restores `event_locations` around the batch
+  rebuild, reusing the exact SQLite cascade-on-drop workaround pattern already established in
+  `0008_single_source_event_date`.
+- Fixed a real regression the full migration chain exposed: `test_migration_0004.py`'s backfill
+  test upgrades a fresh database from empty straight through to `head`, and 0004's backfill step
+  calls the live (already-patched) `apply_coordinates`, so an alpha-2 row seeded before 0004 no
+  longer resolved once `_country_key` started rejecting 2-character codes — this is exactly what
+  the new post-conversion backfill inside 0010 now fixes, rather than leaving 0004's own test
+  broken.
+- Added the required amendment note to
+  [Local Location Coordinate Resolution](decisions/Local-Location-Coordinate-Resolution.md).
+- Verified: 191 backend tests (187 baseline + 4 new: `_country_key` alpha-3/alpha-2 behavior, an
+  alpha-2-no-longer-resolves regression test, and two new migration tests covering upgrade and
+  downgrade including a linked `event_locations` row and `PRAGMA foreign_key_check`), 187 frontend
+  tests (unchanged — Task 1 is backend-only), clean frontend lint, a successful production build,
+  and Project Knowledge validation (0 errors, 0 warnings). Committed as a single `feat:` commit,
+  isolated test databases only — the owner's live database and containers were not touched.
+
+**Next action:** Task 2 (extraction log storage and read API) of the same plan, in the same
+fresh session per the owner's instruction to proceed task-by-task through Task 7 and then stop for
+approval before Task 8's live rollout.
 
 ---
 

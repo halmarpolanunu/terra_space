@@ -30,7 +30,7 @@ def test_migration_reaches_current_head(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-            == "0009_event_taxonomy_tree"
+            == "0010_iso_alpha3_country_codes"
         )
 
 

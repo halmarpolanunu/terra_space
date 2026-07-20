@@ -34,7 +34,7 @@ def _country_key(country: str | None) -> str | None:
     if country is None:
         return None
     value = country.strip().upper()
-    return value if len(value) == 2 and value.isalpha() else None
+    return value if len(value) == 3 and value.isalpha() else None
 
 
 def _compound_key(country: str, name: str) -> str:

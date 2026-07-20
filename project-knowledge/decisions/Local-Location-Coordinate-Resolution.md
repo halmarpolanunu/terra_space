@@ -77,9 +77,23 @@ province/state reference points come from the highest-population administrative 
   Roadmap explicitly requires approved-event editing. Rejected and merged audit records remain
   immutable.
 
+# Amendments
+
+**2026-07-20 — country keys are ISO alpha-3.** Per Task 1 of the
+[Staged Event Detection Pipeline Implementation Plan](../plans/2026-07-20-staged-event-detection-pipeline.md),
+the committed gazetteer asset and `locations.country` now use ISO 3166-1 alpha-3 codes
+(for example `IRN`, `IDN`, `USA`) instead of alpha-2. The tiering rules above are otherwise
+unchanged: exact `(country, city_regency)`, then `(country, admin1)`, then `country`, with no
+fuzzy matching. The gazetteer's own generator is still not checked into this repository (see
+Consequences above); the alpha-3 conversion instead remapped the existing asset's keys with a
+one-off script (`backend/scripts/convert_gazetteer_to_alpha3.py`) driven by a checked-in
+alpha-2-to-alpha-3 table (`backend/app/data/iso3166_alpha2_to_alpha3.py`), which a future real
+regeneration from GeoNames source files should also use so alpha-3 stays the key format.
+
 # Navigation
 
 - [Decisions Index](Decisions-Index.md)
 - [Project Knowledge](../Project-knowledge-Index.md)
 - [Document & Event Data Model](Document-Event-Data-Model.md)
 - [Phase 4 Implementation Plan](../plans/2026-07-14-phase-4-events-dashboard.md)
+- [Staged Event Detection Pipeline decision](Staged-Event-Detection-Pipeline.md)

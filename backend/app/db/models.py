@@ -118,7 +118,7 @@ class Location(TimestampedModel, Base):
     __tablename__ = "locations"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
-    country: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(3), nullable=True)
     admin1: Mapped[str | None] = mapped_column(String(255), nullable=True)
     city_regency: Mapped[str | None] = mapped_column(String(255), nullable=True)
     latitude: Mapped[Decimal | None] = mapped_column(Numeric(9, 6), nullable=True)

@@ -19,7 +19,7 @@ class ExtractedLocation(BaseModel):
     country: str | None = Field(
         default=None,
         description=(
-            "ISO 3166-1 alpha-2 country code, e.g. 'US', 'ID', 'IR'. Never the full "
+            "ISO 3166-1 alpha-3 country code, e.g. 'USA', 'IDN', 'IRN'. Never the full "
             "country name. Null if no country is identifiable for this location."
         ),
     )
