@@ -5,49 +5,24 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import Document, Event, EventSource, EventType, Source, TaxonomyNode
 from app.main import create_app
-from app.schemas.extraction import ExtractedEvent, ExtractedEventType, ExtractionResult
-from app.services.extraction import persist_extraction
+from app.services.extraction import run_staged_pipeline
 from app.services.lm_studio import KnownEventType, LmStudioResponseError
+from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
 
 
-class FakeLmStudioClient:
-    """Test double standing in for LmStudioClient.extract_events."""
-
-    def __init__(self, outcomes: dict[str, ExtractionResult | Exception]) -> None:
-        self._outcomes = outcomes
-        self.calls: list[object] = []
-        self.known_type_calls: list[list[KnownEventType]] = []
-
-    def extract_events(
-        self,
-        document_text: str,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> ExtractionResult:
-        self.calls.append(document_text)
-        self.known_type_calls.append(known_types)
-        content = document_text.content if hasattr(document_text, "content") else document_text
-        outcome = self._outcomes[content]
-        if isinstance(outcome, Exception):
-            raise outcome
-        return outcome
+def _extraction_for(content: str) -> list[FakeEventSpec]:
+    return [
+        FakeEventSpec(
+            title="Extracted event",
+            summary="Summary.",
+            evidence_quote=content,
+        )
+    ]
 
 
-def _extraction_for(content: str) -> ExtractionResult:
-    return ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Extracted event",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing=None),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
-
-
-def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult | Exception]) -> TestClient:
+def _client(
+    tmp_path: Path, outcomes: dict[str, list[FakeEventSpec] | Exception]
+) -> TestClient:
     app = create_app(
         settings=Settings(data_dir=tmp_path),
         lm_studio_check=lambda: True,
@@ -160,21 +135,19 @@ def test_persisting_extraction_leaves_malformed_taxonomy_leaf_untyped(tmp_path: 
         session.add(malformed_leaf)
         session.commit()
 
-        result = persist_extraction(
-            session,
-            document,
-            ExtractionResult(
-                events=[
-                    ExtractedEvent(
+        fake_client = FakeLmStudioClient(
+            {
+                content: [
+                    FakeEventSpec(
                         title="Mobilization",
                         summary="A military unit mobilized.",
-                        event_type=ExtractedEventType(existing="Malformed Leaf"),
-                        epistemic_status="confirmed",
                         evidence_quote=content,
+                        event_type="Malformed Leaf",
                     )
                 ]
-            ),
+            }
         )
+        result = run_staged_pipeline(session, document, fake_client, [], [])
 
         assert len(result.saved_events) == 1
         assert result.saved_events[0].event_type is None
@@ -184,7 +157,7 @@ def test_batch_where_second_document_fails_still_completes_first_and_third(
     tmp_path: Path,
 ) -> None:
     contents = ["First document body.", "Second document body.", "Third document body."]
-    outcomes: dict[str, ExtractionResult | Exception] = {
+    outcomes: dict[str, list[FakeEventSpec] | Exception] = {
         contents[0]: _extraction_for(contents[0]),
         contents[1]: LmStudioResponseError("LM Studio returned malformed output."),
         contents[2]: _extraction_for(contents[2]),

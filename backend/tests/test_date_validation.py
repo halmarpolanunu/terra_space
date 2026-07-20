@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.event import EventCreate, EventUpdate
-from app.schemas.extraction import ExtractedEvent, ExtractedEventType
+from app.schemas.staged_extraction import ClassifiedDate
 
 
 def _event_create(**overrides: object) -> EventCreate:
@@ -15,18 +15,6 @@ def _event_create(**overrides: object) -> EventCreate:
     }
     payload.update(overrides)
     return EventCreate(**payload)
-
-
-def _extracted_event(**overrides: object) -> ExtractedEvent:
-    payload = {
-        "title": "Reported event",
-        "summary": "An event was reported.",
-        "event_type": ExtractedEventType(existing=None),
-        "epistemic_status": "claim",
-        "evidence_quote": "A reported event.",
-    }
-    payload.update(overrides)
-    return ExtractedEvent(**payload)
 
 
 @pytest.mark.parametrize(
@@ -85,6 +73,6 @@ def test_event_update_rejects_inconsistent_date_and_precision(
         EventUpdate(event_date=event_date, event_date_precision=event_date_precision)
 
 
-def test_extracted_event_rejects_an_inconsistent_date_and_precision() -> None:
+def test_classified_date_rejects_an_inconsistent_date_and_precision() -> None:
     with pytest.raises(ValidationError):
-        _extracted_event(event_date="2026-07-10", event_date_precision="month")
+        ClassifiedDate(event_date="2026-07-10", event_date_precision="month")

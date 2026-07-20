@@ -5,34 +5,11 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import EventType, TaxonomyNode
 from app.main import create_app
-from app.schemas.extraction import (
-    ExtractedActor,
-    ExtractedEvent,
-    ExtractedEventType,
-    ExtractedLocation,
-    ExtractionResult,
-)
 from app.services.lm_studio import KnownEventType
+from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
 
 
-class FakeLmStudioClient:
-    """Test double standing in for LmStudioClient.extract_events."""
-
-    def __init__(self, outcomes: dict[str, ExtractionResult]) -> None:
-        self._outcomes = outcomes
-        self.known_types_seen: list[KnownEventType] = []
-
-    def extract_events(
-        self,
-        document_context: object,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> ExtractionResult:
-        self.known_types_seen = known_types
-        return self._outcomes[document_context.content]
-
-
-def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient:
+def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestClient:
     app = create_app(
         settings=Settings(data_dir=tmp_path),
         lm_studio_check=lambda: True,
@@ -73,7 +50,15 @@ def _create_and_process_document(client: TestClient, content: str) -> dict:
 
 def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) -> None:
     content = "A public protest occurred."
-    fake = FakeLmStudioClient({content: ExtractionResult(events=[])})
+    fake = FakeLmStudioClient(
+        {
+            content: [
+                FakeEventSpec(
+                    title="Protest", summary="A public protest occurred.", evidence_quote=content
+                )
+            ]
+        }
+    )
     app = create_app(
         settings=Settings(data_dir=tmp_path),
         lm_studio_check=lambda: True,
@@ -99,30 +84,30 @@ def test_processing_passes_only_active_event_type_definitions(tmp_path: Path) ->
     ).json()
     client.post("/api/documents/process", json={"document_ids": [document["id"]]})
 
-    assert fake.known_types_seen == [
-        KnownEventType(
-            name="Protest",
-            description="Collective public demonstration.",
-            path="Civil Unrest > Public Order > Demonstrations > Protest",
-        )
+    assert fake.known_type_calls == [
+        [
+            KnownEventType(
+                name="Protest",
+                description="Collective public demonstration.",
+                path="Civil Unrest > Public Order > Demonstrations > Protest",
+            )
+        ]
     ]
 
 
 def test_events_for_document_expose_active_type_and_inactive_actor_flags(tmp_path: Path) -> None:
     content = "A local militia reportedly attacked the fuel depot near Sana'a on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Depot attack",
-                summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(existing="Attack"),
-                epistemic_status="claim",
-                evidence_quote=content,
-                actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
-                locations=[ExtractedLocation(country="YE", admin1="Sana'a", city_regency=None)],
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Depot attack",
+            summary="A militia group reportedly attacked a fuel depot.",
+            evidence_quote=content,
+            epistemic_status="claim",
+            event_type="Attack",
+            source_actors=["Local Militia"],
+            locations=[{"country": "YEM", "admin1": "Sana'a", "city_regency": None}],
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
 
@@ -137,10 +122,11 @@ def test_events_for_document_expose_active_type_and_inactive_actor_flags(tmp_pat
     assert event["actors"][0]["actor"]["name"] == "Local Militia"
     assert event["actors"][0]["actor"]["is_active"] is False
     assert event["actors"][0]["role"] == "source"
-    assert event["locations"][0]["country"] == "YE"
+    assert event["locations"][0]["country"] == "YEM"
     assert event["sources"][0]["evidence_quote"] == content
     assert event["sources"][0]["document_id"] == document["id"]
     assert event["duplicate_flags"] == []
+    assert event["extraction_incomplete"] is False
 
 
 def test_list_for_document_only_returns_events_sourced_from_that_document(
@@ -148,28 +134,22 @@ def test_list_for_document_only_returns_events_sourced_from_that_document(
 ) -> None:
     content_a = "Event A happened at the port on 2026-07-01."
     content_b = "Event B happened at the market on 2026-07-02."
-    extraction_a = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Event A",
-                summary="Summary A.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content_a,
-            )
-        ]
-    )
-    extraction_b = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Event B",
-                summary="Summary B.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content_b,
-            )
-        ]
-    )
+    extraction_a = [
+        FakeEventSpec(
+            title="Event A",
+            summary="Summary A.",
+            evidence_quote=content_a,
+            event_type="Report",
+        )
+    ]
+    extraction_b = [
+        FakeEventSpec(
+            title="Event B",
+            summary="Summary B.",
+            evidence_quote=content_b,
+            event_type="Report",
+        )
+    ]
     client = _client(tmp_path, {content_a: extraction_a, content_b: extraction_b})
     doc_a = _create_and_process_document(client, content_a)
     doc_b = _create_and_process_document(client, content_b)
@@ -182,17 +162,14 @@ def test_list_for_document_only_returns_events_sourced_from_that_document(
 
 def test_get_event_by_id_and_404_when_missing(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something",
+            summary="Summary.",
+            evidence_quote=content,
+            event_type="Report",
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     events = client.get(f"/api/documents/{document['id']}/events").json()
@@ -207,17 +184,14 @@ def test_get_event_by_id_and_404_when_missing(tmp_path: Path) -> None:
 
 def test_list_all_events_filters_by_review_status(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something",
+            summary="Summary.",
+            evidence_quote=content,
+            event_type="Report",
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     _create_and_process_document(client, content)
 

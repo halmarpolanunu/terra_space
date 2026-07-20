@@ -124,9 +124,58 @@ Task 8, gated on the owner's approval).
   (unchanged — Task 4 is backend-only), clean lint, a successful production build, and Project
   Knowledge validation. Isolated test databases only.
 
-**Next action:** Task 5 (orchestration and persistence rewrite) of the same plan, in the same
-fresh session per the owner's instruction to proceed task-by-task through Task 7 and then stop
-for approval before Task 8's live rollout.
+**Task 5 (orchestration and persistence rewrite) is also done and committed** — the largest task
+in the plan, since it retires the old single-call path entirely rather than adding the new one
+alongside it:
+- New `Event.extraction_incomplete` boolean (migration `0012_event_extraction_incomplete`, set
+  when any of the four classifiers failed for that candidate), exposed read-only on `EventRead`.
+  The migration snapshots/restores `event_actors`, `event_sources`, `event_locations`, and
+  `duplicate_flags` around the `events` table rebuild, reusing the same SQLite
+  cascade-on-drop workaround as `0008`/`0010`.
+- Rewrote `app/services/extraction.py`: `persist_extraction(db, document, ExtractionResult)` is
+  replaced by `run_staged_pipeline(db, document, lm_studio_client, known_types, known_actors)`,
+  which calls `parse_and_validate_signals` (Task 3) then, per surviving candidate, all four
+  classifiers (Task 4), assembles one draft `Event`, and reuses the existing grounding logic
+  unchanged (`_location_grounded`, coordinate resolution, actor lookup/creation, duplicate
+  detection) — plus one addition carried over from the old `_validate_event`: a candidate with a
+  blank title or summary is dropped and logged (`stage=signal_parser`) rather than becoming a
+  blank draft, since nothing else in the new pipeline still checked that. Every dropped location
+  now writes a real extraction-log entry instead of the old silent `dropped_locations` list.
+  `processing.py`'s `_process_document` now calls this one function instead of
+  `extract_events`+`persist_extraction`; a Signal Parser failure still raises and fails the
+  document exactly like before, while classifier failures degrade to an incomplete event and
+  never fail the batch.
+- Removed the retired single-call path entirely rather than leaving it as dead code:
+  `LmStudioClient.extract_events`/`_build_request`/`EXTRACTION_SYSTEM_PROMPT`, and
+  `ExtractedEventType`/`ExtractedLocation`/`ExtractedActor`/`ExtractedEvent`/`ExtractionResult`
+  from `app/schemas/extraction.py` (trimmed to just the two still-shared type aliases,
+  `EpistemicStatus`/`DatePrecision`).
+- This rewrite's biggest ripple was test fixtures: six existing test files
+  (`test_processing.py`, `test_events_api.py`, `test_event_edit_approve_reject.py`,
+  `test_event_types_actors_api.py`, `test_duplicate_resolution.py`, `test_date_validation.py`)
+  used a hand-rolled `FakeLmStudioClient` stubbing `extract_events` purely as a fixture mechanism
+  to get specific events into the database for testing unrelated features (approval, duplicate
+  resolution, event-type management). Built one shared, reusable double,
+  `tests/staged_lm_studio_fake.py` (not itself a test module), that implements the full staged
+  call surface (`parse_signals` plus all four classifiers) from a simple flat `FakeEventSpec` list
+  per document — including a `fail_stages` option so a test can force one specific classifier to
+  fail for a candidate — and updated all six files to use it, translating each fixture 1:1.
+  Deleted `test_lm_studio_extraction.py` and `test_extraction_validation.py` outright (their
+  target no longer exists) and replaced their coverage with `tests/test_staged_pipeline_persistence.py`
+  (13 tests directly against `run_staged_pipeline`, translating every case: dropped ungrounded
+  candidates, blank title/summary, multi-candidate documents, one-classifier-failure producing an
+  incomplete-but-otherwise-complete event, all-classifiers-failing still saving a titled/quoted
+  draft, location grounding in all its variants, actor reuse/creation, and taxonomy-leaf linking).
+- Verified: 222 backend tests total (net change from 229: +2 migration, +13 new persistence
+  tests, −8 deleted `extract_events` tests, −15 deleted old `persist_extraction` tests, plus the
+  six rewired files unchanged in count), 187 frontend tests (unaffected — no frontend file
+  changed; the new `extraction_incomplete` field is additive and ignored by existing TS fetch
+  typing), clean lint, a successful production build, and Project Knowledge validation. Isolated
+  test databases only throughout.
+
+**Next action:** Task 6 (per-call timeout semantics) of the same plan, in the same fresh session
+per the owner's instruction to proceed task-by-task through Task 7 and then stop for approval
+before Task 8's live rollout.
 
 ---
 

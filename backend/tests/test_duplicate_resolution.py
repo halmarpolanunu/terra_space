@@ -5,24 +5,10 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import EventType, TaxonomyNode
 from app.main import create_app
-from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
-from app.services.lm_studio import KnownEventType
+from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
 
 
-class FakeLmStudioClient:
-    def __init__(self, outcomes: dict[str, ExtractionResult]) -> None:
-        self._outcomes = outcomes
-
-    def extract_events(
-        self,
-        document_context: object,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> ExtractionResult:
-        return self._outcomes[document_context.content]
-
-
-def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient:
+def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestClient:
     app = create_app(
         settings=Settings(data_dir=tmp_path),
         lm_studio_check=lambda: True,
@@ -56,21 +42,19 @@ def _process(client: TestClient, content: str) -> dict:
     return document
 
 
-def _attack_extraction(content: str, event_date: str) -> ExtractionResult:
-    return ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Depot attack",
-                summary="A militia group attacked a fuel depot.",
-                event_type=ExtractedEventType(existing="Attack"),
-                epistemic_status="claim",
-                evidence_quote=content,
-                event_date=event_date,
-                event_date_precision="exact",
-                actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
-            )
-        ]
-    )
+def _attack_extraction(content: str, event_date: str) -> list[FakeEventSpec]:
+    return [
+        FakeEventSpec(
+            title="Depot attack",
+            summary="A militia group attacked a fuel depot.",
+            evidence_quote=content,
+            epistemic_status="claim",
+            event_type="Attack",
+            event_date=event_date,
+            event_date_precision="exact",
+            source_actors=["Local Militia"],
+        )
+    ]
 
 
 def _setup_flagged_pair(

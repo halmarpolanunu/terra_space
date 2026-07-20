@@ -6,7 +6,6 @@ from typing import TypeVar
 import httpx2
 from pydantic import BaseModel, ValidationError
 
-from app.schemas.extraction import ExtractionResult
 from app.schemas.staged_extraction import (
     ClassifiedActors,
     ClassifiedDate,
@@ -51,28 +50,6 @@ class LmStudioRuntimeConfig:
     model: str | None
     extraction_timeout_seconds: float = 300.0
 
-
-EXTRACTION_SYSTEM_PROMPT = (
-    "You are an intelligence analyst extracting events from a single source document. "
-    "Only report what the document actually states. Leave a field null rather than guess "
-    "or invent a value. Prefer an existing event type or actor over inventing a "
-    "near-duplicate. The evidence_quote for every event must be copied verbatim from the "
-    "document text, not paraphrased or summarized.\n\n"
-    "For every event, extract every location the document ties to that specific event: "
-    "country, province/state (admin1), and city/regency, whenever the text states or "
-    "clearly implies one. Do not skip a location just because it is named indirectly "
-    "(a strait, a coastline, a region, 'the capital') if the document ties it to this "
-    "event. Use the ISO 3166-1 alpha-3 country code (for example 'USA', 'IDN', 'IRN'), never "
-    "the full country name. Leave a location field null only when the document truly gives "
-    "no geographic detail for that event.\n\n"
-    "Example: for the sentence \"Rebel forces attacked a checkpoint near Sana'a, Yemen, "
-    "on Monday,\" the event's locations field must be "
-    "[{\"country\": \"YEM\", \"admin1\": null, \"city_regency\": \"Sana'a\"}] — the country name "
-    "is converted to its ISO code, the city name is kept as written, and admin1 stays null "
-    "because no province/state was stated. Apply this same treatment to every event, "
-    "including ones where the location is implied by a strait, coastline, or region rather "
-    "than a country name spelled out directly."
-)
 
 SIGNAL_PARSER_SYSTEM_PROMPT = (
     "You are an intelligence analyst splitting a single source document into distinct "
@@ -203,19 +180,6 @@ class LmStudioClient:
             if isinstance(model, dict) and isinstance(model.get("id"), str)
         ]
 
-    def extract_events(
-        self,
-        document_context: DocumentExtractionContext,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> ExtractionResult:
-        content = self._call_structured(
-            lambda model_id: self._build_request(
-                model_id, document_context, known_types, known_actors
-            )
-        )
-        return self._parse_structured_content(content, ExtractionResult)
-
     def parse_signals(self, document_context: DocumentExtractionContext) -> SignalParseResult:
         content = self._call_structured(
             lambda model_id: self._build_signal_parser_request(model_id, document_context)
@@ -324,48 +288,6 @@ class LmStudioClient:
         if not isinstance(model_id, str) or not model_id:
             raise LmStudioUnavailableError("No model is loaded in LM Studio.")
         return model_id
-
-    def _build_request(
-        self,
-        model_id: str,
-        document_context: DocumentExtractionContext,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> dict:
-        system_prompt = (
-            f"{EXTRACTION_SYSTEM_PROMPT}\n\n"
-            "Known active Event Type leaves (their paths are classification context only): "
-            f"{_known_type_json(known_types)}\n"
-            "Use an exact supplied active event type name only when it fits. Otherwise set "
-            "existing to null. Never invent, suggest, or describe a new event type.\n"
-            f"Known actors: {', '.join(known_actors) or 'none yet'}"
-        )
-        return {
-            "model": model_id,
-            "temperature": 0,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {
-                    "role": "user",
-                    "content": (
-                        f"Source title: {document_context.title}\n"
-                        f"Publication Date: {document_context.publication_date}\n\n"
-                        "Source content:\n"
-                        f"{document_context.content}\n\n"
-                        "Publication Date is when the source document was made. It is source "
-                        "context only. Set Event Date only when the source content and evidence "
-                        "quote support that event date."
-                    ),
-                },
-            ],
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "extraction_result",
-                    "schema": ExtractionResult.model_json_schema(),
-                },
-            },
-        }
 
     def _build_signal_parser_request(
         self, model_id: str, document_context: DocumentExtractionContext

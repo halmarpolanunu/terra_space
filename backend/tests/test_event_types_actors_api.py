@@ -5,26 +5,12 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import Event, EventType, TaxonomyNode
 from app.main import create_app
-from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
-from app.services.lm_studio import KnownEventType
+from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
 
 SOURCE_TEXT = "Aircraft struck the depot."
 
 
-class FakeLmStudioClient:
-    def __init__(self, outcomes: dict[str, ExtractionResult]) -> None:
-        self._outcomes = outcomes
-
-    def extract_events(
-        self,
-        document_context: object,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> ExtractionResult:
-        return self._outcomes[document_context.content]
-
-
-def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient:
+def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestClient:
     app = create_app(
         settings=Settings(data_dir=tmp_path),
         lm_studio_check=lambda: True,
@@ -468,18 +454,16 @@ def test_active_description_cannot_be_cleared(tmp_path: Path) -> None:
 
 def test_unknown_ai_type_creates_no_event_type_but_keeps_the_draft_untyped(tmp_path: Path) -> None:
     content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Depot attack",
-                summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(existing="Attack"),
-                epistemic_status="claim",
-                evidence_quote=content,
-                actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Depot attack",
+            summary="A militia group reportedly attacked a fuel depot.",
+            evidence_quote=content,
+            epistemic_status="claim",
+            event_type="Attack",
+            source_actors=["Local Militia"],
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = client.post(
         "/api/documents",
@@ -507,17 +491,14 @@ def test_unknown_ai_type_creates_no_event_type_but_keeps_the_draft_untyped(tmp_p
 
 def test_ai_output_uses_an_active_existing_type_without_changing_its_definition(tmp_path: Path) -> None:
     content = "People held a public protest."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Public protest",
-                summary=content,
-                event_type=ExtractedEventType(existing="Protest"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Public protest",
+            summary=content,
+            evidence_quote=content,
+            event_type="Protest",
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     existing_id = _seed_event_type(
         client, name="Protest", description="Human definition.", is_active=True

@@ -155,6 +155,7 @@ class Event(TimestampedModel, Base):
     epistemic_status: Mapped[str] = mapped_column(String(32))
     review_status: Mapped[str] = mapped_column(String(32), default="draft")
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    extraction_incomplete: Mapped[bool] = mapped_column(Boolean, default=False)
 
     event_type: Mapped[EventType | None] = relationship(back_populates="events")
     event_actors: Mapped[list["EventActor"]] = relationship(

@@ -6,16 +6,11 @@ from app.services.lm_studio import DocumentExtractionContext, LmStudioClient, Lm
 
 WELL_FORMED_CONTENT = json.dumps(
     {
-        "events": [
+        "candidates": [
             {
-                "title": "Protest at capitol",
+                "working_title": "Protest at capitol",
                 "summary": "A large protest occurred.",
-                "event_type": {"existing": "Protest"},
-                "event_date": "2026-07-10",
-                "event_date_precision": "exact",
                 "epistemic_status": "confirmed",
-                "locations": [{"country": "ID", "admin1": None, "city_regency": "Jakarta"}],
-                "actors": [{"name": "Students", "role": "source", "existing": False}],
                 "evidence_quote": "A large protest occurred.",
             }
         ]
@@ -42,8 +37,8 @@ def test_client_targets_configured_base_url_and_model(monkeypatch=None) -> None:
         config_provider=lambda: state["config"],
     )
 
-    client.extract_events(
-        DocumentExtractionContext("Source", "2026-07-10", "A large protest occurred."), [], []
+    client.parse_signals(
+        DocumentExtractionContext("Source", "2026-07-10", "A large protest occurred.")
     )
     assert seen["host"] == "configured"
     assert seen["port"] == 5000
@@ -51,8 +46,8 @@ def test_client_targets_configured_base_url_and_model(monkeypatch=None) -> None:
 
     # Changing what the provider returns changes the next call without rebuilding the client.
     state["config"] = LmStudioRuntimeConfig(base_url="http://switched:6000", model=None)
-    client.extract_events(
-        DocumentExtractionContext("Source", "2026-07-10", "A large protest occurred."), [], []
+    client.parse_signals(
+        DocumentExtractionContext("Source", "2026-07-10", "A large protest occurred.")
     )
     assert seen["host"] == "switched"
     assert seen["port"] == 6000

@@ -199,6 +199,7 @@ class EventRead(BaseModel):
     locations: list[LocationRead]
     sources: list[EventSourceRead]
     duplicate_flags: list[DuplicateFlagRead]
+    extraction_incomplete: bool
     created_at: datetime
     updated_at: datetime
     approved_at: datetime | None

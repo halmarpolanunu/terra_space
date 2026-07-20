@@ -142,6 +142,7 @@ def to_event_read(event: Event) -> EventRead:
         duplicate_flags=[
             DuplicateFlagRead.model_validate(flag) for flag in event.duplicate_flags
         ],
+        extraction_incomplete=event.extraction_incomplete,
         created_at=event.created_at,
         updated_at=event.updated_at,
         approved_at=event.approved_at,

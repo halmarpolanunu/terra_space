@@ -6,24 +6,10 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import DuplicateFlag, EventType, TaxonomyNode
 from app.main import create_app
-from app.schemas.extraction import ExtractedActor, ExtractedEvent, ExtractedEventType, ExtractionResult
-from app.services.lm_studio import KnownEventType
+from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
 
 
-class FakeLmStudioClient:
-    def __init__(self, outcomes: dict[str, ExtractionResult]) -> None:
-        self._outcomes = outcomes
-
-    def extract_events(
-        self,
-        document_context: object,
-        known_types: list[KnownEventType],
-        known_actors: list[str],
-    ) -> ExtractionResult:
-        return self._outcomes[document_context.content]
-
-
-def _client(tmp_path: Path, outcomes: dict[str, ExtractionResult]) -> TestClient:
+def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestClient:
     app = create_app(
         settings=Settings(data_dir=tmp_path),
         lm_studio_check=lambda: True,
@@ -69,19 +55,17 @@ def _describe_event_type(client: TestClient, type_id: str, description: str) -> 
     assert response.status_code == 200
 
 
-def _extraction_with_existing_type(content: str) -> ExtractionResult:
-    return ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Depot attack",
-                summary="A militia group reportedly attacked a fuel depot.",
-                event_type=ExtractedEventType(existing="Attack"),
-                epistemic_status="claim",
-                evidence_quote=content,
-                actors=[ExtractedActor(name="Local Militia", role="source", existing=False)],
-            )
-        ]
-    )
+def _extraction_with_existing_type(content: str) -> list[FakeEventSpec]:
+    return [
+        FakeEventSpec(
+            title="Depot attack",
+            summary="A militia group reportedly attacked a fuel depot.",
+            evidence_quote=content,
+            epistemic_status="claim",
+            event_type="Attack",
+            source_actors=["Local Militia"],
+        )
+    ]
 
 
 def test_approving_event_keeps_existing_type_active_and_activates_actor(tmp_path: Path) -> None:
@@ -101,13 +85,9 @@ def test_approving_event_keeps_existing_type_active_and_activates_actor(tmp_path
 
 def test_approval_allows_an_untyped_draft(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(events=[ExtractedEvent(
-        title="Something",
-        summary="Summary.",
-        event_type=ExtractedEventType(existing=None),
-        epistemic_status="confirmed",
-        evidence_quote=content,
-    )])
+    extraction = [
+        FakeEventSpec(title="Something", summary="Summary.", evidence_quote=content)
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
@@ -118,13 +98,9 @@ def test_approval_allows_an_untyped_draft(tmp_path: Path) -> None:
 
 def test_approve_all_allows_untyped_drafts(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(events=[ExtractedEvent(
-        title="Something",
-        summary="Summary.",
-        event_type=ExtractedEventType(existing=None),
-        epistemic_status="confirmed",
-        evidence_quote=content,
-    )])
+    extraction = [
+        FakeEventSpec(title="Something", summary="Summary.", evidence_quote=content)
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     body = client.post(
@@ -136,17 +112,11 @@ def test_approve_all_allows_untyped_drafts(tmp_path: Path) -> None:
 
 def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     app = client.app
     document = _create_and_process_document(client, content)
@@ -168,17 +138,11 @@ def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path)
 
 def test_rejecting_event_never_deletes_it(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
@@ -194,17 +158,11 @@ def test_rejecting_event_never_deletes_it(tmp_path: Path) -> None:
 
 def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
@@ -286,24 +244,14 @@ def test_document_becomes_completed_only_after_all_draft_events_resolved(
     tmp_path: Path,
 ) -> None:
     content = "Two things happened on 2026-07-10 in the capital."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="First thing",
-                summary="Summary one.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            ),
-            ExtractedEvent(
-                title="Second thing",
-                summary="Summary two.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            ),
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="First thing", summary="Summary one.", evidence_quote=content, event_type="Report"
+        ),
+        FakeEventSpec(
+            title="Second thing", summary="Summary two.", evidence_quote=content, event_type="Report"
+        ),
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     events = client.get(f"/api/documents/{document['id']}/events").json()
@@ -321,24 +269,14 @@ def test_document_becomes_completed_only_after_all_draft_events_resolved(
 
 def test_approve_all_skips_events_with_pending_duplicate_flags(tmp_path: Path) -> None:
     content = "Two things happened on 2026-07-10 in the capital."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="First thing",
-                summary="Summary one.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            ),
-            ExtractedEvent(
-                title="Second thing",
-                summary="Summary two.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            ),
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="First thing", summary="Summary one.", evidence_quote=content, event_type="Report"
+        ),
+        FakeEventSpec(
+            title="Second thing", summary="Summary two.", evidence_quote=content, event_type="Report"
+        ),
+    ]
     client = _client(tmp_path, {content: extraction})
     app = client.app
     document = _create_and_process_document(client, content)
@@ -366,17 +304,11 @@ def test_approve_all_skips_events_with_pending_duplicate_flags(tmp_path: Path) -
 
 def test_deleting_draft_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
@@ -390,17 +322,11 @@ def test_deleting_draft_event_removes_it_but_preserves_document(tmp_path: Path) 
 
 def test_deleting_approved_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     document = _create_and_process_document(client, content)
     event = client.get(f"/api/documents/{document['id']}/events").json()[0]
@@ -421,17 +347,11 @@ def test_deleting_missing_event_returns_404(tmp_path: Path) -> None:
 @pytest.mark.parametrize("review_status", ["rejected", "merged"])
 def test_deleting_rejected_or_merged_event_returns_409(tmp_path: Path, review_status: str) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = ExtractionResult(
-        events=[
-            ExtractedEvent(
-                title="Something",
-                summary="Summary.",
-                event_type=ExtractedEventType(existing="Report"),
-                epistemic_status="confirmed",
-                evidence_quote=content,
-            )
-        ]
-    )
+    extraction = [
+        FakeEventSpec(
+            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
+        )
+    ]
     client = _client(tmp_path, {content: extraction})
     app = client.app
     document = _create_and_process_document(client, content)
