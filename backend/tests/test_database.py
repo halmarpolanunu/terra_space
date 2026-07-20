@@ -34,7 +34,7 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                == "0010_iso_alpha3_country_codes"
+                == "0011_extraction_log_entries"
         )
     event_type_columns = {
         column["name"]: column for column in inspect(engine).get_columns("event_types")
@@ -100,6 +100,7 @@ def test_foundation_schema_contains_all_required_tables(tmp_path: Path) -> None:
         "event_actors",
         "event_locations",
         "event_sources",
+        "extraction_log_entries",
     }
     assert expected <= set(inspect(engine).get_table_names())
 

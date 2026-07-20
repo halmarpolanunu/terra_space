@@ -61,9 +61,24 @@ Task 8, gated on the owner's approval).
   and Project Knowledge validation (0 errors, 0 warnings). Committed as a single `feat:` commit,
   isolated test databases only — the owner's live database and containers were not touched.
 
-**Next action:** Task 2 (extraction log storage and read API) of the same plan, in the same
-fresh session per the owner's instruction to proceed task-by-task through Task 7 and then stop for
-approval before Task 8's live rollout.
+**Task 2 (extraction log storage and read API) is also done and committed**, test-first:
+- New `ExtractionLogEntry` model/table (`id`, `document_id` FK cascade-delete, `candidate_index`
+  nullable, `stage`, `outcome`, `detail`, `created_at`) via migration
+  `0011_extraction_log_entries`; no batch-rebuild risk since this only creates a new table rather
+  than altering one that already has dependents.
+- Service helper `log_extraction(db, ...)` (adds, does not commit — caller controls the
+  transaction, matching the existing `persist_extraction` pattern) and `list_extraction_log`
+  (newest-first, `created_at` then `id` as a tiebreaker) in `backend/app/services/extraction_log.py`.
+- `GET /api/documents/{id}/extraction-log` added to the existing documents router (`404` for a
+  missing document, `200` with an empty list before any entries exist).
+- Verified: 201 backend tests (201 = 191 + 10 new: 4 service-level, 3 API-level, 3 migration-level,
+  including a cascade-delete-on-document-removal check with `PRAGMA foreign_key_check`), 187
+  frontend tests (unchanged — Task 2 is backend-only), clean lint, a successful production build,
+  and Project Knowledge validation. Isolated test databases only.
+
+**Next action:** Task 3 (Signal Parser stage) of the same plan, in the same fresh session per the
+owner's instruction to proceed task-by-task through Task 7 and then stop for approval before
+Task 8's live rollout.
 
 ---
 

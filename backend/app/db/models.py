@@ -203,6 +203,20 @@ class EventSource(Base):
     source: Mapped[Source] = relationship(back_populates="event_sources")
 
 
+class ExtractionLogEntry(Base):
+    __tablename__ = "extraction_log_entries"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"), index=True
+    )
+    candidate_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    stage: Mapped[str] = mapped_column(String(32))
+    outcome: Mapped[str] = mapped_column(String(16))
+    detail: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
 class DuplicateFlag(TimestampedModel, Base):
     __tablename__ = "duplicate_flags"
 
