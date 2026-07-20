@@ -55,6 +55,8 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Deferred UI Polish Plan (Backgrounds and Settings)](plans/2026-07-17-ui-polish-deferred.md) - merged plan covering both the route backgrounds and the Settings layout
 - [Globe Halo Zoom Behavior Plan](plans/2026-07-17-globe-halo-zoom-behavior.md) - make the globe halo behave correctly while zooming in and out
 - [Globe Backside Node Visibility Plan](plans/2026-07-17-globe-backside-node-visibility.md) - hide location nodes on the far side of the globe
+- [Staged Event Detection Pipeline](decisions/Staged-Event-Detection-Pipeline.md) - approved redesign: Signal Parser plus four narrow per-candidate classifiers, ISO alpha-3, actor aliases, and a per-stage extraction log
+- [Staged Event Detection Pipeline Implementation Plan](plans/2026-07-20-staged-event-detection-pipeline.md) - checkpointed, test-first build plan for the staged pipeline, ready for a fresh execution session
 
 ## Reading rule
 

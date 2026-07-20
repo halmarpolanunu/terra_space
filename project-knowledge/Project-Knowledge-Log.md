@@ -8,6 +8,23 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-20 - Staged Event Detection Pipeline decision approved and planned
+
+- The owner asked to redesign event detection, sharing their own staged "SMC" (Signal, Mechanism,
+  Context) detection framework as inspiration. After a brainstorming session (visual pipeline
+  diagrams reviewed and iterated by the owner), recorded the approved
+  [Staged Event Detection Pipeline](decisions/Staged-Event-Detection-Pipeline.md) decision: the
+  single LM Studio extraction call is replaced with a Signal Parser call plus four narrow
+  per-candidate classifiers (Event Type, Date, Locations, Actors with separate source/recipient
+  lists), keeping the existing deterministic resolution stage. Locked choices: ISO 3166-1 alpha-3
+  country codes (replacing alpha-2, with gazetteer regeneration and data migration), owner-managed
+  actor aliases plus a first actor-management workspace, a per-stage extraction log, per-attribute
+  failure tolerance ("extraction incomplete" instead of whole-document failure), per-call timeout
+  semantics, and Mechanism/Context deferred as a future classifier slot. Wrote the matching
+  [implementation plan](plans/2026-07-20-staged-event-detection-pipeline.md) (8 checkpointed,
+  test-first tasks, written to be executable by a fresh session). This effectively delivers what
+  the superseded Event Detection Reconsideration Plan once asked for. No code changed yet.
+
 ## 2026-07-19 - UI Background Re-polish and Settings UI/UX Polish plans merged
 
 - At the owner's request ("merge point 4 & 5, since its the same"), merged

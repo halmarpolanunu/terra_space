@@ -10,6 +10,23 @@ status: active
 
 ## Current focus
 
+**2026-07-20 (later same day): event detection redesign approved and planned, ready for
+execution.** The owner asked to redesign event detection, sharing their own staged "SMC" (Signal,
+Mechanism, Context) framework as inspiration. The approved
+[Staged Event Detection Pipeline](decisions/Staged-Event-Detection-Pipeline.md) decision replaces
+the single LM Studio extraction call with a Signal Parser plus four narrow per-candidate
+classifiers, keeps the existing deterministic resolution stage, and adds ISO alpha-3 country codes,
+owner-managed actor aliases (with a first actor-management workspace), a per-stage extraction log,
+and per-attribute failure tolerance. Mechanism/Context classification is explicitly deferred. The
+[implementation plan](plans/2026-07-20-staged-event-detection-pipeline.md) (8 checkpointed,
+test-first tasks, self-contained for a fresh session — the owner intends to execute it in a
+separate session, possibly with a different model) is `planned`; **no code has changed yet**. The
+next action for a new session is Task 1 of that plan. This work supersedes the single-call prompt
+approach but does not resolve the paused LM-Studio-side investigation below — the new extraction
+log is designed to make that investigation easier.
+
+---
+
 The owner checked the two globe fixes below live on 2026-07-20 and reported two things, both
 addressed (code changed, not yet committed):
 

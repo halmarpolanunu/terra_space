@@ -22,6 +22,7 @@ status: active
 - [Closed Event Type Taxonomy](Closed-Event-Type-Taxonomy.md) - Prevents local AI from suggesting types; unmatched extracted events keep a blank type for human review.
 - [Single Source Date and Event Date](Single-Source-Date-and-Event-Date.md) - Proposed simplification to one Publication Date for documents and one Event Date for extracted events.
 - [Event Taxonomy Tree and Management](Event-Taxonomy-Tree-and-Management.md) - Replaces flat Event Type management with a four-level owner-managed tree and a calmer Terra Sense taxonomy workspace.
+- [Staged Event Detection Pipeline](Staged-Event-Detection-Pipeline.md) - Replaces the single extraction call with a Signal Parser plus four narrow per-candidate classifiers, ISO alpha-3 country codes, actor aliases, and a per-stage extraction log.
 
 # Navigation
 
