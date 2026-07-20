@@ -77,6 +77,42 @@ implementation plan or decision, link it from here and mark it resolved instead 
      matching or manual coordinate override was built; the owner chose visibility-only for this pass
      (see above). Remains a possible future item if extraction improvements alone prove
      insufficient.
+- **New data point (2026-07-20):** the open reliability question in facet 2 above now has a second,
+  concrete result. The owner reprocessed the same document again and approved the 3 resulting events;
+  live database inspection confirmed all 3 have **zero** location rows at all (not merely unresolved
+  coordinates — no location data was extracted or dropped-and-logged), despite evidence quotes that
+  plainly name Iranian ports/infrastructure. The same document's two earlier 2026-07-18 reprocesses
+  did produce IR/KW/BH locations. The extraction prompt, schema, and grounding-check code were
+  re-read and still look correct, so this reads as the local model's own run-to-run inconsistency
+  rather than a new code regression — but it is not proven, since `PersistResult.dropped_locations`
+  (populated when a location is extracted but fails the evidence-grounding check) is never logged or
+  surfaced anywhere, so there is no way to tell "the model extracted nothing" from "the model
+  extracted something that got silently dropped." See [Current Status](Current-Status.md) for full
+  detail. **Still not yet decided:** whether to add extraction-result observability, treat this as a
+  one-off and reprocess again, or accept it as a hard reliability limit of the current local model
+  (`qwen/qwen3.5-9b`) to discuss directly with the owner.
+- **Follow-up (same day, 2026-07-20):** at the owner's request, reprocessed the same document again
+  to check whether the empty-locations result was a one-off. It was not: the second reprocess
+  produced 4 fresh draft events, again with zero locations on every one. A third, read-only diagnostic
+  call — built from the exact production request (same system prompt, schema, active types/actors)
+  and sent directly to LM Studio outside the persist path, so nothing was written to the database —
+  produced a *third, different failure mode*: the model returned an `event_date` without the required
+  `event_date_precision`, which fails schema validation entirely and would mark the whole document
+  `failed` in the real pipeline. Three calls against the same document and prompt, at `temperature: 0`,
+  produced three materially different outcomes (locations present, locations absent, schema-invalid).
+  This is now read as a **model reliability/non-determinism problem**, not a code defect — the
+  extraction prompt, JSON schema, and validation code were re-verified correct across all three calls.
+  Plausible contributing factor, not confirmed: the system prompt grew substantially between the
+  working 2026-07-18 runs and the failing 2026-07-20 runs (now 4925 characters, including all 12
+  active Event Types' descriptions and full taxonomy paths, added by the
+  [Event Taxonomy Tree Implementation Plan](plans/2026-07-19-event-taxonomy-tree.md) which shipped
+  2026-07-19, in between) — a longer prompt with more classification detail may be crowding out the
+  model's attention on location/date-precision instructions, but this is a hypothesis, not something
+  tested in isolation (would need a controlled A/B call with and without the taxonomy-path text to
+  confirm, which was not done here). **Recommendation for the owner to weigh in on:** this may be near
+  the practical limit of a small local model on this kind of multi-field structured extraction task,
+  and worth a direct conversation about model choice, prompt simplification, or accepting more manual
+  review overhead — rather than another round of prompt micro-tuning.
 
 ### Event Review card should let every draft field be edited in place (2026-07-16)
 

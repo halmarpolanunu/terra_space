@@ -20,7 +20,6 @@ const map = {
   remove: vi.fn(),
   setFilter: vi.fn(),
   setPaintProperty: vi.fn(),
-  setSky: vi.fn(),
   setProjection: vi.fn(),
 };
 
@@ -101,7 +100,6 @@ describe("offline world map configuration", () => {
     render(<WorldMap />);
 
     await waitFor(() => expect(map.setProjection).toHaveBeenCalledWith({ type: "globe" }));
-    expect(map.setSky).toHaveBeenCalledWith(expect.objectContaining({ "horizon-color": "#2d1b05", "atmosphere-blend": 0.65 }));
     expect(map.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({ id: EVENT_PIN_HALO_LAYER_ID, type: "circle" }),
     );
@@ -257,23 +255,8 @@ describe("offline world map configuration", () => {
     vi.useRealTimers();
   });
 
-  it("does not label the map as a flat fallback when only its sky styling fails", () => {
-    map.setProjection.mockImplementation(() => undefined);
-    map.setSky.mockImplementation(() => { throw new Error("sky unavailable"); });
-    map.on.mockImplementation((event: string, ...args: unknown[]) => {
-      const listener = args.at(-1);
-      if (event === "load" && typeof listener === "function") (listener as () => void)();
-      return map;
-    });
-
-    render(<WorldMap />);
-    expect(map.setProjection).toHaveBeenCalledWith({ type: "globe" });
-    expect(screen.queryByText("Flat map fallback")).not.toBeInTheDocument();
-  });
-
   it("modestly emphasizes the selected pin and updates the same layers when selection changes", async () => {
     map.setProjection.mockImplementation(() => undefined);
-    map.setSky.mockImplementation(() => undefined);
     map.setPaintProperty.mockClear();
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
@@ -325,7 +308,6 @@ describe("offline world map configuration", () => {
     const secondCallback = vi.fn();
     let errorListener: (() => void) | undefined;
     map.setProjection.mockImplementation(() => undefined);
-    map.setSky.mockImplementation(() => undefined);
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
       if (event === "load" && typeof listener === "function") (listener as () => void)();
@@ -349,56 +331,6 @@ describe("offline world map configuration", () => {
     expect(await screen.findByText("Flat map fallback")).toBeVisible();
   });
 
-  it("fades the decorative globe ring as the user zooms in so it stops covering the globe surface", () => {
-    let zoom = 2.2;
-    let zoomListener: (() => void) | undefined;
-    map.getZoom.mockImplementation(() => zoom);
-    map.setProjection.mockImplementation(() => undefined);
-    map.setSky.mockImplementation(() => undefined);
-    map.on.mockImplementation((event: string, ...args: unknown[]) => {
-      const listener = args.at(-1);
-      if (event === "load" && typeof listener === "function") (listener as () => void)();
-      if (event === "zoom" && typeof listener === "function") zoomListener = listener as () => void;
-      return map;
-    });
-
-    const { container } = render(<WorldMap />);
-    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("1");
-
-    zoom = 3.2;
-    zoomListener?.();
-    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0.5");
-
-    zoom = 4.2;
-    zoomListener?.();
-    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0");
-  });
-
-  it("also fades the decorative globe ring symmetrically as the user zooms out from rest", () => {
-    let zoom = 2.2;
-    let zoomListener: (() => void) | undefined;
-    map.getZoom.mockImplementation(() => zoom);
-    map.setProjection.mockImplementation(() => undefined);
-    map.setSky.mockImplementation(() => undefined);
-    map.on.mockImplementation((event: string, ...args: unknown[]) => {
-      const listener = args.at(-1);
-      if (event === "load" && typeof listener === "function") (listener as () => void)();
-      if (event === "zoom" && typeof listener === "function") zoomListener = listener as () => void;
-      return map;
-    });
-
-    const { container } = render(<WorldMap />);
-    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("1");
-
-    zoom = 1.2;
-    zoomListener?.();
-    expect(Number(container.style.getPropertyValue("--globe-ring-opacity"))).toBeCloseTo(0.5, 5);
-
-    zoom = 0.2;
-    zoomListener?.();
-    expect(container.style.getPropertyValue("--globe-ring-opacity")).toBe("0");
-  });
-
   it("computes whether a point is more than a quarter-turn away from the viewer-facing center", () => {
     const center = { lng: 0, lat: 20 };
     expect(isBehindGlobe(center, { lng: -0.1, lat: 51.5 })).toBe(false);
@@ -408,6 +340,7 @@ describe("offline world map configuration", () => {
 
   it("hides pins and cluster markers on the far side of the globe as it rotates", () => {
     let moveListener: (() => void) | undefined;
+    map.setProjection.mockImplementation(() => undefined);
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
       if (event === "load" && typeof listener === "function") (listener as () => void)();
@@ -450,7 +383,6 @@ describe("offline world map configuration", () => {
     const cancelAnimationFrame = vi.spyOn(window, "cancelAnimationFrame");
     map.off.mockClear();
     map.setProjection.mockImplementation(() => undefined);
-    map.setSky.mockImplementation(() => undefined);
     map.on.mockImplementation((event: string, ...args: unknown[]) => {
       const listener = args.at(-1);
       if (event === "load" && typeof listener === "function") (listener as () => void)();
@@ -462,7 +394,7 @@ describe("offline world map configuration", () => {
 
     expect(clearInterval).toHaveBeenCalledTimes(1);
     expect(cancelAnimationFrame).toHaveBeenCalled();
-    expect(map.off).toHaveBeenCalledTimes(12);
+    expect(map.off).toHaveBeenCalledTimes(11);
     expect(map.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("load", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("move", expect.any(Function));

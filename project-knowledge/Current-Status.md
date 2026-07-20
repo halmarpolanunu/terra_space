@@ -10,6 +10,70 @@ status: active
 
 ## Current focus
 
+The owner checked the two globe fixes below live on 2026-07-20 and reported two things, both
+addressed (code changed, not yet committed):
+
+1. **"Halo ring masih ada. Hapus saja."** This took three rounds to fully resolve, because there
+   turned out to be three unrelated decorative elements around the globe, not one:
+   1. `.command-deck-globe::after` — the CSS ring from
+      [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md), whose zoom-fade
+      tuning was not enough; removed entirely (also the `--globe-ring-opacity` variable and the
+      `updateGlobeRingOpacity` zoom listener). Fixed a pre-existing frontend test-isolation bug this
+      exposed along the way (a leaked `map.setProjection` throwing mock from an unrelated earlier
+      test in `frontend/tests/world-map.test.tsx`).
+   2. `map.setSky(...)` — MapLibre's native globe atmosphere glow. A real, separate feature, and one
+      explicitly named in the locked [Visual Design Direction](decisions/Visual-Design-Direction.md).
+      Removed at the owner's explicit repeated instruction rather than left in place; that decision
+      document is amended accordingly.
+   3. **The actual remaining cause**, found after confirming via live JS inspection that `getSky()`
+      was already `undefined` (so candidate 2 wasn't it): `.layered-command-deck::before` in
+      `globals.css` — a third, previously unnoticed decorative amber ellipse, part of the Dashboard's
+      3D depth-plane background styling, sitting directly over the globe. Removed.
+   All three verified together: full 187-test frontend suite, clean lint, a production build, a
+   rebuilt/restarted Docker frontend container each round, and a live browser check confirming the
+   globe now renders with no ring or halo of any kind. See that plan's own "Superseded" note for full
+   detail.
+2. **"Data yang sudah saya proses, tapi tidak ada nodes yang keluar."** Checked the live database
+   directly rather than assuming a rendering bug: the 3 events the owner approved from today's
+   reprocess of their one existing document (`ba410407-...`, "US military reimposes naval blockade on
+   Iranian ports, launches new strikes") have **zero location rows at all** — not an unresolved
+   coordinate, no location data was persisted whatsoever — despite each event's own evidence quote
+   plainly naming "Iranian ports," "Iranian coastal infrastructure," etc. This is not a globe
+   rendering defect: the Dashboard's own "Unresolved locations" stat correctly read `3` and `Mapped
+   locations` correctly read `0`, live-confirmed in the browser. The extraction pipeline code itself
+   (prompt, JSON schema, and the grounding check in `persist_extraction`) was re-read and still looks
+   correct; `_location_grounded` still treats country-only locations as trusted. The most likely
+   explanation is the local model's own run-to-run reliability at extracting locations — the same
+   document was reprocessed 3 times across earlier sessions (2026-07-18 twice) and did produce
+   IR/KW/BH locations then, but this newest run produced none across 3 (differently consolidated)
+   events. This is the same open reliability question already recorded in the
+   [Feedback Backlog](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16),
+   now with a second, concrete data point showing a run that produced zero locations rather than
+   "seems good for now." Not yet decided: whether to add extraction-result observability (the
+   `PersistResult.dropped_locations` list already exists in code but is never logged, persisted, or
+   surfaced — so there is currently no way to tell "the model said nothing" from "the model said
+   something ungrounded that got silently dropped"), reprocess again to see if it is a one-off, or
+   treat this as a hard limit of the current local model (`qwen/qwen3.5-9b`) worth raising with the
+   owner directly. Neither globe fix's original visual-confirmation blocker is resolved by this: the
+   3 approved events still have no coordinates to plot, so the backside-node-visibility fix
+   ([Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md)) still has
+   nothing real to check against.
+
+**Follow-up, same day:** at the owner's choice ("coba proses ulang dulu"), reprocessed the same
+document again to test whether the empty-locations result was a one-off. It was not — the second
+reprocess also produced zero locations across its 4 new draft events. A third, read-only diagnostic
+call (built from the real production request/schema, sent directly to LM Studio, nothing persisted)
+produced a *third* distinct outcome: a schema-validation failure (`event_date` present without the
+required `event_date_precision`), which would fail the whole document in the real pipeline. Three
+calls, same document, same `temperature: 0` prompt, three different failure/success shapes — read as
+local-model non-determinism rather than a code defect (prompt/schema/validation code re-verified
+correct each time). See
+[Feedback Backlog](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16)
+for full detail, including an unconfirmed hypothesis that the system prompt's growth to ~4925
+characters (all 12 active Event Types' descriptions and taxonomy paths, added 2026-07-19) may be
+crowding out the model's attention on location/date-precision instructions. Recommend raising this
+directly with the owner as a model-capability question rather than continuing prompt micro-tuning.
+
 **Everything below in this section is done, committed, merged to `main`, pushed to GitHub, and
 (where it touches the running app) deployed to the owner's live containers.** Git housekeeping: all
 of this session's work landed as two commits on the `terra-insight-sense` branch, that branch was
@@ -20,9 +84,10 @@ request ("saya ingin rapi"). The repository now has only `main` and the pre-exis
 
 Two small UI-polish items are done and deployed:
 
-- [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md): the decorative globe
-  ring now fades out symmetrically whether the user zooms in or out from rest, not just zoom-in as
-  before.
+- [Globe Halo Zoom Behavior](plans/2026-07-17-globe-halo-zoom-behavior.md): originally made the
+  decorative globe ring fade out symmetrically on zoom; per the owner's 2026-07-20 live check (see
+  above), the ring is now removed entirely rather than tuned further — that plan's own status is
+  `superseded`.
 - [Globe Backside Node Visibility](plans/2026-07-17-globe-backside-node-visibility.md): event pins
   and clusters on the far side of the globe are now hidden, using a self-built spherical-geometry
   check (`isBehindGlobe` in `frontend/src/components/world-map.tsx`) after discovering MapLibre's
@@ -156,10 +221,9 @@ Task 5 (verify, back up, and safely migrate the live database) is **complete**:
   correctly with live data.
 
 This work is now committed, merged to `main`, and pushed (see the git housekeeping note at the top
-of this section). The plan file's own status is `in-progress`, not yet flipped to `completed` — its
-Task 5 Step 4 checklist still shows the commit step unchecked even though the commit happened as
-part of a combined commit with other pending work; update that plan's checkbox in a future session
-if it matters, but the substance is done and live.
+of this section). The plan file's own status is `completed`, and both its Task 4 and Task 5 commit
+checkboxes are checked, each noting they landed in the single combined commit with other pending
+work rather than their own commit.
 
 The owner-approved [Single Source Date and Event Date Implementation Plan](plans/2026-07-18-single-source-date-event-date.md)
 is implemented, verified, and applied safely to the owner's live database. Documents now use one required, non-blank `Publication Date` (defined

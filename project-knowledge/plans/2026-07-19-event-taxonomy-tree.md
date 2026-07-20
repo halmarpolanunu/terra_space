@@ -231,12 +231,11 @@ already installed).
 Expected: PASS; the inspector stacks below the tree at narrow widths without horizontal overflow.
 Actual: 187/187 tests, clean lint, successful build.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
-~~~powershell
-git add frontend/src/app/sense frontend/src/app/settings/event-type-settings.tsx frontend/src/lib/events-api.ts frontend/src/lib/settings-api.ts frontend/src/app/globals.css frontend/tests/event-type-settings.test.tsx frontend/tests/event-card.test.tsx frontend/tests/events-page.test.tsx
-git commit -m "feat: redesign event taxonomy workspace"
-~~~
+Bundled into the single combined commit `feat: deliver Event Taxonomy tree and prior uncommitted
+feature work` (`0973b2d`) rather than its own commit — see Task 5 Step 4 and Current-Status.md for
+why the frontend and backend work landed together.
 
 ### Task 5: Verify and deploy safely
 

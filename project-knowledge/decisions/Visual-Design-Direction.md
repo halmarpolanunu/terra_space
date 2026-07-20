@@ -90,8 +90,13 @@ may decorate it only as defined by the later decision above.
 - The map is a **3D globe the user can spin and tilt**, rendered with MapLibre's globe
   projection using the existing offline PMTiles package (no new data required).
 - It is **not** 3D terrain elevation (out of MVP scope). "3D" means a rotating/tiltable globe.
-- Dark globe on black with atmosphere glow, faint starfield, slow auto-rotation, day/night
-  shading, glowing location pins with pulse rings, and optional flowing data arcs.
+- Dark globe on black with faint starfield, slow auto-rotation, day/night shading, glowing
+  location pins with pulse rings, and optional flowing data arcs. **Amended 2026-07-20:** the
+  atmosphere glow named here (MapLibre's `setSky` amber horizon effect) and a separate decorative
+  amber ring around the globe were both removed at the owner's explicit, repeated instruction after
+  live testing kept finding one "ring" after another around the globe ("REMOVE that RING. nothing
+  else"). See [Globe Halo Zoom Behavior Plan](../plans/2026-07-17-globe-halo-zoom-behavior.md) for
+  the full history of what was tried and removed.
 - **Implementation check:** confirm the installed MapLibre version supports globe projection
   (MapLibre GL JS v5+). If unavailable or not performant offline, fall back to a styled flat
   map with the same dark tactical treatment; the globe is the target, not a hard blocker.

@@ -246,17 +246,6 @@ export function WorldMap({
     const handlePinMouseLeave = () => {
       map.getCanvas().style.cursor = "";
     };
-    const restingZoom = map.getZoom();
-    const updateGlobeRingOpacity = () => {
-      const wrapper = container.current?.parentElement;
-      if (!wrapper) return;
-      // The decorative ring is sized for the resting globe view; fade it out as the
-      // user zooms away from that view in either direction, so it never sits on top of
-      // an enlarged globe surface (zoomed in) or floats oversized around a shrunken one
-      // (zoomed out).
-      const opacity = Math.max(0, Math.min(1, 1 - Math.abs(map.getZoom() - restingZoom) / 2));
-      wrapper.style.setProperty("--globe-ring-opacity", opacity.toString());
-    };
     const updatePinOcclusion = () => {
       if (!isGlobeModeRef.current) return;
       const center = map.getCenter();
@@ -286,14 +275,6 @@ export function WorldMap({
         setFlatFallback(true);
         projectionModeChangeRef.current?.("flat");
       }
-      try {
-        map.setSky({
-          "sky-color": "#030506",
-          "horizon-color": "#2d1b05",
-          "atmosphere-blend": 0.65,
-          "sky-horizon-blend": 0.75,
-        });
-      } catch { /* The globe projection remains usable without optional sky styling. */ }
       map.addSource(EVENT_PIN_SOURCE_ID, { type: "geojson", data: pinsRef.current as never });
       map.addLayer({
         id: EVENT_PIN_HALO_LAYER_ID,
@@ -344,13 +325,11 @@ export function WorldMap({
       }
       syncClusterMarkers(map, clustersRef.current, clusterMarkersRef, clusterSelectionRef);
       mapLoaded.current = true;
-      updateGlobeRingOpacity();
       updatePinOcclusion();
     };
 
     map.on("error", handleMapError);
     map.on("load", handleLoad);
-    map.on("zoom", updateGlobeRingOpacity);
     map.on("move", updatePinOcclusion);
 
     // Tracks genuine user input only (not MapLibre's "idle"/"move" events, which the
@@ -393,7 +372,6 @@ export function WorldMap({
       if (pinPulse !== undefined) window.clearInterval(pinPulse);
       map.off("error", handleMapError);
       map.off("load", handleLoad);
-      map.off("zoom", updateGlobeRingOpacity);
       map.off("move", updatePinOcclusion);
       map.off("click", EVENT_PIN_LAYER_ID, handlePinClick);
       map.off("mouseenter", EVENT_PIN_LAYER_ID, handlePinMouseEnter);
