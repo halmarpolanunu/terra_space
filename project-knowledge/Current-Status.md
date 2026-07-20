@@ -190,8 +190,44 @@ frontend label/hint. Verified: 223 backend tests (+1), 187 frontend tests (label
 updated in `lm-studio-settings.test.tsx`), clean lint, a successful production build, and Project
 Knowledge validation. Isolated test databases only.
 
-**Next action:** Task 7 (actor aliases and actor management) of the same plan — the last task
-before stopping for the owner's approval on Task 8's live rollout.
+**Task 7 (actor aliases and actor management) is also done and committed** — the last task before
+stopping for the owner's approval on Task 8's live rollout:
+- New `actor_aliases` table (migration `0013_actor_aliases`, cascade-delete with its actor; no
+  batch-rebuild risk since it's a new table). Uniqueness (an alias can't equal another actor's
+  canonical name or another existing alias, case-insensitively) is enforced in the service layer,
+  matching how Event Type name conflicts are already checked — not a DB-level constraint.
+- Lookup change: `find_actor_by_name_or_alias` (new, in `matching.py`) checks canonical names
+  across all actors first, then aliases across all actors; `run_staged_pipeline`'s actor
+  resolution now calls this instead of the old exact-canonical-name-only `find_by_exact_name`
+  (kept for Event Type matching, which stays exact-name-only by design). The AI still only ever
+  receives canonical actor names — aliases are the owner's own data, never AI-managed.
+- New `app/services/actors.py` (rename/activate/deactivate, delete-only-when-unreferenced, mirrors
+  Event Type's rules exactly; add/remove alias) and a new dedicated `app/api/routes/actors.py`
+  router (`GET/PATCH/DELETE /api/actor-management/{id}`, `POST/DELETE .../aliases[/{id}]`) — kept
+  fully separate from the pre-existing simple `GET /api/actors` picker endpoint used across
+  Dashboard/Event Review/Events, which still returns the same compact shape unchanged.
+- New Terra Sense "Actors" workspace (`/sense/actors`, nav entry added after "Event Taxonomy"): a
+  flat searchable list plus an inspector panel, deliberately reusing the Event Taxonomy
+  workspace's existing tree/inspector CSS classes and interaction conventions (edit fields hidden
+  until Edit, confirmation required before deactivate/delete/remove-alias, Delete hidden while
+  in-use) rather than inventing a second visual language.
+- Verified: 251 backend tests (+24: matching-precedence, service CRUD/conflict/cascade, API,
+  migration, and one staged-pipeline test proving an alias resolves to the existing actor instead
+  of creating a duplicate), 198 frontend tests (+17, including an updated 8-item navigation
+  count), clean lint, a successful production build, and Project Knowledge validation. Also
+  confirmed live in a fully isolated Docker Compose stack (`-p actorsqa`, scratch volume, port
+  3011, built then torn down and its images removed afterward) seeded with two actors through the
+  real manual-event API: alias add, activation, and selecting between actors all rendered and
+  behaved correctly in a real browser. The owner's live database/containers were never touched.
+
+**All 7 tasks of the Staged Event Detection Pipeline implementation plan are now complete.**
+Task 8 (review surfacing, full verification, and live rollout) remains and requires the owner's
+explicit go-ahead before starting, since it is the first task in this plan allowed to touch the
+live database and containers — the plan's own instructions require a fresh backup via
+`Backup-TerraSpaceDatabase.ps1` and a rehearsal against a copy of that backup before applying
+anything live.
+
+**Next action:** stop here and wait for the owner's approval to begin Task 8.
 
 ---
 

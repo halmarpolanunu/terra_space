@@ -112,6 +112,21 @@ class Actor(TimestampedModel, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     event_actors: Mapped[list["EventActor"]] = relationship(back_populates="actor")
+    aliases: Mapped[list["ActorAlias"]] = relationship(
+        back_populates="actor", cascade="all, delete-orphan"
+    )
+
+
+class ActorAlias(TimestampedModel, Base):
+    __tablename__ = "actor_aliases"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    actor_id: Mapped[str] = mapped_column(
+        ForeignKey("actors.id", ondelete="CASCADE"), index=True
+    )
+    alias: Mapped[str] = mapped_column(String(500))
+
+    actor: Mapped[Actor] = relationship(back_populates="aliases")
 
 
 class Location(TimestampedModel, Base):

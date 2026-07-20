@@ -3,7 +3,7 @@ type: Implementation Plan
 title: "Staged Event Detection Pipeline Implementation Plan"
 description: "Checkpointed, test-first build plan for the approved staged pipeline: Signal Parser, four per-candidate classifiers, ISO alpha-3 migration, actor aliases, and a per-stage extraction log."
 tags: [event-detection, extraction, lm-studio, implementation-plan]
-status: planned
+status: in-progress
 ---
 
 # Staged Event Detection Pipeline Implementation Plan

@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.db.models import Actor, Document, Event, EventType, TaxonomyNode
+from app.db.models import Actor, ActorAlias, Document, Event, EventType, TaxonomyNode
 from app.db.session import configure_sqlite_connection
 from app.services.extraction import run_staged_pipeline
 from app.services.extraction_log import list_extraction_log
@@ -336,6 +336,35 @@ def test_new_actor_is_created_inactive_and_existing_actor_is_reused(tmp_path: Pa
     assert by_name["Unknown Group"][0].is_active is False
     assert by_name["Unknown Group"][1] == "target"
     assert session.execute(select(Actor)).scalars().all().__len__() == 2
+
+
+def test_actor_alias_resolves_to_the_existing_actor_instead_of_creating_a_new_one(
+    tmp_path: Path,
+) -> None:
+    session = _session(tmp_path)
+    document = _document(session)
+    known_actor = Actor(name="United States", is_active=True)
+    known_actor.aliases.append(ActorAlias(alias="US"))
+    session.add(known_actor)
+    session.commit()
+    client = FakeLmStudioClient(
+        {
+            document.content: [
+                FakeEventSpec(
+                    title="Protest",
+                    summary="A large protest occurred.",
+                    evidence_quote="A large protest occurred at the capitol in Jakarta",
+                    source_actors=["US"],
+                )
+            ]
+        }
+    )
+
+    result = _run(session, document, client, known_actors=["United States"])
+
+    event = result.saved_events[0]
+    assert [link.actor.id for link in event.event_actors] == [known_actor.id]
+    assert session.execute(select(Actor)).scalars().all() == [known_actor]
 
 
 def test_persisted_event_links_back_to_document_source_with_evidence_quote(

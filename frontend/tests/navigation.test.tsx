@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { Navigation } from "@/components/navigation";
 
 describe("Navigation", () => {
-  it("groups the seven product-map links in their visible order", () => {
+  it("groups the eight product-map links in their visible order", () => {
     render(<Navigation currentPath="/documents" />);
 
     const links = screen.getAllByRole("link");
@@ -12,7 +12,7 @@ describe("Navigation", () => {
     expect(screen.getByText("Terra Insight")).toBeVisible();
     expect(screen.getByText("Terra Sense")).toBeVisible();
     expect(screen.getByText("Settings")).toBeVisible();
-    expect(links).toHaveLength(7);
+    expect(links).toHaveLength(8);
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/dashboard",
       "/events",
@@ -20,6 +20,7 @@ describe("Navigation", () => {
       "/documents",
       "/event-review",
       "/sense/event-types",
+      "/sense/actors",
       "/settings",
     ]);
   });
@@ -46,10 +47,10 @@ describe("Navigation", () => {
     },
   );
 
-  it("shows the seven-item navigation sequence", () => {
+  it("shows the eight-item navigation sequence", () => {
     render(<Navigation currentPath="/dashboard" />);
 
-    ["01", "02", "03", "04", "05", "06", "07"].forEach((number) => {
+    ["01", "02", "03", "04", "05", "06", "07", "08"].forEach((number) => {
       expect(screen.getByText(number)).toHaveAttribute("aria-hidden", "true");
     });
   });

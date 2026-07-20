@@ -24,7 +24,12 @@ from app.services.duplicates import detect_duplicates
 from app.services.extraction_log import log_extraction
 from app.services.lm_studio import KnownEventType, LmStudioClient
 from app.services.locations import apply_coordinates
-from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
+from app.services.matching import (
+    find_actor_by_name_or_alias,
+    find_by_exact_name,
+    get_or_create_document_source,
+    quote_found,
+)
 from app.services.signal_parser import parse_and_validate_signals
 
 
@@ -161,14 +166,14 @@ def run_staged_pipeline(
 
         if classified_actors is not None:
             for name in classified_actors.source_actors:
-                actor = find_by_exact_name(existing_actors, name)
+                actor = find_actor_by_name_or_alias(existing_actors, name)
                 if actor is None:
                     actor = Actor(name=name, is_active=False)
                     db.add(actor)
                     existing_actors.append(actor)
                 event.event_actors.append(EventActor(actor=actor, role="source"))
             for name in classified_actors.recipient_actors:
-                actor = find_by_exact_name(existing_actors, name)
+                actor = find_actor_by_name_or_alias(existing_actors, name)
                 if actor is None:
                     actor = Actor(name=name, is_active=False)
                     db.add(actor)

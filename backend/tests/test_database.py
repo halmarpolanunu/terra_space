@@ -34,7 +34,7 @@ def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
     with engine.connect() as connection:
         assert (
             connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-                == "0012_event_extraction_incomplete"
+                == "0013_actor_aliases"
         )
     event_type_columns = {
         column["name"]: column for column in inspect(engine).get_columns("event_types")

@@ -523,6 +523,13 @@ body {
 .taxonomy-confirm { display: grid; gap: 0.5rem; border: 1px solid var(--status-warning); padding: 0.75rem; }
 .taxonomy-confirm p { margin: 0; color: var(--text-muted); }
 
+/* Actors: flat list-plus-inspector workspace, reusing the taxonomy layout classes. */
+.actor-aliases { border-top: 1px solid var(--border); padding-top: 0.75rem; display: grid; gap: 0.5rem; }
+.actor-aliases h4 { margin: 0; font: 0.78rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.actor-alias-list { display: grid; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+.actor-alias-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; border: 1px solid var(--border); padding: 0.35rem 0.6rem; }
+.actor-alias-confirm { display: inline-flex; gap: 0.5rem; border: none; padding: 0; }
+
 @media (max-width: 72rem) {
   .filter-group-fields { grid-template-columns: repeat(2, minmax(10rem, 1fr)); }
   .event-list-header,
