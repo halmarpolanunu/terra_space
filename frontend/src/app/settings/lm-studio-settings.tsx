@@ -120,7 +120,7 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
       </div>
 
       <div className="field">
-        <label htmlFor="lm-timeout">Processing timeout</label>
+        <label htmlFor="lm-timeout">Timeout per AI call</label>
         <select
           id="lm-timeout"
           onChange={(event) => {
@@ -134,7 +134,9 @@ export function LmStudioSettings({ settings, onSaved }: LmStudioSettingsProps) {
           <option value={600}>10 minutes</option>
         </select>
         <p className="settings-hint">
-          The longest time Terra Space waits for one document. Longer settings help slower
+          The longest time Terra Space waits for one AI call. Processing a document makes
+          several calls (splitting it into signals, then classifying each one), so this limit
+          applies to each call rather than the whole document. Longer settings help slower
           models, but also delay the next document when LM Studio is unresponsive.
         </p>
       </div>

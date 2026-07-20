@@ -23,7 +23,7 @@ describe("LmStudioSettings", () => {
 
     expect(screen.getByLabelText(/base url/i)).toHaveValue("http://host.docker.internal:1234");
     expect(screen.getByLabelText(/^model$/i)).toHaveValue("saved-model");
-    expect(screen.getByLabelText(/processing timeout/i)).toHaveValue("300");
+    expect(screen.getByLabelText(/timeout per ai call/i)).toHaveValue("300");
   });
 
   it("groups the connection test with the URL it checks", () => {
@@ -86,7 +86,7 @@ describe("LmStudioSettings", () => {
     });
     render(<LmStudioSettings settings={SETTINGS} />);
 
-    fireEvent.change(screen.getByLabelText(/processing timeout/i), { target: { value: "600" } });
+    fireEvent.change(screen.getByLabelText(/timeout per ai call/i), { target: { value: "600" } });
     fireEvent.click(screen.getByRole("button", { name: /^save/i }));
 
     await waitFor(() =>

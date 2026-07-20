@@ -173,9 +173,25 @@ alongside it:
   typing), clean lint, a successful production build, and Project Knowledge validation. Isolated
   test databases only throughout.
 
-**Next action:** Task 6 (per-call timeout semantics) of the same plan, in the same fresh session
-per the owner's instruction to proceed task-by-task through Task 7 and then stop for approval
-before Task 8's live rollout.
+**Task 6 (per-call timeout semantics) is also done and committed** — smaller than expected,
+since it turned out already half-done as a side effect of Task 3/4's design: every staged call
+(`parse_signals` and all four classifiers) already independently resolves the stored timeout
+through `LmStudioClient._call_structured` and opens its own `httpx2.Client` with it, so the
+stored setting was already applying per call rather than being a single budget shared across a
+whole document's `1 + 4×candidates` calls. Added a regression test
+(`test_extraction_timeout_is_resolved_fresh_for_every_staged_pipeline_call`) proving this by
+changing what the config provider returns between five consecutive calls and asserting each one
+picked up its own current value (`[120, 300, 600, 120, 300]`), then updated the Settings UI copy
+that was still describing the old per-document semantics: the label changed from "Processing
+timeout" to "Timeout per AI call", and the hint now explains that processing a document makes
+several calls (splitting into signals, then classifying each one) so the limit applies to each
+call rather than the whole document. No backend behavior changed, only its test coverage and the
+frontend label/hint. Verified: 223 backend tests (+1), 187 frontend tests (label/hint assertions
+updated in `lm-studio-settings.test.tsx`), clean lint, a successful production build, and Project
+Knowledge validation. Isolated test databases only.
+
+**Next action:** Task 7 (actor aliases and actor management) of the same plan — the last task
+before stopping for the owner's approval on Task 8's live rollout.
 
 ---
 
