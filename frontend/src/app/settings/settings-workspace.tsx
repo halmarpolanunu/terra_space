@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
+import { AppearanceSettings } from "@/app/settings/appearance-settings";
 import { LmStudioSettings } from "@/app/settings/lm-studio-settings";
 import { getSettings, type Settings } from "@/lib/settings-api";
 
@@ -47,6 +48,7 @@ export function SettingsWorkspace() {
               Event types affect local AI classification and are managed in Terra Sense. {" "}
               <a href="/sense/event-types">Manage Event Types in Terra Sense</a>
             </p>
+            <AppearanceSettings />
           </div>
         )}
       </section>

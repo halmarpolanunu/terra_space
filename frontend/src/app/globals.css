@@ -507,6 +507,24 @@ body {
 .settings-status { display: inline-flex; align-items: center; gap: 0.5rem; }
 .settings-status-message { color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
 .settings-saved { color: var(--status-confirmed); font-family: var(--font-mono); font-size: 0.8rem; }
+
+.appearance-motion-toggle { margin-bottom: 1rem; }
+.appearance-field { display: grid; gap: 0.35rem; margin-bottom: 1rem; }
+.appearance-field label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.appearance-field .appearance-value { color: var(--accent); font-variant-numeric: tabular-nums; }
+.appearance-field input[type="range"] { width: 100%; accent-color: var(--accent); }
+.appearance-field[data-disabled] label,
+.appearance-field[data-disabled] .settings-hint { color: var(--text-muted); opacity: 0.55; }
+.appearance-field input[type="range"]:disabled { opacity: 0.4; }
 .event-type-state,
 .event-type-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 .event-type-required { flex-basis: 100%; margin: 0; color: var(--status-warning); font: 0.74rem var(--font-mono); }

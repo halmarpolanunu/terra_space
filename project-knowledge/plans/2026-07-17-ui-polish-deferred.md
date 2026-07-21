@@ -39,10 +39,22 @@ ambient animation** (`frontend/src/components/workspace-ambiance.tsx`: slow-drif
 plus a slow reconstruction scan band, rendered on a fixed canvas behind content). The animation
 honours reduced-motion, pauses when the tab is hidden, and its tuned values (motion 150%, drift 2.0×,
 scan 110%) live as named constants. Verified: 206 frontend tests, lint, production build, and a live
-read-only browser pass across all routes plus a 150% browser-zoom check. **Follow-up the owner
-requested (not yet built): expose the blur/motion as a user setting** — recommended as a per-device
-browser (localStorage) preference with a small "Appearance" section in Settings, which would also
-advance Scope 2 below. The tuned values above become its defaults.
+read-only browser pass across all routes plus a 150% browser-zoom check.
+
+**Follow-up implemented same day: the blur/motion is now a user setting.** A new "Appearance" panel
+was added to Settings (`frontend/src/app/settings/appearance-settings.tsx`), backed by a per-device
+localStorage store (`frontend/src/lib/appearance-settings.ts`, key `terra-space:appearance-settings`
+— not the backend database, since this is a cosmetic single-device preference). It exposes all four
+tuning axes the owner used in the live preview: Background motion (on/off), Background blur (0–8px),
+Motion intensity (0–200%), Drift speed (0–2.5×), and Scan band (0–150%), with the owner's tuned
+values as defaults and a "Reset to defaults" button. Changes apply live (no save button) via a
+`useSyncExternalStore`-backed hook shared with `WorkspaceAmbiance`, which now reads these settings
+instead of hardcoded constants and reacts immediately if changed while mounted. Verified: 217
+frontend tests (11 new, including two real bugs the tests caught before shipping — `resetAppearanceSettings`
+was writing the defaults back to storage instead of clearing it, and a floating-point display glitch
+on the scan-band slider), lint, a production build, and a live browser pass confirming the toggle
+correctly freezes/resumes the canvas animation and persists to `localStorage`. Deployed to the
+owner's live frontend container.
 
 ### Goal
 

@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-21 - Appearance settings added (blur/motion now user-configurable)
+
+- Follow-up to the same-day background re-polish: the owner asked whether the blur/motion tuning
+  could become a Settings feature instead of fixed values. Added a new "Appearance" panel to
+  Settings backed by a per-device `localStorage` store
+  (`frontend/src/lib/appearance-settings.ts` / `frontend/src/app/settings/appearance-settings.tsx`)
+  exposing Background motion (on/off), Background blur, Motion intensity, Drift speed, and Scan
+  band — the same four axes from the live tuning preview, applying instantly with no save step.
+  `WorkspaceAmbiance` now reads these live instead of hardcoded constants. Test-writing caught two
+  real bugs before shipping (`resetAppearanceSettings` was re-writing defaults into storage instead
+  of clearing it; a floating-point display glitch on one slider). Verified with 217 frontend tests
+  (11 new), lint, a production build, and a live browser pass; deployed to the owner's live
+  container. See the [Deferred UI Polish Plan](plans/2026-07-17-ui-polish-deferred.md) Scope 1 note.
+
 ## 2026-07-21 - Route backgrounds re-polished (Deferred UI Polish Plan, Scope 1)
 
 - Implemented Scope 1 of the
