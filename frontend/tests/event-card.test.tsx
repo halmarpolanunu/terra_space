@@ -19,6 +19,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     locations: [],
     sources: [{ source_id: "source-1", document_id: "doc-1", reference_label: "Doc", evidence_quote: "attacked the fuel depot" }],
     duplicate_flags: [],
+    extraction_incomplete: false,
+    extraction_incomplete_stages: [],
     created_at: "2026-07-14T00:00:00Z",
     updated_at: "2026-07-14T00:00:00Z",
     ...overrides,
@@ -26,6 +28,42 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 }
 
 describe("EventCard", () => {
+  it("shows which attributes failed when extraction is incomplete", () => {
+    render(
+      <EventCard
+        actorOptions={[]}
+        approveDisabledReason={null}
+        event={makeEvent({
+          extraction_incomplete: true,
+          extraction_incomplete_stages: ["actors", "locations"],
+        })}
+        eventTypeOptions={[]}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/extraction incomplete/i)).toBeVisible();
+    expect(screen.getByText(/actors, locations/i)).toBeVisible();
+  });
+
+  it("shows no incomplete-extraction note for a complete event", () => {
+    render(
+      <EventCard
+        actorOptions={[]}
+        approveDisabledReason={null}
+        event={makeEvent()}
+        eventTypeOptions={[]}
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/extraction incomplete/i)).not.toBeInTheDocument();
+  });
+
   it("shows the selected definition before approving or editing an extracted event", () => {
     const event = makeEvent({
       event_type: {

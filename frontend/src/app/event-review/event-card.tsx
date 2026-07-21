@@ -19,6 +19,20 @@ import type {
 
 const DATE_PRECISIONS: DatePrecision[] = ["exact", "month", "year", "unknown"];
 
+const STAGE_LABEL: Record<string, string> = {
+  event_type: "event type",
+  event_date: "event date",
+  locations: "locations",
+  actors: "actors",
+};
+
+function formatIncompleteStages(stages: string[]): string {
+  if (stages.length === 0) {
+    return "one or more attributes";
+  }
+  return stages.map((stage) => STAGE_LABEL[stage] ?? stage).join(", ");
+}
+
 type EventCardProps = {
   event: EventRead;
   eventTypeOptions: EventTypeRead[];
@@ -277,6 +291,13 @@ export function EventCard({
 
   return (
     <FramedPanel className="review-event-card" meta="Draft intelligence" title="Event">
+      {event.extraction_incomplete && (
+        <p className="extraction-incomplete-note">
+          Extraction incomplete — local AI could not classify{" "}
+          {formatIncompleteStages(event.extraction_incomplete_stages)}. Review carefully before
+          approving.
+        </p>
+      )}
       {evidenceQuote && <p className="evidence-quote">&ldquo;{evidenceQuote}&rdquo;</p>}
 
       <div className="facts-grid">

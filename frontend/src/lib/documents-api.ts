@@ -35,6 +35,26 @@ export type DocumentDraft = {
   source_url: string | null;
 };
 
+export type ExtractionLogStage =
+  | "signal_parser"
+  | "event_type"
+  | "event_date"
+  | "locations"
+  | "actors"
+  | "persistence";
+
+export type ExtractionLogOutcome = "ok" | "failed" | "dropped";
+
+export type ExtractionLogEntry = {
+  id: string;
+  document_id: string;
+  candidate_index: number | null;
+  stage: ExtractionLogStage;
+  outcome: ExtractionLogOutcome;
+  detail: string;
+  created_at: string;
+};
+
 const BASE_URL = "/api/backend/api/documents";
 
 async function parseOrThrow(response: Response): Promise<Document> {
@@ -145,4 +165,13 @@ export async function deleteAttachment(documentId: string, attachmentId: string)
     const body = await response.json().catch(() => null);
     throw new Error(body?.detail ?? `Request failed with status ${response.status}`);
   }
+}
+
+export async function listExtractionLog(documentId: string): Promise<ExtractionLogEntry[]> {
+  const response = await fetch(`${BASE_URL}/${documentId}/extraction-log`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.detail ?? `Request failed with status ${response.status}`);
+  }
+  return response.json() as Promise<ExtractionLogEntry[]>;
 }

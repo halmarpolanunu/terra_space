@@ -134,6 +134,7 @@ def run_staged_pipeline(
             review_status="draft",
             event_type=event_type,
             extraction_incomplete=incomplete,
+            candidate_index=index,
         )
         db.add(event)
         event.event_sources.append(

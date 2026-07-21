@@ -1,12 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 
+import { ExtractionLogPanel } from "@/app/documents/extraction-log-panel";
 import { ProcessingStatusBadge } from "@/app/documents/processing-status-badge";
 import { FramedPanel } from "@/components/framed-panel";
 import { attachmentFileUrl, type Document } from "@/lib/documents-api";
 
 const EDITABLE_STATUSES = new Set(["draft", "failed"]);
+const PROCESSED_STATUSES = new Set(["processing", "ready_for_review", "completed", "failed"]);
 
 type DocumentListProps = {
   documents: Document[];
@@ -32,6 +35,19 @@ export function DocumentList({
   onDeleteAttachment,
 }: DocumentListProps) {
   const selectedCount = selectedIds.size;
+  const [expandedLogIds, setExpandedLogIds] = useState<Set<string>>(new Set());
+
+  function toggleLog(documentId: string) {
+    setExpandedLogIds((current) => {
+      const next = new Set(current);
+      if (next.has(documentId)) {
+        next.delete(documentId);
+      } else {
+        next.add(documentId);
+      }
+      return next;
+    });
+  }
 
   return (
     <FramedPanel meta={`${documents.length} total`} title="Document queue">
@@ -125,6 +141,11 @@ export function DocumentList({
                   Edit
                 </button>
               )}
+              {PROCESSED_STATUSES.has(document.processing_status) && (
+                <button className="btn" onClick={() => toggleLog(document.id)} type="button">
+                  {expandedLogIds.has(document.id) ? "Hide extraction log" : "Extraction log"}
+                </button>
+              )}
               {onDelete && (
                 <button
                   className="btn btn-destructive"
@@ -135,6 +156,11 @@ export function DocumentList({
                 </button>
               )}
             </div>
+            {expandedLogIds.has(document.id) && (
+              <div className="document-row-extraction-log">
+                <ExtractionLogPanel documentId={document.id} />
+              </div>
+            )}
           </li>
         ))}
       </ul>

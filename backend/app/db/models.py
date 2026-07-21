@@ -171,6 +171,7 @@ class Event(TimestampedModel, Base):
     review_status: Mapped[str] = mapped_column(String(32), default="draft")
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     extraction_incomplete: Mapped[bool] = mapped_column(Boolean, default=False)
+    candidate_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     event_type: Mapped[EventType | None] = relationship(back_populates="events")
     event_actors: Mapped[list["EventActor"]] = relationship(

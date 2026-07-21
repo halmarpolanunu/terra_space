@@ -129,6 +129,43 @@ def test_events_for_document_expose_active_type_and_inactive_actor_flags(tmp_pat
     assert event["extraction_incomplete"] is False
 
 
+def test_incomplete_event_exposes_which_stages_failed(tmp_path: Path) -> None:
+    content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
+    extraction = [
+        FakeEventSpec(
+            title="Depot attack",
+            summary="A militia group reportedly attacked a fuel depot.",
+            evidence_quote=content,
+            fail_stages=frozenset({"locations", "actors"}),
+        )
+    ]
+    client = _client(tmp_path, {content: extraction})
+    document = _create_and_process_document(client, content)
+
+    events = client.get(f"/api/documents/{document['id']}/events").json()
+
+    assert events[0]["extraction_incomplete"] is True
+    assert events[0]["extraction_incomplete_stages"] == ["actors", "locations"]
+
+
+def test_complete_event_reports_no_incomplete_stages(tmp_path: Path) -> None:
+    content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
+    extraction = [
+        FakeEventSpec(
+            title="Depot attack",
+            summary="A militia group reportedly attacked a fuel depot.",
+            evidence_quote=content,
+        )
+    ]
+    client = _client(tmp_path, {content: extraction})
+    document = _create_and_process_document(client, content)
+
+    events = client.get(f"/api/documents/{document['id']}/events").json()
+
+    assert events[0]["extraction_incomplete"] is False
+    assert events[0]["extraction_incomplete_stages"] == []
+
+
 def test_list_for_document_only_returns_events_sourced_from_that_document(
     tmp_path: Path,
 ) -> None:

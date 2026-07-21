@@ -21,6 +21,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
       { source_id: "source-2", document_id: "doc-2", reference_label: "Report B", evidence_quote: null },
     ],
     duplicate_flags: [],
+    extraction_incomplete: false,
+    extraction_incomplete_stages: [],
     created_at: "2026-07-14T00:00:00Z",
     updated_at: "2026-07-14T00:00:00Z",
     ...overrides,

@@ -11,6 +11,7 @@ from app.db.models import (
     EventActor,
     EventSource,
     EventType,
+    ExtractionLogEntry,
     Location,
     Source,
     TaxonomyNode,
@@ -115,7 +116,35 @@ def to_event_type_read(event_type: EventType, *, in_use: bool = False) -> EventT
     )
 
 
-def to_event_read(event: Event) -> EventRead:
+def incomplete_extraction_stages(db: Session, event: Event) -> list[str]:
+    """The distinct stages whose classifier call failed for this event's own candidate,
+    for the Event Review "extraction incomplete" note. Empty for a manually-created event
+    (no candidate_index) or one whose source document is gone."""
+    if event.candidate_index is None:
+        return []
+    document_id = next(
+        (
+            event_source.source.document_id
+            for event_source in event.event_sources
+            if event_source.source.document_id is not None
+        ),
+        None,
+    )
+    if document_id is None:
+        return []
+    stages = db.execute(
+        select(ExtractionLogEntry.stage)
+        .where(
+            ExtractionLogEntry.document_id == document_id,
+            ExtractionLogEntry.candidate_index == event.candidate_index,
+            ExtractionLogEntry.outcome == "failed",
+        )
+        .distinct()
+    ).scalars()
+    return sorted(stages)
+
+
+def to_event_read(db: Session, event: Event) -> EventRead:
     return EventRead(
         id=event.id,
         title=event.title,
@@ -143,6 +172,7 @@ def to_event_read(event: Event) -> EventRead:
             DuplicateFlagRead.model_validate(flag) for flag in event.duplicate_flags
         ],
         extraction_incomplete=event.extraction_incomplete,
+        extraction_incomplete_stages=incomplete_extraction_stages(db, event),
         created_at=event.created_at,
         updated_at=event.updated_at,
         approved_at=event.approved_at,

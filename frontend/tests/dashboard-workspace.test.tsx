@@ -87,6 +87,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     locations: [{ id: "location-1", country: "Indonesia", admin1: null, city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" }],
     sources: [{ source_id: "source-1", document_id: "doc-1", reference_label: "Field report", evidence_quote: null }],
     duplicate_flags: [],
+    extraction_incomplete: false,
+    extraction_incomplete_stages: [],
     created_at: "2026-07-14T00:00:00Z",
     updated_at: "2026-07-14T00:00:00Z",
     ...overrides,

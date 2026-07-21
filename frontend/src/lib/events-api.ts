@@ -93,6 +93,8 @@ export type EventRead = {
   locations: LocationRead[];
   sources: EventSourceRead[];
   duplicate_flags: DuplicateFlagRead[];
+  extraction_incomplete: boolean;
+  extraction_incomplete_stages: string[];
   created_at: string;
   updated_at: string;
   approved_at?: string | null;

@@ -63,7 +63,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     id: "event-1", title: "Bridge crossing reported", summary: "Summary", event_date: "2026-07-10", event_date_precision: "exact",
     epistemic_status: "claim", review_status: "approved", event_type: null, actors: [],
     locations: [{ id: "location-1", country: "Indonesia", admin1: "Jakarta", city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" }],
-    sources: [], duplicate_flags: [], created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", ...overrides,
+    sources: [], duplicate_flags: [], extraction_incomplete: false, extraction_incomplete_stages: [],
+    created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", ...overrides,
   };
 }
 

@@ -200,6 +200,7 @@ class EventRead(BaseModel):
     sources: list[EventSourceRead]
     duplicate_flags: list[DuplicateFlagRead]
     extraction_incomplete: bool
+    extraction_incomplete_stages: list[str]
     created_at: datetime
     updated_at: datetime
     approved_at: datetime | None

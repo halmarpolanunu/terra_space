@@ -18,6 +18,8 @@ function makeEvent(id: string, title: string, eventDate: string | null): EventRe
     locations: [],
     sources: [],
     duplicate_flags: [],
+    extraction_incomplete: false,
+    extraction_incomplete_stages: [],
     created_at: "2026-07-14T00:00:00Z",
     updated_at: "2026-07-14T00:00:00Z",
   };

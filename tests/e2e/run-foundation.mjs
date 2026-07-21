@@ -95,29 +95,40 @@ async function runFoundationScenario() {
   }
 }
 
-function singleEventExtraction(evidenceQuote, overrides = {}) {
+// Builds one lm-studio-stub.mjs responseTable entry: a document (matched by `match`, which
+// must be the literal evidence quote so the Signal Parser's grounding check accepts it)
+// that the staged pipeline turns into exactly one signal candidate, classified as given.
+function stubEntry(match, overrides = {}) {
+  const {
+    title = "Stub extracted event",
+    summary = "Extracted by the local LM Studio stub for end-to-end verification.",
+    epistemic_status = "confirmed",
+    event_type = { existing: null },
+    event_date = null,
+    event_date_precision = null,
+    locations = [],
+    sourceActors = [],
+    recipientActors = [],
+    failTimes,
+  } = overrides;
   return {
-    events: [
-      {
-        title: "Stub extracted event",
-        summary: "Extracted by the local LM Studio stub for end-to-end verification.",
-        event_type: { existing: null },
-        event_date: null,
-        event_date_precision: null,
-        epistemic_status: "confirmed",
-        locations: [],
-        actors: [],
-        evidence_quote: evidenceQuote,
-        ...overrides,
-      },
-    ],
+    match,
+    candidate: {
+      working_title: title,
+      summary,
+      epistemic_status,
+      evidence_quote: match,
+    },
+    event_type,
+    event_date: { event_date, event_date_precision },
+    locations: { locations },
+    actors: { source_actors: sourceActors, recipient_actors: recipientActors },
+    ...(failTimes ? { failTimes } : {}),
   };
 }
 
 async function runDocumentsScenario() {
-  const stub = await startLmStudioStubProcess(STUB_PORT, [
-    { match: STUB_EVIDENCE_QUOTE, extraction: singleEventExtraction(STUB_EVIDENCE_QUOTE) },
-  ]);
+  const stub = await startLmStudioStubProcess(STUB_PORT, [stubEntry(STUB_EVIDENCE_QUOTE)]);
   const env = { TERRA_LM_STUDIO_URL: `http://host.docker.internal:${STUB_PORT}` };
   resetLocalDatabase();
 
@@ -165,17 +176,14 @@ async function runEventReviewScenario() {
   const UNMATCHED_QUOTE = "A local official announced new port rules on 2026-07-10";
 
   const responseTable = [
-    {
-      match: UNMATCHED_QUOTE,
-      extraction: singleEventExtraction(UNMATCHED_QUOTE, {
-        title: "Untyped port-rules announcement",
-        summary: "A local official announced new port rules.",
-        event_type: { existing: null },
-        event_date: "2026-07-10",
-        event_date_precision: "exact",
-        epistemic_status: "claim",
-      }),
-    },
+    stubEntry(UNMATCHED_QUOTE, {
+      title: "Untyped port-rules announcement",
+      summary: "A local official announced new port rules.",
+      event_type: { existing: null },
+      event_date: "2026-07-10",
+      event_date_precision: "exact",
+      epistemic_status: "claim",
+    }),
   ];
 
   const stub = await startLmStudioStubProcess(EVENT_REVIEW_STUB_PORT, responseTable);
@@ -216,66 +224,46 @@ async function runEventsDashboardScenario() {
   const REJECTED_QUOTE = "A rejected observation should remain out of approved views";
 
   const responseTable = [
-    {
-      match: JAKARTA_QUOTE,
-      extraction: singleEventExtraction(JAKARTA_QUOTE, {
-        title: "Jakarta field observation",
-        summary: "A confirmed observation from Jakarta.",
-        event_type: { existing: null },
-        event_date: "2026-07-10",
-        event_date_precision: "exact",
-        epistemic_status: "confirmed",
-        locations: [{ country: "ID", admin1: "DKI Jakarta", city_regency: "Jakarta" }],
-      }),
-    },
-    {
-      match: LOS_ANGELES_QUOTE,
-      extraction: singleEventExtraction(LOS_ANGELES_QUOTE, {
-        title: "Los Angeles field observation",
-        summary: "A confirmed observation from California.",
-        event_type: { existing: null },
-        event_date: "2026-07-12",
-        event_date_precision: "exact",
-        epistemic_status: "confirmed",
-        locations: [{ country: "US", admin1: "California", city_regency: null }],
-      }),
-    },
-    {
-      match: UNKNOWN_DATE_QUOTE,
-      extraction: singleEventExtraction(UNKNOWN_DATE_QUOTE, {
-        title: "Unknown-date briefing",
-        summary: "A briefing whose date was not stated.",
-        event_type: { existing: null },
-        event_date: null,
-        event_date_precision: "unknown",
-        epistemic_status: "claim",
-        locations: [{ country: "ID", admin1: null, city_regency: null }],
-      }),
-    },
-    {
-      match: UNMATCHED_QUOTE,
-      extraction: singleEventExtraction(UNMATCHED_QUOTE, {
-        title: "Unmatched location report",
-        summary: "A report with a location that cannot be resolved locally.",
-        event_type: { existing: null },
-        event_date: "2026-07-14",
-        event_date_precision: "exact",
-        epistemic_status: "rumor",
-        locations: [{ country: null, admin1: null, city_regency: "Atlantis" }],
-      }),
-    },
-    {
-      match: REJECTED_QUOTE,
-      extraction: singleEventExtraction(REJECTED_QUOTE, {
-        title: "Rejected observation",
-        summary: "An observation deliberately rejected during review.",
-        event_type: { existing: null },
-        event_date: "2026-07-15",
-        event_date_precision: "exact",
-        epistemic_status: "denied",
-        locations: [],
-      }),
-    },
+    stubEntry(JAKARTA_QUOTE, {
+      title: "Jakarta field observation",
+      summary: "A confirmed observation from Jakarta.",
+      event_date: "2026-07-10",
+      event_date_precision: "exact",
+      epistemic_status: "confirmed",
+      locations: [{ country: "IDN", admin1: "DKI Jakarta", city_regency: "Jakarta" }],
+    }),
+    stubEntry(LOS_ANGELES_QUOTE, {
+      title: "Los Angeles field observation",
+      summary: "A confirmed observation from California.",
+      event_date: "2026-07-12",
+      event_date_precision: "exact",
+      epistemic_status: "confirmed",
+      locations: [{ country: "USA", admin1: "California", city_regency: null }],
+    }),
+    stubEntry(UNKNOWN_DATE_QUOTE, {
+      title: "Unknown-date briefing",
+      summary: "A briefing whose date was not stated.",
+      event_date: null,
+      event_date_precision: "unknown",
+      epistemic_status: "claim",
+      locations: [{ country: "IDN", admin1: null, city_regency: null }],
+    }),
+    stubEntry(UNMATCHED_QUOTE, {
+      title: "Unmatched location report",
+      summary: "A report with a location that cannot be resolved locally.",
+      event_date: "2026-07-14",
+      event_date_precision: "exact",
+      epistemic_status: "rumor",
+      locations: [{ country: null, admin1: null, city_regency: "Atlantis" }],
+    }),
+    stubEntry(REJECTED_QUOTE, {
+      title: "Rejected observation",
+      summary: "An observation deliberately rejected during review.",
+      event_date: "2026-07-15",
+      event_date_precision: "exact",
+      epistemic_status: "denied",
+      locations: [],
+    }),
   ];
   const stub = await startLmStudioStubProcess(EVENTS_DASHBOARD_STUB_PORT, responseTable);
   const env = { TERRA_LM_STUDIO_URL: `http://host.docker.internal:${EVENTS_DASHBOARD_STUB_PORT}` };
@@ -350,15 +338,8 @@ async function runSettingsScenario() {
   const BRAVO_QUOTE = "bravo failing body";
 
   const responseTable = [
-    {
-      match: ALPHA_QUOTE,
-      extraction: singleEventExtraction(ALPHA_QUOTE, { title: "Alpha event" }),
-    },
-    {
-      match: BRAVO_QUOTE,
-      failTimes: 1,
-      extraction: singleEventExtraction(BRAVO_QUOTE, { title: "Bravo event" }),
-    },
+    stubEntry(ALPHA_QUOTE, { title: "Alpha event" }),
+    stubEntry(BRAVO_QUOTE, { title: "Bravo event", failTimes: 1 }),
   ];
 
   const stub = await startLmStudioStubProcess(SETTINGS_STUB_PORT, responseTable);

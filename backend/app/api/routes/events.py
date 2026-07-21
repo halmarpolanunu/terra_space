@@ -180,7 +180,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
 
     @router.get("/api/documents/{document_id}/events", response_model=list[EventRead])
     def list_for_document(document_id: str, db: Session = Depends(get_db)) -> list[EventRead]:
-        return [to_event_read(event) for event in list_events_for_document(db, document_id)]
+        return [to_event_read(db, event) for event in list_events_for_document(db, document_id)]
 
     @router.get("/api/events", response_model=list[EventRead])
     def list_all(
@@ -201,7 +201,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         if date_from and date_to and date_from > date_to:
             raise HTTPException(status_code=422, detail="date_from must be on or before date_to.")
         return [
-            to_event_read(event)
+            to_event_read(db, event)
             for event in list_filtered_events(
                 db,
                 review_status=review_status,
@@ -258,7 +258,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         event = get_event(db, event_id)
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found.")
-        return to_event_read(event)
+        return to_event_read(db, event)
 
     @router.post("/api/events", response_model=EventRead, status_code=201)
     def create_manual(payload: EventCreate, db: Session = Depends(get_db)) -> EventRead:
@@ -269,7 +269,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             event = create_manual_event(db, document, payload)
         except (EvidenceQuoteNotFoundError, EventTypeSelectionError) as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        return to_event_read(event)
+        return to_event_read(db, event)
 
     @router.patch("/api/events/{event_id}", response_model=EventRead)
     def update(event_id: str, payload: EventUpdate, db: Session = Depends(get_db)) -> EventRead:
@@ -282,7 +282,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             raise HTTPException(status_code=409, detail=str(error)) from error
         except EventTypeSelectionError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        return to_event_read(event)
+        return to_event_read(db, event)
 
     @router.delete("/api/events/{event_id}", status_code=204)
     def delete(event_id: str, db: Session = Depends(get_db)) -> None:
@@ -309,7 +309,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             raise HTTPException(status_code=422, detail=str(error)) from error
         except EventTypeSelectionError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
-        return to_event_read(event)
+        return to_event_read(db, event)
 
     @router.post("/api/events/{event_id}/reject", response_model=EventRead)
     def reject(event_id: str, db: Session = Depends(get_db)) -> EventRead:
@@ -320,7 +320,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             event = reject_event(db, event)
         except EventEditNotAllowedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return to_event_read(event)
+        return to_event_read(db, event)
 
     @router.post(
         "/api/events/{event_id}/duplicate-flags/{flag_id}/resolve", response_model=EventRead
@@ -341,7 +341,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             event = resolve_duplicate_flag(db, event, flag, payload.resolution)
         except DuplicateFlagAlreadyResolvedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
-        return to_event_read(event)
+        return to_event_read(db, event)
 
     @router.post(
         "/api/documents/{document_id}/events/approve-all", response_model=ApproveAllResponse
