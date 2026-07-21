@@ -220,14 +220,85 @@ stopping for the owner's approval on Task 8's live rollout:
   real manual-event API: alias add, activation, and selecting between actors all rendered and
   behaved correctly in a real browser. The owner's live database/containers were never touched.
 
-**All 7 tasks of the Staged Event Detection Pipeline implementation plan are now complete.**
-Task 8 (review surfacing, full verification, and live rollout) remains and requires the owner's
-explicit go-ahead before starting, since it is the first task in this plan allowed to touch the
-live database and containers — the plan's own instructions require a fresh backup via
-`Backup-TerraSpaceDatabase.ps1` and a rehearsal against a copy of that backup before applying
-anything live.
+**All 7 tasks of the Staged Event Detection Pipeline implementation plan were complete and
+committed**, and this session then stopped deliberately before Task 8 (review surfacing, full
+verification, and live rollout) to wait for the owner's explicit go-ahead, since it is the first
+task in the plan allowed to touch the live database and containers.
 
-**Next action:** stop here and wait for the owner's approval to begin Task 8.
+**2026-07-21: live migration discovered to have already happened outside the planned Task 8
+process; verified intact and backed up.** Between that stopping point and the owner's next
+message, two things happened outside this session's knowledge:
+
+1. A separate Claude Code session (same owner account) continued the plan and completed Task 8
+   items 1–2 (review surfacing and verification) as commit `d6baece feat: surface
+   extraction-incomplete events and add an extraction log view` — adding `Event.candidate_index`
+   (migration `0014_event_candidate_index`) so an incomplete event can be traced to exactly which
+   classifier stage(s) failed, an "extraction incomplete" note in Event Review, and a per-document
+   "Extraction log" view in Documents. That session also extended the e2e LM Studio stub to the
+   staged pipeline's five call types and updated its location fixtures to alpha-3. Like every task
+   before it, that session verified its UI pieces in its own separate, disposable, isolated Docker
+   Compose stack (project `task8qa`) and explicitly did **not** touch the owner's live database or
+   containers — live E2E execution through a real browser was deliberately deferred, since the
+   existing e2e runner resets Docker volumes under the *default* compose project name, which
+   collides with the owner's real database volume.
+2. The owner's normal containers (`terra_space-backend-1`, `terra_space-frontend-1`, default
+   Compose project `terra_space`) were restarted normally (most likely via
+   `Start-TerraSpace.ps1`, though not yet confirmed by the owner) after `main` had all of the
+   above on it. Since the backend image's entrypoint always runs `alembic upgrade head` before
+   starting the server, that ordinary restart silently applied every pending migration from Tasks
+   1–7 plus Task 8's `0014` (revision `0009` → `0014`) to the **live** database — without the
+   deliberate backup-first, rehearse-on-a-copy sequence the plan's own Task 8 instructions and
+   this plan's Executor notes required. Neither Claude Code session did this directly; it was an
+   inherent side effect of migrations sitting on `main` while the owner's own normal app startup
+   still runs them automatically, same as every previous phase's migrations always have.
+
+The owner (halmarpolanunu) noticed the live Actors page showing real data (a screenshot of
+`/sense/actors` listing real extracted actors — "Iran", "President Trump", "U.S. Central
+Command", "U.S. military" — sourced from their existing "US military reimposes naval blockade on
+Iranian ports..." document) and flagged it as unexpected. This session then verified, read-only,
+directly against the live database inside the running `terra_space-backend-1` container:
+
+- `alembic_version` = `0014_event_candidate_index` (current head).
+- `PRAGMA foreign_key_check` = empty (no violations).
+- Row counts intact: 1 document (`ba410407-...`, `processing_status=completed`), 16 events (all
+  `review_status=rejected` except this document's own history, 0 approved), 12 event types, 5
+  actors, 33 taxonomy nodes, 16 locations, 0 rows in the new `actor_aliases` and
+  `extraction_log_entries` tables (expected — no alias has been added yet and no document has
+  been processed through the new staged pipeline yet, since LM Studio calls only happen during
+  real processing).
+- The alpha-3 country migration (Task 1) correctly converted this document's real Iran/Kuwait/
+  Bahrain location rows to `IRN`/`KWT`/`BHR` with their coordinates preserved (e.g. Tehran
+  `35.69439, 51.42151`); two long-pre-existing rows storing the literal text `"Indonesia"` instead
+  of a code (never resolvable, from well before this session, unrelated to this migration) were
+  correctly left untouched rather than corrupted, since `_country_key` only remaps recognized
+  2-letter codes.
+- Live actor data matches the owner's screenshot exactly: "U.S. military", "U.S. Central Command",
+  "Iran" (inactive), "President Trump" (active), "U.S." (inactive).
+
+No sign of data loss or corruption. With the owner's agreement, took a **fresh backup of this
+now-migrated state** via `Backup-TerraSpaceDatabase.ps1`:
+`data/database-backups/2026-07-21_125512/terra-space.db` — independently verified (revision
+`0014_event_candidate_index`, empty `PRAGMA foreign_key_check`, 16 events, 5 actors). This is now
+the closest available backup; there is no pre-migration backup of the owner's real database from
+before this restart, since the migration happened before either Claude Code session or the owner
+asked for one.
+
+**What remains of Task 8:** the plan's original item 3 (rehearse then deliberately apply the live
+migration) is now moot — the migration already happened and has been verified intact, just via a
+different path than planned (an ordinary container restart rather than a deliberate
+backup-then-migrate sequence). Not yet done: a live browser check by the owner of the new Event
+Review "extraction incomplete" note, the Documents "Extraction log" view, and the Actors workspace
+against their real data (only read-only database queries and the owner's own screenshot have
+confirmed things so far); item 4's documentation closeout (mark the plan `completed`, log this in
+[Project Knowledge Log](Project-Knowledge-Log.md), update the
+[Feedback Backlog](Feedback-Backlog.md) location-reliability entry); and confirming with the owner
+exactly what restarted the containers, for future awareness that any `main` merge with pending
+migrations will auto-apply the next time the owner's normal containers start, restart, or rebuild
+— not only during a deliberate rollout step.
+
+**Next action:** confirm with the owner what restarted the containers and whether they want a live
+browser check of the new Task 8 UI pieces now, then close out the plan's remaining documentation
+items.
 
 ---
 
