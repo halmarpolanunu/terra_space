@@ -142,6 +142,29 @@ implementation plan or decision, link it from here and mark it resolved instead 
     troubleshooting LM Studio settings in this session; pick it up in a dedicated future session ("kita
     perlu duduk lebih lama untuk membenahi proses deteksi").
 
+**New data point (2026-07-21) — the per-stage extraction log (built in the Staged Event Detection
+Pipeline, see [Current Status](Current-Status.md)) gave visibility into a failure mode invisible
+before.** A live, read-only check of the owner's real document's extraction log (4 candidates, 17
+log entries) showed a mixed pattern, not a uniform "zero locations" failure: candidate 1 succeeded
+at every stage (4 locations, 2 source actors, event type, event date, one dropped ungrounded
+location correctly logged as `dropped` rather than silently lost); candidate 4 got a real location
+and event type/date but failed actors and event type with "LM Studio's structured output did not
+match the expected schema" and "LM Studio returned HTTP 400"; candidates 2 and 3 failed **all four**
+classifiers, each logged as "LM Studio returned HTTP 400." An HTTP 400 on every stage for one
+candidate (rather than a schema-shape mismatch on just some stages) suggests something about that
+specific candidate's request body itself may be malformed or oversized, not only generic model
+non-determinism — this is a new, more specific lead the old undifferentiated "sometimes zero
+locations" symptom did not point to. Not yet investigated: what made candidates 2/3's requests
+return HTTP 400 specifically (this needs inspecting the actual request the client sent, e.g. via
+`docker logs` on the backend around those calls, or reproducing directly against LM Studio). It is
+also not known who reprocessed this document to produce this data (no session recorded doing so
+between the last check and this one) — flagged to the owner, not assumed.
+
+**Owner's decision (2026-07-21):** asked directly whether to continue into this investigation right
+after the Staged Event Detection Pipeline plan's Task 8 closeout (which surfaced the HTTP 400 data
+point above); the owner said "later" — deferred again, not declined. Resume only when the owner
+brings it back.
+
 **Where to resume this investigation:**
 1. In LM Studio itself (not visible to any coding agent): confirm the exact model/quantization
    currently loaded still matches what was loaded on 2026-07-18, check the configured context-length
@@ -155,7 +178,12 @@ implementation plan or decision, link it from here and mark it resolved instead 
 4. `PersistResult.dropped_locations` (in `backend/app/services/extraction.py`) is still never logged
    or surfaced anywhere; adding that would make future silent-drop-vs-never-extracted questions
    answerable without a manual diagnostic session like this one.
-5. Before scaling up document *volume* via automated ingestion, see the
+5. New, per the 2026-07-21 extraction-log data point above: check the backend logs (or reproduce
+   directly) for why candidates 2/3 got HTTP 400 on every classifier stage, rather than a normal
+   schema-mismatch — this looks like a request-construction issue for that candidate's content, not
+   generic non-determinism, and the extraction log now makes it findable without a manual diagnostic
+   session.
+6. Before scaling up document *volume* via automated ingestion, see the
    [Automated news and social media ingestion](#automated-news-and-social-media-ingestion-google-news-rss-scraping-telegram-future-direction-2026-07-20)
    entry below — it argues this reliability problem should be resolved (or at least instrumented)
    before, not after, ingestion volume increases.

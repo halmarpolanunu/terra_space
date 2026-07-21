@@ -283,22 +283,50 @@ the closest available backup; there is no pre-migration backup of the owner's re
 before this restart, since the migration happened before either Claude Code session or the owner
 asked for one.
 
-**What remains of Task 8:** the plan's original item 3 (rehearse then deliberately apply the live
-migration) is now moot — the migration already happened and has been verified intact, just via a
-different path than planned (an ordinary container restart rather than a deliberate
-backup-then-migrate sequence). Not yet done: a live browser check by the owner of the new Event
-Review "extraction incomplete" note, the Documents "Extraction log" view, and the Actors workspace
-against their real data (only read-only database queries and the owner's own screenshot have
-confirmed things so far); item 4's documentation closeout (mark the plan `completed`, log this in
-[Project Knowledge Log](Project-Knowledge-Log.md), update the
-[Feedback Backlog](Feedback-Backlog.md) location-reliability entry); and confirming with the owner
-exactly what restarted the containers, for future awareness that any `main` merge with pending
-migrations will auto-apply the next time the owner's normal containers start, restart, or rebuild
-— not only during a deliberate rollout step.
+**Task 8, and the whole Staged Event Detection Pipeline plan, is now complete** (plan status
+updated to `completed`). The plan's original item 3 (rehearse then deliberately apply the live
+migration) was moot — the migration already happened and had been verified intact via a different
+path than planned (an ordinary container restart). The remaining items were closed out
+2026-07-21:
 
-**Next action:** confirm with the owner what restarted the containers and whether they want a live
-browser check of the new Task 8 UI pieces now, then close out the plan's remaining documentation
-items.
+- **Live browser check, done.** Asked the owner what restarted their containers; they didn't
+  recall. Docker Desktop was not running in this session's environment, so it was started, then the
+  owner's normal containers were brought up with a plain `docker compose up -d` (no rebuild, no
+  data touched) at the owner's explicit choice to have this session check read-only rather than
+  check themselves. Confirmed live and intact: `alembic_version` `0014_event_candidate_index`,
+  empty `PRAGMA foreign_key_check`, 20 events (up from 16 at the last check — someone reprocessed
+  the owner's one document since then; no session recorded doing so, flagged to the owner rather
+  than assumed), 1 document, 17 extraction log entries (up from 0), 0 actor aliases. In the real
+  browser, read-only: Event Review's second draft event of that document correctly showed
+  "Extraction incomplete — local AI could not classify actors, event date, locations. Review
+  carefully before approving," with `Not stated` locations/actors and blank event date, matching
+  its logged classifier failures; the Documents "Extraction log" view rendered real per-stage,
+  per-candidate entries (`ok`/`failed`/`dropped` with reasons) for all 4 candidates; the Actors
+  workspace showed the same 5 actors as the owner's earlier screenshot with a working
+  edit/alias/deactivate panel.
+- **New lead surfaced by that same extraction log**, recorded in the
+  [Feedback Backlog](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16):
+  the pattern this time was not uniform "zero locations" — one candidate succeeded at every stage,
+  one partially succeeded, and two failed **every** classifier stage with "LM Studio returned HTTP
+  400," a distinct signature from the schema-mismatch/empty-response failures seen 2026-07-20. An
+  HTTP 400 on every stage for a specific candidate suggests a request-construction problem tied to
+  that candidate's content, not only generic model non-determinism — a more specific next step than
+  before, not yet investigated (would need the backend's own logs around those calls, or a direct
+  reproduction against LM Studio).
+- **Documentation closeout, done:** plan file marked `completed`, this section updated, an entry
+  added to [Project Knowledge Log](Project-Knowledge-Log.md), and the Feedback Backlog entry above
+  updated with the new data point and an added resume-checklist item.
+- **Container restart cause: still unconfirmed.** The owner did not recall what restarted their
+  containers on/before 2026-07-21. Worth remembering for any future session: any `main` merge with
+  pending migrations will auto-apply the next time the owner's normal containers start, restart, or
+  rebuild — not only during a deliberate rollout step — so a live-data surprise like this one can
+  recur.
+
+**Next action:** none pending from this plan. When asked whether to continue into the
+[location-reliability investigation](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16)
+right after this closeout, the owner said "later" — deliberately deferred, not declined. Resume
+only when the owner brings it back; it needs their direct involvement either way (LM Studio's own
+settings, or deciding whether to spend a session on the new HTTP 400 request-level debugging lead).
 
 ---
 

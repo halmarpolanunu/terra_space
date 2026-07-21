@@ -8,6 +8,26 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-21 - Staged Event Detection Pipeline plan closed out
+
+- Closed out the last open items of the
+  [Staged Event Detection Pipeline Implementation Plan](plans/2026-07-20-staged-event-detection-pipeline.md)
+  (now `status: completed`). Its migrations had already reached the live database via an ordinary
+  container restart rather than the plan's own deliberate backup-then-migrate Task 8 sequence
+  (discovered and verified intact in the prior session); what remained was a live, read-only
+  browser check of the three new UI pieces and documentation closeout. Confirmed, against the
+  owner's real running containers (`docker compose up -d`, no rebuild, no data touched) and real
+  data: the Event Review "extraction incomplete" note renders correctly on a genuinely incomplete
+  draft event; the Documents "Extraction log" view renders real per-stage, per-candidate log
+  entries; and the Actors workspace matches the owner's own earlier screenshot. Also found and
+  recorded a new, more specific lead for the still-open
+  [location-reliability investigation](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16):
+  the extraction log showed two candidates failing every classifier stage with "LM Studio returned
+  HTTP 400," rather than the sometimes-zero-locations symptom recorded before — pointing at a
+  possible request-construction issue for specific candidate content rather than only generic model
+  non-determinism. The owner did not recall what restarted their containers, so that remains
+  unconfirmed. No code changed this session.
+
 ## 2026-07-20 - Staged Event Detection Pipeline decision approved and planned
 
 - The owner asked to redesign event detection, sharing their own staged "SMC" (Signal, Mechanism,
