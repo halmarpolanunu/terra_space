@@ -16,6 +16,38 @@ implementation plan or decision, link it from here and mark it resolved instead 
 
 ## Open items
 
+### Route backgrounds and ambient "animus" motion are not approved yet, despite shipping (2026-07-21)
+
+- **Important — do not treat Scope 1 of the [Deferred UI Polish Plan](plans/2026-07-17-ui-polish-deferred.md)
+  as finished.** The owner's own words: "Intinya jangan menganggap ini selesai dlu. saya akan
+  revisit lagi setelah credit reset" (don't consider this done yet; will revisit after their Claude
+  credit resets). The re-polished backgrounds, the CSS blur, and the "animus"-style ambient motion
+  (drifting motes + scan band) are live in the owner's app and committed/pushed
+  (`8ede3a7`, `4849653`), and are technically working (206→217 tests passing, verified live), but
+  this is **shipped-pending-approval, not owner-approved final work.** The one piece from this same
+  session the owner did explicitly like and consider settled is the Appearance setting in Settings
+  (the ability to control blur/motion at all) — only the background art and the motion style itself
+  are in question.
+- **Background — flagged issues:** still too busy/distracting even after the full re-polish and the
+  added blur; the owner also flagged "something else" not yet described. A first version of this
+  same background (with round/spiral orrery corners) was already rejected once this session for
+  being too busy on Dashboard specifically — the angular-HUD replacement was accepted for Dashboard,
+  but the owner's latest feedback suggests busyness is still a concern more broadly, not fully
+  resolved by that one fix.
+- **Animus motion — flagged issues:** "not the right kind of motion" (the drifting-motes-plus-scan-band
+  interpretation of "animus particle effect" may not match what the owner pictured from Assassin's
+  Creed) and "distracting rather than ambient" (draws more attention than a background effect
+  should) — this is a sharper signal than "too subtle," the opposite of what was intended. Owner
+  also flagged "something else" not yet described.
+- **Not yet gathered:** the owner explicitly deferred describing specifics until they revisit
+  ("Ill describe it laterr"), so no further redesign should be attempted from guesswork. When
+  resumed, start by asking the owner to describe concretely what's still wrong (screenshots or
+  specific routes help) rather than re-guessing a new direction.
+- **Status:** Open, parked at the owner's explicit choice. Not resolved. The plan file
+  (`plans/2026-07-17-ui-polish-deferred.md`) stays `status: in-progress`, not `completed`, and its
+  Scope 1 section should not be read as a success story until the owner confirms it in a future
+  session.
+
 ### Event locations do not reliably reach the Dashboard globe (2026-07-16)
 
 - **Problem:** After documents are processed, many resulting events have no usable location, so

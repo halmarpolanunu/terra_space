@@ -10,27 +10,44 @@ status: active
 
 ## Current focus
 
-**2026-07-21: route backgrounds re-polished (Deferred UI Polish Plan, Scope 1) — committed
-locally, not pushed.** After closing out Task 8, the owner picked up the
+**2026-07-21: route backgrounds re-polished and an Appearance setting added (Deferred UI Polish
+Plan, Scope 1) — shipped, pushed to `main`, but explicitly NOT approved as final by the owner.**
+After closing out Task 8, the owner picked up the
 [Deferred UI Polish Plan](plans/2026-07-17-ui-polish-deferred.md). Shown a before/after review
 artifact of all six route backgrounds, they chose a full re-polish. All six were regenerated from
 one shared procedurally-drawn HUD/orrery vocabulary (a throwaway local canvas generator served over
 `127.0.0.1` and extracted to WebP — no external image requests), fixing the two inconsistencies the
 review surfaced (Sense's off-family nebula; Settings being the busiest asset), giving each route a
 distinct purpose-fit motif, keeping the centre clear, and shrinking the set 308 KB → ~205 KB. The
-owner then requested two tweaks, both applied and tuned live with them via an interactive preview
-artifact: (1) the Dashboard's round/spiral corner clusters were removed for angular HUD framing;
-(2) two non-destructive layers were added — a subtle CSS background blur (`1px`,
-`--workspace-bg-blur` on `.app-shell::before`) and a reduced-motion-aware "animus"-style ambient
-canvas (`frontend/src/components/workspace-ambiance.tsx`: drifting amber motes + a slow
-reconstruction scan), with tuned values (blur 1px, motion 150%, drift 2.0×, scan 110%) baked as
-named constants. Verified: 206 frontend tests, lint, production build, and a live read-only browser
-pass (all routes + a 150% zoom check); rebuilt and deployed to the owner's live frontend container.
-The Scope 1 change is committed locally **and not pushed** at the owner's request. **Open
-follow-ups:** (a) the owner asked whether the blur/motion could be a user setting — agreed to build
-it as a next step, recommended as a per-device localStorage "Appearance" control in Settings (the
-tuned values become its defaults), which also advances Scope 2; (b) Scope 2 (the Settings layout)
-itself is still undecided. See the plan's Scope 1 note for detail.
+owner then requested two tweaks, tuned live with them via an interactive preview artifact: (1) the
+Dashboard's round/spiral corner clusters were removed for angular HUD framing; (2) two
+non-destructive layers were added — a CSS background blur and a reduced-motion-aware "animus"-style
+ambient canvas (`frontend/src/components/workspace-ambiance.tsx`: drifting amber motes + a slow
+reconstruction scan). The owner then asked whether blur/motion could be a Settings feature, so a new
+per-device (localStorage, not the backend database) **Appearance panel** was added to Settings
+exposing all four tuning axes with the owner's values as defaults
+(`frontend/src/lib/appearance-settings.ts`, `frontend/src/app/settings/appearance-settings.tsx`).
+Verified throughout: 217 frontend tests (11 new; test-writing itself caught two real bugs — a reset
+function that wrote defaults back into storage instead of clearing it, and a floating-point display
+glitch — both fixed), clean lint, clean production build, and live browser verification (all routes,
+150% zoom, and a confirmed pixel-level check that the motion toggle actually freezes/resumes the
+canvas animation). Committed as two commits (`8ede3a7`, `4849653`) and pushed to `main` on GitHub at
+the owner's request.
+
+**However: do not treat the background or the animus motion as finished.** Immediately after seeing
+the pushed result, the owner said explicitly: "Intinya jangan menganggap ini selesai dlu. saya akan
+revisit lagi setelah credit reset" (don't consider this done; will revisit after their Claude credit
+resets). They like the Appearance-setting addition, but flagged the background as still too
+busy/distracting and the animus motion as "not the right kind of motion" and "distracting rather
+than ambient" — plus unspecified "something else" for both, deferred until they can describe it in
+detail. See the
+[Feedback Backlog entry](Feedback-Backlog.md#route-backgrounds-and-ambient-animus-motion-are-not-approved-yet-despite-shipping-2026-07-21)
+for the full detail and the resume instruction: ask the owner for concrete specifics first, don't
+re-guess a new direction. The plan file stays `status: in-progress`, not `completed`.
+
+**Next action:** none pending right now — the owner chose to park this and revisit after their
+credit resets. When resumed, start by asking what specifically is still wrong with the background
+and the motion, rather than proposing another direction unprompted.
 
 **2026-07-20 (later same day): executing the Staged Event Detection Pipeline implementation
 plan, Task 1 of 8 complete.** The owner asked to redesign event detection, sharing their own

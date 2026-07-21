@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-21 - Owner: background/animus re-polish shipped but not approved as final
+
+- Both same-day Scope 1 commits (`8ede3a7` background re-polish, `4849653` Appearance setting) were
+  pushed to `main` at the owner's request, but the owner then explicitly said not to consider this
+  finished — they will revisit the background and the "animus" ambient motion after their Claude
+  credit resets, and only the Appearance-setting addition itself is considered settled for now.
+  Recorded as an open item in the
+  [Feedback Backlog](Feedback-Backlog.md#route-backgrounds-and-ambient-animus-motion-are-not-approved-yet-despite-shipping-2026-07-21)
+  with the specific complaints given so far (background still too busy; motion "not the right kind"
+  and "distracting rather than ambient"), and Current Status corrected so neither reads as a closed
+  success story. The plan file remains `status: in-progress`. No further code changed for this entry.
+
 ## 2026-07-21 - Appearance settings added (blur/motion now user-configurable)
 
 - Follow-up to the same-day background re-polish: the owner asked whether the blur/motion tuning
