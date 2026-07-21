@@ -10,6 +10,28 @@ status: active
 
 ## Current focus
 
+**2026-07-21: route backgrounds re-polished (Deferred UI Polish Plan, Scope 1) — committed
+locally, not pushed.** After closing out Task 8, the owner picked up the
+[Deferred UI Polish Plan](plans/2026-07-17-ui-polish-deferred.md). Shown a before/after review
+artifact of all six route backgrounds, they chose a full re-polish. All six were regenerated from
+one shared procedurally-drawn HUD/orrery vocabulary (a throwaway local canvas generator served over
+`127.0.0.1` and extracted to WebP — no external image requests), fixing the two inconsistencies the
+review surfaced (Sense's off-family nebula; Settings being the busiest asset), giving each route a
+distinct purpose-fit motif, keeping the centre clear, and shrinking the set 308 KB → ~205 KB. The
+owner then requested two tweaks, both applied and tuned live with them via an interactive preview
+artifact: (1) the Dashboard's round/spiral corner clusters were removed for angular HUD framing;
+(2) two non-destructive layers were added — a subtle CSS background blur (`1px`,
+`--workspace-bg-blur` on `.app-shell::before`) and a reduced-motion-aware "animus"-style ambient
+canvas (`frontend/src/components/workspace-ambiance.tsx`: drifting amber motes + a slow
+reconstruction scan), with tuned values (blur 1px, motion 150%, drift 2.0×, scan 110%) baked as
+named constants. Verified: 206 frontend tests, lint, production build, and a live read-only browser
+pass (all routes + a 150% zoom check); rebuilt and deployed to the owner's live frontend container.
+The Scope 1 change is committed locally **and not pushed** at the owner's request. **Open
+follow-ups:** (a) the owner asked whether the blur/motion could be a user setting — agreed to build
+it as a next step, recommended as a per-device localStorage "Appearance" control in Settings (the
+tuned values become its defaults), which also advances Scope 2; (b) Scope 2 (the Settings layout)
+itself is still undecided. See the plan's Scope 1 note for detail.
+
 **2026-07-20 (later same day): executing the Staged Event Detection Pipeline implementation
 plan, Task 1 of 8 complete.** The owner asked to redesign event detection, sharing their own
 staged "SMC" (Signal, Mechanism, Context) framework as inspiration. The approved

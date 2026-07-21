@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Navigation } from "@/components/navigation";
 import { ServiceStatusPanel } from "@/components/service-status";
+import { WorkspaceAmbiance } from "@/components/workspace-ambiance";
 import { getWorkspaceBackground } from "@/lib/workspace-backgrounds";
 
 type AppShellProps = { currentPath: string; children: ReactNode };
@@ -18,6 +19,7 @@ export function AppShell({ currentPath, children }: AppShellProps) {
 
   return (
     <div className="app-shell" data-route={currentPath} style={style}>
+      <WorkspaceAmbiance />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>

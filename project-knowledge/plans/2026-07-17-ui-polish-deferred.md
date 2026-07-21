@@ -3,7 +3,7 @@ type: Design Plan
 title: Deferred UI Polish Plan (Backgrounds and Settings)
 description: Combined plan for the two deferred visual/UX polish items the owner has looked at once and put off without a direction - route backgrounds and Settings layout.
 tags: [ui, ux, design, backgrounds, settings, dashboard]
-status: planned
+status: in-progress
 okf_version: "0.1"
 ---
 
@@ -21,7 +21,28 @@ concrete options and get a direction" step actually completed, only attempted. T
 (route backgrounds vs. the Settings screen's information architecture) remain distinct work below;
 merging only combines their tracking as one deferred backlog item, not their content.
 
-## Scope 1 - Route backgrounds
+## Scope 1 - Route backgrounds — implemented 2026-07-21
+
+**Status: done (committed locally; not yet pushed at the owner's request).** After the owner chose
+"full re-polish" from a review artifact, all six route backgrounds were regenerated from **one shared
+procedurally-drawn HUD/orrery vocabulary** (a local canvas generator, no external image requests) so
+they finally read as one family — this fixed the two long-standing inconsistencies the review
+surfaced (Sense had drifted to an off-family nebula; Settings was the busiest asset). Each route keeps
+a distinct, purpose-fit motif (Dashboard = telemetry, Documents = layered sources, Event Review =
+viewfinder/scrutiny, Events = quiet ledger, Sense = signal-flow, Settings = calm calibration dial),
+the centre is kept clear for content, and the whole set is smaller on disk (308 KB → ~205 KB). The
+owner then requested two tweaks, both applied: (1) the Dashboard's round/spiral corner clusters were
+removed entirely in favour of angular HUD framing; (2) two new non-destructive layers were added and
+tuned with the owner via a live interactive preview — a subtle CSS **background blur** (`1px`,
+`--workspace-bg-blur` on `.app-shell::before`) so content stays the focus, and an **"animus"-style
+ambient animation** (`frontend/src/components/workspace-ambiance.tsx`: slow-drifting amber data motes
+plus a slow reconstruction scan band, rendered on a fixed canvas behind content). The animation
+honours reduced-motion, pauses when the tab is hidden, and its tuned values (motion 150%, drift 2.0×,
+scan 110%) live as named constants. Verified: 206 frontend tests, lint, production build, and a live
+read-only browser pass across all routes plus a 150% browser-zoom check. **Follow-up the owner
+requested (not yet built): expose the blur/motion as a user setting** — recommended as a per-device
+browser (localStorage) preference with a small "Appearance" section in Settings, which would also
+advance Scope 2 below. The tuned values above become its defaults.
 
 ### Goal
 

@@ -8,6 +8,26 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-07-21 - Route backgrounds re-polished (Deferred UI Polish Plan, Scope 1)
+
+- Implemented Scope 1 of the
+  [Deferred UI Polish Plan](plans/2026-07-17-ui-polish-deferred.md) (now `in-progress`; Scope 2,
+  the Settings layout, still open). The owner reviewed a before/after artifact of all six route
+  backgrounds, chose a full re-polish, and the six were regenerated from one shared procedurally
+  drawn HUD/orrery vocabulary (a local canvas generator — no external image requests), fixing the
+  two inconsistencies the review surfaced (Sense's off-family nebula; Settings being the busiest
+  asset) while giving each route a distinct purpose-fit motif and keeping the centre clear for
+  content; the set also shrank 308 KB → ~205 KB. Two owner tweaks followed: the Dashboard's
+  round/spiral corner clusters were replaced with angular HUD framing, and two non-destructive
+  layers were added and tuned live with the owner — a subtle CSS background blur (1px) and a
+  reduced-motion-aware "animus"-style ambient canvas (drifting amber motes + a slow reconstruction
+  scan) in `frontend/src/components/workspace-ambiance.tsx`. Verified with 206 frontend tests,
+  lint, a production build, and a live read-only browser pass (all routes + a 150% zoom check);
+  deployed to the owner's live frontend container. Committed locally at the owner's request and
+  **not pushed**. Follow-up the owner asked for and not yet built: expose the blur/motion as a
+  user-facing "Appearance" setting (recommended as a per-device localStorage preference), which
+  would also advance Scope 2.
+
 ## 2026-07-21 - Staged Event Detection Pipeline plan closed out
 
 - Closed out the last open items of the

@@ -600,7 +600,8 @@ body {
   content: "";
   position: fixed;
   z-index: 0;
-  inset: 0;
+  /* Overscan past the viewport so the blur's soft edge falls off-screen. */
+  inset: -32px;
   pointer-events: none;
   background-color: #000;
   background-image:
@@ -609,6 +610,18 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  /* Push the decorative background back so content stays the focus. */
+  filter: blur(var(--workspace-bg-blur, 1px));
+}
+/* Ambient "animus" layer: drifting data motes + a slow reconstruction scan.
+   Sits above the background image but below all workspace content. */
+.workspace-ambiance {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 .top-status-bar,
 .sidebar,
