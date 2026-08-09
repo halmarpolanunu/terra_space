@@ -10,6 +10,267 @@ status: active
 
 ## Current focus
 
+**2026-08-09 update: the one-click full news pipeline is built across four n8n workflows, validates cleanly, and is waiting on live testing that needs the owner.** Following the [One-Click Full News Processing Implementation Plan](plans/2026-08-08-one-click-full-news-processing.md), each of the three existing stages now has an internal, callable entry point beside its original interactive one, and a new master workflow runs all three from a single form submission.
+
+- `Terra Space - Input News Manual` (`gABPryH3jTe2Ktz5`), 6 → 9 nodes. New `Phase 1 Internal Input` (Execute Workflow Trigger, six declared article fields) and `Normalize Phase 1 Input`, which both the existing form and the internal trigger now flow through; it rejects a blank required field before any LM Studio call or Supabase insert. New `Build Phase 1 Stage Result` after the save node returns `{ stage, status, p1_uuid, p1_title, cleaned_character_count }`.
+- `Terra Space - Event Candidates` (`pO6m1mpaHz2Ae5ZR`), 18 → 21 nodes. New `Phase 2 Internal Input` and `Normalize Phase 2 Input`; the chat trigger still reaches the pipeline through its existing parse node, now via the shared normalizer. New `Build Phase 2 Stage Result` sits after both the create and the update branch and reads `Prepare Event Candidate Result`, so both branches return the same shape. The detection and persistence order is untouched, so history is still written before the latest row changes.
+- `Terra Space - Event Records` (`qsbIodzbMPxgQeRg`), 30 → 33 nodes. New `Phase 3 Internal Input` and `Normalize Phase 3 Input`, fed by the chat trigger, the test webhook, and the internal trigger. New `Build Phase 3 Stage Result` on the completed output of `Persist Latest Records One at a Time` counts `FINAL` and `EXCEPTION` rows from this execution only. The guarded candidate pipeline, one-retry rule, and latest-row writer are unchanged.
+- `Terra Space - Full News Processing` (`SwXzUU9aHg4NZ9Kx`) is new: one form at `terra-space-full-news-processing` with the same six fields, then three Execute Sub-workflow calls that each wait for completion, guarded by `Phase 1 Succeeded?` and `Candidates Found?`. No UUID is ever shown to or copied by the user.
+
+All four workflows validate at 0 errors. Phase 3 carries one advisory warning where n8n suggests the aggregate node might belong on the loop output; the completed output is deliberate, because that node must summarise the whole execution. **All four workflows are inactive and none has been activated.**
+
+**First end-to-end run: the handoff works, and it exposed one real bug that is now fixed.** The owner loaded `google/gemma-4-12b-qat` in LM Studio and ran the master form from the n8n editor (execution `1625`) on a BBC article about Ukrainian strikes on two Russian oil refineries. Phase 1 (`1626`, 20s) returned `SUCCESS` with UUID `b7c73695-0154-4b16-9dc2-ab917182be1d` and a 4,065-character cleaned article. Phase 2 (`1627`, 22s) returned `EVENT_CANDIDATES_FOUND` with `MAIN_ISSUE_FOUND` and 6 candidates. No UUID was copied by hand at any point — each stage received the previous stage's result exactly as designed.
+
+Phase 3 (`1628`) then failed after 147 ms: `Get Latest Event Candidates` filtered on `$('Parse Phase 1 UUID').item.json.p1_uuid`, and that parse node only runs on the chat and webhook paths, so the reference was unresolvable on the internal path the master uses. Fixed by pointing it at `$('Normalize Phase 3 Input').item.json.p1_uuid`, which runs on all three entry paths, leaving the chat and webhook paths working unchanged. Phase 3 re-validates at 0 errors. Phase 2's other nodes were checked for the same pattern and are clean. Nothing was rolled back: the Phase 1 row and the Phase 2 run/latest rows for that UUID were written correctly and are still there, so Phase 3 can be retried on its own.
+
+**The fix is confirmed, and Phase 3 testing then exposed two pre-existing defects that silently lose candidates.** Executions `1630` and `1631` ran Phase 3 alone through its chat trigger for the same UUID. Both completed, the article loaded, all 6 Phase 2 candidates expanded, and `Build Phase 3 Stage Result` did fire on the batch loop's completed output — so the plan's batch-loop contingency is not needed for the reason it anticipated. Neither defect below was introduced by this plan; both live inside the protected Phase 3 pipeline the plan says to leave unchanged, so both are **recorded and left unfixed pending a decision**.
+
+- **Defect A — candidates vanish when the gazetteer has no matching row.** `Resolve Primary Location Locally` is a Supabase `getAll` node, so an item whose `lookup_key` matches nothing produces no output item and that candidate disappears completely: no record, no `EXCEPTION`, no run-history row. In execution `1631`, 8 items went in and 5 came out. Two candidates had `lookup_key: null` (no grounded ISO3 location) and one produced `UKR␟kharkiv region` where the gazetteer holds `UKR␟kharkiv`. This contradicts the North Star's requirement that AI and lookup failures stay visible, and the Automated Final Event Record Pipeline rule that failed records are retained as exceptions.
+- **Defect B — the persistence loop is fed twice and loses a record.** `Retry Once?` sends non-retry items to `Persist Latest Records One at a Time` immediately while retried items arrive later, so the loop gets a fresh input twice and completes twice. In execution `1631`, 3 candidates reached `Save Event Record Run` but only 2 reached `Prepare Latest Event Row`, and the one lost was the run's only `FINAL` record (candidate `2865:2986`, run `90`). `terra_space_event_records` holds 2 `EXCEPTION` rows for this article and no `FINAL` row.
+- **Consequence C.** Because the loop completes twice, `Build Phase 3 Stage Result` runs twice and the caller receives the last run, which saw only the retried batch (`processed_candidate_count: 2, final_count: 0, exception_count: 2`). Its logic is right for the items it receives; it under-reports because Defect B hands it a partial set. It is deliberately left as written rather than patched in a way that would mask the real fault.
+
+**Both defects are now fixed, with the owner's explicit approval ("Fix both now"), under an amendment to the plan's Global Constraints.** No grounding rule, prompt, model setting, gazetteer entry, taxonomy rule, safeguard, or retry rule was touched — only the plumbing that lost records. Phase 3 is now 32 nodes and validates at 0 errors and 0 warnings.
+
+- **Fix A — `Attach Local Coordinates`** now runs once for all items and rebuilds the full candidate list from `Prepare Local Location Lookup`, joining gazetteer hits by `lookup_key` through a Map instead of reading the Supabase output positionally. An absent or unmatched location now yields `coordinate_status` `NO_GROUNDED_LOCATION` or `UNRESOLVED` with null coordinates — the status values the pipeline already defined — instead of deleting the candidate.
+- **Fix B — the batch loop is gone.** `Persist Latest Records One at a Time` existed only to force the existing-row lookup to return one row per candidate, which is the same drop-unmatched-items behaviour as Defect A. It was removed; `Retry Once?` (false) now flows straight through `Prepare Latest Event Row` → `Get Existing Latest Event Row` → `Determine Latest Record Persistence` → `Latest Record Exists?` → `Save`/`Create Latest Event Record`. `Determine Latest Record Persistence` now runs once for all items and joins existing rows back onto every candidate by `candidate_key`. Without a loop, the first-pass and retry-pass items persist independently and neither can displace the other.
+- **Fix C — `Build Phase 3 Stage Result`** now aggregates across every run of `Prepare Latest Event Row` and deduplicates by `candidate_key`, so its final invocation sees the complete set. It still never re-queries the latest table.
+
+**Defects A and B are confirmed fixed by execution `1635`.** `terra_space_event_records` now holds a row for **all 6** distinct `candidate_key` values for this article, against 2 before. The four candidates that used to be deleted at the gazetteer step are all present, all `FINAL` with `CLASSIFIED` taxonomy and `ACCEPT` safeguard, each carrying an honest `UNRESOLVED` location status. One knock-on issue was fixed along the way: because `Attach Local Coordinates` now rebuilds the candidate list, n8n can no longer trace items back through it, so `Build Taxonomy Request` was changed from `$('Collect Active Event Types').item` to `.first()` — equivalent, since that node always holds exactly one item.
+
+**Consequence C needed a second, different fix.** The first attempt walked `$('Prepare Latest Event Row').all(0, runIndex)` over increasing run indexes, but that run-index argument is not honoured as assumed: every iteration returned the same final run, so deduplication collapsed the answer back to that run's 2 candidates while 6 had actually persisted. A Code node cannot read another node's earlier runs, and first-pass and retry-pass candidates are inherently persisted in different runs. Replaced with an explicit read-back: `Normalize Phase 3 Input` now also emits `run_started_at`, and a new Supabase node `Get This Run's Record Runs` reads `terra_space_event_record_runs` filtered by `p1_news_uuid` and `processed_at >= run_started_at`, returning exactly this execution's append-only rows. `Build Phase 3 Stage Result` aggregates that, keeping the highest `attempt_number` per `candidate_key`. This respects the plan's rule against summarising from the latest table. Phase 3 is now 33 nodes, 0 errors, 0 warnings, and is **not yet re-tested since this last change**.
+
+**Phase 3 is now fully verified (execution `1637`).** Every number agrees across the stage result, the append-only history, and the latest table. The stage result reported `final_count: 4, exception_count: 2, processed_candidate_count: 6`. `terra_space_event_record_runs` gained 8 rows — all 6 candidates at attempt 1 plus attempt 2 for the two that failed — and `terra_space_event_records` holds exactly 6 rows, one per `candidate_key`: 4 `FINAL`/`ACCEPT`/1 attempt and 2 `EXCEPTION`/`REJECT`/2 attempts, all written by this execution. That confirms the three protected behaviours: a successful candidate reports `FINAL`, a rejected one retries exactly once and is then retained as `EXCEPTION`, and one exception does not stop the others from becoming final. Location handling is honest too — 2 rows `RESOLVED` against the gazetteer, 4 `UNRESOLVED`, none deleted.
+
+**The one-click path now works end to end (master execution `1638`, 3m03s).** One form submission of an Independent live-blog article ran Phase 1 (`1639`), Phase 2 (`1640`), and Phase 3 (`1641`) in sequence, each waiting for the previous stage, with no UUID ever shown to or typed by the user. The master returned `status: COMPLETED`, `p1_uuid 3070cf55-8326-4e4c-99df-d6db00df9cf1`, Phase 1 `SUCCESS` (8,334 cleaned characters), Phase 2 `EVENT_CANDIDATES_FOUND` with 5 candidates, and Phase 3 `COMPLETED` with 4 final and 1 exception — message: "Saved article; found 5 candidate(s); created 4 final record(s) and 1 exception(s)."
+
+Read-only database checks agree with every number: 1 `terra_space_news_v2` row (no duplicate), 1 Phase 2 history row, 1 Phase 2 latest row holding 5 candidates, 7 `terra_space_event_record_runs` rows, and 5 `terra_space_event_records` rows split 4 `FINAL` / 1 `EXCEPTION`. Grounding holds throughout — all 5 Phase 2 candidate quotes and all 8 Phase 3 source-actor quotes are exact substrings of `p1_clean_content_text`. The history also shows the retry rule working in both directions for the first time: attempt 1 gave 3 `FINAL` and 2 `EXCEPTION`, and of the two retries one was rescued to `FINAL` while the other stayed a retained `EXCEPTION`.
+
+**2026-08-09: production-readiness verification is done — five of six checks passed, and the sixth found a real defect that is now fixed but not yet re-run.** All four workflows stayed inactive throughout; each check needed the owner to arm a trigger from the n8n editor, with payloads sent from the host so inputs were exact.
+
+- **Empty article text — passed.** Master `1643` → Phase 1 `1644` failed in 154 ms at `Normalize Phase 1 Input` (`Phase 1 input is missing p1_raw_content_text.`). No LM Studio call, no Supabase insert, Phase 2 never invoked, all row counts unchanged. Worth knowing: this condition cannot be produced from the browser at all, because n8n's form validation trims whitespace and rejects even a single space — so the normalizer is defence-in-depth reachable only by a non-browser caller, which is exactly the master's internal trigger.
+- **Malformed UUID — passed on both stages.** Phase 3 execution `1646` failed in 85 ms at `Parse Phase 1 UUID`; Phase 2 executions `1648`/`1649` failed in 41 ms and 24 ms at `Parse Phase 1 UUID from Message`. Neither reached its Supabase query. The chat and webhook paths trip `Parse Phase 1 UUID`, which runs first; `Normalize Phase 3 Input` is the equivalent guard on the internal path.
+- **Manual recovery, webhook parity, and multi-candidate reconciliation — all passed in execution `1647`** (2m03s, Phase 3 test webhook, UUID `3070cf55-8326-4e4c-99df-d6db00df9cf1`). All 5 candidates reconciled against both tables with every latest row's `attempts_used` matching its highest attempt in history — no records dropped. Phase 3 run rows 7 → 14 (history appended), latest rows stayed 5 (updated in place), `terra_space_news_v2` stayed 8 (no duplicate source), Phase 2 history stayed 1. Stage result `4 final / 1 exception / 5 processed` — identical protected behaviour to the internal trigger. Phase 2 recovery via chat (`1650`) likewise kept both history rows and updated its single latest row in place.
+- **No-candidate article — failed, then fixed.** Master `1651` → Phase 1 `1652` → Phase 2 `1653` on a deliberately eventless article about cooking rice (UUID `76d8e150-9a67-4303-badb-324d20ad48a9`). The data behaviour was entirely correct — Phase 1 and Phase 2 rows written, **0 Phase 3 rows, Phase 3 never invoked** — and the model correctly returned `NO_MAIN_ISSUE` in 1.1 s. But the master reported `status: 'FAILED'`, `failed_phase: 'PHASE_2'`. An article with no main issue never reaches candidate detection, so `event_detection_status` stays `NOT_RUN`, and `Build Phase 2 Stage Result` recognised only `EVENT_CANDIDATES_FOUND` and `NO_EVENT_CANDIDATE` — so `NOT_RUN` fell through to `FAILED`. The plan's own contract table had no representation for `NO_MAIN_ISSUE`, a legitimate Phase 2 outcome predating this plan, which contradicts the Global Constraint that a no-candidate result is a successful completion. Fixed with the owner's approval in `Build Phase 2 Stage Result` alone: `NO_MAIN_ISSUE` with `NOT_RUN` now maps to `NO_EVENT_CANDIDATE`, genuine failures still map to `FAILED`, and `main_issue_status` is still returned so callers can tell the two apart. No detection, grounding, or persistence logic changed. Phase 2 re-validates at 0 errors, 0 warnings. **This branch had never been exercised in any run, here or in earlier Phase 2 testing.**
+
+- **No-candidate re-run after the fix — passed.** Master `1654` (11.0s) → Phase 1 `1655` → Phase 2 `1656` on the same eventless article (UUID `9e86df74-0420-445b-8e00-8ca60cbc4ded`) now returns `status: 'COMPLETED_NO_CANDIDATE'`, `failed_phase: null`, Phase 2 `NO_EVENT_CANDIDATE` with `main_issue_status: NO_MAIN_ISSUE` preserved, `phase_3: null`, and the message "Saved article; no grounded event candidate was found, so no event record was created. This is a normal, successful outcome." The database confirms 1 Phase 1 row, 1 Phase 2 history row, 1 Phase 2 latest row, and 0 rows in both Phase 3 tables.
+
+**All six production-readiness checks now pass.** The plan's work is complete apart from activation.
+
+**Next action:** decide whether to activate `Terra Space - Full News Processing`. It is the only open item, and it is the owner's call — nothing has been activated. Activating gives the master a permanent form URL instead of needing "Execute workflow" each time, and also makes the Phase 3 production webhook reachable (its test webhook path is already verified). Separately, none of this session's Project Knowledge updates are committed to git yet.
+
+**Worth carrying forward, not blocking:** the pipeline has now been exercised on three articles. It handles them well, but three is not a reliability sample, and the local model's run-to-run variation is visible in the results — the same article produced different final/exception splits across repeat runs, and twice a fault was found only because a previously unexercised branch was finally run. Whether that variation matters is a separate question from this plan. Then re-run the master form end to end, and finish the remaining plan steps: the negative cases (empty raw text, no-candidate article, malformed UUID), the legacy webhook path, the master form's three terminal paths, and the manual-recovery check. Activation stays a separate decision after testing.
+
+**2026-08-07 update: Phase 3 Event Records workflow is active and has passed its first end-to-end persistence test.** `Terra Space - Event Records` (`qsbIodzbMPxgQeRg`) accepts a Phase 1 UUID through its chat trigger (with a test webhook used only for verification), reads the latest Phase 2 candidates, calls the configured local Gemma model for factual enrichment, taxonomy classification, and an independent article-only safeguard, then writes an append-only run row and updates the latest candidate-key record. Execution `1602` completed successfully for UUID `087cdc48-04f4-4fee-8ba9-4fee61174b65`: the latest record is `FINAL` with `CLASSIFIED` taxonomy and `ACCEPT` safeguard, while `terra_space_event_record_runs` retained the new run. The latest-record writer was corrected from an unsafe repeat-create to an update by `candidate_key`, so a second run does not fail on the unique key. n8n runtime validation reports 0 errors and 0 warnings. The data foundation remains: `terra_space_event_types`, `terra_space_event_records`, `terra_space_event_record_runs`, and `terra_space_location_gazetteer`; no Phase 1 or Phase 2 row was changed.
+
+**2026-08-07 update: Phase 3 Event Records design is approved.** The owner approved a new n8n final-processing phase: `Terra Space - Event Records` will take the latest grounded Phase 2 candidates for one Phase 1 UUID, enrich each candidate, resolve grounded locations locally to coordinates, classify it against active taxonomy leaves, and use an independent local-LLM safeguard. Each candidate has one automatic full retry. Passing records become `FINAL`; two failed/rejected attempts become retained `EXCEPTION` records and stay out of final outputs. This supersedes universal human approval for qualified pipeline records and replaces the older four-classifier design for this n8n pipeline. See [Automated Final Event Record Pipeline](decisions/Automated-Final-Event-Record-Pipeline.md).
+
+**2026-08-07 update: The Phase 2 Notion page is now a detailed operating reference.** It documents the Chat Trigger UUID input, all 18 workflow nodes, fixed Gemma configuration, source-quote grounding, the latest-plus-history table design, status meanings, test evidence, the routing fix, and remaining reliability cases. The workflow is now named `Terra Space - Event Candidates` (`pO6m1mpaHz2Ae5ZR`). n8n currently reports it as inactive with no published active version; this was observed during documentation only and no activation was performed. The history table currently records 19 runs across six source articles: 18 runs returned a main issue and event candidates, with 69 candidate records in total. See the [Notion Phase 2 operating reference](https://app.notion.com/p/3b471e82e5d48188bccec9ad8c558aac).
+
+**2026-08-06 update: Phase 2 no longer uses a test-named result table.** The active workflow now reads and writes `public.terra_space_event_candidates`; it is the renamed continuation of `public.terra_space_event_candidates_test`, so all existing latest-result records were preserved. The related workflow nodes now use permanent names (`Prepare Event Candidate Result`, `Get Existing Event Candidate Result`, `Create Event Candidate Result`, and `Update Event Candidate Result`). `public.terra_space_event_candidate_runs` remains the append-only run history. The active workflow has 18 nodes and validates with 0 errors and 0 warnings.
+
+**2026-08-06: Phase 2 main-issue and event-candidate workflow has completed four interactive chat runs for one article; broader reliability testing remains next.** The isolated latest-result table `public.terra_space_event_candidates` links to Phase 1 through `p1_news_uuid` without changing `terra_space_news_v2`; the append-only `public.terra_space_event_candidate_runs` table retains every run for comparison. The active 18-node n8n workflow `Terra Space - Event Candidates` (`pO6m1mpaHz2Ae5ZR`) starts with a Chat Trigger: paste one Phase 1 UUID as the message, then `Parse Phase 1 UUID from Message` validates and forwards it to the unchanged pipeline. `Create Run History` saves the result before the workflow updates the latest-result row. Runs `1`–`4` for UUID `087cdc48-04f4-4fee-8ba9-4fee61174b65` all returned `MAIN_ISSUE_FOUND`, `EVENT_CANDIDATES_FOUND`, four candidates, no errors, and 100% exact quote grounding (four candidate quotes plus the main-issue quote per run). The same four underlying events and classifications were found each time; only small label wording changes occurred. The latest-result row exactly matches history run `4`, confirming the latest-plus-history behavior works. This is a promising single-article repeatability result, not a reliability conclusion; next run varied articles, especially no-issue/no-event and background-heavy sources. See [Phase 2 Main-Issue and Event-Candidate Testing Design](plans/2026-08-06-phase-2-main-issue-event-candidate-testing-design.md) and [its implementation plan](plans/2026-08-06-phase-2-main-issue-event-candidate-testing-implementation.md).
+
+**2026-08-06 update: The first run for a new UUID exposed a Create/Update routing bug, now fixed and published.** When the latest-result lookup found no row, the condition treated an empty value as “exists” and attempted an update with an undefined ID. The history insert completed first, so run `5` for UUID `4f3f8ed0-85fb-42b3-ad01-75af2917d7e7` was retained with four grounded candidates; only the latest-result row failed. The condition now uses “is not empty,” so the next run for that UUID will create the latest row, and later runs will update it. Workflow validation remains at 0 errors and 0 warnings.
+
+**2026-08-06 update: The second article confirms the fix and adds another strong repeatability sample.** UUID `4f3f8ed0-85fb-42b3-ad01-75af2917d7e7` now has history runs `5`–`10`: every run returned `MAIN_ISSUE_FOUND`, `EVENT_CANDIDATES_FOUND`, four candidates, no stored model error, and exact grounding for the main issue plus all four candidates. The latest-result row was successfully created after the fix and exactly matches run `10`. All four events appeared in every run; only wording varied in two working titles (singular/plural “strike(s)” and “EU receives funds” versus “EU receipt”). This validates both history retention and latest-row creation/update across a second article, but still does not test no-main-issue or no-event outcomes.
+
+**2026-08-06 update: A third article adds a stable three-run sample.** UUID `2851bb01-f5d5-49ed-9d47-18d76b9d11be` has history runs `11`–`13`; all returned `MAIN_ISSUE_FOUND`, `EVENT_CANDIDATES_FOUND`, three candidates, no error, and exact grounding for the main issue plus all nine candidate quotes. The same three events and classifications appeared in all runs: Netanyahu rejecting the Board of Peace proposal, envoys visiting Jerusalem, and Ghazi Hamad's interview. The main-issue label varied only slightly (“Gaza military presence” versus “Israeli military presence”). Its latest-result row exactly matches run `13`. The next valuable coverage test remains an article that should produce `NO_MAIN_ISSUE` or `NO_EVENT_CANDIDATE`.
+
+**2026-08-01: n8n candidate canonical event detection prototype built, awaiting the owner's own
+live chat test.** The owner shared a new conceptual framework ("potential canonical events" with
+two top-level types, RELATIONAL_INTERACTION and ENTITY_CENTRED_CHANGE) and asked for a first-stage
+detector built and tested in n8n, reusing the existing `Terra_Space_Event_detection` workflow
+(n8n id `st4YuDeljYyIuIWU`) rather than changing the production backend yet. See
+[n8n Candidate Canonical Event Detection Prototype](plans/2026-08-01-n8n-candidate-canonical-event-prototype.md)
+for the full design (schema, four-branch architecture, decisions made during brainstorming).
+
+- Built: a new n8n Data Table `candidate_canonical_events` (id `fRsfDUP1hgLvcIIu`, 12 columns), and
+  the workflow now has 16 nodes — the original Chat Trigger plus two parallel model branches
+  (`gemma-4-e4b`, `qwen3.5-9b`) each split into two parallel extraction techniques (Information
+  Extractor, AI Agent + Structured Output Parser), merging into one Code node that computes
+  evidence-quote character offsets deterministically (never asked of the LLM) before inserting one
+  row per candidate into the Data Table.
+- Verified: `n8n_validate_workflow` reports 0 errors, 0 warnings, all 20 connections and 12
+  expressions valid.
+- **The owner's own live test (execution `1358`, ran ~04:32-04:35) found a real bug, now fixed.**
+  Pasting the earthquake worked example into n8n's chat tester ran for real (~3 minutes) but the
+  whole workflow crashed: `qwen3.5-9b`'s Information Extractor branch returned output that didn't
+  match the required JSON schema ("Model output doesn't fit required format"), and since none of
+  the four extraction nodes had error handling configured, n8n's default behavior killed the
+  entire execution on that one branch's failure — so even a successful `gemma` branch would never
+  have reached the Data Table. This is the same qwen3.5-9b structured-output unreliability already
+  documented for the production backend (see the
+  [Feedback Backlog](Feedback-Backlog.md#event-locations-do-not-reliably-reach-the-dashboard-globe-2026-07-16)),
+  now reproduced independently in this new n8n prototype.
+  **Fix applied (same session):** all four extraction nodes (both Information Extractor nodes,
+  both AI Agent nodes) now have `onError: continueErrorOutput`, each wired to a small new "Failure
+  Row" Code node that writes one labeled row (`classification: EXTRACTION_FAILED`, the actual error
+  message in `summary`) into the same Data Table instead of aborting the run — so one branch
+  failing is now visible data, not a silent full-workflow crash, matching this project's existing
+  "blank/labeled over silent guess" principle. Workflow is now 20 nodes; re-validated with
+  `n8n_validate_workflow`: 0 errors, 0 warnings, 28 valid connections.
+- **The re-run (execution `1359`, real article about a Russian missile crash in Poland) succeeded
+  end to end on all four branches** — 4, 4, 4, and 7 candidates respectively from the two
+  Information Extractor branches and two AI Agent branches, all written to the Data Table. First
+  clean comparable dataset from this prototype.
+- **Owner then asked for per-branch duration and token counts.** Duration was added: a "Start
+  Timer" node now stamps the run's start right after the Chat Trigger, and each branch's
+  Prepare/Failure step computes `duration_ms` against it. Since Data Table columns are immutable
+  after creation, this required a new table (`candidate_canonical_events`, id `GRq8A6HfwGyMTiqW`)
+  with the original archived (`candidate_canonical_events_archived_2026-08-01`,
+  id `fRsfDUP1hgLvcIIu`); the 19 rows from execution `1359` were copied forward into the new table.
+  Token counts were investigated and **not implemented**: inspecting execution `1359`'s raw node
+  data showed the `OpenAI Chat Model` sub-nodes record zero output items, so LM Studio's per-call
+  token usage isn't reachable from a Code node with the current node architecture (Information
+  Extractor / AI Agent consuming a Chat Model sub-node) — getting it would need replacing those
+  with raw HTTP Request nodes, a real rearchitecture rather than a field add. Workflow re-validated
+  clean at 21 nodes, 0 errors, 0 warnings, 29 valid connections.
+- **Confirmed via a real test (execution `1361`): `duration_ms` works correctly** (gemma/IE ~38s,
+  gemma/Agent ~54s, qwen/IE ~207s, qwen/Agent ~234s). That same run also surfaced a new, sharper
+  reliability signal: qwen3.5-9b's Information Extractor branch returned schema-valid but
+  **fabricated placeholder content** ("Example Interaction" / "Person A" / "Person B") instead of
+  real extraction — a failure mode schema validation cannot catch, distinct from the earlier
+  outright crash.
+- **Owner then asked about total tokens, with an eye toward future paid-API cost estimation.**
+  Real per-call token usage was investigated and confirmed unreachable with the current node
+  architecture (Information Extractor / AI Agent consuming a Chat Model sub-node record zero
+  output items for that sub-node) — getting real numbers needs an HTTP-Request-based rearchitecture
+  of all four branches, deferred until a paid API is actually in use. Instead added three rough,
+  character-count-based estimated token columns (ballpark only, not for real cost decisions) — see
+  the plan doc for the exact formula.
+- **This produced a third Data Table schema generation in one session**, since Data Table columns
+  are immutable after creation. The owner confirmed they intentionally cleared the table's contents
+  partway through this work (asked directly, not assumed), so no data was carried forward into this
+  generation. Current live table: `candidate_canonical_events`, id `t0refxGmpVhvGllX`, empty.
+  Workflow re-validated clean at 21 nodes, 0 errors, 0 warnings, 29 valid connections, 16
+  expressions checked.
+- **Owner then asked why so few candidates were being found, and supplied the real article text
+  from both prior test runs.** A manual read found ~10-11 genuinely distinct events in that one
+  article, most of the gap traced to two causes: real model non-determinism (already the theme of
+  this prototype — e.g. gemma/AI-Agent went 4→2 candidates on the identical input between runs),
+  plus a real, fixable prompt gap — three of the four branches consistently defaulted to only the
+  article's main/lead story and skipped background/historical events mentioned in passing (only
+  qwen's AI Agent branch reliably reached past the lead paragraph). Added two rules to the shared
+  prompt: explicitly count background/historical mentions as their own candidates, and prefer
+  splitting over merging when unsure. See the plan doc's "Prompt revision after low-recall
+  diagnosis" section for the full before/after breakdown. Workflow re-validated clean at 21 nodes,
+  0 errors, 0 warnings, 29 valid connections.
+- **Re-test confirmed the prompt fix worked, with exact numbers.** gemma/Information Extractor went
+  4→7 candidates and 0/4→3/4 background events; gemma/AI Agent went 2→9 candidates and 1/4→4/4
+  background events, 100% quote-grounded; qwen/AI Agent reached 11 candidates, all 4 background
+  events, but only 45% grounded (mostly from stripping markdown link syntax out of quotes, not
+  fabrication); qwen/Information Extractor failed outright again — its third distinct failure mode
+  in three runs (fabrication → placeholder garbage → schema failure), a consistent dead end
+  independent of prompt wording. Given this, **gemma/AI Agent** was identified as the best-performing
+  pipeline (full recall, best grounding, ~5x faster than qwen/AI Agent) — full detail and tables in
+  the plan doc's evaluation section.
+- **Owner then asked to lock the candidate schema.** A proposed split was presented — a "core"
+  candidate schema (working_title, summary, classification, phenomenon, entities, evidence_quote,
+  evidence_start, evidence_end, quote_grounded) versus "harness" fields specific to this A/B test
+  (run_id, model_used, extraction_method, duration_ms, the three estimated-token fields) — but the
+  owner has **not yet confirmed this split**, so no formal Decision document has been written for it
+  yet. Revisit once confirmed.
+- **Owner then asked to swap models: qwen replaced with `prism-ml/bonsai-27b`, and all prior test
+  data wiped for a clean baseline.** Both qwen branches removed; two equivalent Bonsai-27b branches
+  added (same credential, prompt, schema, structure). Old Data Table and its interim archive both
+  deleted; a fresh empty table (`candidate_canonical_events`, id `nyzRGW4IjjddBbro`) is now live.
+  Comparison is now **gemma-4-e4b vs bonsai-27b**, each split across Information Extractor and AI
+  Agent (4 branches total, same as before). Workflow re-validated clean: 21 nodes, 0 errors, 0
+  warnings, 29 valid connections.
+- **Bonsai-27b tested against a second real article (Ukraine-Iran Caspian Sea strike, BBC) and came
+  out worse than gemma-4-e4b on every axis** — 10-16x slower on both techniques, and its AI Agent
+  branch found fewer real candidates (4) than gemma's (7) despite taking 6x longer. Its Information
+  Extractor branch also fabricated content entirely unrelated to the article, the same failure
+  pattern qwen's Information Extractor branch showed earlier with different filler text — a second,
+  independent case of that same node type producing convincing-looking garbage with a given model,
+  worth keeping in mind if more models get tested against it.
+- **Owner then asked to isolate quantization as a variable**: bonsai-27b removed, replaced with a
+  second gemma-4-e4b branch pair running the Q8_0 quantization (LM Studio id `google/gemma-4-e4b:2`,
+  vs. the existing plain `google/gemma-4-e4b`) — same prompt/schema/credential, only the
+  quantization differs between the two model branches now. Data Table reset to empty
+  (`candidate_canonical_events`, current id `FBPcn6wCtARZYmdA`). Workflow re-validated clean: 21
+  nodes, 0 errors, 0 warnings, 29 valid connections. **Not yet tested live.**
+- **Plain gemma-4-e4b vs Q8_0 tested (execution `1365`, same Caspian Sea article) and scored.**
+  gemma-4-e4b/Information Extractor won on aggregate: fastest by far (19.2s vs 50.2-157.5s for the
+  other three branches) with 100% quote-grounding, though lower recall (~50%) than
+  gemma-q8/Information Extractor (~71%, but 5.8x slower). Full scoring table in the plan doc.
+- **Owner decided: use gemma-4-e4b + Information Extractor going forward, "for now."** Asked for a
+  duplicated, simplified workflow carrying just that one path (not a snapshot of the full 4-branch
+  rig). Built as a new, separate workflow: **`Terra_Space_Event_detection_v1`**
+  (id `D70nY3cYojJhVtgp`) — single path, Chat Trigger → gemma-4-e4b → Information Extractor →
+  evidence-offset computation → insert into a new dedicated table,
+  `candidate_canonical_events_v1` (id `t8GGITb6YRIXw7MO`). Schema trimmed to 11 columns (dropped
+  `model_used`/`extraction_method`/the three token-estimate fields, since those were
+  comparison-only artifacts; kept `run_id` and `duration_ms` for ongoing monitoring). Validated
+  clean: 8 nodes, 0 errors, 0 warnings, 8 valid connections. The original 4-branch
+  `Terra_Space_Event_detection` testing rig is untouched and still available for future model
+  comparisons.
+- **This is provisional, not a locked decision** — the owner's own words were "for now." No formal
+  architecture Decision document has been written, and v1 is not wired into the production
+  backend's Signal Parser stage.
+- **Document intake added to v1, replacing the manual chat-paste entry point.** The owner's real
+  test documents are Obsidian Web Clipper `.md` exports (YAML frontmatter: title, source, author
+  list, published, created, description, tags list, then the article body). Owner asked for a
+  process that saves those fields plus a new `content_full_text` field, placed before `Start
+  Timer`, using manual per-file selection (no folder-watching) and fully replacing the chat
+  trigger. Built as three new nodes: a Form Trigger with a `.md` file-upload field (chosen over
+  reading from disk since n8n runs in Docker — a form upload has no host-filesystem dependency), a
+  Code node that parses the frontmatter/body with a small hand-written parser, and a Data Table
+  insert into a new table, renamed at the owner's request to **"News Article Clipping"**
+  (id `LO0ms6r66gSKtjXv`, 8 columns matching the request exactly). `Start Timer` was changed to pull fields explicitly from the parser node by name rather
+  than assuming what the Data Table insert node passes through. Workflow re-validated clean: 10
+  nodes, 0 errors, 0 warnings, 10 valid connections. **Not yet tested with a real upload.**
+- **Owner then asked to re-evaluate the whole workflow so extraction only ever runs against
+  unprocessed documents** — News Article Clipping rows without an existing successful (non-
+  `EXTRACTION_FAILED`) result in `candidate_canonical_events_v1`, and made re-runnable on its own,
+  independent of uploading. Went through Plan Mode for this (approved plan at
+  `C:\Users\halma\.claude\plans\re-evaluate-the-whole-workflow-virtual-zebra.md`). Confirmed with
+  the owner: failed-only documents get retried (not treated as permanently done), since local-model
+  failures have proven to be noise, not stable signal, all session.
+- **Split into two independent entry points in the same workflow.** Document Upload now stops at
+  Save Document (no longer cascades into extraction). A new **Process Pending Documents** manual
+  trigger reads all documents, reads all existing candidates, filters to unprocessed ones (Code
+  node, set-difference by a new `document_id` link column), and loops through them one at a time
+  (`Split In Batches`, size 1) through the same extraction sub-chain as before, now tagging every
+  candidate row with which document produced it.
+  `candidate_canonical_events_v1` recreated with the new `document_id` column (it was still empty,
+  so this was a plain recreate — new id `mK4cwIZl1FowKunO`). Workflow re-validated clean under both
+  `runtime` and `strict` profiles: 15 nodes (2 triggers), 0 errors. Full detail in the plan doc's
+  "Process only unprocessed documents" section.
+- **Owner changed their mind on intake: replaced file upload with a direct-entry Form.**
+  `Document Upload`/`Parse Document` (file upload + frontmatter parser) were replaced with a single
+  **Document Entry Form** whose 8 fields map 1:1 to `News Article Clipping`'s columns, filled in by
+  hand rather than parsed from an uploaded `.md`. `author`/`tags` now store as plain comma-separated
+  text instead of JSON arrays.
+- **Owner then asked for a cleanup step before saving**, sharing a real messy example (markdown
+  images, inline links, escaped brackets, ad/newsletter boilerplate). Added a **Clean Article Text**
+  node between the form and Save Document that strips markdown image/link syntax, un-escapes
+  brackets, drops known boilerplate lines, strips wiki-link brackets from author names, normalizes
+  comma-separated lists, and (owner confirmed) strips tracking query params from the source URL.
+  This should also reduce a real failure mode seen in earlier evaluations: `quote_grounded: false`
+  results caused by models quoting clean prose that didn't match markdown-cluttered stored text.
+  Workflow re-validated clean: 15 nodes, 2 triggers, 0 errors, 0 warnings, 14 connections. Full
+  detail in the plan doc's "Intake switched to a direct-entry Form; cleanup step added" section.
+- **Owner confirmed the cleanup worked** (real test row's stored text was clean, tracking params
+  gone from the source URL) and then asked for a stable `document_uuid` so documents can be traced
+  from other future workflows, not just this one — replacing the fragile auto-increment `id` that
+  had been used as the candidate-to-document link (a plain sequential number that resets every time
+  a table is recreated, which has already happened repeatedly this session). Both tables recreated
+  again with `document_uuid` (string) replacing `document_id` (number) everywhere; this time the
+  owner's one real test row was preserved and back-filled with a generated UUID rather than lost.
+  New table ids: `News Article Clipping` → `i8L6e1fDfGXx4Z4t`, `candidate_canonical_events_v1` →
+  `SROocbrHK5rnImYd`. UUID is generated once in `Clean Article Text` using a hand-written generator
+  (not `crypto.randomUUID()`, whose availability depends on n8n's exact Node.js runtime — not worth
+  assuming for a plain trace ID). Workflow re-validated clean: 15 nodes, 2 triggers, 0 errors, 0
+  warnings. Full detail in the plan doc's "Stable document_uuid" section.
+- **Next action:** the owner should run **Process Pending Documents** and confirm the one real
+  document gets processed and its candidates are tagged with the correct `document_uuid`, then run
+  it again with nothing new entered to confirm zero new rows land (the core correctness check from
+  the earlier dedup change) — full verification steps in the plan doc. The candidate-schema lock
+  question (proposed core-vs-harness field split) is still open and unconfirmed. This plan's
+  remaining tasks (9-10) stay open, and a decision on whether/how this replaces the backend's Signal
+  Parser stage still needs more confidence before it can be made.
+
 **2026-07-21: route backgrounds re-polished and an Appearance setting added (Deferred UI Polish
 Plan, Scope 1) — shipped, pushed to `main`, but explicitly NOT approved as final by the owner.**
 After closing out Task 8, the owner picked up the

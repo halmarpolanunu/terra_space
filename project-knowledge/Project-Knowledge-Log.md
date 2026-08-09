@@ -8,6 +8,214 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-09 - One-click full news processing built, not yet tested
+
+- Implemented the build steps of the
+  [One-Click Full News Processing Implementation Plan](plans/2026-08-08-one-click-full-news-processing.md).
+  Each of the three existing stages gained an Execute Workflow Trigger and a shared input
+  normalizer beside its original interactive trigger, plus one small node that returns the stage's
+  agreed result contract. No cleaning rule, grounding check, taxonomy rule, safeguard, retry rule,
+  or table was changed, and no existing row was touched.
+- Created `Terra Space - Full News Processing` (`SwXzUU9aHg4NZ9Kx`), a nine-node orchestrator whose
+  form collects the same six article fields and then calls the three stages in order, waiting for
+  each. All four workflows validate at 0 errors and all remain inactive.
+- Recorded two deliberate deviations in the plan: the Phase 3 aggregate's UUID fallback now reads
+  the shared normalizer rather than the chat-only parse node, which would not run on the master
+  path; and the master's no-candidate summary reports a Phase 2 `FAILED` result as a failure
+  instead of a completion, so failure isolation stays visible.
+- Production-readiness verification run 2026-08-09 with all workflows inactive. Five of six checks
+  passed on the first attempt: the empty-article-text guard (`1643`/`1644`), malformed UUIDs on both
+  Phase 2 (`1648`/`1649`) and Phase 3 (`1646`), and manual recovery, webhook parity and
+  multi-candidate reconciliation together in `1647` and `1650`. The sixth, the no-candidate article
+  (`1651`–`1653`), exposed a real defect: an article with no main issue was reported as a Phase 2
+  failure rather than a successful no-candidate completion, because `event_detection_status` stays
+  `NOT_RUN` and the stage-result mapping had no case for it. The plan's own internal contract table
+  had the same omission. Fixed in `Build Phase 2 Stage Result` only, with the owner's approval; the
+  data behaviour had been correct all along, including Phase 3 never being invoked. The re-run
+  (`1654`–`1656`) confirmed the fix: the master now returns `COMPLETED_NO_CANDIDATE` with the Phase 1
+  UUID preserved and no Phase 3 rows. All six checks pass; only the activation decision remains.
+- The one-click path is verified end to end by master execution `1638`: one form submission ran all
+  three stages in sequence with no manual UUID handling, returning 4 final records and 1 exception
+  from 5 candidates, and every count reconciles with the Phase 1, Phase 2, and Phase 3 tables. All
+  Phase 2 candidate quotes and Phase 3 source-actor quotes are exact substrings of the cleaned
+  article.
+- Phase 3 verified end to end by execution `1637`: 6 candidates, 4 `FINAL` and 2 `EXCEPTION`, with
+  the stage result, the append-only run history, and the latest table all agreeing. Before the
+  fixes, only 2 of the same 6 candidates were ever persisted.
+- Phase 3 testing with six candidates exposed two pre-existing defects that silently deleted
+  candidates: the gazetteer lookup dropped any candidate it could not match (3 of 6 lost, with no
+  record, exception, or history row), and the batch persistence loop was fed twice and lost a
+  record, including the run's only `FINAL` one. With the owner's explicit approval, the plan's
+  Global Constraint on leaving the Phase 3 pipeline unchanged was amended to allow fixing them.
+  Both are fixed by joining lookup results back onto the full candidate list in code and by removing
+  the batch loop entirely; the stage summary now aggregates across all persistence runs. No
+  grounding rule, prompt, model setting, gazetteer entry, taxonomy rule, safeguard, or retry rule
+  was changed. Phase 3 validates at 0 errors and 0 warnings.
+- First end-to-end run (master execution `1625`) confirmed the stage handoff works without any
+  manual UUID copying: Phase 1 and Phase 2 both returned their contracts for UUID
+  `b7c73695-0154-4b16-9dc2-ab917182be1d`, with 6 grounded candidates. Phase 3 failed immediately
+  because `Get Latest Event Candidates` still filtered on the chat-only parse node, which does not
+  run on the internal path. Repointed it at the shared normalizer; the chat and webhook paths are
+  unaffected and Phase 3 re-validates at 0 errors. No data was rolled back.
+
+## 2026-08-07 - Phase 3 local storage and coordinate lookup prepared
+
+- Created Phase 3-only Supabase tables: `terra_space_event_types`,
+  `terra_space_event_records`, `terra_space_event_record_runs`, and
+  `terra_space_location_gazetteer`. Phase 1 and Phase 2 tables and rows were not modified.
+- Seeded the twelve active Event Type leaves from the approved taxonomy tree. Imported the
+  existing local GeoNames gazetteer for deterministic exact coordinate lookup: 243 country,
+  71,885 admin1, and 687,685 city/regency keys. The n8n workflow is not yet created.
+
+## 2026-08-07 - Phase 3 automated final event-record direction approved
+
+- Recorded the [Automated Final Event Record Pipeline](decisions/Automated-Final-Event-Record-Pipeline.md).
+  It supersedes universal human approval for qualified n8n pipeline records and the earlier
+  four-classifier design for this pipeline.
+- The approved design is: one factual enrichment call, field-level grounding, deterministic local
+  coordinate resolution, one closed-taxonomy classification call, an independent local-LLM
+  safeguard, and one full automatic retry. Successful records become `FINAL`; a second failure or
+  rejection becomes a retained `EXCEPTION` excluded from final outputs.
+- Updated the North Star to reflect automatic finalization only after these explicit safeguards.
+  No database table or n8n workflow has been changed yet; a detailed schema and implementation
+  plan remain subject to owner review.
+
+## 2026-08-07 - Phase 2 Notion reference expanded
+
+- Expanded [Phase 2 — Main Issue & Event Candidate Detection](https://app.notion.com/p/3b471e82e5d48188bccec9ad8c558aac)
+  into a full operating reference: workflow input and node map, model/prompt constraints, grounding
+  checks, table ownership and field purpose, latest-result versus append-only history behavior,
+  status definitions, routing-fix rationale, test totals, and remaining reliability tests.
+- Recorded the current live n8n state accurately: `Terra Space - Event Candidates`
+  (`pO6m1mpaHz2Ae5ZR`) is inactive and has no published active version as checked on 7 August.
+  No workflow settings or data were changed by this documentation update.
+
+## 2026-08-06 - Phase 2 progress documented in Notion
+
+- The owner renamed the active n8n workflow to `Terra Space - Event Candidates`
+  (`pO6m1mpaHz2Ae5ZR`).
+- Created [Phase 2 — Main Issue & Event Candidate Detection](https://app.notion.com/p/3b471e82e5d48188bccec9ad8c558aac)
+  under the Terra Space Notion page. It records the active workflow, tables, grounding rules,
+  early three-article repeatability results, and the next high-value tests.
+
+## 2026-08-06 - Phase 2 candidate result table promoted from test naming
+
+- Renamed `public.terra_space_event_candidates_test` to
+  `public.terra_space_event_candidates` without deleting or rewriting its existing rows.
+- Updated and published the active `Terra Space - Event` workflow so all latest-result reads and
+  writes use `terra_space_event_candidates`. Renamed the related nodes to remove “Test” from the
+  visible workflow. Corrected remaining internal expressions to reference the renamed preparation
+  node. Workflow validation: 0 errors and 0 warnings.
+
+## 2026-08-06 - Third article adds a stable three-run sample
+
+- Evaluated history runs `11`–`13` for Phase 1 UUID `2851bb01-f5d5-49ed-9d47-18d76b9d11be`.
+  All three returned `MAIN_ISSUE_FOUND` and `EVENT_CANDIDATES_FOUND`, each with three candidates,
+  no error, exact main-issue grounding, and 9/9 exact candidate quote checks.
+- All runs retained the same three event phenomena and classifications. The only variation was a
+  small main-issue label wording change (“Gaza military presence” versus “Israeli military
+  presence”). The latest-result table exactly matches history run `13`.
+
+## 2026-08-06 - Second article confirms stable repeated extraction and routing fix
+
+- Evaluated history runs `5`–`10` for Phase 1 UUID `4f3f8ed0-85fb-42b3-ad01-75af2917d7e7`.
+  All six returned `MAIN_ISSUE_FOUND` and `EVENT_CANDIDATES_FOUND`, each with four candidates,
+  no stored error, exact main-issue grounding, and 24/24 exact candidate quote checks.
+- The same four event phenomena and classifications appeared in every run. Two wording-only title
+  variants occurred: singular/plural “Russian strike(s) on cargo vessels” and “EU receives funds
+  from Russian assets” versus “EU receipt of seized Russian assets.”
+- The latest-result row now exists and exactly matches newest history run `10`, confirming the
+  new-UUID Create route and later latest-result replacement work after the IF-condition fix.
+
+## 2026-08-06 - New-UUID latest-result creation defect fixed
+
+- Execution `1577` successfully wrote history `run_id` `5` for a new UUID, but failed in
+  `Update Test Result` because a missing latest-result row produced an empty key and the IF node
+  used “exists,” which is true even for an empty string. The attempted numeric ID was therefore
+  `undefined`.
+- Changed the branch to “is not empty,” validated the 18-node workflow with 0 errors and 0
+  warnings, and published it. The next new-UUID run will create its latest-result row; subsequent
+  runs will update that row. The history result from the failed run was preserved.
+
+## 2026-08-06 - Four-run Phase 2 repeatability check passed for one article
+
+- Evaluated four interactive chat runs (history `run_id` 1–4) for Phase 1 UUID
+  `087cdc48-04f4-4fee-8ba9-4fee61174b65`. All four returned `MAIN_ISSUE_FOUND` and
+  `EVENT_CANDIDATES_FOUND`, saved four candidates, and had no stored error.
+- Verified exact grounding against the Phase 1 clean text: all 16 candidate quotes and all four
+  main-issue quotes were present verbatim. The same four event phenomena and classifications were
+  retained in every run. Minor wording variation occurred in the main-issue label and one working
+  title (“Trump launches Iran war” versus “Trump launches Iran war with Israel”).
+- The latest-result table exactly matches run `4`, confirming append-only history plus latest-row
+  replacement works. This is a promising repeatability signal for one article only; it does not
+  measure coverage or reliability on other article types.
+
+## 2026-08-06 - Append-only Phase 2 run history added
+
+- Created `public.terra_space_event_candidate_runs`, an append-only local Supabase table with a
+  sequential `run_id`, Phase 1 UUID link, the same status/JSONB/raw-output fields as the latest
+  result, and a `(p1_news_uuid, processed_at)` index for comparisons.
+- Added `Create Run History` to the active `Terra Space - Event` workflow before its existing
+  latest-result update/create branch. Every real submission will now retain a separate history row
+  and still refresh `terra_space_event_candidates_test` as the current result. Workflow validation:
+  0 errors and 0 warnings. An interactive chat run is still needed to verify the new write end to
+  end because the local MCP chat-test route does not persist executions.
+
+## 2026-08-06 - Phase 2 entry changed from form to chat message
+
+- Replaced the active n8n Form Trigger with `Event Candidate UUID Chat`, followed by `Parse Phase
+  1 UUID from Message`. The workflow now accepts one pasted Phase 1 UUID in a chat message and
+  preserves the existing lookup, two-stage model flow, grounding checks, and replace-on-rerun
+  persistence. Runtime validation: 0 errors and 0 warnings.
+- The n8n MCP chat-test request was accepted, but this test route did not create a persisted
+  execution record or update the test row. One interactive chat submission is still needed to
+  verify this new entry point end to end.
+
+## 2026-08-06 - Headline-style main-issue label and rerun behavior verified
+
+- Updated the active Phase 2 workflow so `main_issue.label` must be an informative 8–15-word
+  headline stating the subject, change, and consequence. Real browser execution `1570` completed
+  successfully and replaced the existing test result for the same Phase 1 UUID. It stored the
+  label “US military depletes long-range missile stocks, threatening future global deterrence,”
+  plus four quote-grounded event candidates.
+- The rerun exposed and resolved three live-workflow reliability defects: normalizing Supabase's
+  numeric existing-row ID before the Update/Create branch, stripping optional Markdown JSON fences
+  before parsing Gemma output, and mapping JSONB values as structured JSON rather than quoted text.
+  Workflow validation remained at 0 errors and 0 warnings. This remains a single-article rerun,
+  not a conclusion about reliability across varied articles.
+
+## 2026-08-06 - First real Phase 2 candidate-detection submission succeeded
+
+- Submitted a real Phase 1 article through the active n8n form in a browser after the MCP
+  form-test route proved unable to start an execution. Execution `1563` succeeded and upserted
+  one `terra_space_event_candidates_test` row with a quote-grounded main issue and three
+  quote-grounded candidates. The first live attempts exposed and then fixed two implementation
+  defects: Gemma may wrap valid JSON in Markdown fences, so both validators now remove only an
+  outer fence before parsing; and n8n must pass JSONB values as structured values, not
+  `JSON.stringify` text. The test remains an initial sample only; reliability across varied
+  articles is still required.
+
+## 2026-08-06 - Phase 2 candidate-testing infrastructure built, awaiting live form run
+
+- Created the empty local Supabase table `public.terra_space_event_candidates_test`, linked to
+  Phase 1 by a unique `p1_news_uuid` and constrained to the approved issue/candidate statuses and
+  JSONB result shapes. No Phase 1 rows or columns were changed. Built and activated the 15-node
+  `Terra Space - Event` n8n workflow: form UUID input, source lookup, two sequential direct LM
+  Studio calls using `google/gemma-4-12b-qat`, deterministic evidence-quote grounding, and
+  create-or-update persistence. n8n validation passed with 0 errors and 0 warnings. The MCP
+  form-test endpoint returned n8n's generic form-loading page without creating an execution, so a
+  first live browser submission remains necessary before recording reliability results.
+
+## 2026-08-06 - Phase 2 main-issue-first candidate testing design approved
+
+- The owner approved a new reliability-testing design for the n8n candidate detector. It uses one
+  local model (`google/gemma-4-12b-qat`) in two sequential calls: first identify and ground the
+  article's main issue, then detect and ground provisional event candidates using that issue as
+  context. Results will be isolated in a new Supabase test table rather than altering the Phase 1
+  news table. Re-running an article replaces its prior test result; raw outputs, prompt version,
+  explicit stage statuses, and deterministic quote-offset checks make reliability failures visible.
+  See [Phase 2 Main-Issue and Event-Candidate Testing Design](plans/2026-08-06-phase-2-main-issue-event-candidate-testing-design.md).
+
 ## 2026-07-21 - Owner: background/animus re-polish shipped but not approved as final
 
 - Both same-day Scope 1 commits (`8ede3a7` background re-polish, `4849653` Appearance setting) were
@@ -1097,6 +1305,13 @@ status: active
 - Confirmed an English interface and a separate visual-design session before final styling.
 
 Add new entries at the top only for meaningful changes to direction, roadmap, decisions, or the project's continuation point. Do not log spelling fixes or minor formatting changes.
+
+## 2026-08-07 - Phase 3 Event Records first end-to-end workflow verification
+
+- Activated `Terra Space - Event Records` (`qsbIodzbMPxgQeRg`) and verified its full local pipeline with the existing Phase 1 UUID `087cdc48-04f4-4fee-8ba9-4fee61174b65`.
+- Execution `1602` completed successfully: it read the latest Phase 2 candidate, ran the three local-model steps (factual enrichment, taxonomy, and article-only safeguard), appended an event-record run, and updated the latest Event Record. The tested record is `FINAL`, `CLASSIFIED`, and safeguard `ACCEPT`.
+- Fixed a real repeat-run issue: the latest record node originally attempted to create an already-existing `candidate_key`, causing execution `1601` to fail with a unique-key error. It now updates the existing row by `candidate_key`; the history table remains append-only, so every run is still visible for evaluation.
+- n8n runtime validation now reports 0 errors and 0 warnings.
 
 ## 2026-07-13 - MVP brief ingested
 

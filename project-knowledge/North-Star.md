@@ -28,8 +28,11 @@ The MVP succeeds when:
 - A user can select multiple documents and process them as a batch through local LM Studio.
 - One document can produce multiple draft events.
 - Failed document processing does not break the whole batch or corrupt saved data.
-- Extracted events stay out of the main Events list and Dashboard until the user approves them.
-- A user can edit, approve, reject, add, or link events during review.
+- Event records may enter final outputs automatically only after deterministic grounding and
+  validation checks plus an independent local-LLM safeguard accept them; failed or rejected
+  records are retained as exceptions and excluded from final outputs.
+- A user can inspect, edit, add, or link event records when needed; qualified pipeline records do
+  not require universal manual approval before becoming final.
 - The system can suggest new event types and actors without automatically making them authoritative.
 - Events can have multiple locations, actors, and source documents.
 - The system can flag possible duplicate events without merging them automatically.
@@ -80,7 +83,7 @@ Outside MVP:
 - Do not hard-code event types permanently; store event types as editable data.
 - Validate LLM output before saving it.
 - Do not let parsing or AI failures corrupt documents or approved events.
-- Do not let reprocessing automatically delete or overwrite approved events.
+- Do not let reprocessing automatically delete or overwrite final events.
 - Do not merge possible duplicate events automatically.
 - Preserve room for later growth without building advanced features now.
 - Keep the data-preparation workflow distinct from the analysis workspace, while avoiding a

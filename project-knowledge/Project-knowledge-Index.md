@@ -57,6 +57,11 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Globe Backside Node Visibility Plan](plans/2026-07-17-globe-backside-node-visibility.md) - hide location nodes on the far side of the globe
 - [Staged Event Detection Pipeline](decisions/Staged-Event-Detection-Pipeline.md) - approved redesign: Signal Parser plus four narrow per-candidate classifiers, ISO alpha-3, actor aliases, and a per-stage extraction log
 - [Staged Event Detection Pipeline Implementation Plan](plans/2026-07-20-staged-event-detection-pipeline.md) - checkpointed, test-first build plan for the staged pipeline, ready for a fresh execution session
+- [n8n Candidate Canonical Event Detection Prototype](plans/2026-08-01-n8n-candidate-canonical-event-prototype.md) - testing-phase n8n workflow comparing two LM Studio models and two extraction techniques for detecting provisional candidate events
+- [Phase 2 Main-Issue and Event-Candidate Testing Design](plans/2026-08-06-phase-2-main-issue-event-candidate-testing-design.md) - approved design for a single-model, two-stage n8n reliability test that stores grounded results in a separate Supabase test table
+- [Phase 2 Main-Issue and Event-Candidate Testing Implementation Plan](plans/2026-08-06-phase-2-main-issue-event-candidate-testing-implementation.md) - task-by-task plan for the separate Supabase test table and two-stage n8n reliability workflow
+- [Phase 3 Event Records Implementation Plan](plans/2026-08-07-phase-3-event-records.md) - builds the guarded automatic final-event pipeline from the latest Phase 2 candidates.
+- [One-Click Full News Processing Implementation Plan](plans/2026-08-08-one-click-full-news-processing.md) - refactors the three n8n stages into callable sub-workflows and adds one master form that runs the whole local pipeline.
 
 ## Reading rule
 
