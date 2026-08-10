@@ -63,6 +63,10 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Phase 2 Main-Issue and Event-Candidate Testing Implementation Plan](plans/2026-08-06-phase-2-main-issue-event-candidate-testing-implementation.md) - task-by-task plan for the separate Supabase test table and two-stage n8n reliability workflow
 - [Phase 3 Event Records Implementation Plan](plans/2026-08-07-phase-3-event-records.md) - builds the guarded automatic final-event pipeline from the latest Phase 2 candidates.
 - [One-Click Full News Processing Implementation Plan](plans/2026-08-08-one-click-full-news-processing.md) - refactors the three n8n stages into callable sub-workflows and adds one master form that runs the whole local pipeline.
+- [Fresh Phase-Prefixed Supabase Foundation Plan](plans/2026-08-10-fresh-supabase-foundation.md) - creates the shared local PostgreSQL schema, descriptions, reference data, authority functions, and rollback checkpoint.
+- [n8n Phase-Prefixed Table Transition Plan](plans/2026-08-10-n8n-phase-table-transition.md) - rewires the four inactive workflows to the new Phase 1, Phase 2, and Phase 3 contracts.
+- [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md) - moves the FastAPI/Next.js application from SQLite to the shared Supabase database and implements Dashboard authority.
+- [Supabase Cutover and Verification Plan](plans/2026-08-10-supabase-cutover-verification.md) - verifies the complete system, rollback, no-SQLite-write behavior, and owner-approved activation.
 
 ## Reading rule
 

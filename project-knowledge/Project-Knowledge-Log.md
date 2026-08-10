@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Claude-ready Supabase execution plans written
+
+- Decomposed the approved fresh Supabase architecture into four ordered, checkpointed plans:
+  database foundation, inactive n8n transition, Terra Space application transition, and final
+  cutover verification.
+- The plans define exact phase-prefixed table roles, Dashboard human-authority behavior, database
+  and workflow rollback points, PostgreSQL application changes, negative tests, and a separate
+  owner approval gate before activation.
+- Planning only: no Supabase DDL, workflow update, application change, or activation was performed.
+
 ## 2026-08-10 - Fresh phase-prefixed Supabase architecture approved
 
 - The owner chose to replace the application's SQLite database with a fresh start in the existing
