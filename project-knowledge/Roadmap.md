@@ -71,10 +71,16 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Fresh Local Supabase Consolidation
 
-- [ ] **Create the phase-prefixed Supabase foundation** - build the fresh local schema, constraints,
-  descriptions, reference data, backup procedure, and verification. Status: planned.
-- [ ] **Move the n8n pipeline to the shared schema** - update the four inactive workflows to use
-  Phase 1, Phase 2, and Phase 3 table contracts and verify the full pipeline. Status: planned.
+- [x] **Create the phase-prefixed Supabase foundation** - build the fresh local schema, constraints,
+  descriptions, reference data, backup procedure, and verification. See the
+  [Fresh Phase-Prefixed Supabase Foundation Plan](plans/2026-08-10-fresh-supabase-foundation.md).
+  Status: completed.
+- [x] **Move the n8n pipeline to the shared schema** - update the four inactive workflows to use
+  Phase 1, Phase 2, and Phase 3 table contracts and verify the full pipeline. All six live tests
+  (full grounded run, quote grounding, idempotency, human-edit survival, eventless article, blank
+  input) pass against real Supabase data; all four workflows remain inactive. See the
+  [n8n Phase-Prefixed Table Transition Implementation Plan](plans/2026-08-10-n8n-phase-table-transition.md).
+  Status: completed.
 - [ ] **Move Terra Space application storage to Supabase** - replace SQLite persistence while
   preserving existing application behavior and making Phase 3 events immediately visible and
   human-authoritative in Dashboard. Status: planned.

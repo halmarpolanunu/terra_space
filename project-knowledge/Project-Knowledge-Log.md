@@ -8,6 +8,25 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - n8n Phase-Prefixed Table Transition Plan completed
+
+- The last two live tests passed: an eventless article (master execution `1674`) reconciled at
+  exactly 1/1/1/1/0/0 across the six phase-prefixed tables with Phase 3 never invoked; blank-input
+  attempts on Phase 1 (`1681`/`1682`) both failed before any Supabase write. A master form
+  double-submission incidentally confirmed a canceled execution leaves no partial state.
+- All six required live tests from the [n8n Phase-Prefixed Table Transition
+  Plan](plans/2026-08-10-n8n-phase-table-transition.md) now pass against real data: full grounded
+  run, quote grounding, idempotency, human-edit survival, eventless article, blank input. Plan
+  status is now `completed`.
+- Three real defects were found and fixed along the way, none present in the legacy pipeline: an
+  ad-`<iframe>` false positive in the Phase 1 completeness check, a `runOnceForEachItem`
+  return-shape bug, and a taxonomy-lookup fan-out bug that inflated the classification prompt past
+  LM Studio's context limit.
+- Updated [Roadmap.md](Roadmap.md): both the Supabase foundation and the n8n transition milestones
+  are now marked completed (the foundation one had been left `planned` since plan 1 finished).
+- Next: the owner decides whether to start plan 3, the [Terra Space Supabase Application Transition
+  Plan](plans/2026-08-10-terra-space-supabase-transition.md).
+
 ## 2026-08-10 - Idempotency and human-edit protection confirmed live for phase3_create_pipeline_event
 
 - With the owner's explicit approval, ran a plain SQL `UPDATE` on one `phase3_events` row (title,

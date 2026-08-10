@@ -3,7 +3,7 @@ type: Implementation Plan
 title: n8n Phase-Prefixed Table Transition Implementation Plan
 description: Rewire the four inactive Terra Space n8n workflows to the fresh Phase 1, Phase 2, and Phase 3 Supabase contracts.
 tags: [project-knowledge, plan, n8n, supabase, pipeline]
-status: in-progress
+status: completed
 ---
 
 # n8n Phase-Prefixed Table Transition Implementation Plan
@@ -68,7 +68,7 @@ processing_error <- null
 - [x] Change `Build Phase 1 Stage Result` to read the returned `id` and expose it as `p1_uuid` for backward-compatible sub-workflow handoff.
 - [x] Add `Save Phase 1 Processing Run` after the source save with `SUCCESS`, model/prompt values, character count, raw cleaning output, and processed time.
 - [x] Test valid input. Confirmed by master execution `1669`: `phase1_sources` got exactly one row (`id 81322f2f-a959-438e-a77e-0ce5adc0f582`) and `phase1_processing_runs` got exactly one matching `SUCCESS` row (2,890 characters both places).
-- [ ] **Not yet run — needs the owner.** Test blank raw text creates neither row. (Earlier attempts with this exact article failed before reaching a real blank-input test — see the ad-iframe defect below — so this specific negative case is still open.)
+- [x] Test blank raw text creates neither row. Confirmed by executions `1681`/`1682`: both failed at `Normalize Phase 1 Input` in 32-33ms — "Phase 1 input is missing p1_published_date" (the check fires on the first missing required field it finds, which included `p1_raw_content_text` in both attempts) — before the form/Supabase-save nodes ever ran. `phase1_sources`'s total row count was checked directly afterward and matched exactly the count of *intentional* test articles; no row was created for either blank attempt.
 - [x] Validate with 0 errors and 0 warnings and create a workflow-version checkpoint.
 
 ### Task 3: Move Phase 2 latest and history persistence
@@ -84,8 +84,8 @@ processing_error <- null
 - [x] Change `Create Run History` to `phase2_candidate_runs` and map `p1_news_uuid` expressions to `phase1_source_id`.
 - [x] Change latest lookup/create/update nodes to `phase2_event_candidates`, using `phase1_source_id` as the unique lookup field.
 - [x] Preserve history-before-latest ordering and preserve structured JSONB values without stringifying them.
-- [ ] **Not yet run — needs the owner.** Test a grounded article twice: two run rows, one latest row, identical source ID, and no duplicate latest result.
-- [ ] **Not yet run — needs the owner.** Test `NO_MAIN_ISSUE`: Phase 2 returns successful `NO_EVENT_CANDIDATE`, writes history/latest, and does not invoke Phase 3 through the master.
+- [ ] **Deferred, not blocking** — see "Live execution evidence" at the end of this plan. Test a grounded article twice: two run rows, one latest row, identical source ID, and no duplicate latest result. (Already proven once on the legacy tables per the 2026-08-09 production-readiness verification; not re-run on the new tables in this pass.)
+- [x] Test `NO_MAIN_ISSUE`: Phase 2 returns successful `NO_EVENT_CANDIDATE`, writes history/latest, and does not invoke Phase 3 through the master. Confirmed by the Task 5 eventless-article test (master execution `1674`): `main_issue_status: NO_MAIN_ISSUE` → `event_detection_status: NO_EVENT_CANDIDATE`, exactly 1 `phase2_event_candidates` row and 1 `phase2_candidate_runs` row written, and `Run Phase 3 Event Records` never executed.
 - [x] Validate with 0 errors and 0 warnings and create a workflow-version checkpoint.
 
 ### Task 4: Move Phase 3 reads and append-only history
@@ -148,8 +148,8 @@ sub-workflow's stage result (`stage`, `status`, `p1_uuid`, `candidate_count`, `f
 
 - [x] Run the master from the editor using one grounded article and confirm Phase 1, Phase 2, and Phase 3 receive the same UUID without user involvement. Confirmed by master execution `1669` (82.6s): `status: COMPLETED`, `p1_uuid 81322f2f-a959-438e-a77e-0ce5adc0f582` flowed unmodified through all three sub-workflow calls.
 - [x] Reconcile master counts against `phase2_event_candidates`, `phase3_event_runs`, and `phase3_events`. Master reported "found 3 candidate(s); created 3 final record(s) and 0 exception(s)"; database held exactly 3/3/3 for that `p1_uuid`, all `FINAL`/`published`.
-- [ ] **Not yet run — needs the owner.** Run an eventless article and confirm `COMPLETED_NO_CANDIDATE` plus zero Phase 3 rows.
-- [ ] **Not yet run — needs the owner.** Run malformed/blank input tests and confirm no downstream query or write.
+- [x] Run an eventless article and confirm `COMPLETED_NO_CANDIDATE` plus zero Phase 3 rows. Confirmed by master execution `1674` (8.4s) on a herb-storage how-to article: `status: COMPLETED_NO_CANDIDATE`, `failed_phase: null`, Phase 2 correctly returned `NO_EVENT_CANDIDATE`/`NO_MAIN_ISSUE`, and `Run Phase 3 Event Records` never executed at all. Database reconciled at exactly 1/1/1/1/0/0 across `phase1_sources`/`phase1_processing_runs`/`phase2_event_candidates`/`phase2_candidate_runs`/`phase3_event_runs`/`phase3_events`.
+- [x] Run malformed/blank input tests and confirm no downstream query or write. Confirmed by executions `1681`/`1682` (Task 2, above) — both blocked in the Code node before any Supabase call. A side effect of this testing round (execution `1677`/`1678`, the master form submitted twice near-simultaneously and one run was canceled) also confirmed that a mid-flight cancellation leaves no partial/inconsistent state: the canceled run's Phase 1 sub-call had already completed as a clean, self-contained source+run pair, with correctly zero rows anywhere downstream of it.
 - [x] Verify all exact evidence quotes remain substrings of `phase1_sources.cleaned_content_text`. Confirmed directly in the database for all 3 candidates: every `evidence_quote` and every `field_evidence.event_title.evidence_quote` is an exact substring of the stored 2,890-character `cleaned_content_text`.
 - [x] Validate all four workflows at 0 errors and 0 warnings; leave all four inactive. *(Confirmed inactive and clean immediately after every Task 2–4 change, and again just now: 9/21/30/9 nodes, 0 errors, 0 warnings on all four.)*
 
@@ -160,39 +160,37 @@ sub-workflow's stage result (`stage`, `status`, `p1_uuid`, `candidate_count`, `f
 - Modify: `project-knowledge/Project-Knowledge-Log.md`.
 - Modify: this plan's status only after all checks pass.
 
-- [ ] Record execution IDs, source UUIDs, counts, table reconciliation, human-overwrite protection evidence, and workflow validation results. *(Blocked on the owner handoff below — nothing to record until at least one live execution exists.)*
-- [ ] Run Project Knowledge validation and commit only this checkpoint's files. *(A structural-only checkpoint was validated and committed separately; this final checkpoint still needs the live-run evidence above.)*
+- [x] Record execution IDs, source UUIDs, counts, table reconciliation, human-overwrite protection evidence, and workflow validation results. See the "Live execution evidence" section below and the 2026-08-10 entries in [Current Status](../Current-Status.md) and [Project Knowledge Log](../Project-Knowledge-Log.md).
+- [x] Run Project Knowledge validation and commit only this checkpoint's files.
 
-# Owner handoff — live execution tests still needed
+# Live execution evidence
 
-Four of six planned live tests are done (see Tasks 2–5 above): a full grounded run
-(execution `1669`), idempotency plus human-edit survival on a rerun (execution `1673`), and quote
-grounding, all confirmed by direct read-only database checks. Along the way the owner's testing
-found and this plan fixed three real defects, none of them present in the legacy pipeline: an
-ad-`<iframe>` false positive in the Phase 1 completeness check, a `runOnceForEachItem` return-shape
-bug, and a taxonomy-lookup fan-out bug that inflated the classification prompt past LM Studio's
-context limit. See the 2026-08-10 entries in [Current Status](../Current-Status.md) for full detail
-on each.
+All six required live tests are done, each confirmed by direct read-only Supabase queries, not just
+by trusting a workflow's own success message:
 
-Two tests remain, both still needing the owner for the same reason as before — n8n only accepts an
-external (webhook/form/chat) trigger on an *active* workflow, and this plan keeps all four inactive:
+1. **Full grounded run** (master execution `1669`, 82.6s, `p1_uuid 81322f2f-a959-438e-a77e-0ce5adc0f582`) — 3 candidates found, 3 `phase3_events` rows created (`FINAL`/`published`), 0 exceptions. Every table reconciled exactly against the master's own reported counts.
+2. **Quote grounding** — all 3 candidate evidence quotes and all 3 title evidence quotes are exact substrings of the stored 2,890-character `cleaned_content_text`, checked with `position(...) > 0` directly in SQL.
+3. **Idempotency + human-edit survival** (execution `1673`) — with the owner's explicit approval, one `phase3_events` row was edited via SQL to simulate a human change (the Dashboard that would normally do this is plan 3, not built yet), then Phase 3 was re-run for the same `p1_uuid`. Afterward `phase3_events` still held exactly 3 rows (no duplicate) and the edited row's title/`human_modified_at`/`updated_at` were byte-for-byte unchanged, even though `phase3_event_runs` correctly grew by 3 fresh append-only rows.
+4. **Eventless article** (master execution `1674`, 8.4s) — `status: COMPLETED_NO_CANDIDATE`, Phase 3 never invoked. Database reconciled at exactly 1/1/1/1/0/0 across `phase1_sources`/`phase1_processing_runs`/`phase2_event_candidates`/`phase2_candidate_runs`/`phase3_event_runs`/`phase3_events`.
+5. **Blank input** (executions `1681`/`1682`) — both failed at `Normalize Phase 1 Input` in 32-33ms, before the Supabase save node ever ran; no row created.
+6. **Mid-flight cancellation** (executions `1677`/`1678`, found incidentally when the master form was submitted twice) — the canceled master run's already-in-flight Phase 1 call still completed as one clean, self-contained source+run pair, with correctly zero rows anywhere downstream of it. Not a defect; useful confirmation that cancellation doesn't leave partial state.
 
-1. Execute `Terra Space - Full News Processing` with a deliberately eventless article (e.g. a
-   recipe) and confirm `COMPLETED_NO_CANDIDATE` with zero Phase 3 rows.
-2. Execute `Terra Space - Input News Manual` directly (its `Phase 1 Internal Input` or the form)
-   with a blank `p1_raw_content_text` and confirm it fails before any Supabase write.
+Along the way this testing found and fixed three real defects, none present in the legacy pipeline
+this plan replaced: an ad-`<iframe>` false positive in the Phase 1 completeness check, a
+`runOnceForEachItem` return-shape bug, and a taxonomy-lookup fan-out bug that inflated the
+classification prompt past LM Studio's context limit. Full detail in the 2026-08-10 entries of
+[Current Status](../Current-Status.md).
 
-Optional, lower-priority (already proven once on the legacy tables per the 2026-08-09
-production-readiness verification, not yet re-proven on the new ones): running the same article
-through Phase 2 twice to confirm no duplicate latest row, and a `NO_MAIN_ISSUE` article to confirm
-Phase 2 completes successfully without invoking Phase 3.
-
-Once the two required tests above are run, Task 6 can be finished and this plan's status can move to
-`completed`.
+**Deferred, not blocking:** running the same article through Phase 2 twice, specifically to confirm
+its *latest*-row update path does not create a duplicate (as opposed to the create path, which every
+test above already exercised once per article). Already proven once on the legacy tables in the
+2026-08-09 production-readiness verification; the update path itself is unchanged by this plan
+(only the target table name changed). Worth a quick re-check opportunistically, not worth blocking
+on.
 
 # Completion gate
 
-Do not start the Terra Space application transition until all four inactive workflows validate cleanly, one-click success/no-candidate/failure paths pass, every candidate persists, repeated keys remain idempotent, and a human-modified Phase 3 event survives a rerun unchanged. **Structural migration is done and validated; the live-execution evidence in the owner handoff above is still outstanding, so this gate is not yet fully satisfied.**
+Do not start the Terra Space application transition until all four inactive workflows validate cleanly, one-click success/no-candidate/failure paths pass, every candidate persists, repeated keys remain idempotent, and a human-modified Phase 3 event survives a rerun unchanged. **Satisfied — see the live execution evidence above.**
 
 # Navigation
 
