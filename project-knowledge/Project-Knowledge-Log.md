@@ -8,6 +8,22 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Fixed a pre-existing ad-iframe false positive found during live n8n testing
+
+- The owner's first live test of the [n8n Phase-Prefixed Table Transition
+  Plan](plans/2026-08-10-n8n-phase-table-transition.md) (executions `1657`/`1659`/`1661`) failed
+  three times with "LM Studio returned an incomplete cleaned article." Reading the execution data
+  back showed the model's response was actually complete; the test article's raw HTML held two
+  large Google ad `<iframe>` blocks that inflated the raw-length denominator
+  `Prepare Clean Text for Supabase` uses for its completeness check, so a genuinely complete
+  ~2,850-character result failed an artificially high bar.
+- Not caused by the table migration — the failure happens in `Remove Obvious Non-Article Text`,
+  a node the migration never touched, before any Supabase write is attempted.
+- Fixed: `Remove Obvious Non-Article Text` now also strips `<script>...</script>` and
+  `<iframe>...</iframe>` blocks as part of its deterministic cleanup, before the completeness check
+  ever reads the text. Verified by simulation; a real re-run still needs the owner.
+- `Terra Space - Input News Manual` re-validated at 0 errors, 0 warnings, still inactive.
+
 ## 2026-08-10 - n8n phase-prefixed table transition: structural migration done, live tests pending
 
 - Executed Tasks 1-5 of the [n8n Phase-Prefixed Table Transition Implementation
