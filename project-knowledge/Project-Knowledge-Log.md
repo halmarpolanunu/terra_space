@@ -8,6 +8,25 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Fixed two new defects in Phase 3's authority-function wiring, found by the owner's first real test
+
+- After the ad-iframe fix, the owner's retry got Phase 1 and Phase 2 through cleanly (2 grounded
+  candidates), then Phase 3 failed both candidates on every attempt.
+- Defect 1: `Prepare Authoritative Event Payload` (added by this plan's Task 4) uses
+  `mode: runOnceForEachItem` but incorrectly returned `[{ json: {...} }]` instead of the required
+  `{ json: {...} }`, causing "A 'json' property isn't an object." Fixed by removing the array
+  wrapper, matching every other per-item Code node in this workflow.
+- Defect 2 (more serious): `Classify Event Type` failed with HTTP 400 — "request (13003 tokens)
+  exceeds the available context size (8192 tokens)" — because `Get Taxonomy Nodes` (also added by
+  Task 4) was connected directly downstream of `Get Active Event Types`, whose 12 output items each
+  re-triggered `Get Taxonomy Nodes`'s own query, multiplying the 12 real taxonomy leaves into ~144
+  duplicate entries in the classification prompt. Fixed by making both nodes parallel branches off
+  `Get Phase 1 Source` (each fed exactly one item, each running exactly once) joined by a new
+  `Sync Taxonomy Sources` Merge node before `Collect Active Event Types` runs. No prompt, model, or
+  classification logic changed.
+- `Terra Space - Event Records` re-validated at 0 errors, 0 warnings (31 nodes), still inactive.
+  Neither defect reached `phase3_events` before the fix (0 rows); a re-run still needs the owner.
+
 ## 2026-08-10 - Fixed a pre-existing ad-iframe false positive found during live n8n testing
 
 - The owner's first live test of the [n8n Phase-Prefixed Table Transition
