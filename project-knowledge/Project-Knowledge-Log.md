@@ -8,6 +8,22 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Fresh phase-prefixed Supabase foundation built and verified
+
+- Executed all five tasks of the [Fresh Phase-Prefixed Supabase Foundation Plan](plans/2026-08-10-fresh-supabase-foundation.md).
+  Created 18 new phase-prefixed tables, the `phase3_create_pipeline_event` authority function,
+  Row Level Security, plain-language comments, and the reference data, all beside the legacy
+  tables. Nothing was dropped, emptied, renamed, or overwritten.
+- Rollback material captured first: a dated SQLite copy and a 45.9 MB Supabase `pg_dump` archive,
+  both checksummed and confirmed readable.
+- Verified: 7 foundation checks and 5 reference-data checks pass; the browser-facing key is
+  refused on every new table while the service role works; all legacy row counts are unchanged;
+  all four n8n workflows remain inactive.
+- The database is fresh and empty of application records by the owner's choice. Only reference
+  data was carried across: the twelve approved Event Types, the approved taxonomy tree, and
+  759,813 gazetteer rows.
+- No workflow, application code, or cutover step was changed. Those belong to the next three plans.
+
 ## 2026-08-10 - Claude-ready Supabase execution plans written
 
 - Decomposed the approved fresh Supabase architecture into four ordered, checkpointed plans:
