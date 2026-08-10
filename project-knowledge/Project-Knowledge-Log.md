@@ -8,6 +8,21 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Fresh phase-prefixed Supabase architecture approved
+
+- The owner chose to replace the application's SQLite database with a fresh start in the existing
+  local Supabase deployment; existing SQLite rows will not be migrated, but the database will be
+  preserved as a dated read-only rollback archive.
+- Approved literal `phase1_`, `phase2_`, and `phase3_` table prefixes plus PostgreSQL table/column
+  comments that explain every role in plain language.
+- `phase3_events` will be the shared authoritative event table. Pipeline `FINAL` records appear
+  immediately in Terra Insight, exceptions remain hidden, and later pipeline executions may not
+  silently overwrite human Dashboard decisions.
+- Superseded the earlier Local Supabase Storage Direction and migration plan because both assumed
+  existing SQLite rows would be copied.
+- Planning will be decomposed into Supabase foundation, n8n transition, Terra Space transition, and
+  final cutover verification. Implementation is reserved for Claude; no runtime system changed.
+
 ## 2026-08-09 - One-click full news processing built, not yet tested
 
 - Implemented the build steps of the

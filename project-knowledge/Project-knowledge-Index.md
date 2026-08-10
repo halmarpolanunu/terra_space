@@ -42,7 +42,8 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Event Type Descriptions and AI Classification](decisions/Event-Type-Descriptions-and-AI-Classification.md) — approved rules for described event types, human activation, and description-aware local AI classification
 - [Event Type Descriptions Implementation Plan](plans/2026-07-16-event-type-descriptions.md) — test-first database, API, extraction, Settings, selection guidance, and verification plan
 
-- [Local Supabase Migration Plan](plans/2026-07-17-local-supabase-migration.md) - safe local migration from SQLite to owner-hosted Supabase
+- [Fresh Phase-Prefixed Supabase Architecture](decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md) - approved fresh local Supabase source of truth with Phase 1 collection, Phase 2 candidates, Phase 3 authoritative events, and Dashboard human authority
+- [Local Supabase Migration Plan](plans/2026-07-17-local-supabase-migration.md) - superseded plan to copy SQLite application data into local Supabase
 - [Terra Insight and Terra Sense Product Organization](decisions/Terra-Insight-and-Terra-Sense-Product-Organization.md) - approved product organization: Terra Insight presents and analyses trusted data; Terra Sense collects, processes, and reviews it
 - [Initial Global International Relations Event Taxonomy](decisions/Initial-Global-IR-Event-Taxonomy.md) - approved initial monitoring taxonomy for global security/conflict, diplomacy, and economy/energy
 - [Initial Global IR Event Types Configuration Plan](plans/2026-07-18-initial-global-ir-event-types.md) - creates the twelve approved active Event Types through Terra Sense

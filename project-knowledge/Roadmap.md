@@ -69,6 +69,18 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
   decision and its [implementation plan](plans/2026-07-19-event-taxonomy-tree.md), applied to the
   owner's live database. Status: completed.
 
+## Fresh Local Supabase Consolidation
+
+- [ ] **Create the phase-prefixed Supabase foundation** - build the fresh local schema, constraints,
+  descriptions, reference data, backup procedure, and verification. Status: planned.
+- [ ] **Move the n8n pipeline to the shared schema** - update the four inactive workflows to use
+  Phase 1, Phase 2, and Phase 3 table contracts and verify the full pipeline. Status: planned.
+- [ ] **Move Terra Space application storage to Supabase** - replace SQLite persistence while
+  preserving existing application behavior and making Phase 3 events immediately visible and
+  human-authoritative in Dashboard. Status: planned.
+- [ ] **Verify and approve cutover** - prove visibility, human-override, traceability, offline,
+  restart, rollback, and no-SQLite-write behavior before activation. Status: planned.
+
 ## Deferred Beyond MVP
 
 - Terra Brief module integration.

@@ -3,11 +3,15 @@ type: Implementation Plan
 title: Local Supabase Migration Plan
 description: Plan the safe migration of Terra Space data from SQLite to Supabase hosted locally by the owner.
 tags: [database, supabase, migration, local-first]
-status: planned
+status: superseded
 okf_version: "0.1"
 ---
 
 # Local Supabase Migration Plan
+
+> **Superseded on 2026-08-10.** This plan copies existing SQLite data, but the owner has now chosen
+> a fresh Supabase start with phase-prefixed tables. Replacement implementation plans will follow
+> the [Fresh Phase-Prefixed Supabase Architecture](../decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md).
 
 ## Goal
 

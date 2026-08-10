@@ -3,11 +3,15 @@ type: Decision
 title: Local Supabase Storage Direction
 description: Terra Space will plan a migration from its current local SQLite storage to a Supabase instance hosted on the owner's computer.
 tags: [project-knowledge, decision, database, supabase, local-first]
-status: active
+status: superseded
 okf_version: "0.1"
 ---
 
 # Context
+
+> **Superseded on 2026-08-10.** The owner chose a fresh local Supabase start rather than copying
+> existing SQLite application rows. The current direction is recorded in
+> [Fresh Phase-Prefixed Supabase Architecture](Fresh-Phase-Prefixed-Supabase-Architecture.md).
 
 Terra Space currently stores its data in a local SQLite database. The owner wants to move that
 data to Supabase that they host locally. This changes the storage technology, but does not mean
