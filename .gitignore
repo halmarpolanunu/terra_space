@@ -24,6 +24,9 @@ playwright-report/
 # Isolated implementation workspaces
 .worktrees/
 
+# n8n workflow export backups (may carry credential references)
+.n8n-backups/
+
 # Visual brainstorming companion mockups
 .superpowers/
 

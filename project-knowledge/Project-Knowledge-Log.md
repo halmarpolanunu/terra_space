@@ -8,6 +8,31 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - n8n phase-prefixed table transition: structural migration done, live tests pending
+
+- Executed Tasks 1-5 of the [n8n Phase-Prefixed Table Transition Implementation
+  Plan](plans/2026-08-10-n8n-phase-table-transition.md) at the structural/static-validation level.
+  Full JSON baselines for all four workflows were exported first (git-ignored, pointer recorded at
+  [plans/evidence/2026-08-10-n8n-transition/README.md](plans/evidence/2026-08-10-n8n-transition/README.md)).
+- `Terra Space - Input News Manual`: now saves into `phase1_sources` and adds a new
+  `phase1_processing_runs` row per submission (9 → 11 nodes).
+- `Terra Space - Event Candidates`: now reads `phase1_sources` and persists latest/history into
+  `phase2_event_candidates`/`phase2_candidate_runs` (21 nodes, unchanged count).
+- `Terra Space - Event Records`: now reads `phase1_sources`/`phase2_event_candidates`, persists
+  append-only history to `phase3_event_runs`, and creates authoritative events through the
+  `phase3_create_pipeline_event` RPC instead of the removed legacy latest-row create/update path
+  (33 → 30 nodes: 6 removed, 3 added). Discovered the taxonomy source is now normalized
+  (`phase3_event_types` + `phase3_taxonomy_nodes`) rather than flat, and added a taxonomy-path
+  reconstruction step to compensate — see the plan's Task 4 execution note.
+- `Terra Space - Full News Processing` (master): needed no changes at all, since every stage-result
+  field name it depends on was deliberately preserved across the table migration.
+- All four workflows re-validated at 0 errors/0 warnings after their changes and confirmed still
+  inactive.
+- **Live execution testing is not done.** n8n only accepts external triggers on active workflows,
+  and the plan requires all four to stay inactive, so the remaining test checklist items need the
+  owner to run them from the n8n editor. See the plan's "Owner handoff" section. Plan status is
+  `in-progress`, not `completed`.
+
 ## 2026-08-10 - Fresh phase-prefixed Supabase foundation built and verified
 
 - Executed all five tasks of the [Fresh Phase-Prefixed Supabase Foundation Plan](plans/2026-08-10-fresh-supabase-foundation.md).
