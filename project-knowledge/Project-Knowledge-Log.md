@@ -8,6 +8,24 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - First fully clean end-to-end run of the phase-prefixed pipeline
+
+- Master execution `1669` (82.6s) ran one real article through Phase 1, Phase 2, and Phase 3 with
+  no UUID shown to or typed by the user: `status: COMPLETED`, 3 candidates found, 3 final records
+  created, 0 exceptions.
+- Reconciled every table by direct read-only query: `phase1_sources` (1, completed, 2,890-char
+  cleaned text), `phase1_processing_runs` (1, SUCCESS), `phase2_event_candidates`/`_runs` (1 latest
+  + 1 history, 3 candidates), `phase3_event_runs` (3 rows, all attempt 1, all
+  SUCCESS/CLASSIFIED/ACCEPT — no retries needed), `phase3_events` (3 rows, all
+  `origin: pipeline`/`FINAL`/`published`, real `event_type_id`, `human_modified_at: null`).
+- Grounding checked directly: `raw_content_text` still holds the ad `<iframe>` blocks untouched
+  (8,822 chars); `cleaned_content_text` has zero `<iframe>` occurrences (2,890 chars); all 3
+  candidate evidence quotes and all 3 title evidence quotes are exact substrings of the cleaned
+  text.
+- Confirms both the ad-iframe fix and the two Phase 3 authority-function fixes hold under a real
+  run. Still outstanding: idempotency (rerun same UUID), human-edit survival, the eventless
+  article, and blank/malformed-input negative tests.
+
 ## 2026-08-10 - Fixed two new defects in Phase 3's authority-function wiring, found by the owner's first real test
 
 - After the ad-iframe fix, the owner's retry got Phase 1 and Phase 2 through cleanly (2 grounded
