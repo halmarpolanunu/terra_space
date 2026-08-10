@@ -16,6 +16,29 @@ implementation plan or decision, link it from here and mark it resolved instead 
 
 ## Open items
 
+### Legacy `terra_space_*` Supabase tables have no RLS policies (2026-08-10)
+
+- **Context:** discovered while starting the [Fresh Phase-Prefixed Supabase Foundation
+  Implementation Plan](plans/2026-08-10-fresh-supabase-foundation.md). Running the Supabase
+  security advisor against the existing local database shows the seven legacy
+  `terra_space_news_v2`, `terra_space_event_candidates`, `terra_space_event_candidate_runs`,
+  `terra_space_event_records`, `terra_space_event_record_runs`, `terra_space_event_types`, and
+  `terra_space_location_gazetteer` tables have Row Level Security disabled — pre-existing, not
+  caused by this session's work.
+- **Why it is not urgent:** the local Supabase deployment is only reachable at `127.0.0.1`, has no
+  public internet exposure, and no browser code currently points at it, so the practical exposure
+  is low. Enabling RLS on these tables now was deliberately deferred rather than fixed inline,
+  because the four n8n workflows that are the only thing currently reading/writing them are still
+  active users of this exact shape, and the [Fresh Phase-Prefixed Supabase
+  Architecture](decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md) decision already plans to
+  retire them to read-only legacy status once cutover completes.
+- **Recommendation:** decide whether to enable RLS on these legacy tables (or drop/archive them
+  entirely) after the [Supabase Cutover and Verification
+  Plan](plans/2026-08-10-supabase-cutover-verification.md) completes and the legacy tables are no
+  longer being written to by any active workflow. Fixing it earlier risks breaking the one proven
+  working pipeline for no live security benefit.
+- **Status:** Open, not yet decided. Revisit at or after cutover.
+
 ### Route backgrounds and ambient "animus" motion are not approved yet, despite shipping (2026-07-21)
 
 - **Important — do not treat Scope 1 of the [Deferred UI Polish Plan](plans/2026-07-17-ui-polish-deferred.md)
