@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Restored a node schema accidentally corrupted while setting up a test
+
+- While manually entering test values for `Phase 1 Internal Input`'s schema panel, the six field
+  names got replaced by the whole "fieldname: example value" instruction text and lost their
+  `type: "string"`. Confirmed via the API that this was saved to the live workflow, not just an
+  unsaved editor view.
+- Checked the master workflow's execution history before fixing: no run happened between the
+  corruption and the fix, so none of the six live-test results recorded for the [n8n
+  Phase-Prefixed Table Transition Plan](plans/2026-08-10-n8n-phase-table-transition.md) are
+  affected.
+- Restored the six fields to plain names (`p1_published_date`, `p1_title`,
+  `p1_raw_content_text`, `p1_source_domain`, `p1_source_url`, `p1_author`, all `type: "string"`).
+  `Terra Space - Input News Manual` re-validated at 0 errors, 0 warnings.
+
 ## 2026-08-10 - n8n Phase-Prefixed Table Transition Plan completed
 
 - The last two live tests passed: an eventless article (master execution `1674`) reconciled at
