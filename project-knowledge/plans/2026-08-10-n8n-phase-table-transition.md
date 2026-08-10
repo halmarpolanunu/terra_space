@@ -67,7 +67,8 @@ processing_error <- null
 
 - [x] Change `Build Phase 1 Stage Result` to read the returned `id` and expose it as `p1_uuid` for backward-compatible sub-workflow handoff.
 - [x] Add `Save Phase 1 Processing Run` after the source save with `SUCCESS`, model/prompt values, character count, raw cleaning output, and processed time.
-- [ ] **Not yet run — needs the owner.** Test valid input and blank raw text. Valid input creates exactly one source/run pair; blank input creates neither. Structural validation cannot substitute for this: n8n only accepts external (webhook/form/chat) triggers on an *active* workflow, and this plan requires all four workflows to stay inactive, so a live run must come from the owner manually executing the workflow in the n8n editor. See the owner handoff note at the end of this plan.
+- [x] Test valid input. Confirmed by master execution `1669`: `phase1_sources` got exactly one row (`id 81322f2f-a959-438e-a77e-0ce5adc0f582`) and `phase1_processing_runs` got exactly one matching `SUCCESS` row (2,890 characters both places).
+- [ ] **Not yet run — needs the owner.** Test blank raw text creates neither row. (Earlier attempts with this exact article failed before reaching a real blank-input test — see the ad-iframe defect below — so this specific negative case is still open.)
 - [x] Validate with 0 errors and 0 warnings and create a workflow-version checkpoint.
 
 ### Task 3: Move Phase 2 latest and history persistence
@@ -128,8 +129,8 @@ expected, so `Build Taxonomy Request` and `Validate Taxonomy Result` needed no c
 - [x] For an existing candidate key, accept the returned existing event ID and continue without changing the event's authoritative fields. *(Guaranteed by the function's own idempotency check — `phase3_create_pipeline_event` returns the existing event id and performs no further writes when `candidate_key` already exists; the n8n side does not need to detect this itself.)*
 - [x] Keep `phase3_event_runs` append-only for attempt 1 and optional attempt 2 before calling the authoritative-event function.
 - [x] Rebuild `Build Phase 3 Stage Result` from this execution's Phase 3 run rows, using the highest attempt per candidate key. Count `FINAL`, `EXCEPTION`, and processed candidates exactly as before. *(No code change was needed — `phase3_event_runs` kept the exact same `candidate_key`/`attempt_number`/`outcome_payload` columns this node already read.)*
-- [ ] **Not yet run — needs the owner.** Test a multi-candidate article with unresolved locations and retry outcomes. Every candidate must have a run and one authoritative row; unresolved locations remain null rather than disappearing.
-- [ ] **Not yet run — needs the owner.** Simulate a human edit in `phase3_events`, rerun Phase 3, and verify the title, summary, status, and `human_modified_at` remain unchanged.
+- [x] Test a multi-candidate article. Confirmed by execution `1672`: 3 candidates, 3 `phase3_event_runs` rows, 3 `phase3_events` rows, all `FINAL`/`published`. *(Partial: no retry was needed this run — all 3 candidates were accepted on attempt 1 — and no candidate had an unresolved location, so the retry path and the unresolved-location-stays-null path specifically are still unexercised. Both were already exercised once before this plan, on the legacy tables, per the 2026-08-09 production-readiness verification in Current Status; not re-proven yet on the new tables.)*
+- [x] Simulate a human edit in `phase3_events`, rerun Phase 3, and verify the title, summary, status, and `human_modified_at` remain unchanged. Confirmed by execution `1673`: title `SET` to `"TEST EDIT — should survive rerun"` with `human_modified_at 2026-08-10 15:01:47` and `human_modified_fields ["title"]` via an explicitly-confirmed SQL `UPDATE`, then Phase 3 re-run for the same `p1_uuid` unchanged. Afterward: `phase3_events` still held exactly 3 rows (no duplicate created), the edited row's title/`human_modified_at`/`updated_at` were byte-for-byte unchanged, and all 3 rows' `updated_at` stayed at their original values even though `phase3_event_runs` correctly grew by 3 fresh append-only rows (run IDs 8-10) — proving the rerun reprocessed every candidate but `phase3_create_pipeline_event` wrote nothing further to the authoritative table for an existing `candidate_key`.
 - [x] Validate with 0 errors and 0 warnings and create a workflow-version checkpoint.
 
 ### Task 5: Verify the master workflow without changing its contract
@@ -145,11 +146,11 @@ sub-workflow's stage result (`stage`, `status`, `p1_uuid`, `candidate_count`, `f
 `exception_count`) is exactly the same internal contract name after the table migration, since Task
 2/3/4 all preserved those names deliberately for this reason. It was re-validated only.
 
-- [ ] **Not yet run — needs the owner.** Run the master from the editor using one grounded article and confirm Phase 1, Phase 2, and Phase 3 receive the same UUID without user involvement.
-- [ ] **Not yet run — needs the owner.** Reconcile master counts against `phase2_event_candidates`, `phase3_event_runs`, and `phase3_events`.
+- [x] Run the master from the editor using one grounded article and confirm Phase 1, Phase 2, and Phase 3 receive the same UUID without user involvement. Confirmed by master execution `1669` (82.6s): `status: COMPLETED`, `p1_uuid 81322f2f-a959-438e-a77e-0ce5adc0f582` flowed unmodified through all three sub-workflow calls.
+- [x] Reconcile master counts against `phase2_event_candidates`, `phase3_event_runs`, and `phase3_events`. Master reported "found 3 candidate(s); created 3 final record(s) and 0 exception(s)"; database held exactly 3/3/3 for that `p1_uuid`, all `FINAL`/`published`.
 - [ ] **Not yet run — needs the owner.** Run an eventless article and confirm `COMPLETED_NO_CANDIDATE` plus zero Phase 3 rows.
 - [ ] **Not yet run — needs the owner.** Run malformed/blank input tests and confirm no downstream query or write.
-- [ ] **Not yet run — needs the owner.** Verify all exact evidence quotes remain substrings of `phase1_sources.cleaned_content_text`.
+- [x] Verify all exact evidence quotes remain substrings of `phase1_sources.cleaned_content_text`. Confirmed directly in the database for all 3 candidates: every `evidence_quote` and every `field_evidence.event_title.evidence_quote` is an exact substring of the stored 2,890-character `cleaned_content_text`.
 - [x] Validate all four workflows at 0 errors and 0 warnings; leave all four inactive. *(Confirmed inactive and clean immediately after every Task 2–4 change, and again just now: 9/21/30/9 nodes, 0 errors, 0 warnings on all four.)*
 
 ### Task 6: Record the n8n checkpoint
@@ -164,33 +165,30 @@ sub-workflow's stage result (`stage`, `status`, `p1_uuid`, `candidate_count`, `f
 
 # Owner handoff — live execution tests still needed
 
-Every structural change in Tasks 2–4 is applied and re-validated at 0 errors/0 warnings, and all four
-workflows are confirmed inactive. What is **not** done is running real data through them: n8n only
-accepts an external (webhook/form/chat) trigger on an *active* workflow, and this plan's Global
-Constraints keep all four inactive throughout — so a live run has to come from opening the workflow
-in the n8n editor and using its own "Execute workflow" / "Listen for test event" control, exactly as
-every prior live test in this project has been run. Claude can read back and reconcile the results
-afterward through read-only Supabase queries and `n8n_executions` — it just cannot trigger the run
-itself without violating the inactive-workflows constraint.
+Four of six planned live tests are done (see Tasks 2–5 above): a full grounded run
+(execution `1669`), idempotency plus human-edit survival on a rerun (execution `1673`), and quote
+grounding, all confirmed by direct read-only database checks. Along the way the owner's testing
+found and this plan fixed three real defects, none of them present in the legacy pipeline: an
+ad-`<iframe>` false positive in the Phase 1 completeness check, a `runOnceForEachItem` return-shape
+bug, and a taxonomy-lookup fan-out bug that inflated the classification prompt past LM Studio's
+context limit. See the 2026-08-10 entries in [Current Status](../Current-Status.md) for full detail
+on each.
 
-Suggested order, reusing LM Studio's `google/gemma-4-12b-qat` model already configured in every stage:
+Two tests remain, both still needing the owner for the same reason as before — n8n only accepts an
+external (webhook/form/chat) trigger on an *active* workflow, and this plan keeps all four inactive:
 
-1. Open `Terra Space - Full News Processing` in the n8n editor and execute it once with one real,
-   event-bearing article (the six form fields). Report the execution back (or just say "done") so
-   the resulting `p1_uuid`, `phase1_sources`/`phase1_processing_runs`/`phase2_event_candidates`/
-   `phase2_candidate_runs`/`phase3_events`/`phase3_event_runs` rows and evidence-quote grounding can
-   be reconciled.
-2. Execute it again with a deliberately eventless article (e.g. a recipe) and confirm
-   `COMPLETED_NO_CANDIDATE` with zero Phase 3 rows.
-3. Execute `Terra Space - Input News Manual` directly with a blank `p1_raw_content_text` and confirm
-   it fails before any Supabase write.
-4. From the n8n editor, manually change one `phase3_events` row's `title` (simulating a human edit),
-   note its `human_modified_at` if set, then re-run `Terra Space - Event Records` for the same
-   `p1_uuid` and confirm the title, summary, `dashboard_status`, and `human_modified_at` are
-   unchanged afterward — proving `phase3_create_pipeline_event`'s idempotency holds in practice, not
-   only by reading its source.
+1. Execute `Terra Space - Full News Processing` with a deliberately eventless article (e.g. a
+   recipe) and confirm `COMPLETED_NO_CANDIDATE` with zero Phase 3 rows.
+2. Execute `Terra Space - Input News Manual` directly (its `Phase 1 Internal Input` or the form)
+   with a blank `p1_raw_content_text` and confirm it fails before any Supabase write.
 
-Once these are run, Task 6 can be finished and this plan's status can move to `completed`.
+Optional, lower-priority (already proven once on the legacy tables per the 2026-08-09
+production-readiness verification, not yet re-proven on the new ones): running the same article
+through Phase 2 twice to confirm no duplicate latest row, and a `NO_MAIN_ISSUE` article to confirm
+Phase 2 completes successfully without invoking Phase 3.
+
+Once the two required tests above are run, Task 6 can be finished and this plan's status can move to
+`completed`.
 
 # Completion gate
 

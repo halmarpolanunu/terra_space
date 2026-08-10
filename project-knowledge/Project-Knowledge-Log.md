@@ -8,6 +8,21 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-10 - Idempotency and human-edit protection confirmed live for phase3_create_pipeline_event
+
+- With the owner's explicit approval, ran a plain SQL `UPDATE` on one `phase3_events` row (title,
+  `human_modified_at`, `human_modified_fields`) to simulate a human edit, since the Dashboard that
+  would normally do this doesn't exist yet.
+- The owner then re-ran `Terra Space - Event Records` for the same `p1_uuid` via its chat trigger
+  (execution `1673`). Afterward: `phase3_events` still held exactly 3 rows for that source (no
+  duplicate created) and the edited row's title/`human_modified_at`/`updated_at` were unchanged,
+  as were the other two rows' `updated_at` values — even though `phase3_event_runs` correctly grew
+  by 3 fresh append-only rows. Confirms `phase3_create_pipeline_event`'s idempotency and
+  human-authority guarantees hold under a real rerun, not only by reading its SQL source.
+- Two live tests remain on the [n8n Phase-Prefixed Table Transition
+  Plan](plans/2026-08-10-n8n-phase-table-transition.md): an eventless article and a blank-input
+  test on Phase 1.
+
 ## 2026-08-10 - First fully clean end-to-end run of the phase-prefixed pipeline
 
 - Master execution `1669` (82.6s) ran one real article through Phase 1, Phase 2, and Phase 3 with
