@@ -3,6 +3,7 @@ CLAUDE.local.md
 .env
 .env.*
 !.env.example
+.mcp.json
 
 # Editor and OS state
 .DS_Store
@@ -39,6 +40,8 @@ data/database/*.db
 data/database/*.db-*
 data/database.pre-migration-backup/
 data/database-backups/
+data/backups/*
+!data/backups/README.md
 data/attachments/*
 !data/attachments/.gitkeep
 data/logs/*
