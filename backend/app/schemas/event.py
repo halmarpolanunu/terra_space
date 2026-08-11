@@ -3,7 +3,21 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-EpistemicStatus = Literal["confirmed", "claim", "rumor", "denied"]
+EpistemicStatus = Literal[
+    # Original SQLite draft/approved-event values.
+    "confirmed",
+    "claim",
+    "rumor",
+    "denied",
+    # Added for the Supabase read-only bridge: the approved phase3_events value set
+    # (see decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). SQLite-backed events
+    # never produce these; they exist so bridge data can be shown honestly instead of
+    # rejected or mislabeled.
+    "reported",
+    "alleged",
+    "planned",
+    "unknown",
+]
 DatePrecision = Literal["exact", "month", "year", "unknown"]
 ReviewStatus = Literal["draft", "approved", "rejected", "merged"]
 ActorRole = Literal["source", "target"]

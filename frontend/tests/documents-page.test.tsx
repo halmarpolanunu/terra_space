@@ -1,143 +1,84 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/documents-api", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/documents-api")>("@/lib/documents-api");
+vi.mock("@/lib/bridge-api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/bridge-api")>("@/lib/bridge-api");
   return {
     ...actual,
-    listDocuments: vi.fn(),
-    createDocument: vi.fn(),
-    updateDocument: vi.fn(),
-    deleteDocument: vi.fn(),
-    processDocuments: vi.fn(),
-    retryDocument: vi.fn(),
+    listBridgeSources: vi.fn(),
   };
 });
 
 import DocumentsPage from "@/app/documents/page";
-import * as documentsApi from "@/lib/documents-api";
-import type { Document } from "@/lib/documents-api";
+import * as bridgeApi from "@/lib/bridge-api";
+import type { BridgeSource } from "@/lib/bridge-api";
 
-function makeDocument(overrides: Partial<Document> = {}): Document {
+function makeSource(overrides: Partial<BridgeSource> = {}): BridgeSource {
   return {
-    id: "doc-1",
-    title: "Report",
-    content: "Body",
-    publication_date: "2026-07-10",
-    source_url: null,
-    input_date: "2026-07-14T00:00:00Z",
+    id: "source-1",
+    title: "French Rafale shot down drone over Latvia",
+    publication_date: "2026-08-10",
+    source_domain: "example.com",
+    source_url: "https://example.com/article",
+    author: "A reporter",
+    collection_source: "manual_input",
     processing_status: "completed",
     processing_error: null,
-    created_at: "2026-07-14T00:00:00Z",
-    updated_at: "2026-07-14T00:00:00Z",
-    attachments: [],
+    raw_content_text: "Raw article text.",
+    cleaned_content_text: "Cleaned article text.",
+    created_at: "2026-08-10T00:00:00Z",
+    updated_at: "2026-08-10T00:00:00Z",
     ...overrides,
   };
 }
 
-describe("DocumentsPage batch processing", () => {
+describe("DocumentsPage (Supabase read-only Sources)", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("marks populated rows and attachment thumbnails for restrained motion", async () => {
-    const document = makeDocument({
-      attachments: [
-        {
-          id: "attachment-1",
-          original_name: "briefing-map.png",
-          media_type: "image/png",
-          size_bytes: 2048,
-          created_at: "2026-07-14T00:00:00Z",
-        },
-      ],
-    });
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([document]);
+  it("shows the read-only Supabase preview notice", async () => {
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     render(<DocumentsPage />);
 
-    const title = await screen.findByText(document.title);
-    expect(title.closest("li")).toHaveAttribute("data-motion-item", "document-row");
-    expect(screen.getByAltText("briefing-map.png").closest(".attachment-thumb")).toHaveAttribute(
-      "data-motion-item",
-      "attachment",
-    );
+    await screen.findByRole("status");
   });
 
-  it("shows the confirmation dialog before reprocessing, and proceeds only once confirmed", async () => {
-    const document = makeDocument();
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([document]);
-    vi.mocked(documentsApi.processDocuments).mockResolvedValueOnce({
-      status: "confirmation_required",
-      document_ids: [document.id],
-    });
+  it("lists sources from Supabase with title, publication date, and status", async () => {
+    const source = makeSource();
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([source]);
 
     render(<DocumentsPage />);
-    await screen.findByText(document.title);
 
-    fireEvent.click(screen.getByLabelText(`Select ${document.title}`));
-    fireEvent.click(screen.getByRole("button", { name: /process 1 selected/i }));
-
-    await screen.findByText(/1 selected document has approved events/i);
-    expect(documentsApi.processDocuments).toHaveBeenCalledTimes(1);
-    expect(documentsApi.processDocuments).toHaveBeenCalledWith([document.id]);
-
-    vi.mocked(documentsApi.processDocuments).mockResolvedValueOnce({
-      status: "queued",
-      document_ids: [document.id],
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /reprocess anyway/i }));
-
-    await waitFor(() => expect(documentsApi.processDocuments).toHaveBeenCalledTimes(2));
-    expect(documentsApi.processDocuments).toHaveBeenLastCalledWith([document.id], true);
-    expect(screen.queryByText(/selected document.*has approved events/i)).not.toBeInTheDocument();
+    await screen.findByText(source.title);
+    expect(screen.getByText(/publication date: 2026-08-10/i)).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
   });
 
-  it(
-    "polls document status after processing starts and reflects the badge as it changes",
-    async () => {
-      const target = makeDocument({ processing_status: "draft" });
-      vi.mocked(documentsApi.listDocuments)
-        .mockResolvedValueOnce([target])
-        .mockResolvedValueOnce([{ ...target, processing_status: "processing" }])
-        .mockResolvedValueOnce([{ ...target, processing_status: "ready_for_review" }]);
-      vi.mocked(documentsApi.processDocuments).mockResolvedValueOnce({
-        status: "queued",
-        document_ids: [target.id],
-      });
-
-      render(<DocumentsPage />);
-      await screen.findByText(target.title);
-
-      fireEvent.click(screen.getByLabelText(`Select ${target.title}`));
-      fireEvent.click(screen.getByRole("button", { name: /process 1 selected/i }));
-
-      await waitFor(() => expect(documentsApi.processDocuments).toHaveBeenCalledTimes(1));
-
-      await screen.findByText("Processing", {}, { timeout: 5000 });
-      await screen.findByText("Ready for review", {}, { timeout: 5000 });
-    },
-    10000,
-  );
-
-  it("shows a Retry control for a failed document and calls the retry endpoint", async () => {
-    const failed = makeDocument({
-      processing_status: "failed",
-      processing_error: "LM Studio timed out.",
-    });
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([failed]);
-    vi.mocked(documentsApi.retryDocument).mockResolvedValueOnce({
-      status: "queued",
-      document_ids: [failed.id],
-    });
+  it("shows cleaned text on demand without any edit or process control", async () => {
+    const source = makeSource();
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([source]);
 
     render(<DocumentsPage />);
+    await screen.findByText(source.title);
+
+    expect(screen.queryByRole("button", { name: /add document/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /process selected/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^edit$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^delete$/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /show text/i }));
+
+    expect(screen.getByText("Cleaned article text.")).toBeInTheDocument();
+  });
+
+  it("shows a processing error message for a failed source", async () => {
+    const failed = makeSource({ processing_status: "failed", processing_error: "LM Studio timed out." });
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([failed]);
+
+    render(<DocumentsPage />);
+
     await screen.findByText("LM Studio timed out.");
-
-    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
-
-    await waitFor(() => expect(documentsApi.retryDocument).toHaveBeenCalledWith(failed.id));
   });
 });

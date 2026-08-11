@@ -81,6 +81,12 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
   input) pass against real Supabase data; all four workflows remain inactive. See the
   [n8n Phase-Prefixed Table Transition Implementation Plan](plans/2026-08-10-n8n-phase-table-transition.md).
   Status: completed.
+- [x] **Show the live Supabase pipeline data read-only** - a verification-first bridge before the
+  full cutover: the backend reads local Supabase directly for Sources, Event Review, Events, and
+  Dashboard, with every write control removed; SQLite stays untouched. Verified against real live
+  data. See the [Supabase Read-Only Bridge Design](plans/2026-08-11-supabase-read-only-bridge-design.md)
+  and its [implementation plan](plans/2026-08-11-supabase-read-only-bridge-implementation.md).
+  Status: completed.
 - [ ] **Move Terra Space application storage to Supabase** - replace SQLite persistence while
   preserving existing application behavior and making Phase 3 events immediately visible and
   human-authoritative in Dashboard. Status: planned.

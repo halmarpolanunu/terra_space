@@ -1,6 +1,18 @@
 import { toEventFilterSearch, type EventFilters } from "@/lib/event-filters";
 
-export type EpistemicStatus = "confirmed" | "claim" | "rumor" | "denied";
+export type EpistemicStatus =
+  // Original SQLite draft/approved-event values.
+  | "confirmed"
+  | "claim"
+  | "rumor"
+  | "denied"
+  // Added for the Supabase read-only bridge: the approved phase3_events value set (see
+  // decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). SQLite-backed events never
+  // produce these.
+  | "reported"
+  | "alleged"
+  | "planned"
+  | "unknown";
 export type DatePrecision = "exact" | "month" | "year" | "unknown";
 export type ReviewStatus = "draft" | "approved" | "rejected" | "merged";
 export type ActorRole = "source" | "target";

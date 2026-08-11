@@ -1,0 +1,27 @@
+# Disposable PostgreSQL database for the Supabase read-only bridge's backend tests.
+#
+# This is NOT the real local Supabase deployment (D:\local-supabase) -- it is a plain, throwaway
+# Postgres used only so backend tests can apply the checked-in supabase/migrations/*.sql files
+# and query real tables, without ever touching live pipeline data. Data lives on tmpfs and is
+# gone the moment the container stops.
+#
+# Start before running backend tests that need it:
+#   docker compose -f docker-compose.supabase-bridge-test.yml up -d
+# Tests that need this service skip themselves with a clear message if it isn't reachable.
+
+services:
+  supabase-bridge-test-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: terra_space_bridge_test
+    ports:
+      - 127.0.0.1:55432:5432
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d terra_space_bridge_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20

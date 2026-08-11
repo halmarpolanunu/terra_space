@@ -1,149 +1,100 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { act } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/components/app-shell", () => ({
-  AppShell: ({ children }: { children: React.ReactNode }) => <main>{children}</main>,
-}));
-
-vi.mock("@/lib/documents-api", async () => {
-  const actual =
-    await vi.importActual<typeof import("@/lib/documents-api")>("@/lib/documents-api");
-  return { ...actual, listDocuments: vi.fn() };
-});
-
-vi.mock("@/lib/events-api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
-  return {
-    ...actual,
-    listActors: vi.fn(),
-    listEventsForDocument: vi.fn(),
-    listEventTypes: vi.fn(),
-  };
+vi.mock("@/lib/bridge-api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/bridge-api")>("@/lib/bridge-api");
+  return { ...actual, listBridgeCandidateReviews: vi.fn() };
 });
 
 import EventReviewPage from "@/app/event-review/page";
-import * as documentsApi from "@/lib/documents-api";
-import type { Document } from "@/lib/documents-api";
-import * as eventsApi from "@/lib/events-api";
-import type { EventRead } from "@/lib/events-api";
+import * as bridgeApi from "@/lib/bridge-api";
+import type { BridgeCandidateReview } from "@/lib/bridge-api";
 
-function makeEvent(id: string, title: string): EventRead {
+function makeReview(overrides: Partial<BridgeCandidateReview> = {}): BridgeCandidateReview {
   return {
-    id,
-    title,
-    summary: `${title} summary`,
-    event_date: "2026-07-10",
-    event_date_precision: "exact",
-    epistemic_status: "claim",
-    review_status: "draft",
-    event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
-    actors: [],
-    locations: [],
-    sources: [],
-    duplicate_flags: [],
-    extraction_incomplete: false,
-    extraction_incomplete_stages: [],
-    created_at: "2026-07-14T00:00:00Z",
-    updated_at: "2026-07-14T00:00:00Z",
+    phase1_source_id: "source-1",
+    source_title: "Bridge crossing report",
+    main_issue_status: "MAIN_ISSUE_FOUND",
+    main_issue: {
+      label: "Bridge crossing",
+      summary: "A convoy crossed the bridge.",
+      evidence_quote: "A convoy crossed the bridge before dawn.",
+      evidence_start: 0,
+      evidence_end: 10,
+      quote_grounded: true,
+    },
+    event_detection_status: "EVENT_CANDIDATES_FOUND",
+    event_candidates: [
+      {
+        working_title: "Convoy crosses bridge",
+        classification: "ENTITY_CENTRED_CHANGE",
+        phenomenon: "A convoy crossed the bridge.",
+        entities: ["Convoy"],
+        evidence_quote: "A convoy crossed the bridge before dawn.",
+        evidence_start: 0,
+        evidence_end: 10,
+        quote_grounded: true,
+      },
+    ],
+    processed_at: "2026-08-10T00:00:00Z",
+    ...overrides,
   };
 }
 
-const documentFixture: Document = {
-  id: "document-1",
-  title: "Field report",
-  content: "A convoy crossed the bridge before dawn.",
-  publication_date: "2026-07-10",
-  source_url: "https://example.test/report",
-  input_date: "2026-07-14T00:00:00Z",
-  processing_status: "ready_for_review",
-  processing_error: null,
-  created_at: "2026-07-14T00:00:00Z",
-  updated_at: "2026-07-14T00:00:00Z",
-  attachments: [],
-};
+// This route no longer pairs a document with a draft event for approve/reject -- it pages
+// through one Phase 2 result per source. See
+// project-knowledge/plans/2026-08-11-supabase-read-only-bridge-design.md.
+describe("EventReviewPage (Supabase read-only pipeline output)", () => {
+  afterEach(() => vi.clearAllMocks());
 
-const secondDocumentFixture: Document = {
-  ...documentFixture,
-  id: "document-2",
-  title: "Second field report",
-  content: "A separate report describes activity at the depot.",
-};
-
-describe("EventReviewPage motion direction", () => {
-  beforeEach(() => {
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([documentFixture]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(eventsApi.listEventsForDocument).mockResolvedValue([
-      makeEvent("event-1", "Bridge crossing reported"),
-      makeEvent("event-2", "Convoy reached the depot"),
+  it("shows the read-only notice and the first source's main issue and candidates", async () => {
+    vi.mocked(bridgeApi.listBridgeCandidateReviews).mockResolvedValue([
+      makeReview(),
+      makeReview({ phase1_source_id: "source-2", source_title: "Depot activity report" }),
     ]);
-  });
 
-  it("keys the active source/event pair and reports next, previous, and skip direction", async () => {
     render(<EventReviewPage />);
 
-    await screen.findByText("Bridge crossing reported");
-    const firstPair = document.querySelector(".event-review-columns");
-    expect(firstPair).toHaveClass("event-review-transition");
-    expect(firstPair).toHaveAttribute("data-motion-direction", "next");
-
-    fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    await screen.findByText("Convoy reached the depot");
-    const nextPair = document.querySelector(".event-review-columns");
-    expect(nextPair).not.toBe(firstPair);
-    expect(nextPair).toHaveAttribute("data-motion-direction", "next");
-
-    fireEvent.click(screen.getByRole("button", { name: "Prev" }));
-    await screen.findByText("Bridge crossing reported");
-    const previousPair = document.querySelector(".event-review-columns");
-    expect(previousPair).not.toBe(nextPair);
-    expect(previousPair).toHaveAttribute("data-motion-direction", "previous");
-
-    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
-    await screen.findByText("Convoy reached the depot");
-    await waitFor(() =>
-      expect(document.querySelector(".event-review-columns")).toHaveAttribute(
-        "data-motion-direction",
-        "next",
-      ),
-    );
+    await screen.findByRole("status");
+    expect(screen.getByText("Bridge crossing report")).toBeInTheDocument();
+    expect(screen.getByText("Convoy crosses bridge")).toBeInTheDocument();
+    expect(screen.getByText("Source 1 of 2")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /approve/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /reject/i })).not.toBeInTheDocument();
   });
 
-  it("does not pair a new source document with stale events while its events are loading", async () => {
-    let resolveSecondDocumentEvents: ((events: EventRead[]) => void) | undefined;
-    const secondDocumentEvents = new Promise<EventRead[]>((resolve) => {
-      resolveSecondDocumentEvents = resolve;
-    });
-    const firstEvent = makeEvent("event-1", "Bridge crossing reported");
-    const secondEvent = makeEvent("event-2", "Depot activity reported");
-
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([
-      documentFixture,
-      secondDocumentFixture,
+  it("pages to the next and back to the previous source", async () => {
+    vi.mocked(bridgeApi.listBridgeCandidateReviews).mockResolvedValue([
+      makeReview(),
+      makeReview({ phase1_source_id: "source-2", source_title: "Depot activity report" }),
     ]);
-    vi.mocked(eventsApi.listEventsForDocument).mockImplementation((documentId) =>
-      documentId === documentFixture.id
-        ? Promise.resolve([firstEvent])
-        : secondDocumentEvents,
-    );
 
     render(<EventReviewPage />);
-    await screen.findByText(firstEvent.title);
+    await screen.findByText("Bridge crossing report");
 
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-
-    await screen.findByText(secondDocumentFixture.content);
-    expect(screen.queryByText(firstEvent.title)).not.toBeInTheDocument();
-    expect(screen.getByText("Loading extracted events…")).toBeVisible();
+    await screen.findByText("Depot activity report");
+    expect(screen.getByText("Source 2 of 2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Prev" }));
-    await screen.findByText(documentFixture.content);
-    await screen.findByText(firstEvent.title);
+    await screen.findByText("Bridge crossing report");
+    expect(screen.getByRole("button", { name: "Prev" })).toBeDisabled();
+  });
 
-    await act(async () => resolveSecondDocumentEvents?.([secondEvent]));
-    expect(screen.getByText(firstEvent.title)).toBeVisible();
-    expect(screen.queryByText(secondEvent.title)).not.toBeInTheDocument();
+  it("shows a no-main-issue source honestly instead of inventing one", async () => {
+    vi.mocked(bridgeApi.listBridgeCandidateReviews).mockResolvedValue([
+      makeReview({
+        main_issue_status: "NO_MAIN_ISSUE",
+        main_issue: null,
+        event_detection_status: "NOT_RUN",
+        event_candidates: [],
+      }),
+    ]);
+
+    render(<EventReviewPage />);
+
+    await screen.findByText("No main issue");
+    expect(screen.getByText("Not run (no main issue)")).toBeInTheDocument();
   });
 });

@@ -23,6 +23,10 @@ const EPISTEMIC_LABELS = {
   claim: "Claim",
   rumor: "Rumor",
   denied: "Denied",
+  reported: "Reported",
+  alleged: "Alleged",
+  planned: "Planned",
+  unknown: "Unknown",
 } as const;
 
 const EPISTEMIC_COLORS = {
@@ -30,6 +34,10 @@ const EPISTEMIC_COLORS = {
   claim: "--status-claim",
   rumor: "--status-rumor",
   denied: "--status-denied",
+  reported: "--status-reported",
+  alleged: "--status-alleged",
+  planned: "--status-planned",
+  unknown: "--status-unknown",
 } as const;
 
 function formatLocation(location: LocationRead): string {

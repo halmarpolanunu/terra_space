@@ -14,6 +14,13 @@
   --status-claim: #f2a93b;
   --status-rumor: #54b8ef;
   --status-denied: #e5544b;
+  /* Added for the Supabase read-only bridge's approved epistemic status set (see
+     decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). SQLite-backed draft/approved
+     events never produce these; they exist so bridge data displays honestly. */
+  --status-reported: #3ba9c7;
+  --status-alleged: #a37fe0;
+  --status-planned: #7d93a8;
+  --status-unknown: #8a8f94;
   --focus: var(--accent);
   --shell-glass: rgba(3, 5, 6, 0.78);
   --sidebar-glass: rgba(5, 7, 8, 0.76);
@@ -190,6 +197,17 @@ body {
 .document-title { font-weight: 600; }
 .document-meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); }
 .document-error { color: var(--status-denied); font-family: var(--font-mono); font-size: 0.8rem; }
+.read-only-bridge-notice {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border-bright);
+  border-radius: 6px;
+  background: var(--accent-wash);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
 .event-type-description {
   color: var(--text-muted);
   font-family: var(--font-mono);

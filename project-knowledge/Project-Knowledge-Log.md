@@ -8,6 +8,25 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-11 - Supabase Read-Only Bridge implemented; an undocumented live-database table rename discovered and reconciled
+
+- Implemented the [Supabase Read-Only Bridge Design](plans/2026-08-11-supabase-read-only-bridge-design.md)
+  per its new [implementation plan](plans/2026-08-11-supabase-read-only-bridge-implementation.md).
+  Sources, Event Review, Events, and Dashboard now read local Supabase directly and read-only;
+  SQLite is untouched.
+- Before writing any bridge code, found that the live local Supabase database's phase-prefixed
+  tables had already been renamed with a `terra_space_` prefix on 2026-08-11 (owner + Codex,
+  outside git, undocumented). Confirmed intentional, then reconciled: backfilled the three
+  missing migrations into `supabase/migrations/`, and corrected every stale bare-name reference
+  in the checked-in `supabase/tests/*.sql` and `supabase/seed/*.sql` files, including a legacy
+  source-table reference a first pass missed.
+- 24 new backend tests (read-only enforcement, service queries, API routes) plus 5 rewritten
+  frontend test files. Full suites: 282 backend tests and 214 frontend tests pass, clean lint,
+  clean production build. Verified against the real local Supabase: Sources, Event Review, and
+  Events/Dashboard all show the correct live counts, including a previously human-edited event
+  title surviving correctly through the bridge.
+- Both the design and implementation plan are now `status: completed`.
+
 ## 2026-08-10 - Restored a node schema accidentally corrupted while setting up a test
 
 - While manually entering test values for `Phase 1 Internal Input`'s schema panel, the six field

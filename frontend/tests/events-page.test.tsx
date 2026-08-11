@@ -11,15 +11,14 @@ vi.mock("next/navigation", () => ({
   useParams: () => ({ documentId: currentDocumentId }),
 }));
 
-vi.mock("@/lib/events-api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
+vi.mock("@/lib/bridge-api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/bridge-api")>("@/lib/bridge-api");
   return {
     ...actual,
-    listEvents: vi.fn(),
-    listEventTypes: vi.fn(),
-    listActors: vi.fn(),
-    updateEvent: vi.fn(),
-    deleteEvent: vi.fn(),
+    listBridgeEvents: vi.fn(),
+    listBridgeEventTypes: vi.fn(),
+    listBridgeActors: vi.fn(),
+    listBridgeSources: vi.fn(),
   };
 });
 
@@ -32,7 +31,7 @@ import EventsPage from "@/app/events/page";
 import { EventDetail } from "@/app/events/event-detail";
 import { EventEditor } from "@/app/events/event-editor";
 import DocumentSourcePage from "@/app/documents/[documentId]/page";
-import * as eventsApi from "@/lib/events-api";
+import * as bridgeApi from "@/lib/bridge-api";
 import * as documentsApi from "@/lib/documents-api";
 import type { EventRead, TaxonomyPathSegment } from "@/lib/events-api";
 import type { Document } from "@/lib/documents-api";
@@ -76,43 +75,62 @@ function makeDocument(overrides: Partial<Document> = {}): Document {
   return { id: "doc-1", title: "Field report", content: "The full source report.", publication_date: "2026-07-11", source_url: "https://example.test/report", input_date: "2026-07-14T00:00:00Z", processing_status: "completed", processing_error: null, created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", attachments: [], ...overrides };
 }
 
-describe("EventsPage", () => {
+// Events reads Supabase read-only: no edit, approve, reject, or delete controls exist on this
+// page. See project-knowledge/plans/2026-08-11-supabase-read-only-bridge-design.md.
+describe("EventsPage (Supabase read-only)", () => {
   afterEach(() => {
     currentSearch = "q=bridge&sort=title_asc";
     vi.clearAllMocks();
   });
 
-  it("restores URL filters, requests approved events, replaces the URL on changes, and hides non-approved rows", async () => {
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([
+  it("restores URL filters, requests events from the bridge, and replaces the URL on changes", async () => {
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([
       makeEvent(),
-      makeEvent({ id: "event-2", title: "Second approved event" }),
-      makeEvent({ id: "event-3", title: "Rejected event", review_status: "rejected" }),
+      makeEvent({ id: "event-2", title: "Second published event" }),
     ]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     render(<EventsPage />);
 
     await screen.findByText("Bridge crossing reported");
-    expect(eventsApi.listEvents).toHaveBeenCalledWith(expect.objectContaining({ q: "bridge", sort: "title_asc" }));
-    expect(screen.queryByText("Rejected event")).not.toBeInTheDocument();
+    expect(bridgeApi.listBridgeEvents).toHaveBeenCalledWith(expect.objectContaining({ q: "bridge", sort: "title_asc" }));
     expect(screen.getByLabelText("Search title & summary")).toHaveValue("bridge");
 
     fireEvent.change(screen.getByLabelText("Search title & summary"), { target: { value: "convoy" } });
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/events?q=convoy&sort=title_asc"));
   });
 
-  it("opens a selected event with its full facts and read-only sources", async () => {
+  it("shows the read-only preview notice and no edit or delete controls anywhere on the page", async () => {
+    const event = makeEvent();
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([event]);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
+
+    render(<EventsPage />);
+    await screen.findByText(event.title);
+
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: event.title }));
+
+    expect(screen.queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+  });
+
+  it("opens a selected event with its full facts and a plain-text (non-linked) source reference", async () => {
     const event = makeEvent({
       actors: [{ role: "source", actor: { id: "actor-1", name: "North Unit", is_active: true } }],
       locations: [{ id: "location-1", country: "Indonesia", admin1: "Jakarta", city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" }],
-      sources: [{ source_id: "source-1", document_id: "doc-1", reference_label: "Field report", evidence_quote: "A convoy crossed the bridge." }],
+      sources: [{ source_id: "source-1", document_id: null, reference_label: "Field report", evidence_quote: "A convoy crossed the bridge." }],
     });
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([event]);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     const { container } = render(<EventsPage />);
     expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "list");
@@ -124,118 +142,17 @@ describe("EventsPage", () => {
     expect(screen.getByText("2026-07-10")).toBeVisible();
     expect(screen.getByText("North Unit (source)")).toBeVisible();
     expect(screen.getByText("Jakarta, Jakarta, Indonesia (city/regency coordinates)")).toBeVisible();
-    expect(screen.getByText("Claim", { selector: ".event-detail .status-badge" })).toHaveAttribute(
-      "data-status",
-      "claim",
-    );
-    expect(screen.getByRole("link", { name: "Field report" })).toHaveAttribute("href", "/documents/doc-1?from=%2Fevents%3Fq%3Dbridge%26sort%3Dtitle_asc");
+    expect(screen.queryByRole("link", { name: "Field report" })).not.toBeInTheDocument();
+    expect(screen.getByText("Field report")).toBeVisible();
     expect(screen.getByText(/sources and evidence are read-only/i)).toBeVisible();
-  });
-
-  it("saves an approved-event patch and refreshes the selected event", async () => {
-    const event = makeEvent();
-    const updated = { ...event, summary: "The convoy crossed at dawn." };
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([event.event_type!]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(eventsApi.updateEvent).mockResolvedValue(updated);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
-
-    const { container } = render(<EventsPage />);
-    fireEvent.click(await screen.findByRole("button", { name: event.title }));
-    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "edit");
-    fireEvent.change(screen.getByLabelText("Summary"), { target: { value: updated.summary } });
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    await waitFor(() => expect(eventsApi.updateEvent).toHaveBeenCalledWith(event.id, expect.objectContaining({ summary: updated.summary })));
-    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
-    expect(screen.getByText(updated.summary)).toBeVisible();
-  });
-
-  it("deletes an event directly from its list row without opening the detail panel", async () => {
-    const event = makeEvent();
-    const other = makeEvent({ id: "event-2", title: "Second approved event" });
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event, other]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
-    vi.mocked(eventsApi.deleteEvent).mockResolvedValue();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
-    render(<EventsPage />);
-    await screen.findByText(event.title);
-    const row = screen.getByRole("button", { name: event.title }).closest("li")!;
-
-    fireEvent.click(within(row).getByRole("button", { name: "Delete" }));
-
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining(event.title));
-    await waitFor(() => expect(eventsApi.deleteEvent).toHaveBeenCalledWith(event.id));
-    expect(screen.queryByRole("button", { name: event.title })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: other.title })).toBeVisible();
-  });
-
-  it("deletes an approved event after confirmation and returns to the refreshed list", async () => {
-    const event = makeEvent();
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
-    vi.mocked(eventsApi.deleteEvent).mockResolvedValue();
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
-    const { container } = render(<EventsPage />);
-    fireEvent.click(await screen.findByRole("button", { name: event.title }));
-
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-
-    expect(window.confirm).toHaveBeenCalledWith(
-      expect.stringContaining(event.title),
-    );
-    await waitFor(() => expect(eventsApi.deleteEvent).toHaveBeenCalledWith(event.id));
-    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "list");
-    expect(screen.queryByRole("button", { name: event.title })).not.toBeInTheDocument();
-  });
-
-  it("does not delete when the confirmation dialog is declined", async () => {
-    const event = makeEvent();
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
-    vi.spyOn(window, "confirm").mockReturnValue(false);
-
-    const { container } = render(<EventsPage />);
-    fireEvent.click(await screen.findByRole("button", { name: event.title }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-
-    expect(eventsApi.deleteEvent).not.toHaveBeenCalled();
-    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
-  });
-
-  it("keeps the detail open and shows an error message when deletion fails", async () => {
-    const event = makeEvent();
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
-    vi.mocked(eventsApi.deleteEvent).mockRejectedValue(new Error("Event cannot be edited while rejected."));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
-    const { container } = render(<EventsPage />);
-    fireEvent.click(await screen.findByRole("button", { name: event.title }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-
-    await screen.findByText("Event cannot be edited while rejected.");
-    expect(container.querySelector(".events-view")).toHaveAttribute("data-view", "detail");
   });
 
   it("returns to the filtered list when filters change while an event is selected", async () => {
     const event = makeEvent();
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([event]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([event]);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     render(<EventsPage />);
     fireEvent.click(await screen.findByRole("button", { name: event.title }));

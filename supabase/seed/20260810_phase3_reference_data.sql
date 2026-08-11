@@ -7,11 +7,11 @@
 --
 -- What it does copy:
 --   1. The twelve approved active Event Types, keeping the identifiers they already have
---      in terra_space_event_types so nothing loses its identity.
+--      in terra_space_legacy_event_types so nothing loses its identity.
 --   2. The approved four-level taxonomy tree, with fixed identifiers written out below so
 --      re-running this file always produces the same tree.
 --   3. The offline location gazetteer, mapped column by column out of
---      terra_space_location_gazetteer.
+--      terra_space_legacy_location_gazetteer.
 --
 -- The legacy tables are only ever read. Nothing here drops, empties, or edits them.
 -- Every statement is safe to run twice.
@@ -26,9 +26,9 @@ begin;
 -- =====================================================================================
 -- 1. The twelve approved active Event Types
 -- =====================================================================================
--- The identifiers below are the ones already in use in terra_space_event_types.
+-- The identifiers below are the ones already in use in terra_space_legacy_event_types.
 
-insert into public.phase3_event_types (id, name, description, is_active) values
+insert into public.terra_space_phase3_event_types (id, name, description, is_active) values
   ('725564a1-6cba-4bba-92a3-af8c177bd732', 'Security Statement / Threat',
    'An official security-related statement, warning, threat, or posture signal.', true),
   ('9d3c99d3-aa65-4b0a-8181-27c6010fd831', 'Military Mobilization',
@@ -62,14 +62,14 @@ on conflict do nothing;
 -- project-knowledge/decisions/Event-Taxonomy-Tree-and-Management.md
 
 -- Domains
-insert into public.phase3_taxonomy_nodes (id, name, level, parent_id, is_active) values
+insert into public.terra_space_phase3_taxonomy_nodes (id, name, level, parent_id, is_active) values
   ('00000001-0000-4000-8000-000000000001', 'Security & Conflict', 'domain', null, true),
   ('00000001-0000-4000-8000-000000000002', 'Diplomacy',           'domain', null, true),
   ('00000001-0000-4000-8000-000000000003', 'Economy & Energy',    'domain', null, true)
 on conflict do nothing;
 
 -- Categories
-insert into public.phase3_taxonomy_nodes (id, name, level, parent_id, is_active) values
+insert into public.terra_space_phase3_taxonomy_nodes (id, name, level, parent_id, is_active) values
   ('00000002-0000-4000-8000-000000000001', 'Signalling & Posture',
    'category', '00000001-0000-4000-8000-000000000001', true),
   ('00000002-0000-4000-8000-000000000002', 'Military & Conflict Activity',
@@ -85,7 +85,7 @@ insert into public.phase3_taxonomy_nodes (id, name, level, parent_id, is_active)
 on conflict do nothing;
 
 -- Subcategories
-insert into public.phase3_taxonomy_nodes (id, name, level, parent_id, is_active) values
+insert into public.terra_space_phase3_taxonomy_nodes (id, name, level, parent_id, is_active) values
   ('00000003-0000-4000-8000-000000000001', 'Security Signalling',
    'subcategory', '00000002-0000-4000-8000-000000000001', true),
   ('00000003-0000-4000-8000-000000000002', 'Military Readiness',
@@ -113,7 +113,7 @@ insert into public.phase3_taxonomy_nodes (id, name, level, parent_id, is_active)
 on conflict do nothing;
 
 -- Event Type leaves. Each one is the only node allowed to carry an Event Type.
-insert into public.phase3_taxonomy_nodes (id, name, description, level, parent_id, event_type_id, is_active)
+insert into public.terra_space_phase3_taxonomy_nodes (id, name, description, level, parent_id, event_type_id, is_active)
 select v.node_id::uuid, t.name, t.description, 'event_type', v.parent_id::uuid, t.id, true
 from (values
   ('00000004-0000-4000-8000-000000000001', '00000003-0000-4000-8000-000000000001', '725564a1-6cba-4bba-92a3-af8c177bd732'),
@@ -129,19 +129,19 @@ from (values
   ('00000004-0000-4000-8000-00000000000b', '00000003-0000-4000-8000-00000000000b', '28bf4f22-e496-49ec-83cc-512e035b5dcc'),
   ('00000004-0000-4000-8000-00000000000c', '00000003-0000-4000-8000-00000000000c', '7ed8fb4c-051e-47e2-9b87-d7861fdb565e')
 ) as v(node_id, parent_id, event_type_id)
-join public.phase3_event_types t on t.id = v.event_type_id::uuid
+join public.terra_space_phase3_event_types t on t.id = v.event_type_id::uuid
 on conflict do nothing;
 
 -- =====================================================================================
 -- 3. The offline location gazetteer
 -- =====================================================================================
--- terra_space_location_gazetteer stores the whole place in one lookup_key. The key is
+-- terra_space_legacy_location_gazetteer stores the whole place in one lookup_key. The key is
 -- either a three-letter country code on its own, or the country code, the unit-separator
 -- character (ASCII 31), and the place name in lower case. This splits that key into the
 -- explicit columns the new table uses, and keeps the original key so existing lookups
 -- still work unchanged.
 
-insert into public.phase3_location_gazetteer (
+insert into public.terra_space_phase3_location_gazetteer (
   lookup_key, country_iso3, admin1, city_regency, latitude, longitude, coordinate_precision
 )
 select
@@ -154,7 +154,7 @@ select
   g.latitude,
   g.longitude,
   g.coordinate_precision
-from public.terra_space_location_gazetteer g
+from public.terra_space_legacy_location_gazetteer g
 on conflict (lookup_key) do nothing;
 
 commit;
@@ -166,9 +166,9 @@ declare
   v_nodes integer;
   v_gaz   integer;
 begin
-  select count(*) into v_types from public.phase3_event_types;
-  select count(*) into v_nodes from public.phase3_taxonomy_nodes;
-  select count(*) into v_gaz   from public.phase3_location_gazetteer;
+  select count(*) into v_types from public.terra_space_phase3_event_types;
+  select count(*) into v_nodes from public.terra_space_phase3_taxonomy_nodes;
+  select count(*) into v_gaz   from public.terra_space_phase3_location_gazetteer;
   raise notice 'Seeded: % Event Types, % taxonomy nodes, % gazetteer rows.', v_types, v_nodes, v_gaz;
 end;
 $$;

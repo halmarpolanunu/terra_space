@@ -11,3 +11,9 @@ class Settings(BaseSettings):
     data_dir: Path = Path("/data")
     lm_studio_url: str = "http://host.docker.internal:1234"
     map_filename: str = "world-low-detail.pmtiles"
+    supabase_url: str | None = None
+    """Private, backend-only PostgreSQL URL for the read-only Supabase bridge.
+
+    Read from TERRA_SUPABASE_URL. Never exposed to frontend code. When unset, every
+    /api/bridge/* route reports itself unconfigured instead of falling back to SQLite.
+    """

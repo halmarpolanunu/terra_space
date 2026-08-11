@@ -22,15 +22,15 @@ declare
 begin
   select count(*) filter (where is_active), count(*)
     into v_active, v_total
-    from public.phase3_event_types;
+    from public.terra_space_phase3_event_types;
   if v_active <> 12 or v_total <> 12 then
     raise exception 'FAIL: expected 12 Event Types, all active; found % active of %', v_active, v_total;
   end if;
 
   -- Names, descriptions, and identifiers still match the approved list in the legacy table.
   select count(*) into v_changed
-    from public.terra_space_event_types legacy
-    full join public.phase3_event_types fresh
+    from public.terra_space_legacy_event_types legacy
+    full join public.terra_space_phase3_event_types fresh
       on fresh.id = legacy.event_type_id
    where legacy.event_type_id is null
       or fresh.id is null
@@ -63,7 +63,7 @@ begin
          count(*) filter (where level = 'subcategory'),
          count(*) filter (where level = 'event_type')
     into v_domains, v_categories, v_subs, v_leaves
-    from public.phase3_taxonomy_nodes
+    from public.terra_space_phase3_taxonomy_nodes
    where is_active;
   if (v_domains, v_categories, v_subs, v_leaves) <> (3, 6, 12, 12) then
     raise exception 'FAIL: expected 3 domains, 6 categories, 12 subcategories, 12 leaves; found %, %, %, %',
@@ -72,8 +72,8 @@ begin
 
   -- Each node sits directly under the correct level.
   select count(*) into v_bad
-    from public.phase3_taxonomy_nodes child
-    join public.phase3_taxonomy_nodes parent on parent.id = child.parent_id
+    from public.terra_space_phase3_taxonomy_nodes child
+    join public.terra_space_phase3_taxonomy_nodes parent on parent.id = child.parent_id
    where (child.level, parent.level) not in (
      ('category', 'domain'), ('subcategory', 'category'), ('event_type', 'subcategory')
    );
@@ -83,9 +83,9 @@ begin
 
   -- Every active Event Type has exactly one active leaf.
   select count(*) into v_bad
-    from public.phase3_event_types t
+    from public.terra_space_phase3_event_types t
    where t.is_active
-     and (select count(*) from public.phase3_taxonomy_nodes n
+     and (select count(*) from public.terra_space_phase3_taxonomy_nodes n
            where n.event_type_id = t.id and n.is_active and n.level = 'event_type') <> 1;
   if v_bad <> 0 then
     raise exception 'FAIL: % active Event Types do not have exactly one active leaf', v_bad;
@@ -93,7 +93,7 @@ begin
 
   -- No leaf is missing its Event Type.
   select count(*) into v_bad
-    from public.phase3_taxonomy_nodes
+    from public.terra_space_phase3_taxonomy_nodes
    where level = 'event_type' and event_type_id is null;
   if v_bad <> 0 then
     raise exception 'FAIL: % leaves carry no Event Type', v_bad;
@@ -102,10 +102,10 @@ begin
   -- Spot-check one full path end to end.
   select d.name || ' > ' || c.name || ' > ' || s.name || ' > ' || l.name
     into v_path
-    from public.phase3_taxonomy_nodes l
-    join public.phase3_taxonomy_nodes s on s.id = l.parent_id
-    join public.phase3_taxonomy_nodes c on c.id = s.parent_id
-    join public.phase3_taxonomy_nodes d on d.id = c.parent_id
+    from public.terra_space_phase3_taxonomy_nodes l
+    join public.terra_space_phase3_taxonomy_nodes s on s.id = l.parent_id
+    join public.terra_space_phase3_taxonomy_nodes c on c.id = s.parent_id
+    join public.terra_space_phase3_taxonomy_nodes d on d.id = c.parent_id
    where l.name = 'Armed Operation / Strike';
   if v_path is distinct from
      'Security & Conflict > Military & Conflict Activity > Use of Force > Armed Operation / Strike' then
@@ -127,16 +127,16 @@ declare
   v_mismatch  integer;
   v_split     integer;
 begin
-  select count(*) into v_legacy from public.terra_space_location_gazetteer;
-  select count(*) into v_copied from public.phase3_location_gazetteer;
+  select count(*) into v_legacy from public.terra_space_legacy_location_gazetteer;
+  select count(*) into v_copied from public.terra_space_phase3_location_gazetteer;
   if v_copied <> v_legacy then
     raise exception 'FAIL: gazetteer copy is incomplete, % of % rows', v_copied, v_legacy;
   end if;
 
   -- Coordinates and precision are unchanged, and the country code matches the original key.
   select count(*) into v_mismatch
-    from public.terra_space_location_gazetteer g
-    join public.phase3_location_gazetteer p on p.lookup_key = g.lookup_key
+    from public.terra_space_legacy_location_gazetteer g
+    join public.terra_space_phase3_location_gazetteer p on p.lookup_key = g.lookup_key
    where p.latitude is distinct from g.latitude
       or p.longitude is distinct from g.longitude
       or p.coordinate_precision is distinct from g.coordinate_precision
@@ -147,7 +147,7 @@ begin
 
   -- The place name landed in the right column for its precision.
   select count(*) into v_split
-    from public.phase3_location_gazetteer
+    from public.terra_space_phase3_location_gazetteer
    where (coordinate_precision = 'country'      and (admin1 is not null or city_regency is not null))
       or (coordinate_precision = 'admin1'       and (admin1 is null or city_regency is not null))
       or (coordinate_precision = 'city_regency' and (city_regency is null or admin1 is not null));
@@ -170,20 +170,20 @@ begin
   select string_agg(format('%s=%s', t, n), ', ')
     into v_dirty
     from (
-      select 'phase1_sources' as t, count(*) as n from public.phase1_sources
-      union all select 'phase1_attachments', count(*) from public.phase1_attachments
-      union all select 'phase1_processing_runs', count(*) from public.phase1_processing_runs
-      union all select 'phase2_event_candidates', count(*) from public.phase2_event_candidates
-      union all select 'phase2_candidate_runs', count(*) from public.phase2_candidate_runs
-      union all select 'phase3_events', count(*) from public.phase3_events
-      union all select 'phase3_event_runs', count(*) from public.phase3_event_runs
-      union all select 'phase3_event_sources', count(*) from public.phase3_event_sources
-      union all select 'phase3_event_actors', count(*) from public.phase3_event_actors
-      union all select 'phase3_event_locations', count(*) from public.phase3_event_locations
-      union all select 'phase3_duplicate_flags', count(*) from public.phase3_duplicate_flags
-      union all select 'phase3_actors', count(*) from public.phase3_actors
-      union all select 'phase3_actor_aliases', count(*) from public.phase3_actor_aliases
-      union all select 'phase3_locations', count(*) from public.phase3_locations
+      select 'terra_space_phase1_sources' as t, count(*) as n from public.terra_space_phase1_sources
+      union all select 'terra_space_phase1_attachments', count(*) from public.terra_space_phase1_attachments
+      union all select 'terra_space_phase1_processing_runs', count(*) from public.terra_space_phase1_processing_runs
+      union all select 'terra_space_phase2_event_candidates', count(*) from public.terra_space_phase2_event_candidates
+      union all select 'terra_space_phase2_candidate_runs', count(*) from public.terra_space_phase2_candidate_runs
+      union all select 'terra_space_phase3_events', count(*) from public.terra_space_phase3_events
+      union all select 'terra_space_phase3_event_runs', count(*) from public.terra_space_phase3_event_runs
+      union all select 'terra_space_phase3_event_sources', count(*) from public.terra_space_phase3_event_sources
+      union all select 'terra_space_phase3_event_actors', count(*) from public.terra_space_phase3_event_actors
+      union all select 'terra_space_phase3_event_locations', count(*) from public.terra_space_phase3_event_locations
+      union all select 'terra_space_phase3_duplicate_flags', count(*) from public.terra_space_phase3_duplicate_flags
+      union all select 'terra_space_phase3_actors', count(*) from public.terra_space_phase3_actors
+      union all select 'terra_space_phase3_actor_aliases', count(*) from public.terra_space_phase3_actor_aliases
+      union all select 'terra_space_phase3_locations', count(*) from public.terra_space_phase3_locations
     ) s
    where n > 0;
 
@@ -204,13 +204,13 @@ declare
   v_wrong text := '';
 begin
   for v_row in
-    select 'terra_space_news_v2' as t, count(*) as n, 10 as expected from public.terra_space_news_v2
-    union all select 'terra_space_event_candidates', count(*), 10 from public.terra_space_event_candidates
-    union all select 'terra_space_event_candidate_runs', count(*), 25 from public.terra_space_event_candidate_runs
-    union all select 'terra_space_event_records', count(*), 15 from public.terra_space_event_records
-    union all select 'terra_space_event_record_runs', count(*), 123 from public.terra_space_event_record_runs
-    union all select 'terra_space_event_types', count(*), 12 from public.terra_space_event_types
-    union all select 'terra_space_location_gazetteer', count(*), 759813 from public.terra_space_location_gazetteer
+    select 'terra_space_legacy_news_v2' as t, count(*) as n, 10 as expected from public.terra_space_legacy_news_v2
+    union all select 'terra_space_legacy_event_candidates', count(*), 10 from public.terra_space_legacy_event_candidates
+    union all select 'terra_space_legacy_event_candidate_runs', count(*), 25 from public.terra_space_legacy_event_candidate_runs
+    union all select 'terra_space_legacy_event_records', count(*), 15 from public.terra_space_legacy_event_records
+    union all select 'terra_space_legacy_event_record_runs', count(*), 123 from public.terra_space_legacy_event_record_runs
+    union all select 'terra_space_legacy_event_types', count(*), 12 from public.terra_space_legacy_event_types
+    union all select 'terra_space_legacy_location_gazetteer', count(*), 759813 from public.terra_space_legacy_location_gazetteer
   loop
     if v_row.n <> v_row.expected then
       v_wrong := v_wrong || format('%s: %s (expected %s); ', v_row.t, v_row.n, v_row.expected);

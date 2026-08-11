@@ -9,8 +9,10 @@ from app.api.routes.health import create_health_router
 from app.api.routes.maps import create_maps_router
 from app.api.routes.processing import create_processing_router
 from app.api.routes.settings import create_settings_router
+from app.api.routes.supabase_bridge import create_supabase_bridge_router
 from app.core.config import Settings
 from app.db.session import create_session_factory
+from app.db.supabase_bridge import create_supabase_read_only_engine
 from app.services.lm_studio import LmStudioClient, LmStudioRuntimeConfig
 from app.services.settings import effective_lm_studio_config
 from app.services.storage import StoragePaths, ensure_storage
@@ -49,6 +51,11 @@ def create_app(
     app.include_router(
         create_settings_router(session_factory, lm_studio_client, settings.lm_studio_url)
     )
+    supabase_engine = (
+        create_supabase_read_only_engine(settings.supabase_url) if settings.supabase_url else None
+    )
+    app.state.supabase_engine = supabase_engine
+    app.include_router(create_supabase_bridge_router(supabase_engine))
     return app
 
 app = create_app()

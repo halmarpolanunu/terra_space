@@ -8,6 +8,7 @@ services:
     environment:
       TERRA_DATA_DIR: /data
       TERRA_LM_STUDIO_URL: ${TERRA_LM_STUDIO_URL:-http://host.docker.internal:1234}
+      TERRA_SUPABASE_URL: ${TERRA_SUPABASE_URL:-}
     extra_hosts:
       - host.docker.internal:host-gateway
     volumes:

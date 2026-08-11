@@ -5,15 +5,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { AppShell } from "@/components/app-shell";
 import { EventDetail } from "@/app/events/event-detail";
-import { EventEditor } from "@/app/events/event-editor";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
 import { FramedPanel } from "@/components/framed-panel";
 import { PageHeader } from "@/components/page-header";
+import { ReadOnlyBridgeNotice } from "@/components/read-only-bridge-notice";
 import { clearEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
-import { deleteEvent, listActors, listEventTypes, listEvents, updateEvent, type EventUpdate, type ActorRead, type EventRead, type EventTypeRead } from "@/lib/events-api";
-import { listDocuments } from "@/lib/documents-api";
+import type { ActorRead, EventRead, EventTypeRead } from "@/lib/events-api";
+import { listBridgeActors, listBridgeEventTypes, listBridgeEvents, listBridgeSources } from "@/lib/bridge-api";
 
+// Editing, approving, and deleting are intentionally absent from this workspace: Events reads
+// Supabase read-only (see project-knowledge/plans/2026-08-11-supabase-read-only-bridge-design.md).
 export function EventsWorkspace() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,64 +27,49 @@ export function EventsWorkspace() {
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
-  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     let active = true;
-    void Promise.all([listEvents(filters), listEventTypes(), listActors(), listDocuments()]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments]) => {
+    void Promise.all([
+      listBridgeEvents(filters),
+      listBridgeEventTypes(),
+      listBridgeActors(),
+      listBridgeSources(),
+    ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments]) => {
       if (!active) return;
-      setEvents(nextEvents.filter((event) => event.review_status === "approved"));
-      setEventTypes(nextEventTypes); setActors(nextActors); setDocuments(nextDocuments.map(({ id, title }) => ({ id, title }))); setError(undefined);
+      setEvents(nextEvents);
+      setEventTypes(nextEventTypes);
+      setActors(nextActors);
+      setDocuments(nextDocuments.map(({ id, title }) => ({ id, title })));
+      setError(undefined);
     }).catch(() => { if (active) setError("Terra Space backend is unavailable. Try again after it starts."); });
     return () => { active = false; };
   }, [filters]);
 
   function changeFilters(nextFilters: EventFilters) {
     setSelectedEvent(null);
-    setEditing(false);
     const nextSearch = toEventFilterSearch(nextFilters);
     router.replace(nextSearch ? `/events?${nextSearch}` : "/events");
-  }
-
-  async function saveEvent(patch: EventUpdate) {
-    if (!selectedEvent) return;
-    try {
-      const updated = await updateEvent(selectedEvent.id, patch);
-      setEvents((current) => current.map((event) => event.id === updated.id ? updated : event));
-      setSelectedEvent(updated); setEditing(false); setError(undefined);
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Unable to save this event."); }
-  }
-
-  async function removeEvent(event: EventRead) {
-    const confirmed = window.confirm(
-      `Delete “${event.title}”? This permanently removes the event. Its source document remains.`,
-    );
-    if (!confirmed) return;
-    try {
-      await deleteEvent(event.id);
-      setEvents((current) => current.filter((current_) => current_.id !== event.id));
-      if (selectedEvent?.id === event.id) { setSelectedEvent(null); setEditing(false); }
-      setError(undefined);
-    } catch (deleteError) { setError(deleteError instanceof Error ? deleteError.message : "Unable to delete this event."); }
   }
 
   function changeSort(sort: EventSort) {
     changeFilters({ ...filters, sort });
   }
 
-  const currentView = selectedEvent ? (editing ? "edit" : "detail") : "list";
+  const currentView = selectedEvent ? "detail" : "list";
 
   return <AppShell currentPath="/events"><section className="events-page" aria-labelledby="events-title">
     <PageHeader
-      description="Search and explore approved events. Sources and evidence stay read-only."
-      eyebrow="Approved intelligence only"
+      description="Search and explore published events from the local Supabase pipeline. Sources, evidence, editing, and approval stay read-only here."
+      eyebrow="Read-only Supabase preview"
       title="Events"
       titleId="events-title"
     />
+    <ReadOnlyBridgeNotice />
     <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
     {error && <p className="document-error">{error}</p>}
     <div className="events-view" data-view={currentView} key={currentView}>
-      {selectedEvent ? editing ? <EventEditor actorOptions={actors} event={selectedEvent} eventTypeOptions={eventTypes} onCancel={() => setEditing(false)} onSave={saveEvent} /> : <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} onDelete={() => void removeEvent(selectedEvent)} onEdit={() => setEditing(true)} /> : <FramedPanel className="events-list-panel" title="Approved event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onDelete={(event) => void removeEvent(event)} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
+      {selectedEvent ? <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} /> : <FramedPanel className="events-list-panel" title="Published event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
     </div>
   </section></AppShell>;
 }

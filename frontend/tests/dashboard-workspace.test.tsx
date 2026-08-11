@@ -9,14 +9,16 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(currentSearch),
 }));
 
-vi.mock("@/lib/events-api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
-  return { ...actual, getDashboardSummary: vi.fn(), listActors: vi.fn(), listEventTypes: vi.fn(), listEvents: vi.fn() };
-});
-
-vi.mock("@/lib/documents-api", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/documents-api")>("@/lib/documents-api");
-  return { ...actual, listDocuments: vi.fn() };
+vi.mock("@/lib/bridge-api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/bridge-api")>("@/lib/bridge-api");
+  return {
+    ...actual,
+    getBridgeDashboardSummary: vi.fn(),
+    listBridgeActors: vi.fn(),
+    listBridgeEventTypes: vi.fn(),
+    listBridgeEvents: vi.fn(),
+    listBridgeSources: vi.fn(),
+  };
 });
 
 vi.mock("@/components/service-status", () => ({
@@ -69,8 +71,7 @@ vi.mock("@/app/dashboard/event-globe", () => {
 });
 
 import DashboardPage from "@/app/dashboard/page";
-import * as eventsApi from "@/lib/events-api";
-import * as documentsApi from "@/lib/documents-api";
+import * as bridgeApi from "@/lib/bridge-api";
 import type { EventRead } from "@/lib/events-api";
 
 function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
@@ -119,17 +120,17 @@ describe("Dashboard workspace", () => {
     const pinReady = makeEvent();
     const unknownDate = makeEvent({ id: "event-2", title: "Undated event", event_date: null, event_date_precision: "unknown", locations: [] });
     const missingCoordinates = makeEvent({ id: "event-3", title: "Unlocated event", locations: [{ id: "location-3", country: "Indonesia", admin1: null, city_regency: null, latitude: null, longitude: null }] });
-    vi.mocked(eventsApi.listEvents).mockImplementation(async (filters) => filters.q === "convoy" ? [pinReady] : [pinReady, unknownDate, missingCoordinates]);
-    vi.mocked(eventsApi.getDashboardSummary).mockImplementation(async (filters) => filters.q === "convoy" ? { ...summary, total_events: 1, new_events: 0, by_event_type: [{ name: "Movement", count: 1 }], incomplete_date_count: 0, incomplete_location_count: 0 } : summary);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([pinReady.event_type!]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeEvents).mockImplementation(async (filters) => filters.q === "convoy" ? [pinReady] : [pinReady, unknownDate, missingCoordinates]);
+    vi.mocked(bridgeApi.getBridgeDashboardSummary).mockImplementation(async (filters) => filters.q === "convoy" ? { ...summary, total_events: 1, new_events: 0, by_event_type: [{ name: "Movement", count: 1 }], incomplete_date_count: 0, incomplete_location_count: 0 } : summary);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([pinReady.event_type!]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     const view = render(<DashboardPage />);
     await screen.findByRole("button", { name: "Bridge crossing reported" });
 
-    const [eventFilters] = vi.mocked(eventsApi.listEvents).mock.calls[0];
-    const [summaryFilters] = vi.mocked(eventsApi.getDashboardSummary).mock.calls[0];
+    const [eventFilters] = vi.mocked(bridgeApi.listBridgeEvents).mock.calls[0];
+    const [summaryFilters] = vi.mocked(bridgeApi.getBridgeDashboardSummary).mock.calls[0];
     expect(eventFilters).toBe(summaryFilters);
     expect(eventFilters).toMatchObject({ q: "bridge", sort: "title_asc" });
     expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
@@ -170,8 +171,8 @@ describe("Dashboard workspace", () => {
     view.rerender(<DashboardPage />);
 
     await waitFor(() => expect(screen.getByText("1")).toBeVisible());
-    const calls = vi.mocked(eventsApi.listEvents).mock.calls;
-    const summaryCalls = vi.mocked(eventsApi.getDashboardSummary).mock.calls;
+    const calls = vi.mocked(bridgeApi.listBridgeEvents).mock.calls;
+    const summaryCalls = vi.mocked(bridgeApi.getBridgeDashboardSummary).mock.calls;
     expect(calls.at(-1)?.[0]).toBe(summaryCalls.at(-1)?.[0]);
     expect(calls.at(-1)?.[0]).toMatchObject({ q: "convoy", sort: "title_asc" });
     expect(screen.getByRole("button", { name: "Map features: 1" })).toBeVisible();
@@ -181,11 +182,11 @@ describe("Dashboard workspace", () => {
 
   it("shows zero summary states and opens selected map events in the detail panel", async () => {
     currentSearch = "";
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([]);
-    vi.mocked(eventsApi.getDashboardSummary).mockResolvedValue({ total_events: 0, new_events: 0, by_event_type: [], incomplete_date_count: 0, incomplete_location_count: 0 });
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([]);
+    vi.mocked(bridgeApi.getBridgeDashboardSummary).mockResolvedValue({ total_events: 0, new_events: 0, by_event_type: [], incomplete_date_count: 0, incomplete_location_count: 0 });
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     render(<DashboardPage />);
     await screen.findByRole("button", { name: "Map features: 0" });
@@ -203,11 +204,11 @@ describe("Dashboard workspace", () => {
       title: "Unlocated report",
       locations: [{ id: "location-2", country: "Indonesia", admin1: null, city_regency: null, latitude: null, longitude: null }],
     });
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([located, unlocated]);
-    vi.mocked(eventsApi.getDashboardSummary).mockResolvedValue(summary);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([located, unlocated]);
+    vi.mocked(bridgeApi.getBridgeDashboardSummary).mockResolvedValue(summary);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
 
     render(<DashboardPage />);
     const statButton = await screen.findByRole("button", { name: "Unresolved locations · 1" });
