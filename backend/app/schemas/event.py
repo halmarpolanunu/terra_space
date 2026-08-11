@@ -1,28 +1,24 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-EpistemicStatus = Literal[
-    # Original SQLite draft/approved-event values.
-    "confirmed",
-    "claim",
-    "rumor",
-    "denied",
-    # Added for the Supabase read-only bridge: the approved phase3_events value set
-    # (see decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). SQLite-backed events
-    # never produce these; they exist so bridge data can be shown honestly instead of
-    # rejected or mislabeled.
-    "reported",
-    "alleged",
-    "planned",
-    "unknown",
-]
+# The full canonical set phase3_events' own CHECK constraint enforces (see
+# decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). "claim"/"rumor" -- the old SQLite-only
+# values -- were dropped once SQLite stopped being a write target for events; nothing produces
+# them anymore.
+EpistemicStatus = Literal["confirmed", "reported", "alleged", "planned", "denied", "unknown"]
 DatePrecision = Literal["exact", "month", "year", "unknown"]
-ReviewStatus = Literal["draft", "approved", "rejected", "merged"]
 ActorRole = Literal["source", "target"]
 DuplicateResolution = Literal["pending", "kept_separate", "linked"]
 TaxonomyLevel = Literal["domain", "category", "subcategory", "event_type"]
+
+# Replaces the old SQLite `ReviewStatus` (draft/approved/rejected/merged) entirely -- see
+# decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
+# decisions/Automatic-Event-Visibility-With-Manual-Filtering.md.
+Origin = Literal["pipeline", "manual"]
+PipelineOutcome = Literal["FINAL", "EXCEPTION"]
+DashboardStatus = Literal["published", "hidden", "rejected", "archived", "merged"]
 
 
 class TaxonomyPathSegment(BaseModel):
@@ -40,6 +36,15 @@ class EventTypeRead(BaseModel):
     is_active: bool
     in_use: bool = False
     taxonomy_path: list[TaxonomyPathSegment] = Field(default_factory=list)
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def blank_description_reads_as_none(cls, value: str | None) -> str | None:
+        # terra_space_phase3_event_types.description is NOT NULL on the live table (a fresh
+        # Postgres start has no legacy blank-description rows to accommodate), so "no
+        # description" is stored as "" -- this keeps the API's existing null-means-"none"
+        # contract.
+        return value or None
 
 
 class EventTypeCreate(BaseModel):
@@ -133,8 +138,26 @@ class LocationInput(BaseModel):
     admin1: str | None = None
     city_regency: str | None = None
 
+    @field_validator("country")
+    @classmethod
+    def normalize_and_validate_country_code(cls, value: str | None) -> str | None:
+        # terra_space_phase3_locations.country_iso3 is CHECKed to exactly '^[A-Z]{3}$' on the
+        # live table. Normalizing here gives a clear, beginner-readable 422 instead of a raw
+        # database error, and means "id"/"IDN"/" idn " all resolve to the same stored location.
+        if value is None:
+            return None
+        cleaned = value.strip().upper()
+        if not cleaned:
+            return None
+        if len(cleaned) != 3 or not cleaned.isalpha():
+            raise ValueError("Country must be a 3-letter code, for example IDN or USA.")
+        return cleaned
+
 
 class EventCreate(BaseModel):
+    # Kept as "document_id" for API/frontend compatibility -- a Document *is* a Phase 1 source
+    # now (see project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md), so this is
+    # the id of the phase1_sources row the evidence quote must be found in.
     document_id: str
     evidence_quote: str
     title: str
@@ -177,16 +200,6 @@ class EventUpdate(BaseModel):
         return self
 
 
-class ApproveAllSkipped(BaseModel):
-    event_id: str
-    reason: str
-
-
-class ApproveAllResponse(BaseModel):
-    approved_event_ids: list[str]
-    skipped: list[ApproveAllSkipped]
-
-
 class EventTypeCount(BaseModel):
     name: str
     count: int
@@ -198,18 +211,7 @@ class DashboardSummaryRead(BaseModel):
     by_event_type: list[EventTypeCount]
     incomplete_date_count: int
     incomplete_location_count: int
-    # Added for the Supabase bridge's automatic-visibility work (see
-    # decisions/Automatic-Event-Visibility-With-Manual-Filtering.md): how many of the events in
-    # this result are pipeline EXCEPTION records. SQLite-backed events never produce these, so
-    # this defaults to 0 and needs no change anywhere the SQLite dashboard summary is built.
     exception_count: int = 0
-
-
-# Bridge-only dashboard/pipeline state (see
-# decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
-# decisions/Automatic-Event-Visibility-With-Manual-Filtering.md). SQLite events never set these.
-PipelineOutcome = Literal["FINAL", "EXCEPTION"]
-DashboardStatus = Literal["published", "hidden", "rejected", "archived", "merged"]
 
 
 class EventRead(BaseModel):
@@ -219,7 +221,6 @@ class EventRead(BaseModel):
     event_date: str | None
     event_date_precision: DatePrecision | None
     epistemic_status: EpistemicStatus
-    review_status: ReviewStatus
     event_type: EventTypeRead | None
     actors: list[EventActorRead]
     locations: list[LocationRead]
@@ -229,9 +230,17 @@ class EventRead(BaseModel):
     extraction_incomplete_stages: list[str]
     created_at: datetime
     updated_at: datetime
+    # Kept as "approved_at" for API/frontend compatibility, fed from the real `published_at`
+    # column -- "published" is the correct term now, but this avoids renaming an already-shipped
+    # field across the bridge and every frontend consumer for no functional gain.
     approved_at: datetime | None
-    # Added for the Supabase bridge's automatic-visibility work. All three are optional and
-    # default to None/absent, so existing SQLite-backed EventRead construction is unaffected.
+    # Origin/authority fields -- see decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
+    # decisions/Automatic-Event-Visibility-With-Manual-Filtering.md. Optional so the handful of
+    # remaining SQLite-only test helpers that build an EventRead by hand don't all need updating,
+    # but every real code path (bridge and primary) always populates them.
+    origin: Origin | None = None
     pipeline_outcome: PipelineOutcome | None = None
     dashboard_status: DashboardStatus | None = None
     exception_reason: str | None = None
+    human_modified_at: datetime | None = None
+    human_modified_fields: list[str] = Field(default_factory=list)

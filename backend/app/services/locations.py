@@ -9,7 +9,7 @@ import re
 from typing import Literal
 import unicodedata
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db.models import Location
@@ -83,6 +83,35 @@ def apply_coordinates(location: Location) -> None:
     location.latitude = resolved.latitude
     location.longitude = resolved.longitude
     location.coordinate_precision = resolved.precision
+
+
+def get_or_create_location(
+    db: Session, country: str | None, admin1: str | None, city_regency: str | None
+) -> Location:
+    """Find-or-create by the same normalized (country, admin1, city_regency) key that
+    `terra_space_phase3_locations`'s own unique index enforces on the live database -- unlike the
+    old SQLite `locations` table, this one dedupes globally (two events at the same place share
+    one row), so callers must never just insert a fresh Location for every event."""
+
+    # terra_space_phase3_locations.country_iso3 is CHECKed to '^[A-Z]{3}$' -- normalize here too
+    # (not just at the API boundary in schemas/event.py's LocationInput) so this function is
+    # correct on its own terms for any caller.
+    country = (country or "").strip().upper() or None
+
+    existing = db.execute(
+        select(Location).where(
+            func.coalesce(Location.country, "") == (country or ""),
+            func.coalesce(func.lower(Location.admin1), "") == (admin1 or "").lower(),
+            func.coalesce(func.lower(Location.city_regency), "") == (city_regency or "").lower(),
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        return existing
+    location = Location(country=country, admin1=admin1, city_regency=city_regency)
+    apply_coordinates(location)
+    db.add(location)
+    db.flush()
+    return location
 
 
 def backfill_missing_coordinates(db: Session) -> int:

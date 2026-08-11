@@ -42,14 +42,14 @@ describe("event filter URL state", () => {
       json: async () => [],
     });
     vi.stubGlobal("fetch", fetchMock);
-    const filters = { ...emptyEventFilters(), q: "bridge crossing", sort: "title_asc" };
+    const filters = { ...emptyEventFilters(), q: "bridge crossing", sort: "title_asc" as const };
 
     await listEvents(filters);
     await getDashboardSummary(filters);
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      "/api/backend/api/events?q=bridge+crossing&sort=title_asc&review_status=approved",
+      "/api/backend/api/events?q=bridge+crossing&sort=title_asc",
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,

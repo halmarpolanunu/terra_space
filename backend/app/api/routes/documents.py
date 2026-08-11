@@ -5,7 +5,6 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.schemas.document import AttachmentRead, DocumentCreate, DocumentRead, DocumentUpdate
-from app.schemas.extraction_log import ExtractionLogEntryRead
 from app.services.attachments import (
     InvalidAttachmentError,
     attachment_file_path,
@@ -14,6 +13,7 @@ from app.services.attachments import (
 )
 from app.services.documents import (
     EDITABLE_PROCESSING_STATUSES,
+    DocumentDeleteNotAllowedError,
     DocumentEditNotAllowedError,
     create_document,
     delete_document,
@@ -21,7 +21,6 @@ from app.services.documents import (
     list_documents,
     update_document,
 )
-from app.services.extraction_log import list_extraction_log
 from app.services.storage import StoragePaths
 
 
@@ -69,7 +68,10 @@ def create_documents_router(session_factory: sessionmaker, paths: StoragePaths) 
         document = get_document(db, document_id)
         if document is None:
             raise HTTPException(status_code=404, detail="Document not found.")
-        delete_document(db, paths, document)
+        try:
+            delete_document(db, paths, document)
+        except DocumentDeleteNotAllowedError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     def _editable_document_or_404_or_409(db: Session, document_id: str):
         document = get_document(db, document_id)
@@ -126,17 +128,5 @@ def create_documents_router(session_factory: sessionmaker, paths: StoragePaths) 
         delete_attachment_file(paths, attachment)
         db.delete(attachment)
         db.commit()
-
-    @router.get(
-        "/api/documents/{document_id}/extraction-log",
-        response_model=list[ExtractionLogEntryRead],
-    )
-    def get_extraction_log(
-        document_id: str, db: Session = Depends(get_db)
-    ) -> list[ExtractionLogEntryRead]:
-        document = get_document(db, document_id)
-        if document is None:
-            raise HTTPException(status_code=404, detail="Document not found.")
-        return list_extraction_log(db, document_id)
 
     return router

@@ -8,7 +8,7 @@ vi.mock("@/lib/documents-api", async () => {
 
 vi.mock("@/lib/events-api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
-  return { ...actual, listEventsByReviewStatus: vi.fn() };
+  return { ...actual, listEventsByDashboardStatus: vi.fn() };
 });
 
 import { calculatePipelineCounts } from "@/app/sense/pipeline-summary";
@@ -42,8 +42,8 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     summary: "A reported event.",
     event_date: null,
     event_date_precision: null,
-    epistemic_status: "claim",
-    review_status: "draft",
+    epistemic_status: "reported",
+    dashboard_status: "hidden",
     event_type: null,
     actors: [],
     locations: [],
@@ -60,19 +60,19 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
 describe("Terra Sense pipeline data", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("requests events by review status from the existing events API", async () => {
+  it("requests events by dashboard status from the existing events API", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify([]), { status: 200 }),
     );
 
-    const { listEventsByReviewStatus: requestEventsByReviewStatus } =
+    const { listEventsByDashboardStatus: requestEventsByDashboardStatus } =
       await vi.importActual<typeof import("@/lib/events-api")>("@/lib/events-api");
-    await requestEventsByReviewStatus("draft");
+    await requestEventsByDashboardStatus("hidden");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/backend/api/events?review_status=draft");
+    expect(fetchMock).toHaveBeenCalledWith("/api/backend/api/events?dashboard_status=hidden");
   });
 
-  it("calculates the read-only local pipeline counts", () => {
+  it("calculates the local pipeline counts", () => {
     const documents = [
       makeDocument({ id: "draft", processing_status: "draft" }),
       makeDocument({ id: "queued", processing_status: "queued" }),
@@ -80,39 +80,39 @@ describe("Terra Sense pipeline data", () => {
       makeDocument({ id: "failed", processing_status: "failed" }),
       makeDocument({ id: "review", processing_status: "ready_for_review" }),
     ];
-    const draftEvents = [
-      makeEvent({ id: "draft-1" }),
+    const hiddenEvents = [
+      makeEvent({ id: "hidden-1" }),
       makeEvent({
-        id: "draft-2",
+        id: "hidden-2",
         duplicate_flags: [{
           id: "flag-1",
-          matched_event_id: "approved-1",
+          matched_event_id: "published-1",
           matched_reason: "Similar report.",
           resolution: "pending",
           resolved_at: null,
         }, {
           id: "flag-2",
-          matched_event_id: "approved-2",
+          matched_event_id: "published-2",
           matched_reason: "Another similar report.",
           resolution: "pending",
           resolved_at: null,
         }],
       }),
     ];
-    const approvedEvents = [
-      makeEvent({ id: "approved-1", review_status: "approved" }),
-      makeEvent({ id: "approved-2", review_status: "approved" }),
-      makeEvent({ id: "approved-3", review_status: "approved" }),
+    const publishedEvents = [
+      makeEvent({ id: "published-1", dashboard_status: "published" }),
+      makeEvent({ id: "published-2", dashboard_status: "published" }),
+      makeEvent({ id: "published-3", dashboard_status: "published" }),
     ];
 
-    expect(calculatePipelineCounts(documents, draftEvents, approvedEvents)).toEqual({
+    expect(calculatePipelineCounts(documents, hiddenEvents, publishedEvents)).toEqual({
       sourceDrafts: 1,
       activeProcessing: 2,
       failedProcessing: 1,
       reviewDocuments: 1,
-      draftEvents: 2,
+      hiddenEvents: 2,
       pendingDuplicates: 2,
-      approvedEvents: 3,
+      publishedEvents: 3,
     });
   });
 });
@@ -122,21 +122,21 @@ describe("Terra Sense Overview", () => {
 
   function renderOverview({
     documents = [],
-    draftEvents = [],
-    approvedEvents = [],
+    hiddenEvents = [],
+    publishedEvents = [],
   }: {
     documents?: Document[];
-    draftEvents?: EventRead[];
-    approvedEvents?: EventRead[];
+    hiddenEvents?: EventRead[];
+    publishedEvents?: EventRead[];
   } = {}) {
     vi.mocked(documentsApi.listDocuments).mockResolvedValue(documents);
-    vi.mocked(eventsApi.listEventsByReviewStatus)
-      .mockResolvedValueOnce(draftEvents)
-      .mockResolvedValueOnce(approvedEvents);
+    vi.mocked(eventsApi.listEventsByDashboardStatus)
+      .mockResolvedValueOnce(hiddenEvents)
+      .mockResolvedValueOnce(publishedEvents);
     return render(<SensePage />);
   }
 
-  it("renders the read-only local flow and its navigation links", async () => {
+  it("renders the local flow and its navigation links", async () => {
     renderOverview();
 
     expect(await screen.findByRole("heading", { name: "Terra Sense", level: 1 })).toBeVisible();
@@ -148,7 +148,7 @@ describe("Terra Sense Overview", () => {
     expect(flow.getByRole("link", { name: /open sources/i })).toHaveAttribute("href", "/documents");
     expect(flow.getByRole("link", { name: /open event review/i })).toHaveAttribute("href", "/event-review");
     expect(flow.getByRole("link", { name: /open terra insight/i })).toHaveAttribute("href", "/dashboard");
-    expect(flow.getByText(/only approved events enter terra insight/i)).toBeVisible();
+    expect(flow.getByText(/only published events enter terra insight/i)).toBeVisible();
   });
 
   it("shows an empty local queue when every count is zero", async () => {
@@ -165,8 +165,8 @@ describe("Terra Sense Overview", () => {
 
   it("warns when a duplicate decision is pending", async () => {
     renderOverview({
-      draftEvents: [makeEvent({ duplicate_flags: [{
-        id: "flag-1", matched_event_id: "approved-1", matched_reason: "Similar report.",
+      hiddenEvents: [makeEvent({ duplicate_flags: [{
+        id: "flag-1", matched_event_id: "published-1", matched_reason: "Similar report.",
         resolution: "pending", resolved_at: null,
       }] })],
     });
@@ -176,7 +176,7 @@ describe("Terra Sense Overview", () => {
 
   it("reports a local API error without exposing workflow editing controls", async () => {
     vi.mocked(documentsApi.listDocuments).mockRejectedValue(new Error("Backend offline"));
-    vi.mocked(eventsApi.listEventsByReviewStatus).mockResolvedValue([]);
+    vi.mocked(eventsApi.listEventsByDashboardStatus).mockResolvedValue([]);
     render(<SensePage />);
 
     expect(await screen.findByText("Terra Space backend is unavailable. Try again after it starts.")).toBeVisible();

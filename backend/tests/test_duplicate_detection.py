@@ -16,17 +16,18 @@ def _session(tmp_path: Path) -> Session:
     return Session(engine)
 
 
-def _approved_event(
+def _published_event(
     event_type: EventType,
     event_date: str | None = "2026-07-10",
     actor: Actor | None = None,
     location: Location | None = None,
 ) -> Event:
     event = Event(
-        title="Approved event",
+        title="Published event",
         summary="Summary.",
         epistemic_status="confirmed",
-        review_status="approved",
+        origin="manual",
+        dashboard_status="published",
         event_type=event_type,
         event_date=event_date,
     )
@@ -37,17 +38,18 @@ def _approved_event(
     return event
 
 
-def _draft_event(
+def _new_event(
     event_type: EventType,
     event_date: str | None = "2026-07-11",
     actor: Actor | None = None,
     location: Location | None = None,
 ) -> Event:
     event = Event(
-        title="Draft event",
+        title="New event",
         summary="Summary.",
-        epistemic_status="claim",
-        review_status="draft",
+        epistemic_status="confirmed",
+        origin="manual",
+        dashboard_status="hidden",
         event_type=event_type,
         event_date=event_date,
     )
@@ -62,18 +64,18 @@ def test_flags_same_type_close_dates_and_shared_actor(tmp_path: Path) -> None:
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
         actor = Actor(name="Air Force", is_active=True)
-        approved = _approved_event(event_type, actor=actor)
-        session.add(approved)
+        published = _published_event(event_type, actor=actor)
+        session.add(published)
         session.commit()
 
-        draft = _draft_event(event_type, actor=actor)
-        session.add(draft)
+        new_event = _new_event(event_type, actor=actor)
+        session.add(new_event)
 
-        flags = detect_duplicates(session, draft)
+        flags = detect_duplicates(session, new_event)
         session.commit()
 
         assert len(flags) == 1
-        assert flags[0].matched_event_id == approved.id
+        assert flags[0].matched_event_id == published.id
         assert flags[0].resolution == "pending"
         assert "Airstrike" in flags[0].matched_reason
 
@@ -81,35 +83,35 @@ def test_flags_same_type_close_dates_and_shared_actor(tmp_path: Path) -> None:
 def test_flags_same_type_close_dates_and_shared_location(tmp_path: Path) -> None:
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
-        approved = _approved_event(
+        published = _published_event(
             event_type, location=Location(country="YE", admin1="Sana'a", city_regency=None)
         )
-        session.add(approved)
+        session.add(published)
         session.commit()
 
-        draft = _draft_event(
+        new_event = _new_event(
             event_type, location=Location(country="YE", admin1="Sana'a", city_regency=None)
         )
-        session.add(draft)
+        session.add(new_event)
 
-        flags = detect_duplicates(session, draft)
+        flags = detect_duplicates(session, new_event)
         session.commit()
 
         assert len(flags) == 1
-        assert flags[0].matched_event_id == approved.id
+        assert flags[0].matched_event_id == published.id
 
 
 def test_does_not_flag_when_only_type_matches(tmp_path: Path) -> None:
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
-        approved = _approved_event(event_type)
-        session.add(approved)
+        published = _published_event(event_type)
+        session.add(published)
         session.commit()
 
-        draft = _draft_event(event_type)
-        session.add(draft)
+        new_event = _new_event(event_type)
+        session.add(new_event)
 
-        flags = detect_duplicates(session, draft)
+        flags = detect_duplicates(session, new_event)
         session.commit()
 
         assert flags == []
@@ -120,34 +122,34 @@ def test_does_not_flag_when_dates_are_far_apart(tmp_path: Path) -> None:
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
         actor = Actor(name="Air Force", is_active=True)
-        approved = _approved_event(event_type, event_date="2026-01-01", actor=actor)
-        session.add(approved)
+        published = _published_event(event_type, event_date="2026-01-01", actor=actor)
+        session.add(published)
         session.commit()
 
-        draft = _draft_event(event_type, event_date="2026-07-11", actor=actor)
-        session.add(draft)
+        new_event = _new_event(event_type, event_date="2026-07-11", actor=actor)
+        session.add(new_event)
 
-        flags = detect_duplicates(session, draft)
+        flags = detect_duplicates(session, new_event)
         session.commit()
 
         assert flags == []
 
 
-def test_does_not_flag_against_draft_or_rejected_events(tmp_path: Path) -> None:
+def test_does_not_flag_against_hidden_or_rejected_events(tmp_path: Path) -> None:
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
         actor = Actor(name="Air Force", is_active=True)
-        other_draft = _draft_event(event_type, actor=actor)
-        other_draft.review_status = "draft"
-        rejected = _draft_event(event_type, actor=actor)
-        rejected.review_status = "rejected"
-        session.add_all([other_draft, rejected])
+        other_hidden = _new_event(event_type, actor=actor)
+        other_hidden.dashboard_status = "hidden"
+        rejected = _new_event(event_type, actor=actor)
+        rejected.dashboard_status = "rejected"
+        session.add_all([other_hidden, rejected])
         session.commit()
 
-        draft = _draft_event(event_type, actor=actor)
-        session.add(draft)
+        new_event = _new_event(event_type, actor=actor)
+        session.add(new_event)
 
-        flags = detect_duplicates(session, draft)
+        flags = detect_duplicates(session, new_event)
         session.commit()
 
         assert flags == []
@@ -157,17 +159,17 @@ def test_detecting_twice_does_not_create_duplicate_flags(tmp_path: Path) -> None
     with _session(tmp_path) as session:
         event_type = EventType(name="Airstrike", is_active=True)
         actor = Actor(name="Air Force", is_active=True)
-        approved = _approved_event(event_type, actor=actor)
-        session.add(approved)
+        published = _published_event(event_type, actor=actor)
+        session.add(published)
         session.commit()
 
-        draft = _draft_event(event_type, actor=actor)
-        session.add(draft)
+        new_event = _new_event(event_type, actor=actor)
+        session.add(new_event)
         session.commit()
 
-        first = detect_duplicates(session, draft)
+        first = detect_duplicates(session, new_event)
         session.commit()
-        second = detect_duplicates(session, draft)
+        second = detect_duplicates(session, new_event)
         session.commit()
 
         assert len(first) == 1

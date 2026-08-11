@@ -6,7 +6,7 @@ import { PipelineSummary, calculatePipelineCounts, type PipelineCounts } from "@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { listDocuments } from "@/lib/documents-api";
-import { listEventsByReviewStatus } from "@/lib/events-api";
+import { listEventsByDashboardStatus } from "@/lib/events-api";
 
 export function SenseWorkspace() {
   const [counts, setCounts] = useState<PipelineCounts | null>(null);
@@ -16,11 +16,11 @@ export function SenseWorkspace() {
     let active = true;
     void Promise.all([
       listDocuments(),
-      listEventsByReviewStatus("draft"),
-      listEventsByReviewStatus("approved"),
-    ]).then(([documents, draftEvents, approvedEvents]) => {
+      listEventsByDashboardStatus("hidden"),
+      listEventsByDashboardStatus("published"),
+    ]).then(([documents, hiddenEvents, publishedEvents]) => {
       if (!active) return;
-      setCounts(calculatePipelineCounts(documents, draftEvents, approvedEvents));
+      setCounts(calculatePipelineCounts(documents, hiddenEvents, publishedEvents));
       setError(undefined);
     }).catch(() => {
       if (active) setError("Terra Space backend is unavailable. Try again after it starts.");

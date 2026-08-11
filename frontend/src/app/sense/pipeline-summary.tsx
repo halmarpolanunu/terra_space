@@ -7,15 +7,19 @@ export type PipelineCounts = {
   activeProcessing: number;
   failedProcessing: number;
   reviewDocuments: number;
-  draftEvents: number;
+  hiddenEvents: number;
   pendingDuplicates: number;
-  approvedEvents: number;
+  publishedEvents: number;
 };
 
+// "hidden" here means dashboard_status="hidden" -- a pipeline exception (or a manually created
+// event) awaiting a human decision. "published" replaces the old local "approved" status now that
+// Supabase's phase3_events is the source of truth (see
+// decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md).
 export function calculatePipelineCounts(
   documents: Document[],
-  draftEvents: EventRead[],
-  approvedEvents: EventRead[],
+  hiddenEvents: EventRead[],
+  publishedEvents: EventRead[],
 ): PipelineCounts {
   return {
     sourceDrafts: documents.filter((document) => document.processing_status === "draft").length,
@@ -24,12 +28,12 @@ export function calculatePipelineCounts(
     ).length,
     failedProcessing: documents.filter((document) => document.processing_status === "failed").length,
     reviewDocuments: documents.filter((document) => document.processing_status === "ready_for_review").length,
-    draftEvents: draftEvents.length,
-    pendingDuplicates: draftEvents.reduce(
+    hiddenEvents: hiddenEvents.length,
+    pendingDuplicates: hiddenEvents.reduce(
       (count, event) => count + event.duplicate_flags.filter((flag) => flag.resolution === "pending").length,
       0,
     ),
-    approvedEvents: approvedEvents.length,
+    publishedEvents: publishedEvents.length,
   };
 }
 
@@ -41,9 +45,9 @@ export function PipelineSummary({ counts }: PipelineSummaryProps) {
     activeProcessing: 0,
     failedProcessing: 0,
     reviewDocuments: 0,
-    draftEvents: 0,
+    hiddenEvents: 0,
     pendingDuplicates: 0,
-    approvedEvents: 0,
+    publishedEvents: 0,
   };
   const isEmpty = Object.values(summary).every((count) => count === 0);
 
@@ -76,7 +80,7 @@ export function PipelineSummary({ counts }: PipelineSummaryProps) {
         <li>
           <article>
             <h2>Event Review</h2>
-            <p>{summary.draftEvents} draft event{summary.draftEvents === 1 ? "" : "s"} awaiting a human decision.</p>
+            <p>{summary.hiddenEvents} event{summary.hiddenEvents === 1 ? "" : "s"} hidden as a pipeline exception, awaiting a decision.</p>
             <Link href="/event-review">Open Event Review</Link>
           </article>
         </li>
@@ -84,8 +88,8 @@ export function PipelineSummary({ counts }: PipelineSummaryProps) {
         <li>
           <article>
             <h2>Terra Insight</h2>
-            <p>{summary.approvedEvents} approved event{summary.approvedEvents === 1 ? "" : "s"} available for analysis.</p>
-            <p>Only approved events enter Terra Insight.</p>
+            <p>{summary.publishedEvents} published event{summary.publishedEvents === 1 ? "" : "s"} available for analysis.</p>
+            <p>Only published events enter Terra Insight.</p>
             <Link href="/dashboard">Open Terra Insight</Link>
           </article>
         </li>

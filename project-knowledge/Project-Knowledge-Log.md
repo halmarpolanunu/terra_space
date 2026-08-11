@@ -8,6 +8,38 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-11 - Full Terra Space Supabase application transition implemented; live cutover verification still owner-pending
+
+- Implemented the [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md)
+  task by task: backend persistence, models, document/settings services, event authority, and the
+  Dashboard/Events UI all now run against local Supabase/PostgreSQL instead of SQLite, with full
+  read/write authority (publish/reject/archive/restore/edit/delete) — not the prior read-only
+  preview. SQLite is preserved untouched as rollback material.
+- A real architectural gap (no Postgres equivalent of Terra Space's own staged extraction pipeline)
+  was surfaced to the owner rather than guessed; the owner chose to retire that pipeline now that
+  n8n owns event detection end to end. Recorded as [Retire Terra Space's Own Extraction
+  Pipeline](decisions/Retire-Terra-Space-Own-Extraction-Pipeline.md), which supersedes the [Staged
+  Event Detection Pipeline](decisions/Staged-Event-Detection-Pipeline.md) decision. The related
+  [Feedback Backlog](Feedback-Backlog.md) investigation into unreliable location extraction is
+  noted as moot rather than resolved, since the subsystem it was about no longer exists.
+- Replaced SQLite-specific operational tooling: `Start-TerraSpace.ps1` fails fast with a
+  plain-language message when `TERRA_DATABASE_URL` is missing or local Supabase is unreachable;
+  `Backup-TerraSpaceDatabase.ps1`/`Restore-TerraSpaceDatabase.ps1` now use `pg_dump`/`pg_restore`
+  scoped to Terra Space's own tables plus an attachments manifest, with restore requiring typed
+  confirmation and refusing anything but the local Supabase instance; `tools/Test-Persistence.py`
+  removes its sentinel row through the real API, not raw SQL.
+- Verified with the full automated suite: 237 backend tests (SQLite unit + real PostgreSQL
+  integration, including new `test_phase_prefixed_models.py` and `test_phase3_event_authority.py`),
+  218 frontend tests, clean lint, clean production build. Live browser verification against the
+  owner's real local Supabase instance was deliberately not run in this session — those scenarios
+  publish/reject/archive/delete real event rows, and the owner chose to run that pass themselves
+  rather than have it run unattended against real data. See `Current-Status.md` and `Roadmap.md`
+  for what remains before final cutover activation. Not committed yet, per instruction.
+- A second, separate, non-integrated implementation attempt of the same goal was found mid-session
+  in a git worktree (`.worktrees/codex-supabase-app-transition`, branch
+  `codex/supabase-app-transition`, 3 commits, diverged from an earlier point in `main`'s history).
+  Surfaced to the owner, who chose to leave it untouched and continue this implementation on `main`.
+
 ## 2026-08-11 - Automatic event visibility and manual Dashboard filtering: pipeline exceptions now show by default
 
 - The owner reported that a real article's four Phase 2 candidates all became Phase 3 `EXCEPTION`

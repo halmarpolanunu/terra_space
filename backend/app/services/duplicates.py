@@ -49,25 +49,25 @@ def _shared_location_labels(a: Event, b: Event) -> list[str]:
     return labels
 
 
-def _match_signals(draft: Event, approved: Event) -> tuple[list[str], list[str]] | None:
-    if draft.event_type_id is None or draft.event_type_id != approved.event_type_id:
+def _match_signals(new_event: Event, published: Event) -> tuple[list[str], list[str]] | None:
+    if new_event.event_type_id is None or new_event.event_type_id != published.event_type_id:
         return None
-    if not _dates_close_enough(draft, approved):
+    if not _dates_close_enough(new_event, published):
         return None
-    shared_actors = _shared_actor_names(draft, approved)
-    shared_locations = _shared_location_labels(draft, approved)
+    shared_actors = _shared_actor_names(new_event, published)
+    shared_locations = _shared_location_labels(new_event, published)
     if not shared_actors and not shared_locations:
         return None
     return shared_actors, shared_locations
 
 
 def _build_matched_reason(
-    draft: Event, approved: Event, shared_actors: list[str], shared_locations: list[str]
+    new_event: Event, published: Event, shared_actors: list[str], shared_locations: list[str]
 ) -> str:
-    parts = [f"same type ({draft.event_type.name})"]
+    parts = [f"same type ({new_event.event_type.name})"]
 
-    date_a = _parse_date(draft.event_date)
-    date_b = _parse_date(approved.event_date)
+    date_a = _parse_date(new_event.event_date)
+    date_b = _parse_date(published.event_date)
     if date_a is not None and date_b is not None:
         diff = abs((date_a - date_b).days)
         parts.append("same date" if diff == 0 else f"dates {diff} day(s) apart")
@@ -81,37 +81,40 @@ def _build_matched_reason(
 
 
 def detect_duplicates(db: Session, event: Event) -> list[DuplicateFlag]:
-    """Flag `event` (always a fresh draft) against already-approved events it resembles.
+    """Flag `event` (a freshly created, not-yet-reviewed event) against `published` events it
+    resembles. See decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
+    decisions/Automatic-Event-Visibility-With-Manual-Filtering.md -- `published` is the new
+    authority model's equivalent of the old "approved" review status.
 
-    Only ever compares draft-vs-approved, never draft-vs-draft, and is idempotent: calling
-    this again for the same draft event does not create a second flag against the same
-    approved event.
+    Only ever compares the new event against published ones, never two unreviewed events against
+    each other, and is idempotent: calling this again for the same event does not create a second
+    flag against the same published event.
     """
     db.flush()
 
     already_flagged_ids = {
         flag.matched_event_id
         for flag in db.execute(
-            select(DuplicateFlag).where(DuplicateFlag.draft_event_id == event.id)
+            select(DuplicateFlag).where(DuplicateFlag.event_id == event.id)
         ).scalars()
     }
 
-    approved_events = list(
-        db.execute(select(Event).where(Event.review_status == "approved")).scalars()
+    published_events = list(
+        db.execute(select(Event).where(Event.dashboard_status == "published")).scalars()
     )
 
     created: list[DuplicateFlag] = []
-    for approved in approved_events:
-        if approved.id in already_flagged_ids:
+    for published in published_events:
+        if published.id in already_flagged_ids:
             continue
-        signals = _match_signals(event, approved)
+        signals = _match_signals(event, published)
         if signals is None:
             continue
         shared_actors, shared_locations = signals
         flag = DuplicateFlag(
-            draft_event_id=event.id,
-            matched_event_id=approved.id,
-            matched_reason=_build_matched_reason(event, approved, shared_actors, shared_locations),
+            event_id=event.id,
+            matched_event_id=published.id,
+            matched_reason=_build_matched_reason(event, published, shared_actors, shared_locations),
             resolution="pending",
         )
         db.add(flag)
@@ -150,7 +153,7 @@ def resolve_duplicate_flag(
             else:
                 event_source.event = matched_event
                 existing_source_ids.add(event_source.source_id)
-        event.review_status = "merged"
+        event.dashboard_status = "merged"
 
     db.commit()
     db.refresh(event)

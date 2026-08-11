@@ -101,7 +101,8 @@ implementation plan or decision, link it from here and mark it resolved instead 
   per city/admin1/country, so same-city events are pixel-for-pixel identical) — "is it possible the
   location should result the exact match of latitude and longitude so the pin tidak menumpuk pada
   satu titik."
-- **Status:** Partially resolved, three of four facets addressed.
+- **Status:** Partially resolved, three of four facets addressed; the remaining facet is now moot
+  (see the 2026-08-11 update below).
   1. **Visibility (both facets) — resolved.** The owner chose pure visibility (no fuzzy gazetteer
      matching, no manual coordinate override): co-located pins now group into one numbered cluster
      marker (click → list of the events at that point), and unresolved-location events are now
@@ -242,6 +243,16 @@ brings it back.
    [Automated news and social media ingestion](#automated-news-and-social-media-ingestion-google-news-rss-scraping-telegram-future-direction-2026-07-20)
    entry below — it argues this reliability problem should be resolved (or at least instrumented)
    before, not after, ingestion volume increases.
+
+**Update (2026-08-11) — moot, not fixed.** The in-app staged extraction pipeline this whole
+investigation is about (`backend/app/services/extraction.py`, `classifiers.py`,
+`signal_parser.py`, `extraction_log.py`) was retired outright per [Retire Terra Space's Own
+Extraction Pipeline](decisions/Retire-Terra-Space-Own-Extraction-Pipeline.md): n8n is now the only
+path from a document to a Phase 3 event, and it does its own location resolution independently of
+this code. This item's root cause was never resolved; it stopped applying because the subsystem it
+was about no longer exists in Terra Space. If the same symptom (events with no usable location)
+resurfaces through n8n's pipeline, it needs a fresh investigation there, not a resumption of this
+one.
 
 ### Event Review card should let every draft field be edited in place (2026-07-16)
 

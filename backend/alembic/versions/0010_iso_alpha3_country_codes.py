@@ -7,10 +7,15 @@ Create Date: 2026-07-20
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.orm import Session
 
 from app.data.iso3166_alpha2_to_alpha3 import ALPHA2_TO_ALPHA3
-from app.services.locations import backfill_missing_coordinates
+
+# Deliberately not importing app.services.locations.backfill_missing_coordinates here (see
+# project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md, Task 2): that function
+# now queries the phase-prefixed PostgreSQL `Location` model, not this migration's own `locations`
+# table. `resolve_location` is a pure lookup function (plain strings in, coordinates out) with no
+# table-name coupling, so it stays safe to reuse directly against raw SQL below.
+from app.services.locations import resolve_location
 
 revision = "0010_iso_alpha3_country_codes"
 down_revision = "0009_event_taxonomy_tree"
@@ -73,7 +78,29 @@ def upgrade() -> None:
     # The gazetteer asset is keyed by alpha-3, so rows left unresolved only because
     # their country code was still alpha-2 can now be backfilled (mirrors the same
     # reasoning as 0004_coordinate_backfill).
-    backfill_missing_coordinates(Session(bind=op.get_bind()))
+    connection = op.get_bind()
+    rows = connection.execute(
+        sa.text(
+            "SELECT id, country, admin1, city_regency FROM locations "
+            "WHERE latitude IS NULL AND longitude IS NULL"
+        )
+    ).all()
+    for row in rows:
+        resolved = resolve_location(row.country, row.admin1, row.city_regency)
+        if resolved is None:
+            continue
+        connection.execute(
+            sa.text(
+                "UPDATE locations SET latitude = :latitude, longitude = :longitude, "
+                "coordinate_precision = :precision WHERE id = :id"
+            ),
+            {
+                "latitude": float(resolved.latitude),
+                "longitude": float(resolved.longitude),
+                "precision": resolved.precision,
+                "id": row.id,
+            },
+        )
 
 
 def downgrade() -> None:

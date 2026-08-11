@@ -135,7 +135,11 @@ def test_delete_actor_refuses_when_referenced_by_an_event(tmp_path: Path) -> Non
     session = _session(tmp_path)
     actor = Actor(name="Referenced Actor", is_active=True)
     event = Event(
-        title="Event", summary="Summary", epistemic_status="confirmed", review_status="draft"
+        title="Event",
+        summary="Summary",
+        epistemic_status="confirmed",
+        origin="manual",
+        dashboard_status="hidden",
     )
     event.event_actors.append(EventActor(actor=actor, role="source"))
     session.add(event)

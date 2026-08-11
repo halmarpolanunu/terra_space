@@ -8,7 +8,7 @@ from app.services.storage import StoragePaths, ensure_storage
 
 
 def test_map_route_explains_when_package_is_missing(tmp_path: Path) -> None:
-    app = create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: False)
+    app = create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: False)
 
     response = TestClient(app).get("/api/maps/world.pmtiles")
 
@@ -21,7 +21,7 @@ def test_map_route_supports_byte_ranges(tmp_path: Path) -> None:
     ensure_storage(paths)
     assert paths.map_file is not None
     paths.map_file.write_bytes(bytes(range(256)))
-    app = create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: False)
+    app = create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: False)
 
     response = TestClient(app).get("/api/maps/world.pmtiles", headers={"Range": "bytes=0-126"})
 

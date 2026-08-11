@@ -10,9 +10,18 @@ type EventDetailProps = {
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  // Dashboard-status authority actions (see
+  // decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). onPublish makes a hidden event
+  // visible for the first time; onRestore un-rejects/un-archives (same end state, different
+  // starting point) -- both hit the same backend action, kept separate here only so the button
+  // label matches what the owner is actually doing.
+  onPublish?: () => void;
+  onReject?: () => void;
+  onArchive?: () => void;
+  onRestore?: () => void;
   // Browser-only manual visibility (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md).
-  // Independent of onEdit/onDelete and unrelated to the pipeline's own dashboard_status: this
-  // never writes to Supabase or the backend.
+  // Independent of the authority actions above and unrelated to the pipeline's own dashboard_status:
+  // this never writes to Supabase or the backend.
   isManuallyHidden?: boolean;
   onHide?: () => void;
   onUnhide?: () => void;
@@ -20,24 +29,28 @@ type EventDetailProps = {
 
 const EPISTEMIC_LABELS = {
   confirmed: "Confirmed",
-  claim: "Claim",
-  rumor: "Rumor",
-  denied: "Denied",
   reported: "Reported",
   alleged: "Alleged",
   planned: "Planned",
+  denied: "Denied",
   unknown: "Unknown",
 } as const;
 
 const EPISTEMIC_COLORS = {
   confirmed: "--status-confirmed",
-  claim: "--status-claim",
-  rumor: "--status-rumor",
-  denied: "--status-denied",
   reported: "--status-reported",
   alleged: "--status-alleged",
   planned: "--status-planned",
+  denied: "--status-denied",
   unknown: "--status-unknown",
+} as const;
+
+const DASHBOARD_STATUS_LABELS = {
+  published: "Published",
+  hidden: "Hidden (pipeline exception)",
+  rejected: "Rejected",
+  archived: "Archived",
+  merged: "Merged into another event",
 } as const;
 
 function formatLocation(location: LocationRead): string {
@@ -61,12 +74,19 @@ export function EventDetail({
   onClose,
   onEdit,
   onDelete,
+  onPublish,
+  onReject,
+  onArchive,
+  onRestore,
   isManuallyHidden,
   onHide,
   onUnhide,
 }: EventDetailProps) {
-  const editable = event.review_status === "draft" || event.review_status === "approved";
+  // "merged" is the one status that blocks direct edit/delete/restore -- see
+  // decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md's Dashboard authority table.
+  const editable = event.dashboard_status !== "merged";
   const deletable = editable;
+  const status = event.dashboard_status;
 
   return (
     <FramedPanel className="event-detail" title="Event detail">
@@ -90,6 +110,15 @@ export function EventDetail({
             value={event.epistemic_status}
           />
         </div>
+        {status && (
+          <div>
+            <span className="field-label">Status</span>
+            <p>
+              {DASHBOARD_STATUS_LABELS[status]}
+              {event.origin === "manual" ? " · Manually added" : event.origin === "pipeline" ? " · AI generated" : ""}
+            </p>
+          </div>
+        )}
         <div><span className="field-label">Event date</span><p>{formatEventDate(event)}</p></div>
         <div><span className="field-label">Actors</span><p>{event.actors.length ? event.actors.map(({ actor, role }) => `${actor.name} (${role})`).join("; ") : "Not stated"}</p></div>
         <div><span className="field-label">Locations</span><p>{event.locations.length ? event.locations.map(formatLocation).join("; ") : "Not stated"}</p></div>
@@ -104,6 +133,11 @@ export function EventDetail({
         ))}</ul> : <p>Not stated</p>}
       </div>
       <p className="event-read-only-note">Sources and evidence are read-only.</p>
+      {event.human_modified_at && (
+        <p className="event-read-only-note">
+          Last edited by you on {new Date(event.human_modified_at).toLocaleString()}.
+        </p>
+      )}
       {(onHide || onUnhide) && (
         <p className="event-read-only-note">
           Hiding an event is a preference saved only in this browser — it is not sent to Supabase
@@ -112,6 +146,16 @@ export function EventDetail({
       )}
       <div className="form-actions">
         {editable && onEdit && <button className="btn btn-primary" onClick={onEdit} type="button">Edit</button>}
+        {status === "hidden" && onPublish && <button className="btn btn-primary" onClick={onPublish} type="button">Publish</button>}
+        {(status === "rejected" || status === "archived") && onRestore && (
+          <button className="btn btn-primary" onClick={onRestore} type="button">Restore</button>
+        )}
+        {(status === "hidden" || status === "published" || status === "archived") && onReject && (
+          <button className="btn" onClick={onReject} type="button">Reject</button>
+        )}
+        {(status === "hidden" || status === "published" || status === "rejected") && onArchive && (
+          <button className="btn" onClick={onArchive} type="button">Archive</button>
+        )}
         {deletable && onDelete && <button className="btn btn-destructive" onClick={onDelete} type="button">Delete</button>}
         {!isManuallyHidden && onHide && <button className="btn" onClick={onHide} type="button">Hide</button>}
         {isManuallyHidden && onUnhide && <button className="btn" onClick={onUnhide} type="button">Unhide</button>}

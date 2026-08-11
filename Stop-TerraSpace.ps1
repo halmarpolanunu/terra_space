@@ -14,7 +14,7 @@ try {
         throw "Terra Space could not be stopped cleanly."
     }
 
-    Write-Host "Terra Space has stopped. Your local data in the data folder remains safe."
+    Write-Host "Terra Space has stopped. Your local Supabase database, attachments, and other data remain safe."
 }
 finally {
     Pop-Location

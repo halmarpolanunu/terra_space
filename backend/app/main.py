@@ -7,7 +7,6 @@ from app.api.routes.documents import create_documents_router
 from app.api.routes.events import create_events_router
 from app.api.routes.health import create_health_router
 from app.api.routes.maps import create_maps_router
-from app.api.routes.processing import create_processing_router
 from app.api.routes.settings import create_settings_router
 from app.api.routes.supabase_bridge import create_supabase_bridge_router
 from app.core.config import Settings
@@ -26,7 +25,14 @@ def create_app(
     settings = settings or Settings()
     paths = StoragePaths.from_root(settings.data_dir, settings.map_filename)
     ensure_storage(paths)
-    session_factory = create_session_factory(f"sqlite:///{paths.database}")
+    if settings.database_url is None:
+        raise RuntimeError(
+            "TERRA_DATABASE_URL is not set. Terra Space needs a database connection string to "
+            "start -- point it at your local Supabase/PostgreSQL instance (see .env.example "
+            "and project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md). "
+            "Tests may pass Settings(database_url=\"sqlite:///...\") explicitly instead."
+        )
+    session_factory = create_session_factory(settings.database_url)
 
     def lm_studio_config_provider() -> LmStudioRuntimeConfig:
         db = session_factory()
@@ -45,7 +51,6 @@ def create_app(
     app.include_router(create_health_router(paths, checker))
     app.include_router(create_maps_router(paths))
     app.include_router(create_documents_router(session_factory, paths))
-    app.include_router(create_processing_router(session_factory, lm_studio_client))
     app.include_router(create_events_router(session_factory))
     app.include_router(create_actors_router(session_factory))
     app.include_router(

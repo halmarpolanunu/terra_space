@@ -11,8 +11,7 @@ function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
     summary: "A convoy crossed the bridge.",
     event_date: null,
     event_date_precision: null,
-    epistemic_status: "claim",
-    review_status: "approved",
+    epistemic_status: "reported",
     event_type: { id: "type-1", name: "Movement", description: null, is_active: true },
     actors: [],
     locations: [],
@@ -42,7 +41,7 @@ describe("EventList", () => {
     );
 
     expect(screen.getByText("Bridge crossing reported")).toBeInTheDocument();
-    expect(screen.getByText("Claim")).toBeInTheDocument();
+    expect(screen.getByText("Reported")).toBeInTheDocument();
     expect(screen.getByText("Movement")).toBeInTheDocument();
     expect(screen.getByText("Date unknown")).toBeInTheDocument();
     expect(screen.getByText("Not stated")).toBeInTheDocument();
@@ -135,7 +134,7 @@ describe("EventList", () => {
     );
 
     expect(screen.getByText("Exception")).toBeInTheDocument();
-    expect(screen.getByText("Claim")).toBeInTheDocument();
+    expect(screen.getByText("Reported")).toBeInTheDocument();
   });
 
   it("does not show an Exception badge for a published event", () => {

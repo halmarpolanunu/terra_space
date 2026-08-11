@@ -24,11 +24,15 @@ type EventFilterBarProps = {
   onChange: (filters: EventFilters) => void;
 };
 
+// The canonical 6-value set (see decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md).
+// "claim"/"rumor" were dropped once SQLite stopped being a write target for events.
 const EPISTEMIC_OPTIONS = [
   ["confirmed", "Confirmed"],
-  ["claim", "Claim"],
-  ["rumor", "Rumor"],
+  ["reported", "Reported"],
+  ["alleged", "Alleged"],
+  ["planned", "Planned"],
   ["denied", "Denied"],
+  ["unknown", "Unknown"],
 ] as const;
 
 export function EventFilterBar({

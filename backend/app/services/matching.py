@@ -1,9 +1,6 @@
 import re
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
-from app.db.models import Actor, Document, Source
+from app.db.models import Actor
 
 
 def normalize_text(text: str) -> str:
@@ -38,15 +35,3 @@ def find_actor_by_name_or_alias(actors: list[Actor], name: str) -> Actor | None:
             if alias.alias.strip().casefold() == target:
                 return actor
     return None
-
-
-def get_or_create_document_source(db: Session, document: Document) -> Source:
-    existing = db.execute(
-        select(Source).where(Source.document_id == document.id)
-    ).scalar_one_or_none()
-    if existing is not None:
-        return existing
-    source = Source(document=document, reference_label=document.title)
-    db.add(source)
-    db.flush()
-    return source

@@ -207,11 +207,6 @@ def _to_event_read(row: dict) -> EventRead:
         event_date=row["event_date"],
         event_date_precision=row["event_date_precision"],
         epistemic_status=row["epistemic_status"],
-        # Every row this query returns is published or hidden; from Terra Insight's perspective
-        # that is the same as an "approved" event (visible), and no write action is wired to this
-        # route so relaxing this value here cannot let anything be edited. `dashboard_status`
-        # below is what actually distinguishes a pipeline exception for display purposes.
-        review_status="approved",
         event_type=event_type,
         actors=actors,
         locations=locations,

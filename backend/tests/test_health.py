@@ -10,7 +10,7 @@ def test_health_reports_optional_services_without_preventing_startup(
     tmp_path: Path,
 ) -> None:
     app = create_app(
-        settings=Settings(data_dir=tmp_path),
+        settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"),
         lm_studio_check=lambda: False,
     )
 

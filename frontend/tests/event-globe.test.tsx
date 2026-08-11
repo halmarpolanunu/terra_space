@@ -61,7 +61,7 @@ import type { EventRead } from "@/lib/events-api";
 function makeEvent(overrides: Partial<EventRead> = {}): EventRead {
   return {
     id: "event-1", title: "Bridge crossing reported", summary: "Summary", event_date: "2026-07-10", event_date_precision: "exact",
-    epistemic_status: "claim", review_status: "approved", event_type: null, actors: [],
+    epistemic_status: "reported", event_type: null, actors: [],
     locations: [{ id: "location-1", country: "Indonesia", admin1: "Jakarta", city_regency: "Jakarta", latitude: -6.2, longitude: 106.8, coordinate_precision: "city_regency" }],
     sources: [], duplicate_flags: [], extraction_incomplete: false, extraction_incomplete_stages: [],
     created_at: "2026-07-14T00:00:00Z", updated_at: "2026-07-14T00:00:00Z", ...overrides,
@@ -135,7 +135,7 @@ describe("EventGlobe", () => {
     ]);
 
     expect(features.features).toHaveLength(1);
-    expect(features.features[0]).toMatchObject({ geometry: { type: "Point", coordinates: [106.8, -6.2] }, properties: { eventId: "event-1", title: "Bridge crossing reported", locationLabel: "Jakarta, Jakarta, Indonesia", epistemicStatus: "claim", coordinatePrecision: "city_regency" } });
+    expect(features.features[0]).toMatchObject({ geometry: { type: "Point", coordinates: [106.8, -6.2] }, properties: { eventId: "event-1", title: "Bridge crossing reported", locationLabel: "Jakarta, Jakarta, Indonesia", epistemicStatus: "reported", coordinatePrecision: "city_regency" } });
   });
 
   it("marks a pipeline exception event's pin so it renders with a distinct style", () => {

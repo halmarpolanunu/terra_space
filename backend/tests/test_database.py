@@ -1,22 +1,17 @@
-from datetime import UTC, datetime
+"""Tests for the archived SQLite Alembic migration chain.
+
+`app/db/models.py` now describes the PostgreSQL/Supabase schema (see
+project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md), completely independent of
+these frozen Alembic migration files -- Alembic's own job is preserving the ability to rebuild and
+inspect the archived SQLite rollback database exactly as it was, so these tests intentionally
+never import `app.db.models` and instead assert on the migration chain's own raw SQL output.
+"""
+
 from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import Session
-
-from app.db.models import (
-    Actor,
-    Document,
-    Event,
-    EventActor,
-    EventSource,
-    EventType,
-    Location,
-    Source,
-)
-from app.db.session import configure_sqlite_connection
 
 
 def test_alembic_migration_creates_foundation_schema(tmp_path: Path) -> None:
@@ -79,103 +74,3 @@ def test_event_type_description_migration_preserves_legacy_rows(tmp_path: Path) 
     assert "description" in {
         column["name"] for column in inspect(engine).get_columns("event_types")
     }
-
-
-def test_foundation_schema_contains_all_required_tables(tmp_path: Path) -> None:
-    engine = create_engine(f"sqlite:///{tmp_path / 'terra-space.db'}")
-    configure_sqlite_connection(engine)
-
-    from app.db.base import Base
-
-    Base.metadata.create_all(engine)
-
-    expected = {
-        "documents",
-        "attachments",
-        "events",
-        "event_types",
-        "actors",
-        "locations",
-        "sources",
-        "event_actors",
-        "event_locations",
-        "event_sources",
-        "extraction_log_entries",
-    }
-    assert expected <= set(inspect(engine).get_table_names())
-
-    with engine.connect() as connection:
-        assert connection.execute(text("PRAGMA foreign_keys")).scalar_one() == 1
-
-
-def test_approved_event_can_reference_multiple_actors_locations_and_sources(
-    tmp_path: Path,
-) -> None:
-    engine = create_engine(f"sqlite:///{tmp_path / 'terra-space.db'}")
-    configure_sqlite_connection(engine)
-    from app.db.base import Base
-
-    Base.metadata.create_all(engine)
-
-    with Session(engine) as session:
-        event_type = EventType(name="Protest", is_active=True)
-        document = Document(
-            title="Source document",
-            content="Evidence",
-            publication_date="2026-07-13",
-            input_date=datetime.now(UTC),
-            processing_status="completed",
-        )
-        source = Source(document=document, reference_label="Source document")
-        event = Event(
-            title="Event",
-            summary="Summary",
-            epistemic_status="confirmed",
-            review_status="approved",
-            event_type=event_type,
-        )
-        event.event_actors.extend(
-            [
-                EventActor(actor=Actor(name="Actor A"), role="source"),
-                EventActor(actor=Actor(name="Actor B"), role="target"),
-            ]
-        )
-        event.locations.extend([Location(country="ID"), Location(country="MY")])
-        event.event_sources.append(EventSource(source=source, evidence_quote="Evidence"))
-        session.add(event)
-        session.commit()
-
-        assert len(event.event_actors) == 2
-        assert len(event.locations) == 2
-        assert len(event.event_sources) == 1
-
-
-def test_deleting_source_document_does_not_delete_approved_event(tmp_path: Path) -> None:
-    engine = create_engine(f"sqlite:///{tmp_path / 'terra-space.db'}")
-    configure_sqlite_connection(engine)
-    from app.db.base import Base
-
-    Base.metadata.create_all(engine)
-    with Session(engine) as session:
-        document = Document(
-            title="Source document",
-            content="Evidence",
-            publication_date="2026-07-13",
-            input_date=datetime.now(UTC),
-            processing_status="completed",
-        )
-        source = Source(document=document, reference_label="Source document")
-        event = Event(
-            title="Event",
-            summary="Summary",
-            epistemic_status="confirmed",
-            review_status="approved",
-        )
-        event.event_sources.append(EventSource(source=source, evidence_quote="Evidence"))
-        session.add(event)
-        session.commit()
-
-        session.delete(document)
-        session.commit()
-
-        assert session.get(Event, event.id) is not None

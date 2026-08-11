@@ -12,7 +12,6 @@ function makeEvent(id: string, title: string, eventDate: string | null): EventRe
     event_date: eventDate,
     event_date_precision: eventDate ? "exact" : null,
     epistemic_status: "confirmed",
-    review_status: "approved",
     event_type: null,
     actors: [],
     locations: [],

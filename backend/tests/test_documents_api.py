@@ -8,7 +8,7 @@ from app.main import create_app
 
 
 def _client(tmp_path: Path) -> TestClient:
-    app = create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: False)
+    app = create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: False)
     return TestClient(app)
 
 
@@ -126,7 +126,7 @@ def test_editing_document_rejects_a_blank_publication_date(tmp_path: Path) -> No
 
 
 def test_editing_queued_or_processing_document_returns_409(tmp_path: Path) -> None:
-    app = create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: False)
+    app = create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: False)
     client = TestClient(app)
     created = client.post("/api/documents", json=_valid_payload()).json()
 

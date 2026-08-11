@@ -66,3 +66,16 @@ class DocumentRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     attachments: list[AttachmentRead] = []
+    # Added when Document was mapped onto terra_space_phase1_sources (see
+    # project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md). All additive.
+    cleaned_content_text: str | None = None
+    source_domain: str = ""
+    author: str = ""
+    collection_source: str = ""
+
+    @field_validator("source_url", mode="before")
+    @classmethod
+    def blank_source_url_reads_as_none(cls, value: str | None) -> str | None:
+        # terra_space_phase1_sources.source_url is NOT NULL on the live table, so "no URL" is
+        # stored as "" -- this keeps the API's existing null-means-"not provided" contract.
+        return value or None

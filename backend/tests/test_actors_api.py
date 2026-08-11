@@ -8,7 +8,7 @@ from app.main import create_app
 
 
 def _client(tmp_path: Path) -> TestClient:
-    app = create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: False)
+    app = create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: False)
     return TestClient(app)
 
 
@@ -27,7 +27,8 @@ def _seed_referenced_actor(client: TestClient, *, name: str) -> str:
             title="Linked event",
             summary="Summary",
             epistemic_status="confirmed",
-            review_status="approved",
+            origin="manual",
+            dashboard_status="published",
         )
         event.event_actors.append(EventActor(actor=actor, role="source"))
         db.add(event)

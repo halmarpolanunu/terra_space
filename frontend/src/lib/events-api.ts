@@ -1,20 +1,10 @@
 import { toEventFilterSearch, type EventFilters } from "@/lib/event-filters";
 
-export type EpistemicStatus =
-  // Original SQLite draft/approved-event values.
-  | "confirmed"
-  | "claim"
-  | "rumor"
-  | "denied"
-  // Added for the Supabase read-only bridge: the approved phase3_events value set (see
-  // decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). SQLite-backed events never
-  // produce these.
-  | "reported"
-  | "alleged"
-  | "planned"
-  | "unknown";
+// The canonical set phase3_events' own CHECK constraint enforces (see
+// decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). "claim"/"rumor" -- the old SQLite-only
+// values -- were dropped once SQLite stopped being a write target for events.
+export type EpistemicStatus = "confirmed" | "reported" | "alleged" | "planned" | "denied" | "unknown";
 export type DatePrecision = "exact" | "month" | "year" | "unknown";
-export type ReviewStatus = "draft" | "approved" | "rejected" | "merged";
 export type ActorRole = "source" | "target";
 export type DuplicateResolution = "pending" | "kept_separate" | "linked";
 
@@ -92,9 +82,10 @@ export type DuplicateFlagRead = {
   resolved_at: string | null;
 };
 
-// Bridge-only pipeline/dashboard state (see
+// Replaces the old "ReviewStatus" (draft/approved/rejected/merged) entirely -- see
 // decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
-// decisions/Automatic-Event-Visibility-With-Manual-Filtering.md). SQLite events never set these.
+// decisions/Automatic-Event-Visibility-With-Manual-Filtering.md.
+export type Origin = "pipeline" | "manual";
 export type PipelineOutcome = "FINAL" | "EXCEPTION";
 export type DashboardStatus = "published" | "hidden" | "rejected" | "archived" | "merged";
 
@@ -105,7 +96,6 @@ export type EventRead = {
   event_date: string | null;
   event_date_precision: DatePrecision | null;
   epistemic_status: EpistemicStatus;
-  review_status: ReviewStatus;
   event_type: EventTypeRead | null;
   actors: EventActorRead[];
   locations: LocationRead[];
@@ -115,12 +105,14 @@ export type EventRead = {
   extraction_incomplete_stages: string[];
   created_at: string;
   updated_at: string;
+  // Kept as "approved_at" for compatibility -- fed from the real `published_at` column.
   approved_at?: string | null;
-  // Added for the Supabase bridge's automatic-visibility work. All three are optional/absent
-  // for SQLite-backed events.
+  origin?: Origin | null;
   pipeline_outcome?: PipelineOutcome | null;
   dashboard_status?: DashboardStatus | null;
   exception_reason?: string | null;
+  human_modified_at?: string | null;
+  human_modified_fields?: string[];
 };
 
 export function isExceptionEvent(event: EventRead): boolean {
@@ -133,7 +125,6 @@ export type DashboardSummaryRead = {
   by_event_type: { name: string; count: number }[];
   incomplete_date_count: number;
   incomplete_location_count: number;
-  // Added for the Supabase bridge's automatic-visibility work; always 0 for SQLite events.
   exception_count?: number;
 };
 
@@ -154,6 +145,7 @@ export type LocationInput = {
 };
 
 export type EventCreate = {
+  // A Document *is* a Phase 1 source now -- this is that row's id.
   document_id: string;
   evidence_quote: string;
   title: string;
@@ -177,11 +169,6 @@ export type EventUpdate = Partial<{
   actors: ActorInput[];
 }>;
 
-export type ApproveAllResponse = {
-  approved_event_ids: string[];
-  skipped: { event_id: string; reason: string }[];
-};
-
 const API_ROOT = "/api/backend/api";
 
 async function parseOrThrow<T>(response: Response): Promise<T> {
@@ -198,17 +185,16 @@ export async function listEventsForDocument(documentId: string): Promise<EventRe
 }
 
 export async function listEvents(filters: EventFilters): Promise<EventRead[]> {
-  const params = new URLSearchParams(toEventFilterSearch(filters));
-  params.set("review_status", "approved");
-  const search = params.toString();
+  const search = toEventFilterSearch(filters);
   const response = await fetch(`${API_ROOT}/events${search ? `?${search}` : ""}`);
   return parseOrThrow<EventRead[]>(response);
 }
 
-export async function listEventsByReviewStatus(
-  reviewStatus: ReviewStatus,
+/** For Terra Sense's own pipeline summary -- not filtered/sorted, just a plain status count. */
+export async function listEventsByDashboardStatus(
+  dashboardStatus: DashboardStatus,
 ): Promise<EventRead[]> {
-  const response = await fetch(`${API_ROOT}/events?review_status=${reviewStatus}`);
+  const response = await fetch(`${API_ROOT}/events?dashboard_status=${dashboardStatus}`);
   return parseOrThrow<EventRead[]>(response);
 }
 
@@ -243,26 +229,30 @@ export async function updateEvent(eventId: string, patch: EventUpdate): Promise<
   return parseOrThrow<EventRead>(response);
 }
 
-export async function approveEvent(eventId: string): Promise<EventRead> {
-  const response = await fetch(`${API_ROOT}/events/${eventId}/approve`, { method: "POST" });
+async function postTransition(eventId: string, action: string): Promise<EventRead> {
+  const response = await fetch(`${API_ROOT}/events/${eventId}/${action}`, { method: "POST" });
   return parseOrThrow<EventRead>(response);
 }
 
+export async function publishEvent(eventId: string): Promise<EventRead> {
+  return postTransition(eventId, "publish");
+}
+
 export async function rejectEvent(eventId: string): Promise<EventRead> {
-  const response = await fetch(`${API_ROOT}/events/${eventId}/reject`, { method: "POST" });
-  return parseOrThrow<EventRead>(response);
+  return postTransition(eventId, "reject");
+}
+
+export async function archiveEvent(eventId: string): Promise<EventRead> {
+  return postTransition(eventId, "archive");
+}
+
+export async function restoreEvent(eventId: string): Promise<EventRead> {
+  return postTransition(eventId, "restore");
 }
 
 export async function deleteEvent(eventId: string): Promise<void> {
   const response = await fetch(`${API_ROOT}/events/${eventId}`, { method: "DELETE" });
   if (!response.ok) await parseOrThrow<never>(response);
-}
-
-export async function approveAllForDocument(documentId: string): Promise<ApproveAllResponse> {
-  const response = await fetch(`${API_ROOT}/documents/${documentId}/events/approve-all`, {
-    method: "POST",
-  });
-  return parseOrThrow<ApproveAllResponse>(response);
 }
 
 export async function resolveDuplicateFlag(

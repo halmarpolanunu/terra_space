@@ -13,7 +13,7 @@ PNG_BYTES = bytes.fromhex(
 
 
 def _client(tmp_path: Path) -> TestClient:
-    return TestClient(create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: True))
+    return TestClient(create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: True))
 
 
 def _draft_document(client: TestClient) -> dict:

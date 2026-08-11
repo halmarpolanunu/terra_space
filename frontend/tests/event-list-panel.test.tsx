@@ -12,7 +12,6 @@ function makeEvent(id: string, title: string): EventRead {
     event_date: null,
     event_date_precision: null,
     epistemic_status: "confirmed",
-    review_status: "approved",
     event_type: null,
     actors: [],
     locations: [],

@@ -15,28 +15,26 @@ type EventListProps = {
 };
 
 function isDeletable(event: EventRead): boolean {
-  return event.review_status === "draft" || event.review_status === "approved";
+  // "merged" is the one status that blocks direct edit/delete -- see
+  // decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md's Dashboard authority table.
+  return event.dashboard_status !== "merged";
 }
 
 const EPISTEMIC_LABELS = {
   confirmed: "Confirmed",
-  claim: "Claim",
-  rumor: "Rumor",
-  denied: "Denied",
   reported: "Reported",
   alleged: "Alleged",
   planned: "Planned",
+  denied: "Denied",
   unknown: "Unknown",
 } as const;
 
 const EPISTEMIC_COLORS = {
   confirmed: "--status-confirmed",
-  claim: "--status-claim",
-  rumor: "--status-rumor",
-  denied: "--status-denied",
   reported: "--status-reported",
   alleged: "--status-alleged",
   planned: "--status-planned",
+  denied: "--status-denied",
   unknown: "--status-unknown",
 } as const;
 

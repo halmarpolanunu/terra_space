@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { EventDetail } from "@/app/events/event-detail";
+import { EventEditor } from "@/app/events/event-editor";
 import { DashboardSummaryContent, exceptionEvents, unresolvedLocationEvents } from "@/app/dashboard/dashboard-summary";
 import { EventGlobe, countResolvedEventLocations } from "@/app/dashboard/event-globe";
 import { EventListPanel } from "@/app/dashboard/event-list-panel";
@@ -13,7 +14,6 @@ import { AppShell } from "@/components/app-shell";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
 import { EventTimeline } from "@/components/event-timeline";
-import { ReadOnlyBridgeNotice } from "@/components/read-only-bridge-notice";
 import {
   ACTIVE_FILTER_KEYS,
   EVENT_SORT_OPTIONS,
@@ -24,15 +24,24 @@ import {
   type EventFilters,
   type EventSort,
 } from "@/lib/event-filters";
-import type { ActorRead, EventRead, EventTypeRead } from "@/lib/events-api";
-import { hideEvent, unhideEvent, useHiddenEventIds } from "@/lib/hidden-events";
 import {
-  getBridgeDashboardSummary,
-  listBridgeActors,
-  listBridgeEvents,
-  listBridgeEventTypes,
-  listBridgeSources,
-} from "@/lib/bridge-api";
+  archiveEvent,
+  deleteEvent,
+  getEvent,
+  listActors,
+  listEventTypes,
+  listEvents,
+  publishEvent,
+  rejectEvent,
+  restoreEvent,
+  updateEvent,
+  type ActorRead,
+  type EventRead,
+  type EventTypeRead,
+  type EventUpdate,
+} from "@/lib/events-api";
+import { listDocuments } from "@/lib/documents-api";
+import { hideEvent, unhideEvent, useHiddenEventIds } from "@/lib/hidden-events";
 
 export function DashboardWorkspace() {
   const router = useRouter();
@@ -45,6 +54,7 @@ export function DashboardWorkspace() {
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
+  const [editing, setEditing] = useState(false);
   const [activePanel, setActivePanel] = useState<CommandDeckPanel>(null);
   const [projectionMode, setProjectionMode] = useState<"globe" | "flat" | "unavailable">("globe");
   const [listPanel, setListPanel] = useState<{
@@ -71,15 +81,21 @@ export function DashboardWorkspace() {
     [allEvents, hiddenEventIds],
   );
 
+  const refetchEvents = useCallback(() => {
+    return listEvents(filters).then((nextEvents) => {
+      setAllEvents(nextEvents);
+      return nextEvents;
+    });
+  }, [filters]);
+
   useEffect(() => {
     let active = true;
     void Promise.all([
-      listBridgeEvents(filters),
-      getBridgeDashboardSummary(filters),
-      listBridgeEventTypes(),
-      listBridgeActors(),
-      listBridgeSources(),
-    ]).then(([nextEvents, , nextEventTypes, nextActors, nextDocuments]) => {
+      listEvents(filters),
+      listEventTypes(),
+      listActors(),
+      listDocuments(),
+    ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments]) => {
       if (!active) return;
       setAllEvents(nextEvents);
       setEventTypes(nextEventTypes);
@@ -94,6 +110,7 @@ export function DashboardWorkspace() {
 
   function changeFilters(nextFilters: EventFilters) {
     setSelectedEvent(null);
+    setEditing(false);
     setListPanel(null);
     const nextSearch = toEventFilterSearch(nextFilters);
     router.replace(nextSearch ? `/dashboard?${nextSearch}` : "/dashboard");
@@ -105,6 +122,7 @@ export function DashboardWorkspace() {
 
   function selectEvent(event: EventRead) {
     setSelectedEvent(event);
+    setEditing(false);
     setActivePanel("detail");
   }
 
@@ -119,6 +137,48 @@ export function DashboardWorkspace() {
     setActivePanel("list");
   }
 
+  async function refreshSelected(eventId: string) {
+    const [nextEvent] = await Promise.all([getEvent(eventId), refetchEvents()]);
+    setSelectedEvent(nextEvent);
+    return nextEvent;
+  }
+
+  async function runTransition(action: (eventId: string) => Promise<EventRead>, event: EventRead) {
+    try {
+      await action(event.id);
+      await refreshSelected(event.id);
+      setError(undefined);
+    } catch (transitionError) {
+      setError(transitionError instanceof Error ? transitionError.message : "That action could not be completed.");
+    }
+  }
+
+  async function saveEdit(patch: EventUpdate) {
+    if (!selectedEvent) return;
+    try {
+      await updateEvent(selectedEvent.id, patch);
+      await refreshSelected(selectedEvent.id);
+      setEditing(false);
+      setError(undefined);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "That change could not be saved.");
+    }
+  }
+
+  async function removeEvent(event: EventRead) {
+    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+    try {
+      await deleteEvent(event.id);
+      setSelectedEvent(null);
+      setEditing(false);
+      setActivePanel(null);
+      await refetchEvents();
+      setError(undefined);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "That event could not be deleted.");
+    }
+  }
+
   const dashboardPath = `/dashboard${search ? `?${search}` : ""}`;
   const eventsPath = `/events${search ? `?${search}` : ""}`;
   const markerCount = countResolvedEventLocations(events);
@@ -129,23 +189,39 @@ export function DashboardWorkspace() {
   return (
     <AppShell currentPath="/dashboard">
       <section aria-labelledby="dashboard-title" className="dashboard-page">
-        <ReadOnlyBridgeNotice />
         <CommandDeckViewport>
         <LayeredCommandDeck
           activeFilterCount={activeFilterCount}
           activePanel={activePanel}
           detail={selectedEvent ? (
-            <EventDetail
-              event={selectedEvent}
-              eventsPath={dashboardPath}
-              isManuallyHidden={hiddenEventIds.includes(selectedEvent.id)}
-              onClose={() => {
-                setSelectedEvent(null);
-                setActivePanel(null);
-              }}
-              onHide={() => hideEvent(selectedEvent.id)}
-              onUnhide={() => unhideEvent(selectedEvent.id)}
-            />
+            editing ? (
+              <EventEditor
+                actorOptions={actors}
+                event={selectedEvent}
+                eventTypeOptions={eventTypes}
+                onCancel={() => setEditing(false)}
+                onSave={saveEdit}
+              />
+            ) : (
+              <EventDetail
+                event={selectedEvent}
+                eventsPath={dashboardPath}
+                isManuallyHidden={hiddenEventIds.includes(selectedEvent.id)}
+                onArchive={() => runTransition(archiveEvent, selectedEvent)}
+                onClose={() => {
+                  setSelectedEvent(null);
+                  setEditing(false);
+                  setActivePanel(null);
+                }}
+                onDelete={() => removeEvent(selectedEvent)}
+                onEdit={() => setEditing(true)}
+                onHide={() => hideEvent(selectedEvent.id)}
+                onPublish={() => runTransition(publishEvent, selectedEvent)}
+                onReject={() => runTransition(rejectEvent, selectedEvent)}
+                onRestore={() => runTransition(restoreEvent, selectedEvent)}
+                onUnhide={() => unhideEvent(selectedEvent.id)}
+              />
+            )
           ) : undefined}
           eventCount={events.length}
           eventsHref={eventsPath}
@@ -201,6 +277,7 @@ export function DashboardWorkspace() {
               events={events}
               hasActiveFilters={hasActiveEventFilters(filters)}
               onClearFilters={() => changeFilters(clearEventFilters(filters))}
+              onDelete={removeEvent}
               onSelect={selectEvent}
               onSortChange={changeSort}
               sort={filters.sort}

@@ -9,14 +9,12 @@ from app.db.models import DuplicateFlag, EventType, TaxonomyNode
 from app.schemas.duplicate import DuplicateResolveRequest
 from app.schemas.event import (
     ActorRead,
-    ApproveAllResponse,
-    ApproveAllSkipped,
+    DashboardSummaryRead,
     EventCreate,
     EventRead,
     EventTypeRead,
     EventTypeUpdate,
     EventUpdate,
-    DashboardSummaryRead,
     TaxonomyNodeCreate,
     TaxonomyNodeRead,
     TaxonomyNodeUpdate,
@@ -25,40 +23,57 @@ from app.services.documents import get_document
 from app.services.duplicates import DuplicateFlagAlreadyResolvedError, resolve_duplicate_flag
 from app.services.events import (
     EventEditNotAllowedError,
+    EventReferencedByDuplicateFlagError,
+    EventTransitionNotAllowedError,
     EventTypeDescriptionRequiredError,
     EventTypeInUseError,
     EventTypeNameConflictError,
-    EventTypeTaxonomyRequiredError,
     EventTypeSelectionError,
+    EventTypeTaxonomyRequiredError,
     EvidenceQuoteNotFoundError,
     PendingDuplicateFlagError,
-    approve_all_for_document,
-    approve_event,
-    create_manual_event,
-    delete_event,
-    delete_event_type,
-    get_event,
-    list_actors,
-    list_event_types,
-    list_event_taxonomy,
-    list_events,
-    list_filtered_events,
-    list_events_for_document,
-    referenced_event_type_ids,
-    reject_event,
-    dashboard_summary,
-    to_event_read,
-    to_event_type_read,
-    to_taxonomy_node_read,
-    create_taxonomy_node,
-    delete_taxonomy_node,
-    update_taxonomy_node,
-    update_event,
-    update_event_type,
     TaxonomyNodeDefinitionError,
     TaxonomyNodeHasChildrenError,
     TaxonomyNodeParentError,
+    archive_event,
+    create_manual_event,
+    create_taxonomy_node,
+    dashboard_summary,
+    delete_event,
+    delete_event_type,
+    delete_taxonomy_node,
+    get_event,
+    list_actors,
+    list_event_taxonomy,
+    list_event_types,
+    list_events_for_document,
+    list_filtered_events,
+    publish_event,
+    referenced_event_type_ids,
+    reject_event,
+    restore_event,
+    to_event_read,
+    to_event_type_read,
+    to_taxonomy_node_read,
+    update_event,
+    update_event_type,
+    update_taxonomy_node,
 )
+
+# Accepted as a deprecated alias for dashboard_status="published" -- see
+# project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md Task 4. Removed once
+# nothing sends it anymore.
+_REVIEW_STATUS_COMPAT = {"approved": "published"}
+
+
+def _resolve_dashboard_status_filter(
+    dashboard_status: str | None, review_status: str | None
+) -> str | None:
+    if dashboard_status is not None:
+        return dashboard_status
+    if review_status is not None:
+        return _REVIEW_STATUS_COMPAT.get(review_status, review_status)
+    return None
 
 
 def create_events_router(session_factory: sessionmaker) -> APIRouter:
@@ -184,6 +199,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
 
     @router.get("/api/events", response_model=list[EventRead])
     def list_all(
+        dashboard_status: str | None = None,
         review_status: str | None = None,
         q: str | None = None,
         date_from: date | None = None,
@@ -204,7 +220,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             to_event_read(db, event)
             for event in list_filtered_events(
                 db,
-                review_status=review_status,
+                dashboard_status=_resolve_dashboard_status_filter(dashboard_status, review_status),
                 q=q,
                 date_from=date_from,
                 date_to=date_to,
@@ -221,6 +237,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
 
     @router.get("/api/events/dashboard-summary", response_model=DashboardSummaryRead)
     def dashboard_summary_route(
+        dashboard_status: str | None = None,
         q: str | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
@@ -238,7 +255,7 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             raise HTTPException(status_code=422, detail="date_from must be on or before date_to.")
         events = list_filtered_events(
             db,
-            review_status="approved",
+            dashboard_status=dashboard_status,
             q=q,
             date_from=date_from,
             date_to=date_to,
@@ -293,15 +310,16 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             delete_event(db, event)
         except EventEditNotAllowedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
+        except EventReferencedByDuplicateFlagError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
-    @router.post("/api/events/{event_id}/approve", response_model=EventRead)
-    def approve(event_id: str, db: Session = Depends(get_db)) -> EventRead:
+    def _transition_route(event_id: str, db: Session, action):
         event = get_event(db, event_id)
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found.")
         try:
-            event = approve_event(db, event)
-        except EventEditNotAllowedError as error:
+            event = action(db, event)
+        except EventTransitionNotAllowedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         except PendingDuplicateFlagError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
@@ -311,16 +329,21 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
             raise HTTPException(status_code=422, detail=str(error)) from error
         return to_event_read(db, event)
 
+    @router.post("/api/events/{event_id}/publish", response_model=EventRead)
+    def publish(event_id: str, db: Session = Depends(get_db)) -> EventRead:
+        return _transition_route(event_id, db, publish_event)
+
     @router.post("/api/events/{event_id}/reject", response_model=EventRead)
     def reject(event_id: str, db: Session = Depends(get_db)) -> EventRead:
-        event = get_event(db, event_id)
-        if event is None:
-            raise HTTPException(status_code=404, detail="Event not found.")
-        try:
-            event = reject_event(db, event)
-        except EventEditNotAllowedError as error:
-            raise HTTPException(status_code=409, detail=str(error)) from error
-        return to_event_read(db, event)
+        return _transition_route(event_id, db, reject_event)
+
+    @router.post("/api/events/{event_id}/archive", response_model=EventRead)
+    def archive(event_id: str, db: Session = Depends(get_db)) -> EventRead:
+        return _transition_route(event_id, db, archive_event)
+
+    @router.post("/api/events/{event_id}/restore", response_model=EventRead)
+    def restore(event_id: str, db: Session = Depends(get_db)) -> EventRead:
+        return _transition_route(event_id, db, restore_event)
 
     @router.post(
         "/api/events/{event_id}/duplicate-flags/{flag_id}/resolve", response_model=EventRead
@@ -335,28 +358,12 @@ def create_events_router(session_factory: sessionmaker) -> APIRouter:
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found.")
         flag = db.get(DuplicateFlag, flag_id)
-        if flag is None or flag.draft_event_id != event_id:
+        if flag is None or flag.event_id != event_id:
             raise HTTPException(status_code=404, detail="Duplicate flag not found.")
         try:
             event = resolve_duplicate_flag(db, event, flag, payload.resolution)
         except DuplicateFlagAlreadyResolvedError as error:
             raise HTTPException(status_code=409, detail=str(error)) from error
         return to_event_read(db, event)
-
-    @router.post(
-        "/api/documents/{document_id}/events/approve-all", response_model=ApproveAllResponse
-    )
-    def approve_all(document_id: str, db: Session = Depends(get_db)) -> ApproveAllResponse:
-        document = get_document(db, document_id)
-        if document is None:
-            raise HTTPException(status_code=404, detail="Document not found.")
-        result = approve_all_for_document(db, document_id)
-        return ApproveAllResponse(
-            approved_event_ids=result.approved_event_ids,
-            skipped=[
-                ApproveAllSkipped(event_id=skip.event_id, reason=skip.reason)
-                for skip in result.skipped
-            ],
-        )
 
     return router

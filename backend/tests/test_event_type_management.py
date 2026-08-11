@@ -8,7 +8,7 @@ from app.main import create_app
 
 
 def _app(tmp_path: Path):
-    return create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: True)
+    return create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: True)
 
 
 def _seed_type_with_event(app, *, name: str, is_active: bool = True) -> str:
@@ -23,7 +23,8 @@ def _seed_type_with_event(app, *, name: str, is_active: bool = True) -> str:
                 title="Linked event",
                 summary="Summary",
                 epistemic_status="confirmed",
-                review_status="approved",
+                origin="manual",
+                dashboard_status="published",
                 event_type_id=event_type.id,
             )
         )
@@ -37,7 +38,8 @@ def _seed_type(app, *, name: str, description: str | None = None, is_active: boo
     factory = app.state.session_factory
     db = factory()
     try:
-        event_type = EventType(name=name, description=description, is_active=is_active)
+        # terra_space_phase3_event_types.description is NOT NULL -- "" not None.
+        event_type = EventType(name=name, description=description or "", is_active=is_active)
         db.add(event_type)
         db.commit()
         return event_type.id

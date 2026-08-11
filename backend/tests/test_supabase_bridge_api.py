@@ -20,14 +20,14 @@ from tests.supabase_bridge_test_support import (  # noqa: F401
 def _configured_client(tmp_path: Path) -> TestClient:
     require_bridge_database()
     app = create_app(
-        settings=Settings(data_dir=tmp_path, supabase_url=TEST_DATABASE_URL),
+        settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}", supabase_url=TEST_DATABASE_URL),
         lm_studio_check=lambda: False,
     )
     return TestClient(app)
 
 
 def _unconfigured_client(tmp_path: Path) -> TestClient:
-    app = create_app(settings=Settings(data_dir=tmp_path), lm_studio_check=lambda: False)
+    app = create_app(settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"), lm_studio_check=lambda: False)
     return TestClient(app)
 
 
@@ -110,7 +110,7 @@ def test_events_route_returns_published_events_with_full_epistemic_range(
     assert response.status_code == 200
     [event] = response.json()
     assert event["epistemic_status"] == "unknown"
-    assert event["review_status"] == "approved"
+    assert event["dashboard_status"] == "published"
 
 
 def test_event_detail_route_returns_hidden_event_marked_as_exception(

@@ -6,14 +6,12 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import DuplicateFlag, EventType, TaxonomyNode
 from app.main import create_app
-from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
 
 
-def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestClient:
+def _client(tmp_path: Path) -> TestClient:
     app = create_app(
-        settings=Settings(data_dir=tmp_path),
+        settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"),
         lm_studio_check=lambda: True,
-        lm_studio_client=FakeLmStudioClient(outcomes),
     )
     client = TestClient(app)
     with app.state.session_factory() as db:
@@ -34,97 +32,72 @@ def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestCli
     return client
 
 
-def _create_and_process_document(client: TestClient, content: str) -> dict:
+def _create_document(client: TestClient, content: str) -> dict:
     response = client.post(
         "/api/documents",
         json={"title": content, "content": content, "publication_date": "2026-07-10"},
     )
     assert response.status_code == 201
-    document = response.json()
-    process_response = client.post(
-        "/api/documents/process", json={"document_ids": [document["id"]]}
-    )
-    assert process_response.status_code == 202
-    return document
+    return response.json()
 
 
-def _describe_event_type(client: TestClient, type_id: str, description: str) -> None:
-    response = client.patch(
-        f"/api/event-types/{type_id}", json={"description": description}
-    )
-    assert response.status_code == 200
+def _create_manual_event(client: TestClient, document_id: str, **overrides: object) -> dict:
+    payload = {
+        "document_id": document_id,
+        "evidence_quote": overrides.pop("evidence_quote"),
+        "title": overrides.pop("title", "An event"),
+        "summary": overrides.pop("summary", "Something happened."),
+        "epistemic_status": overrides.pop("epistemic_status", "confirmed"),
+    }
+    payload.update(overrides)
+    response = client.post("/api/events", json=payload)
+    assert response.status_code == 201, response.text
+    return response.json()
 
 
-def _extraction_with_existing_type(content: str) -> list[FakeEventSpec]:
-    return [
-        FakeEventSpec(
-            title="Depot attack",
-            summary="A militia group reportedly attacked a fuel depot.",
-            evidence_quote=content,
-            epistemic_status="claim",
-            event_type="Attack",
-            source_actors=["Local Militia"],
-        )
-    ]
-
-
-def test_approving_event_keeps_existing_type_active_and_activates_actor(tmp_path: Path) -> None:
+def test_publishing_event_keeps_existing_type_active_and_activates_actor(tmp_path: Path) -> None:
     content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
-    extraction = _extraction_with_existing_type(content)
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client,
+        document["id"],
+        evidence_quote=content,
+        event_type={"existing": "Attack"},
+        actors=[{"name": "Local Militia", "role": "source"}],
+    )
 
-    response = client.post(f"/api/events/{event['id']}/approve")
+    response = client.post(f"/api/events/{event['id']}/publish")
     assert response.status_code == 200
     body = response.json()
-    assert body["review_status"] == "approved"
+    assert body["dashboard_status"] == "published"
     assert body["event_type"]["is_active"] is True
     assert body["actors"][0]["actor"]["is_active"] is True
 
 
-def test_approval_allows_an_untyped_draft(tmp_path: Path) -> None:
+def test_publish_allows_an_untyped_event(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(title="Something", summary="Summary.", evidence_quote=content)
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
-    response = client.post(f"/api/events/{event['id']}/approve")
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(client, document["id"], evidence_quote=content)
+
+    response = client.post(f"/api/events/{event['id']}/publish")
     assert response.status_code == 200
     assert response.json()["event_type"] is None
 
 
-def test_approve_all_allows_untyped_drafts(tmp_path: Path) -> None:
+def test_publishing_event_with_pending_duplicate_flag_returns_409(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(title="Something", summary="Summary.", evidence_quote=content)
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    body = client.post(
-        f"/api/documents/{document['id']}/events/approve-all"
-    ).json()
-    assert len(body["approved_event_ids"]) == 1
-    assert body["skipped"] == []
-
-
-def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path) -> None:
-    content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
+    client = _client(tmp_path)
     app = client.app
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client, document["id"], evidence_quote=content, event_type={"existing": "Report"}
+    )
 
     with app.state.session_factory() as session:
         flag = DuplicateFlag(
-            draft_event_id=event["id"],
+            event_id=event["id"],
             matched_event_id=event["id"],
             matched_reason="test setup",
             resolution="pending",
@@ -132,42 +105,60 @@ def test_approving_event_with_pending_duplicate_flag_returns_409(tmp_path: Path)
         session.add(flag)
         session.commit()
 
-    response = client.post(f"/api/events/{event['id']}/approve")
+    response = client.post(f"/api/events/{event['id']}/publish")
     assert response.status_code == 409
 
 
 def test_rejecting_event_never_deletes_it(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client, document["id"], evidence_quote=content, event_type={"existing": "Report"}
+    )
 
     response = client.post(f"/api/events/{event['id']}/reject")
     assert response.status_code == 200
-    assert response.json()["review_status"] == "rejected"
+    assert response.json()["dashboard_status"] == "rejected"
 
     still_there = client.get(f"/api/events/{event['id']}")
     assert still_there.status_code == 200
-    assert still_there.json()["review_status"] == "rejected"
+    assert still_there.json()["dashboard_status"] == "rejected"
 
 
-def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
+def test_archive_and_restore_roundtrip(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
-    _describe_event_type(client, event["event_type"]["id"], "Use for reports of an event.")
-    client.post(f"/api/events/{event['id']}/approve")
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(client, document["id"], evidence_quote=content)
+
+    archived = client.post(f"/api/events/{event['id']}/archive")
+    assert archived.status_code == 200
+    assert archived.json()["dashboard_status"] == "archived"
+
+    restored = client.post(f"/api/events/{event['id']}/restore")
+    assert restored.status_code == 200
+    assert restored.json()["dashboard_status"] == "published"
+
+
+def test_restore_is_not_allowed_from_hidden(tmp_path: Path) -> None:
+    content = "Something happened on 2026-07-10."
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(client, document["id"], evidence_quote=content)
+
+    response = client.post(f"/api/events/{event['id']}/restore")
+    assert response.status_code == 409
+
+
+def test_editing_published_event_keeps_it_published(tmp_path: Path) -> None:
+    content = "Something happened on 2026-07-10."
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client, document["id"], evidence_quote=content, event_type={"existing": "Report"}
+    )
+    client.post(f"/api/events/{event['id']}/publish")
 
     response = client.patch(
         f"/api/events/{event['id']}",
@@ -180,11 +171,13 @@ def test_editing_approved_event_keeps_it_approved(tmp_path: Path) -> None:
     assert response.status_code == 200
     assert response.json()["title"] == "Nope"
     assert response.json()["event_date"] == "2026-07-10"
-    assert response.json()["review_status"] == "approved"
+    assert response.json()["dashboard_status"] == "published"
+    assert response.json()["human_modified_at"] is not None
+    assert set(response.json()["human_modified_fields"]) == {"title", "event_date", "event_date_precision"}
 
 
 def test_manual_add_with_quote_not_in_document_is_rejected(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     document = client.post(
         "/api/documents",
         json={
@@ -207,8 +200,8 @@ def test_manual_add_with_quote_not_in_document_is_rejected(tmp_path: Path) -> No
     assert response.status_code == 422
 
 
-def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+def test_manual_add_with_valid_quote_creates_hidden_event(tmp_path: Path) -> None:
+    client = _client(tmp_path)
     content = "Reported a checkpoint closure near the bridge."
     document = client.post(
         "/api/documents",
@@ -231,7 +224,8 @@ def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None
     )
     assert response.status_code == 201
     body = response.json()
-    assert body["review_status"] == "draft"
+    assert body["dashboard_status"] == "hidden"
+    assert body["origin"] == "manual"
     assert body["event_type"]["name"] == "Report"
     assert body["event_type"]["is_active"] is True
     assert body["event_date"] == "2026-07-10"
@@ -240,79 +234,14 @@ def test_manual_add_with_valid_quote_creates_draft_event(tmp_path: Path) -> None
     assert body["sources"][0]["document_id"] == document["id"]
 
 
-def test_document_becomes_completed_only_after_all_draft_events_resolved(
-    tmp_path: Path,
-) -> None:
-    content = "Two things happened on 2026-07-10 in the capital."
-    extraction = [
-        FakeEventSpec(
-            title="First thing", summary="Summary one.", evidence_quote=content, event_type="Report"
-        ),
-        FakeEventSpec(
-            title="Second thing", summary="Summary two.", evidence_quote=content, event_type="Report"
-        ),
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    events = client.get(f"/api/documents/{document['id']}/events").json()
-    assert len(events) == 2
-    _describe_event_type(client, events[0]["event_type"]["id"], "Use for reports of an event.")
-
-    client.post(f"/api/events/{events[0]['id']}/approve")
-    mid = client.get(f"/api/documents/{document['id']}").json()
-    assert mid["processing_status"] == "ready_for_review"
-
-    client.post(f"/api/events/{events[1]['id']}/reject")
-    done = client.get(f"/api/documents/{document['id']}").json()
-    assert done["processing_status"] == "completed"
-
-
-def test_approve_all_skips_events_with_pending_duplicate_flags(tmp_path: Path) -> None:
-    content = "Two things happened on 2026-07-10 in the capital."
-    extraction = [
-        FakeEventSpec(
-            title="First thing", summary="Summary one.", evidence_quote=content, event_type="Report"
-        ),
-        FakeEventSpec(
-            title="Second thing", summary="Summary two.", evidence_quote=content, event_type="Report"
-        ),
-    ]
-    client = _client(tmp_path, {content: extraction})
-    app = client.app
-    document = _create_and_process_document(client, content)
-    events = client.get(f"/api/documents/{document['id']}/events").json()
-    _describe_event_type(client, events[0]["event_type"]["id"], "Use for reports of an event.")
-
-    with app.state.session_factory() as session:
-        flagged_event_id = events[0]["id"]
-        flag = DuplicateFlag(
-            draft_event_id=flagged_event_id,
-            matched_event_id=flagged_event_id,
-            matched_reason="test setup",
-            resolution="pending",
-        )
-        session.add(flag)
-        session.commit()
-
-    response = client.post(f"/api/documents/{document['id']}/events/approve-all")
-    assert response.status_code == 200
-    body = response.json()
-    assert events[1]["id"] in body["approved_event_ids"]
-    assert events[0]["id"] not in body["approved_event_ids"]
-    assert body["skipped"][0]["event_id"] == events[0]["id"]
-
-
-def test_deleting_draft_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
+def test_deleting_hidden_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
-    assert event["review_status"] == "draft"
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client, document["id"], evidence_quote=content, event_type={"existing": "Report"}
+    )
+    assert event["dashboard_status"] == "hidden"
 
     response = client.delete(f"/api/events/{event['id']}")
     assert response.status_code == 204
@@ -320,17 +249,14 @@ def test_deleting_draft_event_removes_it_but_preserves_document(tmp_path: Path) 
     assert client.get(f"/api/documents/{document['id']}").status_code == 200
 
 
-def test_deleting_approved_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
+def test_deleting_published_event_removes_it_but_preserves_document(tmp_path: Path) -> None:
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
-    client.post(f"/api/events/{event['id']}/approve")
+    client = _client(tmp_path)
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client, document["id"], evidence_quote=content, event_type={"existing": "Report"}
+    )
+    client.post(f"/api/events/{event['id']}/publish")
 
     response = client.delete(f"/api/events/{event['id']}")
     assert response.status_code == 204
@@ -339,29 +265,59 @@ def test_deleting_approved_event_removes_it_but_preserves_document(tmp_path: Pat
 
 
 def test_deleting_missing_event_returns_404(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     response = client.delete("/api/events/does-not-exist")
     assert response.status_code == 404
 
 
-@pytest.mark.parametrize("review_status", ["rejected", "merged"])
-def test_deleting_rejected_or_merged_event_returns_409(tmp_path: Path, review_status: str) -> None:
+@pytest.mark.parametrize("dashboard_status", ["rejected", "merged"])
+def test_deleting_rejected_or_merged_event(tmp_path: Path, dashboard_status: str) -> None:
+    """`rejected` stays deletable (an owner's own decision they can still undo by deleting);
+    `merged` is the one status that blocks direct edit/delete -- see
+    decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md."""
+
     content = "Something happened on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Something", summary="Summary.", evidence_quote=content, event_type="Report"
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
+    client = _client(tmp_path)
     app = client.app
-    document = _create_and_process_document(client, content)
-    event = client.get(f"/api/documents/{document['id']}/events").json()[0]
+    document = _create_document(client, content)
+    event = _create_manual_event(
+        client, document["id"], evidence_quote=content, event_type={"existing": "Report"}
+    )
 
     with app.state.session_factory() as session:
         from app.db.models import Event as EventModel
 
         stored_event = session.get(EventModel, event["id"])
-        stored_event.review_status = review_status
+        stored_event.dashboard_status = dashboard_status
+        session.commit()
+
+    response = client.delete(f"/api/events/{event['id']}")
+    if dashboard_status == "merged":
+        assert response.status_code == 409
+        assert client.get(f"/api/events/{event['id']}").status_code == 200
+    else:
+        assert response.status_code == 204
+        assert client.get(f"/api/events/{event['id']}").status_code == 404
+
+
+def test_deleting_event_referenced_by_another_events_duplicate_flag_returns_409(
+    tmp_path: Path,
+) -> None:
+    content = "Something happened on 2026-07-10."
+    client = _client(tmp_path)
+    app = client.app
+    document = _create_document(client, content)
+    event = _create_manual_event(client, document["id"], evidence_quote=content)
+    other = _create_manual_event(client, document["id"], evidence_quote=content, title="Other")
+
+    with app.state.session_factory() as session:
+        flag = DuplicateFlag(
+            event_id=other["id"],
+            matched_event_id=event["id"],
+            matched_reason="test setup",
+            resolution="pending",
+        )
+        session.add(flag)
         session.commit()
 
     response = client.delete(f"/api/events/{event['id']}")

@@ -3,8 +3,12 @@ type: Decision
 title: "Staged Event Detection Pipeline"
 description: "Replaces the single LM Studio extraction call with a staged pipeline: one Signal Parser call, then four narrow per-candidate classifier calls, then the existing deterministic resolution — plus ISO alpha-3 country codes, actor alias management, and a per-stage extraction log."
 tags: [project-knowledge, decision, event-detection, extraction, lm-studio]
-status: active
+status: superseded
 ---
+
+> **Superseded 2026-08-11:** Terra Space's own extraction pipeline described below was retired
+> once n8n became the sole event-detection path against the shared Supabase schema. See [Retire
+> Terra Space's Own Extraction Pipeline](Retire-Terra-Space-Own-Extraction-Pipeline.md).
 
 # Context
 

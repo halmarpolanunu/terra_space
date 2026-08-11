@@ -27,7 +27,7 @@ class FakeLmStudioClient:
 
 def _client(tmp_path: Path, fake: FakeLmStudioClient) -> TestClient:
     app = create_app(
-        settings=Settings(data_dir=tmp_path),
+        settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"),
         lm_studio_check=lambda: True,
         lm_studio_client=fake,
     )

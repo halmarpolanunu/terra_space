@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
@@ -7,13 +6,12 @@ from sqlalchemy.orm import Session
 from app.db.models import (
     Actor,
     Document,
+    DuplicateFlag,
     Event,
     EventActor,
     EventSource,
     EventType,
-    ExtractionLogEntry,
-    Location,
-    Source,
+    PipelineEventRun,
     TaxonomyNode,
     utc_now,
 )
@@ -32,22 +30,59 @@ from app.schemas.event import (
     TaxonomyPathSegment,
 )
 from app.services.duplicates import detect_duplicates
-from app.services.matching import find_by_exact_name, get_or_create_document_source, quote_found
-from app.services.locations import apply_coordinates
+from app.services.locations import get_or_create_location
+from app.services.matching import find_by_exact_name, quote_found
 
-EDITABLE_REVIEW_STATUSES = {"draft", "approved"}
+# Replaces the old draft/approved review-status gate. "merged" is the only status that blocks
+# direct edit/delete/restore -- see decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md's
+# Dashboard authority table ("merged -> no direct edit or restore").
+EDITABLE_DASHBOARD_STATUSES = {"hidden", "published", "rejected", "archived"}
+DELETABLE_DASHBOARD_STATUSES = EDITABLE_DASHBOARD_STATUSES
+
+# Allowed dashboard_status transitions -- see
+# project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md Task 4.
+_ALLOWED_TRANSITIONS: dict[str, set[str]] = {
+    "publish": {"hidden", "rejected", "archived"},
+    "reject": {"hidden", "published", "archived"},
+    "archive": {"hidden", "published", "rejected"},
+    "restore": {"rejected", "archived"},
+}
 
 
 class EventEditNotAllowedError(Exception):
-    """Raised when editing, approving, or rejecting an event outside of review_status draft."""
+    """Raised when editing, deleting, or transitioning a merged event."""
 
-    def __init__(self, review_status: str) -> None:
-        self.review_status = review_status
-        super().__init__(f"Event cannot be edited while {review_status}.")
+    def __init__(self, dashboard_status: str) -> None:
+        self.dashboard_status = dashboard_status
+        super().__init__(f"Event cannot be edited while {dashboard_status}.")
+
+
+class EventTransitionNotAllowedError(Exception):
+    """Raised when a publish/reject/archive/restore transition isn't allowed from the event's
+    current dashboard_status."""
+
+    def __init__(self, action: str, dashboard_status: str) -> None:
+        self.action = action
+        self.dashboard_status = dashboard_status
+        super().__init__(f"Cannot {action} an event that is currently {dashboard_status}.")
+
+
+class EventReferencedByDuplicateFlagError(Exception):
+    """Raised when deleting an event that another event's duplicate flag still matches against.
+
+    `phase3_duplicate_flags.matched_event_id` is ON DELETE RESTRICT at the database level (unlike
+    the old SQLite cascade), so this is checked proactively for a clear message instead of letting
+    a raw IntegrityError surface.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Another event's duplicate flag still points at this one. Resolve that flag first."
+        )
 
 
 class PendingDuplicateFlagError(Exception):
-    """Raised when approving an event that still has an unresolved duplicate flag."""
+    """Raised when publishing an event that still has an unresolved duplicate flag."""
 
     def __init__(self, pending_count: int) -> None:
         self.pending_count = pending_count
@@ -87,7 +122,7 @@ class TaxonomyNodeDefinitionError(Exception):
 
 
 class EvidenceQuoteNotFoundError(Exception):
-    """Raised when a manually added event's evidence quote is not in the document's content."""
+    """Raised when a manually added event's evidence quote is not in the source's content."""
 
 
 def taxonomy_path_for_event_type(event_type: EventType) -> list[TaxonomyPathSegment]:
@@ -116,32 +151,34 @@ def to_event_type_read(event_type: EventType, *, in_use: bool = False) -> EventT
     )
 
 
-def incomplete_extraction_stages(db: Session, event: Event) -> list[str]:
-    """The distinct stages whose classifier call failed for this event's own candidate,
-    for the Event Review "extraction incomplete" note. Empty for a manually-created event
-    (no candidate_index) or one whose source document is gone."""
-    if event.candidate_index is None:
-        return []
-    document_id = next(
-        (
-            event_source.source.document_id
-            for event_source in event.event_sources
-            if event_source.source.document_id is not None
-        ),
-        None,
-    )
-    if document_id is None:
-        return []
-    stages = db.execute(
-        select(ExtractionLogEntry.stage)
-        .where(
-            ExtractionLogEntry.document_id == document_id,
-            ExtractionLogEntry.candidate_index == event.candidate_index,
-            ExtractionLogEntry.outcome == "failed",
-        )
-        .distinct()
-    ).scalars()
-    return sorted(stages)
+def _exception_reason(db: Session, event: Event) -> str | None:
+    """Same construction as the read-only bridge's own `_build_exception_reason` (see
+    app/services/supabase_bridge.py), reading the event's latest Phase 3 run by candidate_key."""
+
+    if event.pipeline_outcome != "EXCEPTION" or not event.candidate_key:
+        return None
+    run = db.execute(
+        select(PipelineEventRun)
+        .where(PipelineEventRun.candidate_key == event.candidate_key)
+        .order_by(PipelineEventRun.processed_at.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if run is None:
+        return None
+    if run.error_message:
+        return str(run.error_message)
+    reasons = run.safeguard_reasons
+    if not reasons:
+        return None
+    if isinstance(reasons, list):
+        return "; ".join(str(reason) for reason in reasons) or None
+    if isinstance(reasons, dict):
+        nested = reasons.get("reasons") or reasons.get("reason")
+        if isinstance(nested, list):
+            return "; ".join(str(reason) for reason in nested) or None
+        if nested:
+            return str(nested)
+    return str(reasons)
 
 
 def to_event_read(db: Session, event: Event) -> EventRead:
@@ -152,7 +189,6 @@ def to_event_read(db: Session, event: Event) -> EventRead:
         event_date=event.event_date,
         event_date_precision=event.event_date_precision,
         epistemic_status=event.epistemic_status,
-        review_status=event.review_status,
         event_type=to_event_type_read(event.event_type) if event.event_type else None,
         actors=[
             EventActorRead(role=event_actor.role, actor=ActorRead.model_validate(event_actor.actor))
@@ -162,8 +198,9 @@ def to_event_read(db: Session, event: Event) -> EventRead:
         sources=[
             EventSourceRead(
                 source_id=event_source.source_id,
-                document_id=event_source.source.document_id,
-                reference_label=event_source.source.reference_label,
+                # A Document *is* the Phase 1 source now, so its own id is the deep-link target.
+                document_id=event_source.source_id,
+                reference_label=event_source.reference_label,
                 evidence_quote=event_source.evidence_quote,
             )
             for event_source in event.event_sources
@@ -172,17 +209,30 @@ def to_event_read(db: Session, event: Event) -> EventRead:
             DuplicateFlagRead.model_validate(flag) for flag in event.duplicate_flags
         ],
         extraction_incomplete=event.extraction_incomplete,
-        extraction_incomplete_stages=incomplete_extraction_stages(db, event),
+        extraction_incomplete_stages=event.extraction_incomplete_stages,
         created_at=event.created_at,
         updated_at=event.updated_at,
-        approved_at=event.approved_at,
+        approved_at=event.published_at,
+        origin=event.origin,
+        pipeline_outcome=event.pipeline_outcome,
+        dashboard_status=event.dashboard_status,
+        exception_reason=_exception_reason(db, event),
+        human_modified_at=event.human_modified_at,
+        human_modified_fields=list(event.human_modified_fields or []),
     )
 
 
-def list_events(db: Session, review_status: str | None) -> list[Event]:
+def list_events(db: Session, dashboard_status: str | None) -> list[Event]:
+    """See decisions/Automatic-Event-Visibility-With-Manual-Filtering.md: with no explicit
+    `dashboard_status` filter, every automatically-visible event (published and hidden/exception)
+    is returned. Only a real owner decision (rejected/archived/merged) narrows it away by
+    default -- the caller must ask for that status explicitly."""
+
     query = select(Event)
-    if review_status is not None:
-        query = query.where(Event.review_status == review_status)
+    if dashboard_status is not None:
+        query = query.where(Event.dashboard_status == dashboard_status)
+    else:
+        query = query.where(Event.dashboard_status.in_(("published", "hidden")))
     query = query.order_by(Event.created_at.desc())
     return list(db.execute(query).scalars())
 
@@ -208,7 +258,7 @@ def _event_date_interval(event: Event) -> tuple[date, date] | None:
 def list_filtered_events(
     db: Session,
     *,
-    review_status: str | None,
+    dashboard_status: str | None,
     q: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
@@ -221,7 +271,7 @@ def list_filtered_events(
     document_id: str | None = None,
     sort: str = "date_desc",
 ) -> list[Event]:
-    events = list_events(db, review_status)
+    events = list_events(db, dashboard_status)
     needle = q.strip().casefold() if q else None
 
     def matches(event: Event) -> bool:
@@ -240,7 +290,7 @@ def list_filtered_events(
         if city_regency and city_regency not in {location.city_regency for location in event.locations}:
             return False
         if document_id and document_id not in {
-            link.source.document_id for link in event.event_sources if link.source.document_id
+            link.source_id for link in event.event_sources
         }:
             return False
         if date_from or date_to:
@@ -274,17 +324,17 @@ def dashboard_summary(events: list[Event]) -> dict[str, object]:
         name = event.event_type.name if event.event_type else "Uncategorized"
         counts[name] = counts.get(name, 0) + 1
 
-    def approved_within_week(event: Event) -> bool:
-        if event.approved_at is None:
+    def published_within_week(event: Event) -> bool:
+        if event.published_at is None:
             return False
-        approved_at = event.approved_at
-        if approved_at.tzinfo is None:
-            approved_at = approved_at.replace(tzinfo=UTC)
-        return approved_at >= week_ago
+        published_at = event.published_at
+        if published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=UTC)
+        return published_at >= week_ago
 
     return {
         "total_events": len(events),
-        "new_events": sum(1 for event in events if approved_within_week(event)),
+        "new_events": sum(1 for event in events if published_within_week(event)),
         "by_event_type": [
             {"name": name, "count": count} for name, count in sorted(counts.items())
         ],
@@ -294,6 +344,7 @@ def dashboard_summary(events: list[Event]) -> dict[str, object]:
             for event in events
             if not any(location.latitude is not None and location.longitude is not None for location in event.locations)
         ),
+        "exception_count": sum(1 for event in events if event.pipeline_outcome == "EXCEPTION"),
     }
 
 
@@ -301,8 +352,7 @@ def list_events_for_document(db: Session, document_id: str) -> list[Event]:
     query = (
         select(Event)
         .join(EventSource, EventSource.event_id == Event.id)
-        .join(Source, Source.id == EventSource.source_id)
-        .where(Source.document_id == document_id)
+        .where(EventSource.source_id == document_id)
         .order_by(Event.created_at)
         .distinct()
     )
@@ -497,7 +547,9 @@ def update_event_type(
         if find_by_exact_name(others, clean_name) is not None:
             raise EventTypeNameConflictError("An event type with this name already exists.")
     next_description = (
-        event_type.description if description is _UNSET else _clean_description(description)
+        _clean_description(event_type.description)
+        if description is _UNSET
+        else _clean_description(description)
     )
     activates = is_active is True and not event_type.is_active
     clears_active_description = (
@@ -519,7 +571,9 @@ def update_event_type(
         if event_type.taxonomy_node is not None:
             event_type.taxonomy_node.name = clean_name
     if description is not _UNSET:
-        event_type.description = next_description
+        # The live table's description column is NOT NULL -- "no description" is represented as
+        # "" (empty string), never Python None, unlike the old SQLite column.
+        event_type.description = next_description or ""
     if is_active is not _UNSET and is_active is not None:
         event_type.is_active = is_active
     db.commit()
@@ -608,33 +662,9 @@ def _resolve_actor(db: Session, name: str) -> Actor:
     return actor
 
 
-def _document_ids_for_event(event: Event) -> set[str]:
-    return {
-        event_source.source.document_id
-        for event_source in event.event_sources
-        if event_source.source.document_id is not None
-    }
-
-
-def _complete_documents_with_no_drafts_remaining(db: Session, document_ids: set[str]) -> None:
-    for document_id in document_ids:
-        document = db.get(Document, document_id)
-        if document is None or document.processing_status != "ready_for_review":
-            continue
-        remaining = db.execute(
-            select(Event.id)
-            .join(EventSource, EventSource.event_id == Event.id)
-            .join(Source, Source.id == EventSource.source_id)
-            .where(Source.document_id == document_id, Event.review_status == "draft")
-            .limit(1)
-        ).first()
-        if remaining is None:
-            document.processing_status = "completed"
-
-
 def update_event(db: Session, event: Event, payload: EventUpdate) -> Event:
-    if event.review_status not in EDITABLE_REVIEW_STATUSES:
-        raise EventEditNotAllowedError(event.review_status)
+    if event.dashboard_status not in EDITABLE_DASHBOARD_STATUSES:
+        raise EventEditNotAllowedError(event.dashboard_status)
 
     data = payload.model_dump(exclude_unset=True, exclude={"event_type", "actors", "locations"})
     for field_name, value in data.items():
@@ -653,111 +683,92 @@ def update_event(db: Session, event: Event, payload: EventUpdate) -> Event:
         event.locations = []
         for location_input in payload.locations:
             if location_input.country or location_input.admin1 or location_input.city_regency:
-                location = Location(
-                    country=location_input.country,
-                    admin1=location_input.admin1,
-                    city_regency=location_input.city_regency,
+                location = get_or_create_location(
+                    db,
+                    location_input.country,
+                    location_input.admin1,
+                    location_input.city_regency,
                 )
-                apply_coordinates(location)
                 event.locations.append(location)
+
+    # Human authority tracking -- see decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md.
+    # Never touches pipeline_candidate/pipeline_event_snapshot; a later pipeline rerun cannot see
+    # these fields at all (it only ever reads/writes phase3_events by candidate_key, and this
+    # column is irrelevant to that idempotency check).
+    if payload.model_fields_set:
+        event.human_modified_at = utc_now()
+        event.human_modified_fields = sorted(
+            set(event.human_modified_fields or []) | payload.model_fields_set
+        )
 
     db.commit()
     db.refresh(event)
     return event
 
 
-def approve_event(db: Session, event: Event) -> Event:
-    if event.review_status not in EDITABLE_REVIEW_STATUSES:
-        raise EventEditNotAllowedError(event.review_status)
-
+def _validate_before_publish(event: Event) -> None:
     pending = [flag for flag in event.duplicate_flags if flag.resolution == "pending"]
     if pending:
         raise PendingDuplicateFlagError(len(pending))
 
-    if (
-        event.event_type is not None
-        and (
-            not event.event_type.is_active
-            or not _is_full_taxonomy_leaf(event.event_type)
-        )
+    if event.event_type is not None and (
+        not event.event_type.is_active or not _is_full_taxonomy_leaf(event.event_type)
     ):
-        raise EventTypeSelectionError(
-            "Choose an active Event Type leaf from the Event Taxonomy."
-        )
+        raise EventTypeSelectionError("Choose an active Event Type leaf from the Event Taxonomy.")
 
     _require_description_before_type_activation(
-        event.event_type,
-        "Add a description before approving this event type.",
+        event.event_type, "Add a description before publishing this event type."
     )
 
-    event.review_status = "approved"
-    event.approved_at = utc_now()
-    for event_actor in event.event_actors:
-        if not event_actor.actor.is_active:
-            event_actor.actor.is_active = True
 
-    _complete_documents_with_no_drafts_remaining(db, _document_ids_for_event(event))
+def _transition(db: Session, event: Event, action: str, target_status: str) -> Event:
+    allowed_from = _ALLOWED_TRANSITIONS[action]
+    if event.dashboard_status not in allowed_from:
+        raise EventTransitionNotAllowedError(action, event.dashboard_status)
+
+    if target_status == "published":
+        _validate_before_publish(event)
+
+    event.dashboard_status = target_status
+    event.human_modified_at = utc_now()
+    if target_status == "published":
+        if event.published_at is None:
+            event.published_at = utc_now()
+        for event_actor in event.event_actors:
+            if not event_actor.actor.is_active:
+                event_actor.actor.is_active = True
 
     db.commit()
     db.refresh(event)
     return event
+
+
+def publish_event(db: Session, event: Event) -> Event:
+    return _transition(db, event, "publish", "published")
 
 
 def reject_event(db: Session, event: Event) -> Event:
-    if event.review_status not in EDITABLE_REVIEW_STATUSES:
-        raise EventEditNotAllowedError(event.review_status)
+    return _transition(db, event, "reject", "rejected")
 
-    event.review_status = "rejected"
-    _complete_documents_with_no_drafts_remaining(db, _document_ids_for_event(event))
 
-    db.commit()
-    db.refresh(event)
-    return event
+def archive_event(db: Session, event: Event) -> Event:
+    return _transition(db, event, "archive", "archived")
+
+
+def restore_event(db: Session, event: Event) -> Event:
+    return _transition(db, event, "restore", "published")
 
 
 def delete_event(db: Session, event: Event) -> None:
-    if event.review_status not in EDITABLE_REVIEW_STATUSES:
-        raise EventEditNotAllowedError(event.review_status)
+    if event.dashboard_status not in DELETABLE_DASHBOARD_STATUSES:
+        raise EventEditNotAllowedError(event.dashboard_status)
+    referencing = db.execute(
+        select(DuplicateFlag.id).where(DuplicateFlag.matched_event_id == event.id).limit(1)
+    ).first()
+    if referencing is not None:
+        raise EventReferencedByDuplicateFlagError
     db.delete(event)
     db.commit()
-
-
-@dataclass
-class ApproveAllSkip:
-    event_id: str
-    reason: str
-
-
-@dataclass
-class ApproveAllResult:
-    approved_event_ids: list[str] = field(default_factory=list)
-    skipped: list[ApproveAllSkip] = field(default_factory=list)
-
-
-def approve_all_for_document(db: Session, document_id: str) -> ApproveAllResult:
-    result = ApproveAllResult()
-    for event in list_events_for_document(db, document_id):
-        if event.review_status != "draft":
-            continue
-        try:
-            approve_event(db, event)
-            result.approved_event_ids.append(event.id)
-        except PendingDuplicateFlagError:
-            result.skipped.append(
-                ApproveAllSkip(event_id=event.id, reason="Has a pending duplicate flag.")
-            )
-        except EventTypeDescriptionRequiredError:
-            result.skipped.append(
-                ApproveAllSkip(event_id=event.id, reason="Event type needs a description.")
-            )
-        except EventTypeSelectionError:
-            result.skipped.append(
-                ApproveAllSkip(
-                    event_id=event.id,
-                    reason="Event type is not an active Event Taxonomy leaf.",
-                )
-            )
-    return result
 
 
 def create_manual_event(db: Session, document: Document, payload: EventCreate) -> Event:
@@ -766,7 +777,6 @@ def create_manual_event(db: Session, document: Document, payload: EventCreate) -
             "Evidence quote not found in the source document."
         )
 
-    source = get_or_create_document_source(db, document)
     event_type = _resolve_event_type(db, payload.event_type)
 
     event = Event(
@@ -775,23 +785,21 @@ def create_manual_event(db: Session, document: Document, payload: EventCreate) -
         event_date=payload.event_date,
         event_date_precision=payload.event_date_precision,
         epistemic_status=payload.epistemic_status,
-        review_status="draft",
+        origin="manual",
+        dashboard_status="hidden",
         event_type=event_type,
     )
     db.add(event)
 
     event.event_sources.append(
-        EventSource(source=source, evidence_quote=payload.evidence_quote)
+        EventSource(source=document, reference_label=document.title, evidence_quote=payload.evidence_quote)
     )
 
     for location in payload.locations:
         if location.country or location.admin1 or location.city_regency:
-            location_record = Location(
-                country=location.country,
-                admin1=location.admin1,
-                city_regency=location.city_regency,
+            location_record = get_or_create_location(
+                db, location.country, location.admin1, location.city_regency
             )
-            apply_coordinates(location_record)
             event.locations.append(location_record)
 
     for actor_input in payload.actors:

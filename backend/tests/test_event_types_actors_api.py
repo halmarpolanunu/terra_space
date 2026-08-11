@@ -5,30 +5,14 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.db.models import Event, EventType, TaxonomyNode
 from app.main import create_app
-from tests.staged_lm_studio_fake import FakeEventSpec, FakeLmStudioClient
-
-SOURCE_TEXT = "Aircraft struck the depot."
 
 
-def _client(tmp_path: Path, outcomes: dict[str, list[FakeEventSpec]]) -> TestClient:
+def _client(tmp_path: Path) -> TestClient:
     app = create_app(
-        settings=Settings(data_dir=tmp_path),
+        settings=Settings(data_dir=tmp_path, database_url=f"sqlite:///{tmp_path / 'test.db'}"),
         lm_studio_check=lambda: True,
-        lm_studio_client=FakeLmStudioClient(outcomes),
     )
     return TestClient(app)
-
-
-def _process_source(client: TestClient, content: str) -> None:
-    document = client.post(
-        "/api/documents",
-        json={"title": content, "content": content, "publication_date": "2026-07-16"},
-    ).json()
-    response = client.post(
-        "/api/documents/process",
-        json={"document_ids": [document["id"]]},
-    )
-    assert response.status_code == 202
 
 
 def _seed_event_type(
@@ -41,7 +25,10 @@ def _seed_event_type(
     with client.app.state.session_factory() as db:
         event_type = EventType(
             name=name,
-            description=description,
+            # terra_space_phase3_event_types.description is NOT NULL on the live table -- "no
+            # description" is "" (empty string), never Python None. See schemas/event.py's
+            # EventTypeRead.blank_description_reads_as_none for the matching read-side contract.
+            description=description or "",
             is_active=is_active,
         )
         db.add(event_type)
@@ -100,7 +87,7 @@ def _document_for_manual_event(client: TestClient) -> dict:
 
 
 def test_taxonomy_returns_nested_nodes_and_leaf_paths(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     _seed_taxonomy_leaf(client)
 
     tree = client.get("/api/event-taxonomy")
@@ -118,7 +105,7 @@ def test_taxonomy_returns_nested_nodes_and_leaf_paths(tmp_path: Path) -> None:
 
 
 def test_taxonomy_rejects_invalid_parent_level(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
 
     response = client.post("/api/event-taxonomy/nodes", json={"name": "Bad", "level": "event_type"})
 
@@ -127,7 +114,7 @@ def test_taxonomy_rejects_invalid_parent_level(tmp_path: Path) -> None:
 
 
 def test_taxonomy_creates_only_legal_child_levels_and_active_described_leaf(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     domain = client.post("/api/event-taxonomy/nodes", json={"name": "Security", "level": "domain"})
     assert domain.status_code == 201
     category = client.post(
@@ -162,14 +149,15 @@ def test_taxonomy_creates_only_legal_child_levels_and_active_described_leaf(tmp_
 
 
 def test_taxonomy_prevents_deleting_nodes_with_children_or_referenced_leaf(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     leaf, event_type = _seed_taxonomy_leaf(client)
     with client.app.state.session_factory() as db:
         db.add(
             Event(
                 title="Referenced event",
                 summary="summary",
-                epistemic_status="claim",
+                epistemic_status="confirmed",
+                origin="manual",
                 event_type_id=event_type.id,
             )
         )
@@ -189,7 +177,7 @@ def test_taxonomy_prevents_deleting_nodes_with_children_or_referenced_leaf(tmp_p
 
 
 def test_taxonomy_updates_leaf_definition_through_its_node(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     leaf, _event_type = _seed_taxonomy_leaf(client)
 
     response = client.patch(
@@ -211,7 +199,7 @@ def test_taxonomy_updates_leaf_definition_through_its_node(tmp_path: Path) -> No
 def test_legacy_create_event_type_route_is_rejected_to_prevent_unlinked_active_types(
     tmp_path: Path,
 ) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     response = client.post(
         "/api/event-types",
         json={"name": "Airstrike", "description": "Use for an aerial weapons strike."},
@@ -222,7 +210,7 @@ def test_legacy_create_event_type_route_is_rejected_to_prevent_unlinked_active_t
 
 
 def test_legacy_event_type_rename_keeps_linked_taxonomy_leaf_in_sync(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     leaf, event_type = _seed_taxonomy_leaf(client)
 
     response = client.patch(f"/api/event-types/{event_type.id}", json={"name": "Armed Strike"})
@@ -236,7 +224,7 @@ def test_legacy_event_type_rename_keeps_linked_taxonomy_leaf_in_sync(tmp_path: P
 
 
 def test_legacy_event_type_delete_is_blocked_when_linked_to_taxonomy_leaf(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     _leaf, event_type = _seed_taxonomy_leaf(client)
 
     response = client.delete(f"/api/event-types/{event_type.id}")
@@ -246,7 +234,7 @@ def test_legacy_event_type_delete_is_blocked_when_linked_to_taxonomy_leaf(tmp_pa
 
 
 def test_inactive_type_requires_description_before_activation(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     type_id = _seed_event_type(client, name="Suggested type", description=None, is_active=False)
     response = client.patch(f"/api/event-types/{type_id}", json={"is_active": True})
     assert response.status_code == 422
@@ -254,7 +242,7 @@ def test_inactive_type_requires_description_before_activation(tmp_path: Path) ->
 
 
 def test_legacy_unlinked_event_type_cannot_be_activated_through_legacy_patch(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     type_id = _seed_event_type(
         client,
         name="Legacy inactive type",
@@ -269,7 +257,7 @@ def test_legacy_unlinked_event_type_cannot_be_activated_through_legacy_patch(tmp
 
 
 def test_manual_event_type_requires_an_active_taxonomy_leaf(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     document = _document_for_manual_event(client)
     _seed_event_type(
         client,
@@ -290,7 +278,7 @@ def test_manual_event_type_requires_an_active_taxonomy_leaf(tmp_path: Path) -> N
 def test_manual_event_accepts_a_linked_leaf_and_leaves_type_blank_when_omitted(
     tmp_path: Path,
 ) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     _leaf, event_type = _seed_taxonomy_leaf(client)
     document = _document_for_manual_event(client)
 
@@ -309,7 +297,7 @@ def test_manual_event_accepts_a_linked_leaf_and_leaves_type_blank_when_omitted(
 
 
 def test_manual_event_type_rejects_legacy_suggested_field(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     document = _document_for_manual_event(client)
 
     response = client.post(
@@ -323,7 +311,7 @@ def test_manual_event_type_rejects_legacy_suggested_field(tmp_path: Path) -> Non
 def test_event_update_rejects_unknown_type_and_allows_an_explicit_blank_type(
     tmp_path: Path,
 ) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     _leaf, event_type = _seed_taxonomy_leaf(client)
     document = _document_for_manual_event(client)
     event = client.post(
@@ -344,8 +332,8 @@ def test_event_update_rejects_unknown_type_and_allows_an_explicit_blank_type(
     assert cleared.json()["event_type"] is None
 
 
-def test_approval_cannot_activate_an_unlinked_event_type(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+def test_publish_cannot_activate_an_unlinked_event_type(tmp_path: Path) -> None:
+    client = _client(tmp_path)
     document = _document_for_manual_event(client)
     event = client.post("/api/events", json=_manual_event_payload(document["id"])).json()
     type_id = _seed_event_type(
@@ -360,14 +348,14 @@ def test_approval_cannot_activate_an_unlinked_event_type(tmp_path: Path) -> None
         persisted_event.event_type_id = type_id
         db.commit()
 
-    response = client.post(f"/api/events/{event['id']}/approve")
+    response = client.post(f"/api/events/{event['id']}/publish")
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Choose an active Event Type leaf from the Event Taxonomy."
 
 
-def test_approval_rejects_an_active_event_type_outside_the_taxonomy(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+def test_publish_rejects_an_active_event_type_outside_the_taxonomy(tmp_path: Path) -> None:
+    client = _client(tmp_path)
     document = _document_for_manual_event(client)
     event = client.post("/api/events", json=_manual_event_payload(document["id"])).json()
     type_id = _seed_event_type(
@@ -382,42 +370,16 @@ def test_approval_rejects_an_active_event_type_outside_the_taxonomy(tmp_path: Pa
         persisted_event.event_type_id = type_id
         db.commit()
 
-    response = client.post(f"/api/events/{event['id']}/approve")
+    response = client.post(f"/api/events/{event['id']}/publish")
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Choose an active Event Type leaf from the Event Taxonomy."
 
 
-def test_approve_all_skips_an_inactive_taxonomy_leaf(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
-    _leaf, event_type = _seed_taxonomy_leaf(client)
-    document = _document_for_manual_event(client)
-    event = client.post("/api/events", json=_manual_event_payload(document["id"])).json()
-    with client.app.state.session_factory() as db:
-        persisted_event = db.get(Event, event["id"])
-        persisted_type = db.get(EventType, event_type.id)
-        assert persisted_event is not None
-        assert persisted_type is not None
-        persisted_event.event_type_id = event_type.id
-        persisted_type.is_active = False
-        db.commit()
-
-    response = client.post(f"/api/documents/{document['id']}/events/approve-all")
-
-    assert response.status_code == 200
-    assert response.json()["approved_event_ids"] == []
-    assert response.json()["skipped"] == [
-        {
-            "event_id": event["id"],
-            "reason": "Event type is not an active Event Taxonomy leaf.",
-        }
-    ]
-
-
 def test_legacy_active_type_can_be_renamed_or_deactivated_without_description(
     tmp_path: Path,
 ) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     type_id = _seed_event_type(client, name="Legacy", description=None, is_active=True)
     renamed = client.patch(f"/api/event-types/{type_id}", json={"name": "Legacy renamed"})
     assert renamed.status_code == 200
@@ -428,7 +390,7 @@ def test_legacy_active_type_can_be_renamed_or_deactivated_without_description(
 def test_legacy_active_type_can_save_rename_with_unchanged_blank_description(
     tmp_path: Path,
 ) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     type_id = _seed_event_type(client, name="Legacy", description=None, is_active=True)
     response = client.patch(
         f"/api/event-types/{type_id}",
@@ -441,7 +403,7 @@ def test_legacy_active_type_can_save_rename_with_unchanged_blank_description(
 
 
 def test_active_description_cannot_be_cleared(tmp_path: Path) -> None:
-    client = _client(tmp_path, {})
+    client = _client(tmp_path)
     type_id = _seed_event_type(
         client,
         name="Protest",
@@ -450,79 +412,3 @@ def test_active_description_cannot_be_cleared(tmp_path: Path) -> None:
     )
     response = client.patch(f"/api/event-types/{type_id}", json={"description": " "})
     assert response.status_code == 422
-
-
-def test_unknown_ai_type_creates_no_event_type_but_keeps_the_draft_untyped(tmp_path: Path) -> None:
-    content = "A local militia reportedly attacked the fuel depot on 2026-07-10."
-    extraction = [
-        FakeEventSpec(
-            title="Depot attack",
-            summary="A militia group reportedly attacked a fuel depot.",
-            evidence_quote=content,
-            epistemic_status="claim",
-            event_type="Attack",
-            source_actors=["Local Militia"],
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
-    document = client.post(
-        "/api/documents",
-        json={"title": content, "content": content, "publication_date": "2026-07-10"},
-    ).json()
-    process_response = client.post(
-        "/api/documents/process", json={"document_ids": [document["id"]]}
-    )
-    assert process_response.status_code == 202
-
-    types_response = client.get("/api/event-types")
-    assert types_response.status_code == 200
-    assert types_response.json() == []
-
-    events = client.get(f"/api/documents/{document['id']}/events").json()
-    assert events[0]["event_type"] is None
-
-    actors_response = client.get("/api/actors")
-    assert actors_response.status_code == 200
-    actors = actors_response.json()
-    assert len(actors) == 1
-    assert actors[0]["name"] == "Local Militia"
-    assert actors[0]["is_active"] is False
-
-
-def test_ai_output_uses_an_active_existing_type_without_changing_its_definition(tmp_path: Path) -> None:
-    content = "People held a public protest."
-    extraction = [
-        FakeEventSpec(
-            title="Public protest",
-            summary=content,
-            evidence_quote=content,
-            event_type="Protest",
-        )
-    ]
-    client = _client(tmp_path, {content: extraction})
-    existing_id = _seed_event_type(
-        client, name="Protest", description="Human definition.", is_active=True
-    )
-    with client.app.state.session_factory() as db:
-        event_type = db.get(EventType, existing_id)
-        assert event_type is not None
-        domain = TaxonomyNode(name="Civic", level="domain")
-        category = TaxonomyNode(name="Public activity", level="category", parent=domain)
-        subcategory = TaxonomyNode(name="Demonstrations", level="subcategory", parent=category)
-        db.add(
-            TaxonomyNode(
-                name="Protest",
-                level="event_type",
-                parent=subcategory,
-                event_type=event_type,
-            )
-        )
-        db.commit()
-
-    _process_source(client, content)
-
-    rows = client.get("/api/event-types").json()
-    assert len(rows) == 1
-    assert rows[0]["id"] == existing_id
-    assert rows[0]["description"] == "Human definition."
-    assert rows[0]["in_use"] is True

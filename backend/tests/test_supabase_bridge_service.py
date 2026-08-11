@@ -79,7 +79,7 @@ def test_list_bridge_events_returns_published_and_hidden_but_not_owner_decided(
     events = list_bridge_events(bridge_read_only_engine)
 
     assert {event.title for event in events} == {"Published event", "Hidden exception"}
-    assert all(event.review_status == "approved" for event in events)
+    assert {event.dashboard_status for event in events} == {"published", "hidden"}
 
 
 def test_list_bridge_events_marks_pipeline_outcome_and_dashboard_status(
@@ -236,7 +236,6 @@ def test_filter_bridge_events_by_query_text() -> None:
             event_date=None,
             event_date_precision=None,
             epistemic_status="confirmed",
-            review_status="approved",
             event_type=None,
             actors=[],
             locations=[],
@@ -267,7 +266,6 @@ def test_bridge_dashboard_summary_counts_by_type() -> None:
             event_date=None,
             event_date_precision="unknown",
             epistemic_status="confirmed",
-            review_status="approved",
             event_type=EventTypeRead(id=type_name, name=type_name, description=None, is_active=True)
             if type_name
             else None,
@@ -303,7 +301,6 @@ def test_bridge_dashboard_summary_counts_exceptions() -> None:
             event_date=None,
             event_date_precision="unknown",
             epistemic_status="confirmed",
-            review_status="approved",
             event_type=None,
             actors=[],
             locations=[],

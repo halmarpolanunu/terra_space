@@ -39,6 +39,14 @@ if ($hostGateway.Count -ne 1) {
     throw "The backend must map host.docker.internal to host-gateway."
 }
 
+if (-not $resolved.services.backend.environment.PSObject.Properties.Name.Contains("TERRA_DATABASE_URL")) {
+    throw "The backend must declare TERRA_DATABASE_URL so it can reach the local Supabase database."
+}
+
+if ($resolved.services.frontend.environment.PSObject.Properties.Name.Contains("TERRA_DATABASE_URL")) {
+    throw "TERRA_DATABASE_URL must never be exposed to the frontend service."
+}
+
 $localFrontendPort = @($resolved.services.frontend.ports | Where-Object { $_.host_ip -eq "127.0.0.1" -and $_.target -eq 3000 -and $_.published -eq "3000" })
 if ($localFrontendPort.Count -ne 1) {
     throw "The frontend must expose only 127.0.0.1:3000:3000."

@@ -2,7 +2,6 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.event import EventCreate, EventUpdate
-from app.schemas.staged_extraction import ClassifiedDate
 
 
 def _event_create(**overrides: object) -> EventCreate:
@@ -11,7 +10,7 @@ def _event_create(**overrides: object) -> EventCreate:
         "evidence_quote": "A reported event.",
         "title": "Reported event",
         "summary": "An event was reported.",
-        "epistemic_status": "claim",
+        "epistemic_status": "confirmed",
     }
     payload.update(overrides)
     return EventCreate(**payload)
@@ -71,8 +70,3 @@ def test_event_update_rejects_inconsistent_date_and_precision(
 ) -> None:
     with pytest.raises(ValidationError):
         EventUpdate(event_date=event_date, event_date_precision=event_date_precision)
-
-
-def test_classified_date_rejects_an_inconsistent_date_and_precision() -> None:
-    with pytest.raises(ValidationError):
-        ClassifiedDate(event_date="2026-07-10", event_date_precision="month")

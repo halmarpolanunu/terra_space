@@ -87,11 +87,22 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
   data. See the [Supabase Read-Only Bridge Design](plans/2026-08-11-supabase-read-only-bridge-design.md)
   and its [implementation plan](plans/2026-08-11-supabase-read-only-bridge-implementation.md).
   Status: completed.
-- [ ] **Move Terra Space application storage to Supabase** - replace SQLite persistence while
-  preserving existing application behavior and making Phase 3 events immediately visible and
-  human-authoritative in Dashboard. Status: planned.
-- [ ] **Verify and approve cutover** - prove visibility, human-override, traceability, offline,
-  restart, rollback, and no-SQLite-write behavior before activation. Status: planned.
+- [x] **Move Terra Space application storage to Supabase** - backend persistence, the Documents
+  CRUD API, and Dashboard/Events authority (publish/reject/archive/restore/edit/delete) now use
+  local Supabase/PostgreSQL instead of SQLite; the visible Sources page deliberately remains the
+  earlier read-only Supabase bridge until its full CRUD interface is brought back in a follow-up.
+  SQLite is preserved untouched as rollback material. Terra Space's own staged extraction pipeline
+  was retired (n8n is now the sole event-detection path) -- see the [retirement
+  decision](decisions/Retire-Terra-Space-Own-Extraction-Pipeline.md). Verified by 237 backend tests
+  (SQLite unit + real PostgreSQL integration) and 218 frontend tests, clean lint, clean production build. See the
+  [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md).
+  Status: completed (implementation and automated verification); live browser verification against
+  real local Supabase is still owner-pending, see below.
+- [ ] **Verify and approve cutover** - run the live browser scenarios (Documents, Event Review,
+  Events/Dashboard, Settings, offline LM Studio, responsive) against the real local Supabase
+  instance, confirm the archived SQLite checksum is still unchanged after a live restart, then
+  activate. Deliberately not run automatically: those scenarios publish/reject/archive/delete real
+  event rows, which needs the owner's own confirmation first. Status: planned.
 
 ## Deferred Beyond MVP
 

@@ -3,7 +3,7 @@ type: Implementation Plan
 title: Terra Space Supabase Application Transition Implementation Plan
 description: Move the Terra Space backend and Dashboard from SQLite to the shared phase-prefixed local Supabase database.
 tags: [project-knowledge, plan, backend, frontend, supabase, dashboard]
-status: planned
+status: in-progress
 ---
 
 # Terra Space Supabase Application Transition Implementation Plan
@@ -48,9 +48,9 @@ status: planned
 **Interfaces:**
 - Produces `Settings.database_url` from `TERRA_DATABASE_URL` and `create_session_factory(database_url)` without schema creation.
 
-- [ ] Write a failing test asserting `Settings` requires `TERRA_DATABASE_URL` outside explicitly configured SQLite unit tests.
-- [ ] Add psycopg 3 as the PostgreSQL SQLAlchemy driver using the repository's exact-version dependency convention and regenerate the lock file.
-- [ ] Replace unconditional SQLite setup with dialect-aware setup:
+- [x] Write a failing test asserting `Settings` requires `TERRA_DATABASE_URL` outside explicitly configured SQLite unit tests.
+- [x] Add psycopg 3 as the PostgreSQL SQLAlchemy driver using the repository's exact-version dependency convention and regenerate the lock file.
+- [x] Replace unconditional SQLite setup with dialect-aware setup:
 
 ```python
 def create_session_factory(database_url: str) -> sessionmaker:
@@ -61,10 +61,10 @@ def create_session_factory(database_url: str) -> sessionmaker:
 ```
 
 Do not call `Base.metadata.create_all()`.
-- [ ] Make `create_app()` use `settings.database_url`; keep SQLite URLs injectable in unit tests only.
-- [ ] Add backend-only `TERRA_DATABASE_URL` to Compose. Do not add it to the frontend service.
-- [ ] Add a private PostgreSQL test service with a separate test database and no host port; tests apply the checked-in Supabase migration before running PostgreSQL integration cases.
-- [ ] Run focused session/config tests and verify the backend starts against the test PostgreSQL service.
+- [x] Make `create_app()` use `settings.database_url`; keep SQLite URLs injectable in unit tests only.
+- [x] Add backend-only `TERRA_DATABASE_URL` to Compose. Do not add it to the frontend service.
+- [x] Add a private PostgreSQL test service with a separate test database and no host port; tests apply the checked-in Supabase migration before running PostgreSQL integration cases.
+- [x] Run focused session/config tests and verify the backend starts against the test PostgreSQL service.
 
 ### Task 2: Map SQLAlchemy models to phase-prefixed tables
 
@@ -76,13 +76,13 @@ Do not call `Base.metadata.create_all()`.
 **Interfaces:**
 - Preserves Python domain class names where useful while mapping them to the new database contract.
 
-- [ ] Map `Document` to `phase1_sources`, exposing compatibility attributes for title, content/raw text, publication date, source URL, processing status/error, and timestamps; add cleaned text, domain, author, and collection source fields.
-- [ ] Map `Attachment` to `phase1_attachments` and replace `document_id` storage with `phase1_source_id` while keeping API serialization stable.
-- [ ] Map `Event` to `phase3_events` with `candidate_key`, `origin`, `pipeline_outcome`, `dashboard_status`, pipeline snapshots, human modification fields, and published time.
-- [ ] Map Event Type, taxonomy, actors, aliases, locations, event-source/actor/location links, and duplicate flags to their `phase3_` table names.
-- [ ] Remove runtime dependency on the old `sources` and `extraction_log_entries` tables. Read evidence from `phase3_event_sources` and pipeline audit from `phase3_event_runs`.
-- [ ] Map `AppSettings` to `app_settings` and retain the fixed `default` row behavior.
-- [ ] Add tests that compare SQLAlchemy table/column names against PostgreSQL `information_schema` and fail on drift.
+- [x] Map `Document` to `phase1_sources`, exposing compatibility attributes for title, content/raw text, publication date, source URL, processing status/error, and timestamps; add cleaned text, domain, author, and collection source fields.
+- [x] Map `Attachment` to `phase1_attachments` and replace `document_id` storage with `phase1_source_id` while keeping API serialization stable.
+- [x] Map `Event` to `phase3_events` with `candidate_key`, `origin`, `pipeline_outcome`, `dashboard_status`, pipeline snapshots, human modification fields, and published time.
+- [x] Map Event Type, taxonomy, actors, aliases, locations, event-source/actor/location links, and duplicate flags to their `phase3_` table names.
+- [x] Remove runtime dependency on the old `sources` and `extraction_log_entries` tables. Read evidence from `phase3_event_sources` and pipeline audit from `phase3_event_runs`.
+- [x] Map `AppSettings` to `app_settings` and retain the fixed `default` row behavior.
+- [x] Add tests that compare SQLAlchemy table/column names against PostgreSQL `information_schema` and fail on drift.
 
 ### Task 3: Adapt source/document and settings services
 
@@ -94,11 +94,11 @@ Do not call `Base.metadata.create_all()`.
 **Interfaces:**
 - Existing frontend Documents and Settings endpoints remain available.
 
-- [ ] Update document CRUD to use `phase1_sources`. New Terra Space UI drafts use `collection_source='terra_space_ui'`; n8n-completed sources remain readable in the same list.
-- [ ] Preserve edit locks, attachment validation, local file paths, processing-status behavior, and source deletion protections.
-- [ ] Ensure deleting a Phase 1 source is blocked when any Phase 2 result or Phase 3 event references it; do not cascade-delete authoritative intelligence.
-- [ ] Update settings reads/writes to upsert the single `app_settings.id='default'` row.
-- [ ] Run document, attachment, settings, and LM-Studio-offline tests against PostgreSQL.
+- [x] Update document CRUD to use `phase1_sources`. New Terra Space UI drafts use `collection_source='terra_space_ui'`; n8n-completed sources remain readable in the same list.
+- [x] Preserve edit locks, attachment validation, local file paths, processing-status behavior, and source deletion protections.
+- [x] Ensure deleting a Phase 1 source is blocked when any Phase 2 result or Phase 3 event references it; do not cascade-delete authoritative intelligence.
+- [x] Update settings reads/writes to upsert the single `app_settings.id='default'` row.
+- [x] Run document, attachment, settings, and LM-Studio-offline tests against PostgreSQL.
 
 ### Task 4: Adapt event services and authority rules
 
@@ -114,9 +114,9 @@ Do not call `Base.metadata.create_all()`.
 - `PATCH /api/events/{id}` records human authority metadata.
 - Add `POST /api/events/{id}/publish`, `/reject`, `/archive`, and `/restore` with explicit transitions.
 
-- [ ] Replace the old review-status query contract with Dashboard status while accepting `review_status=approved` temporarily as an internal compatibility alias mapped to `published` until frontend Task 5 lands. The default (no `dashboard_status` filter given) returns both `published` and `hidden` events, per [Automatic Event Visibility With Manual Filtering](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md) — only `rejected`/`archived`/`merged` are excluded automatically.
-- [ ] On every human event patch, set `human_modified_at=now()` and merge changed field names into `human_modified_fields`; never alter `pipeline_event_snapshot`.
-- [ ] Enforce transitions:
+- [x] Replace the old review-status query contract with Dashboard status while accepting `review_status=approved` temporarily as an internal compatibility alias mapped to `published` until frontend Task 5 lands. The default (no `dashboard_status` filter given) returns both `published` and `hidden` events, per [Automatic Event Visibility With Manual Filtering](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md) — only `rejected`/`archived`/`merged` are excluded automatically.
+- [x] On every human event patch, set `human_modified_at=now()` and merge changed field names into `human_modified_fields`; never alter `pipeline_event_snapshot`.
+- [x] Enforce transitions:
 
 ```text
 hidden -> published|rejected|archived
@@ -126,11 +126,11 @@ archived -> published|rejected
 merged -> no direct edit or restore
 ```
 
-- [ ] Manual event creation sets `origin='manual'`, `pipeline_outcome=null`, and starts hidden until explicitly published.
-- [ ] Protected permanent deletion requires the existing confirmation flow, deletes normalized event relationships, and leaves `phase3_event_runs` audit rows intact by candidate key/source ID.
-- [ ] Update duplicate detection to compare reviewable events against `published` events and preserve keep-separate/link behavior.
-- [ ] Update epistemic statuses to `confirmed|reported|alleged|planned|denied|unknown`; migrate UI/API labels without guessing a pipeline value.
-- [ ] Add tests proving immediate published visibility, hidden exception exclusion, edit metadata, rejected/archived exclusion, restoration, deletion audit retention, and pipeline rerun non-overwrite.
+- [x] Manual event creation sets `origin='manual'`, `pipeline_outcome=null`, and starts hidden until explicitly published.
+- [x] Protected permanent deletion requires the existing confirmation flow, deletes normalized event relationships, and leaves `phase3_event_runs` audit rows intact by candidate key/source ID.
+- [x] Update duplicate detection to compare reviewable events against `published` events and preserve keep-separate/link behavior.
+- [x] Update epistemic statuses to `confirmed|reported|alleged|planned|denied|unknown`; migrate UI/API labels without guessing a pipeline value.
+- [x] Add tests proving immediate published visibility, hidden exception exclusion, edit metadata, rejected/archived exclusion, restoration, deletion audit retention, and pipeline rerun non-overwrite.
 
 ### Task 5: Connect Dashboard and Events UI to the new authority model
 
@@ -144,17 +144,17 @@ merged -> no direct edit or restore
 **Interfaces:**
 - Dashboard lists `published` events and allows edit, reject, archive, and restore through its event detail panel.
 
-- [ ] Replace frontend `ReviewStatus` with `DashboardStatus`; update list requests to send `dashboard_status=published`.
-- [ ] Extend `EventRead` with `origin`, `pipeline_outcome`, `dashboard_status`, `human_modified_at`, and `human_modified_fields`.
-- [ ] Keep summary, filters, globe, timeline, register, and detail derived from the same published-event response.
-- [ ] Add clear event-detail actions: Edit, Reject, Archive, Restore where allowed, and protected Delete. Show `AI generated` versus `Manually added`, without displaying raw model output in the main Dashboard.
-- [ ] After edit/status action, refetch the selected event, event list, and Dashboard summary so the map/timeline/list update immediately.
-- [ ] Show `hidden` Phase 3 exceptions on Dashboard and Events by default, clearly marked, per
+- [x] Replace frontend `ReviewStatus` with `DashboardStatus`; update list requests to send `dashboard_status=published`.
+- [x] Extend `EventRead` with `origin`, `pipeline_outcome`, `dashboard_status`, `human_modified_at`, and `human_modified_fields`.
+- [x] Keep summary, filters, globe, timeline, register, and detail derived from the same published-event response.
+- [x] Add clear event-detail actions: Edit, Reject, Archive, Restore where allowed, and protected Delete. Show `AI generated` versus `Manually added`, without displaying raw model output in the main Dashboard.
+- [x] After edit/status action, refetch the selected event, event list, and Dashboard summary so the map/timeline/list update immediately.
+- [x] Show `hidden` Phase 3 exceptions on Dashboard and Events by default, clearly marked, per
       [Automatic Event Visibility With Manual Filtering](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md);
       also allow the owner to inspect one from Terra Sense/Event Review and publish a corrected
       version.
-- [ ] Update epistemic labels and filters for confirmed, reported, alleged, planned, denied, and unknown.
-- [ ] Run component tests, frontend lint, and production build.
+- [x] Update epistemic labels and filters for confirmed, reported, alleged, planned, denied, and unknown.
+- [x] Run component tests, frontend lint, and production build.
 
 ### Task 6: Replace SQLite-specific operational tooling
 
@@ -166,11 +166,11 @@ merged -> no direct edit or restore
 **Interfaces:**
 - Start/stop and backup/restore operate on local Supabase plus local attachments.
 
-- [ ] Make startup fail with a beginner-readable message when `TERRA_DATABASE_URL` is missing or local Supabase is unavailable; LM Studio unavailability remains non-blocking.
-- [ ] Backups must include a PostgreSQL dump and attachment directory manifest. Restore must require confirmation and validate the target is the local Terra Space Supabase database.
-- [ ] Keep a separately named legacy SQLite restore instruction; never automatically restore SQLite into Supabase.
-- [ ] Replace SQLite table inspection in persistence tooling with PostgreSQL sentinel/readback checks.
-- [ ] Verify restart persistence with a disposable test row and remove it through normal API cleanup, not direct destructive SQL.
+- [x] Make startup fail with a beginner-readable message when `TERRA_DATABASE_URL` is missing or local Supabase is unavailable; LM Studio unavailability remains non-blocking.
+- [x] Backups must include a PostgreSQL dump and attachment directory manifest. Restore must require confirmation and validate the target is the local Terra Space Supabase database.
+- [x] Keep a separately named legacy SQLite restore instruction; never automatically restore SQLite into Supabase.
+- [x] Replace SQLite table inspection in persistence tooling with PostgreSQL sentinel/readback checks.
+- [x] Verify restart persistence with a disposable test row and remove it through normal API cleanup, not direct destructive SQL.
 
 ### Task 7: Run application-wide PostgreSQL verification
 
@@ -178,8 +178,8 @@ merged -> no direct edit or restore
 - Modify: PostgreSQL test fixtures and all tests whose setup is SQLite-specific.
 - Modify: Project Knowledge only after successful verification.
 
-- [ ] Run the complete backend suite against the isolated PostgreSQL test service.
-- [ ] Run all frontend tests, lint, and production build.
+- [x] Run the complete backend suite against the isolated PostgreSQL test service.
+- [x] Run all frontend tests, lint, and production build.
 - [ ] Run browser scenarios for Documents, Event Review, Events/Dashboard, Settings, offline LM Studio, and responsive behavior against the fresh Supabase schema.
 - [ ] Verify the live backend process has zero open SQLite connections and the archived SQLite checksum is unchanged.
 - [ ] Keep production workflows and cutover inactive; record evidence and commit the application checkpoint.

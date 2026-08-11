@@ -1,14 +1,20 @@
 # Terra Space
 
-Terra Space is a local web application for building an intelligence workspace. You add documents, batch-process them through a local AI model, review and approve the events it extracts, then explore approved events through a dashboard, map, timeline, and list. It runs on your own computer: your database, attachments, map package, and local AI processing stay local.
+Terra Space is a local web application for building an intelligence workspace. An n8n pipeline collects and processes source material into events, which land automatically on the Dashboard and Events (published events, plus clearly marked pipeline exceptions you can review, publish, reject, or archive). It runs on your own computer: your local Supabase database, attachments, and map package stay local.
 
 ## Current status
 
-The full MVP is complete and working end to end: manual document input and batch AI processing through LM Studio, Event Review with duplicate-flag resolution, the approved Events list, the Dashboard (summary, globe map, timeline), and Settings (LM Studio connection and event-type management) are all built and verified. The Dashboard's "Layered Command Deck" motion-design refinement is also implemented and verified, ready for the owner's desktop review. See `project-knowledge/Current-Status.md` for what's being worked on next.
+Terra Space's own database is now local Supabase/PostgreSQL -- see `project-knowledge/Current-Status.md` for the up-to-date picture of what's built and what's next.
 
 ## Before you start
 
 Install and open Docker Desktop. You also need PowerShell, which is already included with Windows.
+
+Terra Space's own database is your local Supabase instance -- start that first (it runs
+separately from Terra Space's `docker compose` stack), then copy `.env.example` to `.env` and set
+`TERRA_DATABASE_URL` to that instance's connection string. Terra Space refuses to start with a
+plain-language error if this is missing. See
+`project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md` for the full picture.
 
 Normal use only needs Docker. Node.js on your computer is only required for the optional verification script (`npm run test:e2e`) further down.
 
@@ -46,16 +52,17 @@ If your LM Studio address is different, copy `.env.example` to `.env` and edit `
 
 ## Backup and restore
 
-The database lives inside Docker's own storage now (not directly in the `data` folder) so Terra
-Space starts quickly on Windows. Back it up with:
+Terra Space's live database is your local Supabase instance. Back up just Terra Space's own
+application tables (never the pipeline's `phase2_*` tables, and never any other Supabase project
+data) with:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Backup-TerraSpaceDatabase.ps1
 ```
 
-This saves a timestamped copy into `data\database-backups\`. Then copy the whole `data` folder
-somewhere safe, same as before — it now includes that database backup plus your attachments, map
-package, and logs.
+This saves a PostgreSQL dump plus an attachments manifest into `data\database-backups\<timestamp>\`.
+Then copy the whole `data` folder somewhere safe — it includes that backup plus your actual
+attachments, map package, and logs.
 
 To restore a backup, first stop Terra Space, then run:
 
@@ -63,7 +70,18 @@ To restore a backup, first stop Terra Space, then run:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Restore-TerraSpaceDatabase.ps1 -BackupFolder "data\database-backups\<the-one-you-want>"
 ```
 
-It asks for confirmation before replacing the live database. Start Terra Space again afterward.
+It asks for confirmation before replacing Terra Space's tables, and refuses to run against
+anything that isn't your local Supabase instance. Start Terra Space again afterward.
+
+### Legacy SQLite rollback (before the Supabase transition)
+
+Before Terra Space moved to Supabase, its database was a SQLite file kept in Docker's own storage
+(the `db-data` volume). That volume is still mounted and untouched, purely as inert rollback
+material -- the running application no longer reads or writes it. There is no automated restore
+path for it, and it is never restored into Supabase automatically. If you ever need to inspect it:
+stop Terra Space, copy the file out of the `db-data` volume with
+`docker compose run --rm -v "<dest>:/backup_dest" backend sh -c "cp -a /data/database/. /backup_dest/"`,
+then open `terra-space.db` with any SQLite browser.
 
 ## Verify the foundation
 
