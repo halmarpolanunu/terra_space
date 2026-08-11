@@ -15,6 +15,7 @@ from tests.supabase_bridge_test_support import (  # noqa: F401
     insert_actor,
     insert_candidate_result,
     insert_event,
+    insert_event_run,
     insert_event_type,
     insert_location,
     insert_source,
@@ -62,7 +63,13 @@ def test_list_bridge_candidate_reviews_parses_pipeline_json(bridge_db, bridge_re
     assert review.event_candidates[0].entities == ["Entity A"]
 
 
-def test_list_bridge_events_only_returns_published(bridge_db, bridge_read_only_engine) -> None:
+def test_list_bridge_events_returns_published_and_hidden_but_not_owner_decided(
+    bridge_db, bridge_read_only_engine
+) -> None:
+    """Per decisions/Automatic-Event-Visibility-With-Manual-Filtering.md: a pipeline EXCEPTION
+    (hidden) now shows automatically, alongside published; only a deliberate owner decision
+    (rejected/archived) stays excluded."""
+
     source_id = insert_source(bridge_db)
     insert_event(bridge_db, source_id, dashboard_status="published", title="Published event")
     insert_event(bridge_db, source_id, dashboard_status="hidden", title="Hidden exception")
@@ -71,8 +78,73 @@ def test_list_bridge_events_only_returns_published(bridge_db, bridge_read_only_e
 
     events = list_bridge_events(bridge_read_only_engine)
 
-    assert [event.title for event in events] == ["Published event"]
-    assert events[0].review_status == "approved"
+    assert {event.title for event in events} == {"Published event", "Hidden exception"}
+    assert all(event.review_status == "approved" for event in events)
+
+
+def test_list_bridge_events_marks_pipeline_outcome_and_dashboard_status(
+    bridge_db, bridge_read_only_engine
+) -> None:
+    source_id = insert_source(bridge_db)
+    insert_event(
+        bridge_db, source_id, dashboard_status="published", pipeline_outcome="FINAL", title="Final"
+    )
+    insert_event(
+        bridge_db,
+        source_id,
+        dashboard_status="hidden",
+        pipeline_outcome="EXCEPTION",
+        title="Exception",
+    )
+
+    events = {event.title: event for event in list_bridge_events(bridge_read_only_engine)}
+
+    assert events["Final"].pipeline_outcome == "FINAL"
+    assert events["Final"].dashboard_status == "published"
+    assert events["Final"].exception_reason is None
+    assert events["Exception"].pipeline_outcome == "EXCEPTION"
+    assert events["Exception"].dashboard_status == "hidden"
+
+
+def test_list_bridge_events_builds_exception_reason_from_latest_run(
+    bridge_db, bridge_read_only_engine
+) -> None:
+    source_id = insert_source(bridge_db)
+    candidate_key = "candidate-1:0:5"
+    insert_event(
+        bridge_db,
+        source_id,
+        dashboard_status="hidden",
+        pipeline_outcome="EXCEPTION",
+        title="Exception with reason",
+        candidate_key=candidate_key,
+    )
+    insert_event_run(
+        bridge_db,
+        candidate_key,
+        source_id,
+        safeguard_reasons='["Evidence quote does not support the claimed actor."]',
+    )
+
+    [event] = list_bridge_events(bridge_read_only_engine)
+
+    assert event.exception_reason == "Evidence quote does not support the claimed actor."
+
+
+def test_filter_bridge_events_by_dashboard_status(bridge_db, bridge_read_only_engine) -> None:
+    source_id = insert_source(bridge_db)
+    insert_event(bridge_db, source_id, dashboard_status="published", title="Published event")
+    insert_event(bridge_db, source_id, dashboard_status="hidden", title="Hidden exception")
+
+    published_only = filter_bridge_events(
+        list_bridge_events(bridge_read_only_engine), dashboard_status="published"
+    )
+    hidden_only = filter_bridge_events(
+        list_bridge_events(bridge_read_only_engine), dashboard_status="hidden"
+    )
+
+    assert [event.title for event in published_only] == ["Published event"]
+    assert [event.title for event in hidden_only] == ["Hidden exception"]
 
 
 def test_list_bridge_events_joins_actors_locations_and_sources(bridge_db, bridge_read_only_engine) -> None:
@@ -120,11 +192,26 @@ def test_list_bridge_events_accepts_the_full_epistemic_status_set(
     }
 
 
-def test_get_bridge_event_returns_none_when_not_published(bridge_db, bridge_read_only_engine) -> None:
+def test_get_bridge_event_returns_hidden_events_too(bridge_db, bridge_read_only_engine) -> None:
+    """A hidden (EXCEPTION) event is now a normal, visible event -- see
+    decisions/Automatic-Event-Visibility-With-Manual-Filtering.md."""
+
     source_id = insert_source(bridge_db)
     hidden_id = insert_event(bridge_db, source_id, dashboard_status="hidden")
 
-    assert get_bridge_event(bridge_read_only_engine, hidden_id) is None
+    found = get_bridge_event(bridge_read_only_engine, hidden_id)
+
+    assert found is not None
+    assert found.dashboard_status == "hidden"
+
+
+def test_get_bridge_event_returns_none_for_owner_rejected_event(
+    bridge_db, bridge_read_only_engine
+) -> None:
+    source_id = insert_source(bridge_db)
+    rejected_id = insert_event(bridge_db, source_id, dashboard_status="rejected")
+
+    assert get_bridge_event(bridge_read_only_engine, rejected_id) is None
 
 
 def test_list_bridge_event_types_and_actors(bridge_db, bridge_read_only_engine) -> None:
@@ -203,3 +290,35 @@ def test_bridge_dashboard_summary_counts_by_type() -> None:
     assert {item.name: item.count for item in summary.by_event_type} == {"War": 2, "Uncategorized": 1}
     assert summary.incomplete_date_count == 3
     assert summary.incomplete_location_count == 3
+
+
+def test_bridge_dashboard_summary_counts_exceptions() -> None:
+    from app.schemas.event import EventRead
+
+    def make(title: str, pipeline_outcome: str | None) -> EventRead:
+        return EventRead(
+            id=title,
+            title=title,
+            summary="summary",
+            event_date=None,
+            event_date_precision="unknown",
+            epistemic_status="confirmed",
+            review_status="approved",
+            event_type=None,
+            actors=[],
+            locations=[],
+            sources=[],
+            duplicate_flags=[],
+            extraction_incomplete=False,
+            extraction_incomplete_stages=[],
+            created_at="2026-08-01T00:00:00Z",
+            updated_at="2026-08-01T00:00:00Z",
+            approved_at=None,
+            pipeline_outcome=pipeline_outcome,
+        )
+
+    events = [make("A", "FINAL"), make("B", "EXCEPTION"), make("C", "EXCEPTION")]
+
+    summary = bridge_dashboard_summary(events)
+
+    assert summary.exception_count == 2

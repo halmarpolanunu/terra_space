@@ -113,14 +113,73 @@ def test_events_route_returns_published_events_with_full_epistemic_range(
     assert event["review_status"] == "approved"
 
 
-def test_event_detail_route_404_for_hidden_event(tmp_path: Path, bridge_db) -> None:
+def test_event_detail_route_returns_hidden_event_marked_as_exception(
+    tmp_path: Path, bridge_db
+) -> None:
+    """A hidden (EXCEPTION) event is now visible, not a 404 -- see
+    decisions/Automatic-Event-Visibility-With-Manual-Filtering.md."""
+
     source_id = insert_source(bridge_db)
-    hidden_id = insert_event(bridge_db, source_id, dashboard_status="hidden")
+    hidden_id = insert_event(
+        bridge_db, source_id, dashboard_status="hidden", pipeline_outcome="EXCEPTION"
+    )
     client = _configured_client(tmp_path)
 
     response = client.get(f"/api/bridge/events/{hidden_id}")
 
+    assert response.status_code == 200
+    body = response.json()
+    assert body["dashboard_status"] == "hidden"
+    assert body["pipeline_outcome"] == "EXCEPTION"
+
+
+def test_event_detail_route_404_for_rejected_event(tmp_path: Path, bridge_db) -> None:
+    source_id = insert_source(bridge_db)
+    rejected_id = insert_event(bridge_db, source_id, dashboard_status="rejected")
+    client = _configured_client(tmp_path)
+
+    response = client.get(f"/api/bridge/events/{rejected_id}")
+
     assert response.status_code == 404
+
+
+def test_events_route_returns_hidden_events_by_default(tmp_path: Path, bridge_db) -> None:
+    source_id = insert_source(bridge_db)
+    insert_event(bridge_db, source_id, dashboard_status="published", title="Published")
+    insert_event(bridge_db, source_id, dashboard_status="hidden", title="Hidden")
+    client = _configured_client(tmp_path)
+
+    response = client.get("/api/bridge/events")
+
+    assert response.status_code == 200
+    assert {row["title"] for row in response.json()} == {"Published", "Hidden"}
+
+
+def test_events_route_dashboard_status_filter_narrows_the_view(tmp_path: Path, bridge_db) -> None:
+    source_id = insert_source(bridge_db)
+    insert_event(bridge_db, source_id, dashboard_status="published", title="Published")
+    insert_event(bridge_db, source_id, dashboard_status="hidden", title="Hidden")
+    client = _configured_client(tmp_path)
+
+    published_only = client.get("/api/bridge/events", params={"dashboard_status": "published"})
+    hidden_only = client.get("/api/bridge/events", params={"dashboard_status": "hidden"})
+
+    assert [row["title"] for row in published_only.json()] == ["Published"]
+    assert [row["title"] for row in hidden_only.json()] == ["Hidden"]
+
+
+def test_dashboard_summary_route_counts_exceptions(tmp_path: Path, bridge_db) -> None:
+    source_id = insert_source(bridge_db)
+    insert_event(bridge_db, source_id, dashboard_status="published", pipeline_outcome="FINAL")
+    insert_event(bridge_db, source_id, dashboard_status="hidden", pipeline_outcome="EXCEPTION")
+    client = _configured_client(tmp_path)
+
+    response = client.get("/api/bridge/events/dashboard-summary")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_events"] == 2
+    assert body["exception_count"] == 1
 
 
 def test_dashboard_summary_route(tmp_path: Path, bridge_db) -> None:

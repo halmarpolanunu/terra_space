@@ -53,9 +53,9 @@ export function EventTimeline({ events, sort, hasActiveFilters, limit, onClearFi
       </div>
     ) : (
       <div className="event-empty-state">
-        <p>No approved events yet.</p>
+        <p>No processed events yet.</p>
         <Link className="btn" href="/event-review">
-          Approve extracted events in Event Review
+          Review pipeline candidates in Event Review
         </Link>
       </div>
     );

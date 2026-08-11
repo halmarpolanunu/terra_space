@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { EventDetail } from "@/app/events/event-detail";
-import { DashboardSummaryContent, unresolvedLocationEvents } from "@/app/dashboard/dashboard-summary";
+import { DashboardSummaryContent, exceptionEvents, unresolvedLocationEvents } from "@/app/dashboard/dashboard-summary";
 import { EventGlobe, countResolvedEventLocations } from "@/app/dashboard/event-globe";
 import { EventListPanel } from "@/app/dashboard/event-list-panel";
 import { LayeredCommandDeck, type CommandDeckPanel } from "@/app/dashboard/layered-command-deck";
@@ -25,6 +25,7 @@ import {
   type EventSort,
 } from "@/lib/event-filters";
 import type { ActorRead, EventRead, EventTypeRead } from "@/lib/events-api";
+import { hideEvent, unhideEvent, useHiddenEventIds } from "@/lib/hidden-events";
 import {
   getBridgeDashboardSummary,
   listBridgeActors,
@@ -38,7 +39,7 @@ export function DashboardWorkspace() {
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const filters = useMemo(() => parseEventFilters(search), [search]);
-  const [events, setEvents] = useState<EventRead[]>([]);
+  const [allEvents, setAllEvents] = useState<EventRead[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeRead[]>([]);
   const [actors, setActors] = useState<ActorRead[]>([]);
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
@@ -51,7 +52,24 @@ export function DashboardWorkspace() {
     emptyMessage?: string;
     events: EventRead[];
     title: string;
+    // See decisions/Automatic-Event-Visibility-With-Manual-Filtering.md: this one list panel
+    // needs its content and its row action recomputed live (from allEvents + hiddenEventIds)
+    // rather than the snapshot every other list panel uses, so an Unhide click updates it
+    // immediately instead of only after the panel is reopened.
+    isHiddenByOwnerPanel?: boolean;
   } | null>(null);
+  const hiddenEventIds = useHiddenEventIds();
+
+  // Browser-only manual visibility filter (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md):
+  // never sent to the backend, applied only to what is already shown.
+  const events = useMemo(
+    () => allEvents.filter((event) => !hiddenEventIds.includes(event.id)),
+    [allEvents, hiddenEventIds],
+  );
+  const hiddenByOwnerEvents = useMemo(
+    () => allEvents.filter((event) => hiddenEventIds.includes(event.id)),
+    [allEvents, hiddenEventIds],
+  );
 
   useEffect(() => {
     let active = true;
@@ -63,7 +81,7 @@ export function DashboardWorkspace() {
       listBridgeSources(),
     ]).then(([nextEvents, , nextEventTypes, nextActors, nextDocuments]) => {
       if (!active) return;
-      setEvents(nextEvents);
+      setAllEvents(nextEvents);
       setEventTypes(nextEventTypes);
       setActors(nextActors);
       setDocuments(nextDocuments.map(({ id, title }) => ({ id, title })));
@@ -90,7 +108,13 @@ export function DashboardWorkspace() {
     setActivePanel("detail");
   }
 
-  function showList(context: { description?: string; emptyMessage?: string; events: EventRead[]; title: string }) {
+  function showList(context: {
+    description?: string;
+    emptyMessage?: string;
+    events: EventRead[];
+    title: string;
+    isHiddenByOwnerPanel?: boolean;
+  }) {
     setListPanel(context);
     setActivePanel("list");
   }
@@ -114,15 +138,18 @@ export function DashboardWorkspace() {
             <EventDetail
               event={selectedEvent}
               eventsPath={dashboardPath}
+              isManuallyHidden={hiddenEventIds.includes(selectedEvent.id)}
               onClose={() => {
                 setSelectedEvent(null);
                 setActivePanel(null);
               }}
+              onHide={() => hideEvent(selectedEvent.id)}
+              onUnhide={() => unhideEvent(selectedEvent.id)}
             />
           ) : undefined}
           eventCount={events.length}
           eventsHref={eventsPath}
-          eyebrow="Approved intelligence"
+          eyebrow="Processed intelligence"
           filters={(
             <EventFilterBar
               actorOptions={actors}
@@ -152,12 +179,17 @@ export function DashboardWorkspace() {
             <EventListPanel
               description={listPanel.description}
               emptyMessage={listPanel.emptyMessage}
-              events={listPanel.events}
+              events={listPanel.isHiddenByOwnerPanel ? hiddenByOwnerEvents : listPanel.events}
               onClose={() => {
                 setListPanel(null);
                 setActivePanel(null);
               }}
               onSelect={selectEvent}
+              renderRowAction={listPanel.isHiddenByOwnerPanel ? (event) => (
+                <button className="btn" onClick={() => unhideEvent(event.id)} type="button">
+                  Unhide
+                </button>
+              ) : undefined}
               title={listPanel.title}
             />
           ) : undefined}
@@ -189,7 +221,21 @@ export function DashboardWorkspace() {
           summary={(
             <DashboardSummaryContent
               events={events}
+              hiddenByOwnerCount={hiddenByOwnerEvents.length}
               markerCount={markerCount}
+              onShowExceptions={() => showList({
+                title: "Pipeline exceptions",
+                description: "Events the pipeline could not fully validate, but retained.",
+                events: exceptionEvents(events),
+                emptyMessage: "No pipeline exceptions in this view.",
+              })}
+              onShowHiddenByOwner={() => showList({
+                title: "Hidden by you",
+                description: "Events you hid in this browser. Hiding is not saved to Supabase.",
+                events: hiddenByOwnerEvents,
+                emptyMessage: "You have not hidden any events.",
+                isHiddenByOwnerPanel: true,
+              })}
               onShowUnresolvedLocations={() => showList({
                 title: "Unresolved locations",
                 description: "Events with no resolved coordinates on the map.",

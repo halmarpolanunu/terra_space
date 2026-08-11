@@ -198,6 +198,18 @@ class DashboardSummaryRead(BaseModel):
     by_event_type: list[EventTypeCount]
     incomplete_date_count: int
     incomplete_location_count: int
+    # Added for the Supabase bridge's automatic-visibility work (see
+    # decisions/Automatic-Event-Visibility-With-Manual-Filtering.md): how many of the events in
+    # this result are pipeline EXCEPTION records. SQLite-backed events never produce these, so
+    # this defaults to 0 and needs no change anywhere the SQLite dashboard summary is built.
+    exception_count: int = 0
+
+
+# Bridge-only dashboard/pipeline state (see
+# decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
+# decisions/Automatic-Event-Visibility-With-Manual-Filtering.md). SQLite events never set these.
+PipelineOutcome = Literal["FINAL", "EXCEPTION"]
+DashboardStatus = Literal["published", "hidden", "rejected", "archived", "merged"]
 
 
 class EventRead(BaseModel):
@@ -218,3 +230,8 @@ class EventRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     approved_at: datetime | None
+    # Added for the Supabase bridge's automatic-visibility work. All three are optional and
+    # default to None/absent, so existing SQLite-backed EventRead construction is unaffected.
+    pipeline_outcome: PipelineOutcome | None = None
+    dashboard_status: DashboardStatus | None = None
+    exception_reason: str | None = None

@@ -87,12 +87,12 @@ describe("EventTimeline", () => {
     expect(onSelect).toHaveBeenCalledWith(firstUnknown);
   });
 
-  it("shows a no-data message with a link to Event Review when there are no filters and no approved events", () => {
+  it("shows a no-data message with a link to Event Review when there are no filters and no processed events", () => {
     render(<EventTimeline events={[]} hasActiveFilters={false} sort="date_desc" />);
 
-    expect(screen.getByText("No approved events yet.")).toBeVisible();
+    expect(screen.getByText("No processed events yet.")).toBeVisible();
     expect(
-      screen.getByRole("link", { name: /approve extracted events in event review/i }),
+      screen.getByRole("link", { name: /review pipeline candidates in event review/i }),
     ).toHaveAttribute("href", "/event-review");
   });
 

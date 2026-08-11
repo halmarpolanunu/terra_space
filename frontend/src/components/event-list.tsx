@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { StatusChip } from "@/components/status-chip";
 import { EVENT_SORT_OPTIONS, type EventSort } from "@/lib/event-filters";
-import type { EventRead, LocationRead } from "@/lib/events-api";
+import { isExceptionEvent, type EventRead, type LocationRead } from "@/lib/events-api";
 
 type EventListProps = {
   events: EventRead[];
@@ -66,7 +66,7 @@ export function EventList({
     <div className="event-list-panel">
       <div className="event-list-toolbar">
         <p className="event-list-count">
-          {events.length} approved event{events.length === 1 ? "" : "s"}
+          {events.length} processed event{events.length === 1 ? "" : "s"}
         </p>
         <div className="field event-list-sort">
           <label htmlFor="event-list-sort">Sort order</label>
@@ -94,9 +94,9 @@ export function EventList({
           </div>
         ) : (
           <div className="event-empty-state">
-            <p>No approved events yet.</p>
+            <p>No processed events yet.</p>
             <Link className="btn" href="/event-review">
-              Approve extracted events in Event Review
+              Review pipeline candidates in Event Review
             </Link>
           </div>
         )
@@ -120,11 +120,16 @@ export function EventList({
                   <button className="event-list-title" onClick={() => onSelect(event)} type="button">
                     {event.title}
                   </button>
-                  <StatusChip
-                    colorVar={EPISTEMIC_COLORS[event.epistemic_status]}
-                    label={EPISTEMIC_LABELS[event.epistemic_status]}
-                    value={event.epistemic_status}
-                  />
+                  <span className="event-list-status-cell">
+                    <StatusChip
+                      colorVar={EPISTEMIC_COLORS[event.epistemic_status]}
+                      label={EPISTEMIC_LABELS[event.epistemic_status]}
+                      value={event.epistemic_status}
+                    />
+                    {isExceptionEvent(event) && (
+                      <StatusChip colorVar="--status-warning" label="Exception" value="exception" />
+                    )}
+                  </span>
                   <span className="event-list-meta">{event.event_type?.name ?? "Uncategorized"}</span>
                   <span className="event-list-meta">{formatDate(event)}</span>
                   <span className="event-list-meta">{location}</span>

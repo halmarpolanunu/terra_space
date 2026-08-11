@@ -24,7 +24,12 @@ status: planned
 - Do not expose the PostgreSQL URL, Supabase service key, or database password to frontend code.
 - Do not run `Base.metadata.create_all()` against Supabase; checked-in Supabase migrations own schema.
 - Pipeline reruns may append history but may not overwrite authoritative event fields.
-- `FINAL/published` appears immediately; hidden, rejected, archived, merged, and exception records stay outside normal Dashboard queries.
+- `FINAL/published` and `EXCEPTION/hidden` events both appear immediately, with `hidden` events
+  clearly marked as a pipeline exception and filterable/hideable by the owner. `rejected`,
+  `archived`, and `merged` records — the owner's own explicit decisions — stay outside normal
+  Dashboard queries. See [Automatic Event Visibility With Manual
+  Filtering](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md), which amended the
+  older automatic-exception-hiding rule this plan originally assumed.
 - Keep the application usable when LM Studio is offline.
 
 ---
@@ -109,7 +114,7 @@ Do not call `Base.metadata.create_all()`.
 - `PATCH /api/events/{id}` records human authority metadata.
 - Add `POST /api/events/{id}/publish`, `/reject`, `/archive`, and `/restore` with explicit transitions.
 
-- [ ] Replace the old review-status query contract with Dashboard status while accepting `review_status=approved` temporarily as an internal compatibility alias mapped to `published` until frontend Task 5 lands.
+- [ ] Replace the old review-status query contract with Dashboard status while accepting `review_status=approved` temporarily as an internal compatibility alias mapped to `published` until frontend Task 5 lands. The default (no `dashboard_status` filter given) returns both `published` and `hidden` events, per [Automatic Event Visibility With Manual Filtering](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md) — only `rejected`/`archived`/`merged` are excluded automatically.
 - [ ] On every human event patch, set `human_modified_at=now()` and merge changed field names into `human_modified_fields`; never alter `pipeline_event_snapshot`.
 - [ ] Enforce transitions:
 
@@ -144,7 +149,10 @@ merged -> no direct edit or restore
 - [ ] Keep summary, filters, globe, timeline, register, and detail derived from the same published-event response.
 - [ ] Add clear event-detail actions: Edit, Reject, Archive, Restore where allowed, and protected Delete. Show `AI generated` versus `Manually added`, without displaying raw model output in the main Dashboard.
 - [ ] After edit/status action, refetch the selected event, event list, and Dashboard summary so the map/timeline/list update immediately.
-- [ ] Show hidden Phase 3 exceptions in Terra Sense/Event Review, not Dashboard; allow the owner to inspect and publish a corrected exception.
+- [ ] Show `hidden` Phase 3 exceptions on Dashboard and Events by default, clearly marked, per
+      [Automatic Event Visibility With Manual Filtering](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md);
+      also allow the owner to inspect one from Terra Sense/Event Review and publish a corrected
+      version.
 - [ ] Update epistemic labels and filters for confirmed, reported, alleged, planned, denied, and unknown.
 - [ ] Run component tests, frontend lint, and production build.
 
@@ -185,3 +193,4 @@ Do not perform final cutover until the complete backend/frontend/browser suite p
 - [n8n transition plan](2026-08-10-n8n-phase-table-transition.md)
 - [Cutover plan](2026-08-10-supabase-cutover-verification.md)
 - [Architecture decision](../decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md)
+- [Automatic Event Visibility With Manual Filtering (decision)](../decisions/Automatic-Event-Visibility-With-Manual-Filtering.md)

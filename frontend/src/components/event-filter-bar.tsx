@@ -159,6 +159,24 @@ export function EventFilterBar({
             </div>
           </div>
         </fieldset>
+
+        <fieldset className="filter-group filter-group-visibility">
+          <legend className="filter-group-label">Visibility</legend>
+          <div className="filter-group-fields">
+            <div className="field">
+              <label htmlFor="event-filter-visibility">Show</label>
+              <select
+                id="event-filter-visibility"
+                onChange={update("dashboard_status")}
+                value={value.dashboard_status}
+              >
+                <option value="">All processed events</option>
+                <option value="published">Published only</option>
+                <option value="hidden">Exceptions only</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
       </div>
     </form>
   );

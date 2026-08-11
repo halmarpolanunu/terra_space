@@ -90,7 +90,7 @@ describe("EventList", () => {
       />,
     );
 
-    expect(screen.getByText("2 approved events")).toBeInTheDocument();
+    expect(screen.getByText("2 processed events")).toBeInTheDocument();
     ["Title", "Status", "Type", "Date", "Location", "Sources"].forEach((header) =>
       expect(screen.getByText(header)).toBeInTheDocument(),
     );
@@ -112,15 +112,44 @@ describe("EventList", () => {
     expect(onSortChange).toHaveBeenCalledWith("title_asc");
   });
 
-  it("shows a no-data message with a link to Event Review when there are no filters and no approved events", () => {
+  it("shows a no-data message with a link to Event Review when there are no filters and no processed events", () => {
     render(
       <EventList events={[]} hasActiveFilters={false} onSelect={vi.fn()} onSortChange={vi.fn()} sort="" />,
     );
 
-    expect(screen.getByText("No approved events yet.")).toBeVisible();
+    expect(screen.getByText("No processed events yet.")).toBeVisible();
     expect(
-      screen.getByRole("link", { name: /approve extracted events in event review/i }),
+      screen.getByRole("link", { name: /review pipeline candidates in event review/i }),
     ).toHaveAttribute("href", "/event-review");
+  });
+
+  it("marks a pipeline exception event without hiding its epistemic status", () => {
+    render(
+      <EventList
+        events={[makeEvent({ dashboard_status: "hidden" })]}
+        hasActiveFilters={false}
+        onSelect={vi.fn()}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
+
+    expect(screen.getByText("Exception")).toBeInTheDocument();
+    expect(screen.getByText("Claim")).toBeInTheDocument();
+  });
+
+  it("does not show an Exception badge for a published event", () => {
+    render(
+      <EventList
+        events={[makeEvent({ dashboard_status: "published" })]}
+        hasActiveFilters={false}
+        onSelect={vi.fn()}
+        onSortChange={vi.fn()}
+        sort=""
+      />,
+    );
+
+    expect(screen.queryByText("Exception")).not.toBeInTheDocument();
   });
 
   it("shows a filtered-empty message with a working Clear filters button when filters are active", () => {

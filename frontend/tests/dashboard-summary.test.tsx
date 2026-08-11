@@ -34,4 +34,15 @@ describe("summarizeDashboardEvents", () => {
 
     expect(summary.incomplete_date_count).toBe(1);
   });
+
+  it("counts pipeline exceptions (dashboard_status: hidden) separately from published events", () => {
+    const summary = summarizeDashboardEvents([
+      makeEvent({ dashboard_status: "published" }),
+      makeEvent({ id: "event-2", dashboard_status: "hidden" }),
+      makeEvent({ id: "event-3", dashboard_status: "hidden" }),
+    ]);
+
+    expect(summary.exception_count).toBe(2);
+    expect(summary.total_events).toBe(3);
+  });
 });

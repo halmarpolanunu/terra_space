@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { FramedPanel } from "@/components/framed-panel";
 import type { EventRead } from "@/lib/events-api";
 
@@ -10,6 +12,9 @@ export type EventListPanelProps = {
   onClose: () => void;
   onSelect: (event: EventRead) => void;
   title: string;
+  // Optional per-row action (e.g. "Unhide" in the "Hidden by you" panel). Most callers of this
+  // read-only "select to view" panel don't need one.
+  renderRowAction?: (event: EventRead) => ReactNode;
 };
 
 export function EventListPanel({
@@ -19,6 +24,7 @@ export function EventListPanel({
   onClose,
   onSelect,
   title,
+  renderRowAction,
 }: EventListPanelProps) {
   return (
     <FramedPanel className="dashboard-list-panel" meta={String(events.length)} title={title}>
@@ -28,10 +34,11 @@ export function EventListPanel({
       ) : (
         <ul className="dashboard-list-panel-items">
           {events.map((event) => (
-            <li key={event.id}>
+            <li className="dashboard-list-panel-row" key={event.id}>
               <button className="dashboard-list-panel-item" onClick={() => onSelect(event)} type="button">
                 {event.title}
               </button>
+              {renderRowAction?.(event)}
             </li>
           ))}
         </ul>

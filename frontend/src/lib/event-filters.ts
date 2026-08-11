@@ -8,6 +8,10 @@ export const EVENT_SORT_OPTIONS: [EventSort, string][] = [
   ["title_asc", "Title (A–Z)"],
 ];
 
+// Manual visibility filter (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md).
+// "" means "all processed events" (published + hidden), the default.
+export type DashboardStatusFilter = "" | "published" | "hidden";
+
 export type EventFilters = {
   q: string;
   date_from: string;
@@ -19,6 +23,7 @@ export type EventFilters = {
   admin1: string;
   city_regency: string;
   document_id: string;
+  dashboard_status: DashboardStatusFilter;
   sort: EventSort;
 };
 
@@ -33,6 +38,7 @@ const FILTER_KEYS: (keyof EventFilters)[] = [
   "admin1",
   "city_regency",
   "document_id",
+  "dashboard_status",
   "sort",
 ];
 
@@ -47,9 +53,11 @@ export const ACTIVE_FILTER_KEYS: Exclude<keyof EventFilters, "sort">[] = [
   "admin1",
   "city_regency",
   "document_id",
+  "dashboard_status",
 ];
 
 const SORT_VALUES = new Set<EventSort>(["", "date_desc", "date_asc", "created_desc", "title_asc"]);
+const DASHBOARD_STATUS_VALUES = new Set<DashboardStatusFilter>(["", "published", "hidden"]);
 
 export function emptyEventFilters(): EventFilters {
   return {
@@ -63,6 +71,7 @@ export function emptyEventFilters(): EventFilters {
     admin1: "",
     city_regency: "",
     document_id: "",
+    dashboard_status: "",
     sort: "",
   };
 }
@@ -79,6 +88,10 @@ export function parseEventFilters(search: string | URLSearchParams): EventFilter
     const value = params.get(key)?.trim() ?? "";
     if (key === "sort") {
       filters.sort = SORT_VALUES.has(value as EventSort) ? (value as EventSort) : "";
+    } else if (key === "dashboard_status") {
+      filters.dashboard_status = DASHBOARD_STATUS_VALUES.has(value as DashboardStatusFilter)
+        ? (value as DashboardStatusFilter)
+        : "";
     } else {
       filters[key] = value;
     }

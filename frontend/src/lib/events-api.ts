@@ -92,6 +92,12 @@ export type DuplicateFlagRead = {
   resolved_at: string | null;
 };
 
+// Bridge-only pipeline/dashboard state (see
+// decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md and
+// decisions/Automatic-Event-Visibility-With-Manual-Filtering.md). SQLite events never set these.
+export type PipelineOutcome = "FINAL" | "EXCEPTION";
+export type DashboardStatus = "published" | "hidden" | "rejected" | "archived" | "merged";
+
 export type EventRead = {
   id: string;
   title: string;
@@ -110,7 +116,16 @@ export type EventRead = {
   created_at: string;
   updated_at: string;
   approved_at?: string | null;
+  // Added for the Supabase bridge's automatic-visibility work. All three are optional/absent
+  // for SQLite-backed events.
+  pipeline_outcome?: PipelineOutcome | null;
+  dashboard_status?: DashboardStatus | null;
+  exception_reason?: string | null;
 };
+
+export function isExceptionEvent(event: EventRead): boolean {
+  return event.dashboard_status === "hidden";
+}
 
 export type DashboardSummaryRead = {
   total_events: number;
@@ -118,6 +133,8 @@ export type DashboardSummaryRead = {
   by_event_type: { name: string; count: number }[];
   incomplete_date_count: number;
   incomplete_location_count: number;
+  // Added for the Supabase bridge's automatic-visibility work; always 0 for SQLite events.
+  exception_count?: number;
 };
 
 export type EventTypeInput = {

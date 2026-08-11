@@ -85,6 +85,7 @@ def create_supabase_bridge_router(engine: Engine | None) -> APIRouter:
         admin1: str | None = None,
         city_regency: str | None = None,
         document_id: str | None = None,
+        dashboard_status: Literal["published", "hidden"] | None = None,
         sort: Literal["date_desc", "date_asc", "created_desc", "title_asc"] = "date_desc",
     ) -> DashboardSummaryRead:
         if date_from and date_to and date_from > date_to:
@@ -101,6 +102,7 @@ def create_supabase_bridge_router(engine: Engine | None) -> APIRouter:
             admin1=admin1,
             city_regency=city_regency,
             document_id=document_id,
+            dashboard_status=dashboard_status,
             sort=sort,
         )
         return bridge_dashboard_summary(events)
@@ -117,6 +119,7 @@ def create_supabase_bridge_router(engine: Engine | None) -> APIRouter:
         admin1: str | None = None,
         city_regency: str | None = None,
         document_id: str | None = None,
+        dashboard_status: Literal["published", "hidden"] | None = None,
         sort: Literal["date_desc", "date_asc", "created_desc", "title_asc"] = "date_desc",
     ) -> list[EventRead]:
         if date_from and date_to and date_from > date_to:
@@ -133,6 +136,7 @@ def create_supabase_bridge_router(engine: Engine | None) -> APIRouter:
             admin1=admin1,
             city_regency=city_regency,
             document_id=document_id,
+            dashboard_status=dashboard_status,
             sort=sort,
         )
 

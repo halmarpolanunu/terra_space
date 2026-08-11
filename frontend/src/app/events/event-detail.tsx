@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { FramedPanel } from "@/components/framed-panel";
 import { StatusChip } from "@/components/status-chip";
-import type { EventRead, LocationRead } from "@/lib/events-api";
+import { isExceptionEvent, type EventRead, type LocationRead } from "@/lib/events-api";
 
 type EventDetailProps = {
   event: EventRead;
@@ -10,6 +10,12 @@ type EventDetailProps = {
   onClose: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  // Browser-only manual visibility (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md).
+  // Independent of onEdit/onDelete and unrelated to the pipeline's own dashboard_status: this
+  // never writes to Supabase or the backend.
+  isManuallyHidden?: boolean;
+  onHide?: () => void;
+  onUnhide?: () => void;
 };
 
 const EPISTEMIC_LABELS = {
@@ -49,7 +55,16 @@ function formatEventDate(event: EventRead): string {
     : event.event_date;
 }
 
-export function EventDetail({ event, eventsPath, onClose, onEdit, onDelete }: EventDetailProps) {
+export function EventDetail({
+  event,
+  eventsPath,
+  onClose,
+  onEdit,
+  onDelete,
+  isManuallyHidden,
+  onHide,
+  onUnhide,
+}: EventDetailProps) {
   const editable = event.review_status === "draft" || event.review_status === "approved";
   const deletable = editable;
 
@@ -59,6 +74,12 @@ export function EventDetail({ event, eventsPath, onClose, onEdit, onDelete }: Ev
         <h3>{event.title}</h3>
         <button className="btn" onClick={onClose} type="button">Back to list</button>
       </div>
+      {isExceptionEvent(event) && (
+        <div className="event-exception-callout" role="note">
+          <p><strong>Pipeline exception</strong> — retained but not fully validated.</p>
+          {event.exception_reason && <p>{event.exception_reason}</p>}
+        </div>
+      )}
       <div className="facts-grid">
         <div><span className="field-label">Type</span><p>{event.event_type?.name ?? "Not stated"}</p></div>
         <div>
@@ -83,9 +104,17 @@ export function EventDetail({ event, eventsPath, onClose, onEdit, onDelete }: Ev
         ))}</ul> : <p>Not stated</p>}
       </div>
       <p className="event-read-only-note">Sources and evidence are read-only.</p>
+      {(onHide || onUnhide) && (
+        <p className="event-read-only-note">
+          Hiding an event is a preference saved only in this browser — it is not sent to Supabase
+          and will not carry over to a different browser or device.
+        </p>
+      )}
       <div className="form-actions">
         {editable && onEdit && <button className="btn btn-primary" onClick={onEdit} type="button">Edit</button>}
         {deletable && onDelete && <button className="btn btn-destructive" onClick={onDelete} type="button">Delete</button>}
+        {!isManuallyHidden && onHide && <button className="btn" onClick={onHide} type="button">Hide</button>}
+        {isManuallyHidden && onUnhide && <button className="btn" onClick={onUnhide} type="button">Unhide</button>}
       </div>
     </FramedPanel>
   );

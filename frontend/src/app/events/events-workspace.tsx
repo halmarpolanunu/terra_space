@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/page-header";
 import { ReadOnlyBridgeNotice } from "@/components/read-only-bridge-notice";
 import { clearEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
 import type { ActorRead, EventRead, EventTypeRead } from "@/lib/events-api";
+import { hideEvent, unhideEvent, useHiddenEventIds } from "@/lib/hidden-events";
 import { listBridgeActors, listBridgeEventTypes, listBridgeEvents, listBridgeSources } from "@/lib/bridge-api";
 
 // Editing, approving, and deleting are intentionally absent from this workspace: Events reads
@@ -21,12 +22,20 @@ export function EventsWorkspace() {
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const filters = useMemo(() => parseEventFilters(search), [search]);
-  const [events, setEvents] = useState<EventRead[]>([]);
+  const [allEvents, setAllEvents] = useState<EventRead[]>([]);
   const [eventTypes, setEventTypes] = useState<EventTypeRead[]>([]);
   const [actors, setActors] = useState<ActorRead[]>([]);
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
+  const hiddenEventIds = useHiddenEventIds();
+
+  // Browser-only manual visibility filter (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md):
+  // never sent to the backend. Review or restore a hidden event from Dashboard's "Hidden by you" panel.
+  const events = useMemo(
+    () => allEvents.filter((event) => !hiddenEventIds.includes(event.id)),
+    [allEvents, hiddenEventIds],
+  );
 
   useEffect(() => {
     let active = true;
@@ -37,7 +46,7 @@ export function EventsWorkspace() {
       listBridgeSources(),
     ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments]) => {
       if (!active) return;
-      setEvents(nextEvents);
+      setAllEvents(nextEvents);
       setEventTypes(nextEventTypes);
       setActors(nextActors);
       setDocuments(nextDocuments.map(({ id, title }) => ({ id, title })));
@@ -60,7 +69,7 @@ export function EventsWorkspace() {
 
   return <AppShell currentPath="/events"><section className="events-page" aria-labelledby="events-title">
     <PageHeader
-      description="Search and explore published events from the local Supabase pipeline. Sources, evidence, editing, and approval stay read-only here."
+      description="Search and explore processed events from the local Supabase pipeline, including pipeline exceptions. Sources, evidence, editing, and approval stay read-only here."
       eyebrow="Read-only Supabase preview"
       title="Events"
       titleId="events-title"
@@ -69,7 +78,16 @@ export function EventsWorkspace() {
     <EventFilterBar actorOptions={actors} documentOptions={documents} eventTypeOptions={eventTypes} onChange={changeFilters} value={filters} />
     {error && <p className="document-error">{error}</p>}
     <div className="events-view" data-view={currentView} key={currentView}>
-      {selectedEvent ? <EventDetail event={selectedEvent} eventsPath={`/events${search ? `?${search}` : ""}`} onClose={() => setSelectedEvent(null)} /> : <FramedPanel className="events-list-panel" title="Published event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
+      {selectedEvent ? (
+        <EventDetail
+          event={selectedEvent}
+          eventsPath={`/events${search ? `?${search}` : ""}`}
+          isManuallyHidden={hiddenEventIds.includes(selectedEvent.id)}
+          onClose={() => setSelectedEvent(null)}
+          onHide={() => hideEvent(selectedEvent.id)}
+          onUnhide={() => unhideEvent(selectedEvent.id)}
+        />
+      ) : <FramedPanel className="events-list-panel" title="Event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
     </div>
   </section></AppShell>;
 }

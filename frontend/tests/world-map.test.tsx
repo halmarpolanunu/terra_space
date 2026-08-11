@@ -361,6 +361,7 @@ describe("offline world map configuration", () => {
           locationLabel: pin.eventId,
           epistemicStatus: "confirmed",
           coordinatePrecision: "city_regency",
+          isException: false,
         },
       })),
     };

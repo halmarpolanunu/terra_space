@@ -108,6 +108,7 @@ describe("Dashboard workspace", () => {
   afterEach(() => {
     currentSearch = "q=bridge&sort=title_asc";
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it("retains the local service-status panel alongside the Dashboard workspace", () => {
@@ -141,7 +142,8 @@ describe("Dashboard workspace", () => {
     expect(within(summaryPanel).getByText("Total events")).toBeVisible();
     expect(within(summaryPanel).getByText("3")).toBeVisible();
     expect(within(summaryPanel).getByText("New in last 7 days")).toBeVisible();
-    expect(within(summaryPanel).getByText("0")).toBeVisible();
+    const newEventsRow = within(summaryPanel).getByText("New in last 7 days").closest("div")!;
+    expect(within(newEventsRow).getByText("0")).toBeVisible();
     expect(within(summaryPanel).getByText("Mapped locations")).toBeVisible();
     expect(within(summaryPanel).getByText("1")).toBeVisible();
     expect(within(summaryPanel).queryByText("Distribution by type")).not.toBeInTheDocument();
@@ -190,10 +192,12 @@ describe("Dashboard workspace", () => {
 
     render(<DashboardPage />);
     await screen.findByRole("button", { name: "Map features: 0" });
-    expect(screen.getAllByText("0")).toHaveLength(4);
+    expect(screen.getAllByText("0")).toHaveLength(6);
     expect(screen.getByText("Mapped locations")).toBeVisible();
-    expect(screen.getByText("No approved events yet.")).toBeVisible();
+    expect(screen.getByText("No processed events yet.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Unresolved locations · 0" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Pipeline exceptions · 0" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Hidden by you · 0" })).toBeDisabled();
   });
 
   it("opens a list of unresolved-location events from the summary stat and can drill into one", async () => {
@@ -223,5 +227,72 @@ describe("Dashboard workspace", () => {
     fireEvent.click(within(listDrawer).getByRole("button", { name: "Unlocated report" }));
     expect(await screen.findByRole("heading", { name: "Event detail" })).toBeVisible();
     expect(screen.getByText("Selected map event: event-2")).toBeVisible();
+  });
+
+  it("shows a pipeline exception event automatically, marked, and counted separately", async () => {
+    currentSearch = "";
+    const published = makeEvent({ id: "event-1", title: "Published report", dashboard_status: "published" });
+    const exception = makeEvent({
+      id: "event-2",
+      title: "Exception report",
+      dashboard_status: "hidden",
+      pipeline_outcome: "EXCEPTION",
+      exception_reason: "Evidence quote does not support the claimed actor.",
+      locations: [],
+    });
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([published, exception]);
+    vi.mocked(bridgeApi.getBridgeDashboardSummary).mockResolvedValue(summary);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
+
+    render(<DashboardPage />);
+    await screen.findByRole("button", { name: "Exception report" });
+    fireEvent.click(screen.getByRole("button", { name: /Event register/i }));
+    const registerDrawer = screen.getByRole("region", { name: "register panel" });
+    expect(within(registerDrawer).getByText("Exception")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Event register/i }));
+
+    const exceptionsStat = screen.getByRole("button", { name: "Pipeline exceptions · 1" });
+    expect(exceptionsStat).toBeEnabled();
+
+    fireEvent.click(exceptionsStat);
+    const listDrawer = screen.getByRole("region", { name: "list panel" });
+    expect(within(listDrawer).getByRole("heading", { name: "Pipeline exceptions" })).toBeVisible();
+    expect(within(listDrawer).getByRole("button", { name: "Exception report" })).toBeVisible();
+    expect(within(listDrawer).queryByText("Published report")).not.toBeInTheDocument();
+
+    fireEvent.click(within(listDrawer).getByRole("button", { name: "Exception report" }));
+    expect(await screen.findByText("Pipeline exception")).toBeVisible();
+    expect(screen.getByText("Evidence quote does not support the claimed actor.")).toBeVisible();
+  });
+
+  it("hides an event from the browser only, and un-hides it from the Hidden by you panel", async () => {
+    currentSearch = "";
+    const eventA = makeEvent({ id: "event-1", title: "First report" });
+    const eventB = makeEvent({ id: "event-2", title: "Second report", locations: [] });
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([eventA, eventB]);
+    vi.mocked(bridgeApi.getBridgeDashboardSummary).mockResolvedValue(summary);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
+
+    render(<DashboardPage />);
+    await screen.findByRole("button", { name: "First report" });
+
+    fireEvent.click(screen.getByRole("button", { name: "First report" }));
+    expect(await screen.findByRole("heading", { name: "Event detail" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+
+    expect(screen.queryByRole("button", { name: "First report" })).not.toBeInTheDocument();
+    const hiddenStat = screen.getByRole("button", { name: "Hidden by you · 1" });
+    expect(hiddenStat).toBeEnabled();
+
+    fireEvent.click(hiddenStat);
+    const listDrawer = screen.getByRole("region", { name: "list panel" });
+    expect(within(listDrawer).getByRole("heading", { name: "Hidden by you" })).toBeVisible();
+    fireEvent.click(within(listDrawer).getByRole("button", { name: "Unhide" }));
+
+    expect(screen.getByRole("button", { name: "Hidden by you · 0" })).toBeDisabled();
   });
 });

@@ -76,17 +76,20 @@ preserves the approved phase prefix and role.
 # Dashboard authority
 
 `phase3_events` is the single authoritative event table. A Phase 3 `FINAL` result creates a
-`published` event that appears immediately in Dashboard, Events, map, timeline, summary, and filter
-results. A Phase 3 `EXCEPTION` is retained with a hidden status and does not enter Terra Insight.
+`published` event and a Phase 3 `EXCEPTION` creates a `hidden` event; both appear immediately in
+Dashboard, Events, map, timeline, summary, and filter results, with `hidden` events clearly marked
+as a pipeline exception. This automatic-visibility rule was amended on 2026-08-11 — see
+[Automatic Event Visibility With Manual Filtering](Automatic-Event-Visibility-With-Manual-Filtering.md)
+for why an automatic `EXCEPTION`/`hidden` state stopped meaning "excluded from Terra Insight."
 
 Pipeline outcome and human publication status remain separate:
 
 | Pipeline outcome | Dashboard status | Behavior |
 |---|---|---|
 | `FINAL` | `published` | Appears immediately in Terra Insight. |
-| `EXCEPTION` | `hidden` | Preserved but excluded from Terra Insight. |
-| Any retained record | `rejected` | Hidden by the owner's decision. |
-| Any retained record | `archived` | Removed from normal use but recoverable. |
+| `EXCEPTION` | `hidden` | Appears immediately in Terra Insight, clearly marked as a pipeline exception; the owner may filter or hide it manually. |
+| Any retained record | `rejected` | Excluded from Terra Insight by the owner's own explicit decision. |
+| Any retained record | `archived` | Removed from normal use but recoverable, by the owner's own explicit decision. |
 
 The pipeline may create a new authoritative event using a unique deterministic candidate key. A
 later pipeline run may append audit history but may not silently overwrite the authoritative event.
@@ -119,7 +122,9 @@ The work will be decomposed into controlled implementation plans:
 - A Phase 1 source must trace to its Phase 2 result and every Phase 3 event derived from it.
 - A repeated candidate key must not create a duplicate authoritative event.
 - A pipeline rerun must not overwrite a human-modified event.
-- `FINAL` events appear immediately; `EXCEPTION`, `rejected`, and `archived` events remain excluded.
+- `FINAL` and `EXCEPTION` events both appear immediately, with `EXCEPTION` clearly marked as a
+  pipeline exception and filterable/hideable by the owner; `rejected` and `archived` events (the
+  owner's own explicit decisions) remain excluded from normal Dashboard queries.
 - Dashboard summary, search, filters, globe, timeline, detail, and editing use the same Supabase data.
 - Taxonomy, actors, locations, sources, evidence, duplicates, and audit history retain valid
   relationships.
@@ -152,4 +157,5 @@ be reused rather than redesigned except where human authority requires explicit 
 - [Decisions Index](Decisions-Index.md)
 - [Superseded Local Supabase Storage Direction](Local-Supabase-Storage-Direction.md)
 - [One-Click Full News Processing](One-Click-Full-News-Processing.md)
+- [Automatic Event Visibility With Manual Filtering](Automatic-Event-Visibility-With-Manual-Filtering.md) - amends the Dashboard authority rule above
 - [Project Knowledge](../Project-knowledge-Index.md)

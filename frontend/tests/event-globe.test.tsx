@@ -138,6 +138,22 @@ describe("EventGlobe", () => {
     expect(features.features[0]).toMatchObject({ geometry: { type: "Point", coordinates: [106.8, -6.2] }, properties: { eventId: "event-1", title: "Bridge crossing reported", locationLabel: "Jakarta, Jakarta, Indonesia", epistemicStatus: "claim", coordinatePrecision: "city_regency" } });
   });
 
+  it("marks a pipeline exception event's pin so it renders with a distinct style", () => {
+    const features = eventLocationsToFeatureCollection([
+      makeEvent({ dashboard_status: "hidden" }),
+    ]);
+
+    expect(features.features[0].properties.isException).toBe(true);
+  });
+
+  it("does not mark a published event's pin as an exception", () => {
+    const features = eventLocationsToFeatureCollection([
+      makeEvent({ dashboard_status: "published" }),
+    ]);
+
+    expect(features.features[0].properties.isException).toBe(false);
+  });
+
   it("loads the existing offline map, adds its GeoJSON source after load, and removes it on unmount", async () => {
     map.on.mockImplementation((event: string, listener: () => void) => {
       if (event === "load") listener();

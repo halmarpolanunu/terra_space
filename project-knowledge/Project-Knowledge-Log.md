@@ -8,6 +8,36 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-11 - Automatic event visibility and manual Dashboard filtering: pipeline exceptions now show by default
+
+- The owner reported that a real article's four Phase 2 candidates all became Phase 3 `EXCEPTION`
+  records and none appeared anywhere in Terra Space, because the just-shipped read-only bridge
+  only ever showed `dashboard_status: published`. New direction: every processed event shows
+  automatically, exception or not; the owner filters or hides manually instead.
+- Recorded as a decision amending, not silently replacing, the locked [Fresh Phase-Prefixed
+  Supabase Architecture](decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md) decision's
+  Dashboard-authority rule: [Automatic Event Visibility With Manual
+  Filtering](decisions/Automatic-Event-Visibility-With-Manual-Filtering.md). Implemented per its
+  [design](plans/2026-08-11-automatic-event-visibility-design.md) and [implementation
+  plan](plans/2026-08-11-automatic-event-visibility-implementation.md), both now `completed`. The
+  not-yet-started [Terra Space Supabase Application Transition
+  Plan](plans/2026-08-10-terra-space-supabase-transition.md) was updated to keep this same rule at
+  full cutover instead of reverting to automatic exception-hiding.
+- Backend: the bridge query now returns `published`+`hidden` events (only owner-decided
+  `rejected`/`archived`/`merged` stay excluded); `EventRead`/`DashboardSummaryRead` gained
+  additive `pipeline_outcome`/`dashboard_status`/`exception_reason`/`exception_count` fields; a new
+  `dashboard_status` query parameter drives the owner's manual filter.
+- Frontend: a "Visibility" filter, a browser-only (`localStorage`) per-event hide/unhide via a new
+  `hidden-events.ts`, an "Exception" badge and distinct globe pin color for exception events, and
+  new "Pipeline exceptions"/"Hidden by you" Dashboard stats. A pre-existing undefined
+  `--status-warning` CSS variable was found and fixed along the way, and several bridge-screen
+  strings that said "approved"/"published" were corrected to "processed" language.
+- Full suites: 291 backend tests and 231 frontend tests pass, clean lint, clean production build.
+  Live-verified against the real local Supabase (after rebuilding the Docker images): the owner's
+  real four-exception article now shows all four, each with its real recorded reason, and the
+  manual visibility filter correctly narrows real data. No Supabase write was added; SQLite
+  untouched.
+
 ## 2026-08-11 - Supabase Read-Only Bridge implemented; an undocumented live-database table rename discovered and reconciled
 
 - Implemented the [Supabase Read-Only Bridge Design](plans/2026-08-11-supabase-read-only-bridge-design.md)

@@ -68,6 +68,9 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md) - moves the FastAPI/Next.js application from SQLite to the shared Supabase database and implements Dashboard authority.
 - [Supabase Read-Only Bridge Design](plans/2026-08-11-supabase-read-only-bridge-design.md) - approved verification-first scope for displaying the local Supabase pipeline data in Terra Space without application writes.
 - [Supabase Read-Only Bridge Implementation Plan](plans/2026-08-11-supabase-read-only-bridge-implementation.md) - task-by-task backend/frontend build plan for the bridge, including the undocumented live-database table rename it discovered and corrected first.
+- [Automatic Event Visibility With Manual Filtering](decisions/Automatic-Event-Visibility-With-Manual-Filtering.md) - amends Dashboard authority so every processed event, including pipeline exceptions, appears automatically; the owner filters or hides events manually instead.
+- [Automatic Event Visibility Design](plans/2026-08-11-automatic-event-visibility-design.md) - approved design for showing every processed Phase 3 event automatically with a manual visibility filter and a browser-only per-event hide control.
+- [Automatic Event Visibility Implementation Plan](plans/2026-08-11-automatic-event-visibility-implementation.md) - task-by-task backend/frontend build plan for automatic exception visibility, filtering, and hiding.
 - [Supabase Cutover and Verification Plan](plans/2026-08-10-supabase-cutover-verification.md) - verifies the complete system, rollback, no-SQLite-write behavior, and owner-approved activation.
 
 ## Reading rule

@@ -1,6 +1,6 @@
 import { FramedPanel } from "@/components/framed-panel";
 import { locationIsResolved } from "@/app/dashboard/event-globe";
-import type { EventRead } from "@/lib/events-api";
+import { isExceptionEvent, type EventRead } from "@/lib/events-api";
 
 type DashboardSummaryProps = {
   events: EventRead[];
@@ -8,7 +8,10 @@ type DashboardSummaryProps = {
 
 type DashboardSummaryContentProps = DashboardSummaryProps & {
   markerCount: number;
+  hiddenByOwnerCount?: number;
   onShowUnresolvedLocations?: () => void;
+  onShowExceptions?: () => void;
+  onShowHiddenByOwner?: () => void;
 };
 
 function approvedInLastSevenDays(approvedAt: string | null | undefined): boolean {
@@ -25,6 +28,10 @@ export function unresolvedLocationEvents(events: EventRead[]): EventRead[] {
   return events.filter((event) => !hasResolvedLocation(event));
 }
 
+export function exceptionEvents(events: EventRead[]): EventRead[] {
+  return events.filter(isExceptionEvent);
+}
+
 export function summarizeDashboardEvents(events: EventRead[]) {
   const byType = new Map<string, number>();
   for (const event of events) {
@@ -37,6 +44,7 @@ export function summarizeDashboardEvents(events: EventRead[]) {
     by_event_type: [...byType.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([name, count]) => ({ name, count })),
     incomplete_date_count: events.filter((event) => !event.event_date || event.event_date_precision === "unknown").length,
     incomplete_location_count: unresolvedLocationEvents(events).length,
+    exception_count: exceptionEvents(events).length,
   };
 }
 
@@ -61,7 +69,14 @@ export function DashboardSummary({ events }: DashboardSummaryProps) {
   );
 }
 
-export function DashboardSummaryContent({ events, markerCount, onShowUnresolvedLocations }: DashboardSummaryContentProps) {
+export function DashboardSummaryContent({
+  events,
+  markerCount,
+  hiddenByOwnerCount = 0,
+  onShowUnresolvedLocations,
+  onShowExceptions,
+  onShowHiddenByOwner,
+}: DashboardSummaryContentProps) {
   const value = summarizeDashboardEvents(events);
 
   return (
@@ -80,6 +95,34 @@ export function DashboardSummaryContent({ events, markerCount, onShowUnresolvedL
             type="button"
           >
             {value.incomplete_location_count}
+          </button>
+        </dd>
+      </div>
+      <div>
+        <dt>Pipeline exceptions</dt>
+        <dd>
+          <button
+            aria-label={`Pipeline exceptions · ${value.exception_count}`}
+            className="dashboard-summary-stat-button"
+            disabled={value.exception_count === 0}
+            onClick={onShowExceptions}
+            type="button"
+          >
+            {value.exception_count}
+          </button>
+        </dd>
+      </div>
+      <div>
+        <dt>Hidden by you</dt>
+        <dd>
+          <button
+            aria-label={`Hidden by you · ${hiddenByOwnerCount}`}
+            className="dashboard-summary-stat-button"
+            disabled={hiddenByOwnerCount === 0}
+            onClick={onShowHiddenByOwner}
+            type="button"
+          >
+            {hiddenByOwnerCount}
           </button>
         </dd>
       </div>

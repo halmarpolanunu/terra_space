@@ -6,7 +6,7 @@ import {
   type EventPinFeatureCollection,
   type MapProjectionMode,
 } from "@/components/world-map";
-import type { EventRead, LocationRead } from "@/lib/events-api";
+import { isExceptionEvent, type EventRead, type LocationRead } from "@/lib/events-api";
 
 type EventGlobeProps = {
   events: EventRead[];
@@ -59,6 +59,7 @@ export function buildEventMapData(
           locationLabel: locationLabel(eventLocation),
           epistemicStatus: event.epistemic_status,
           coordinatePrecision: eventLocation.coordinate_precision ?? "unknown",
+          isException: isExceptionEvent(event),
         },
       });
     } else {

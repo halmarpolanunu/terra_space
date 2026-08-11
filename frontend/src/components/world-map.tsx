@@ -16,6 +16,22 @@ export const EVENT_PIN_SOURCE_ID = "event-pins";
 export const EVENT_PIN_LAYER_ID = "event-pins";
 export const EVENT_PIN_HALO_LAYER_ID = "event-pin-halo";
 
+// Distinct pin color for a pipeline exception (dashboard_status: hidden), so a cluster of pins
+// is honest about which events are fully validated versus retained with caveats -- see
+// decisions/Automatic-Event-Visibility-With-Manual-Filtering.md.
+const EXCEPTION_PIN_COLOR_EXPRESSION: ExpressionSpecification = [
+  "case",
+  ["==", ["get", "isException"], true],
+  "#e5544b",
+  "#f2a93b",
+];
+const EXCEPTION_PIN_STROKE_COLOR_EXPRESSION: ExpressionSpecification = [
+  "case",
+  ["==", ["get", "isException"], true],
+  "#ffb199",
+  "#ffd17a",
+];
+
 export type EventPinFeatureCollection = {
   type: "FeatureCollection";
   features: {
@@ -27,6 +43,10 @@ export type EventPinFeatureCollection = {
       locationLabel: string;
       epistemicStatus: string;
       coordinatePrecision: string;
+      // Pipeline exception (dashboard_status: hidden) -- see
+      // decisions/Automatic-Event-Visibility-With-Manual-Filtering.md. Drives the distinct pin
+      // color below so an exception is never shown identically to a validated event.
+      isException: boolean;
     };
   }[];
 };
@@ -281,7 +301,7 @@ export function WorldMap({
         type: "circle",
         source: EVENT_PIN_SOURCE_ID,
         paint: {
-          "circle-color": "#f2a93b",
+          "circle-color": EXCEPTION_PIN_COLOR_EXPRESSION,
           "circle-radius": haloRadius(selectedEventRef.current),
           "circle-blur": 0.55,
           "circle-opacity": haloOpacity(selectedEventRef.current),
@@ -292,9 +312,9 @@ export function WorldMap({
         type: "circle",
         source: EVENT_PIN_SOURCE_ID,
         paint: {
-          "circle-color": "#f2a93b",
+          "circle-color": EXCEPTION_PIN_COLOR_EXPRESSION,
           "circle-radius": selectedPaintValue(selectedEventRef.current, 7.5, 6),
-          "circle-stroke-color": "#ffd17a",
+          "circle-stroke-color": EXCEPTION_PIN_STROKE_COLOR_EXPRESSION,
           "circle-stroke-width": selectedPaintValue(selectedEventRef.current, 2, 1),
           "circle-opacity": selectedPaintValue(
             selectedEventRef.current,

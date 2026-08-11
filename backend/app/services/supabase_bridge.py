@@ -76,12 +76,14 @@ def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewR
 _EVENT_QUERY = """
     select
         e.id, e.title, e.summary, e.event_date, e.event_date_precision, e.epistemic_status,
-        e.published_at, e.created_at, e.updated_at,
+        e.published_at, e.created_at, e.updated_at, e.pipeline_outcome, e.dashboard_status,
         et.id as event_type_id, et.name as event_type_name, et.description as event_type_description,
         et.is_active as event_type_is_active,
         coalesce(actors.actors, '[]'::jsonb) as actors,
         coalesce(locations.locations, '[]'::jsonb) as locations,
-        coalesce(sources.sources, '[]'::jsonb) as sources
+        coalesce(sources.sources, '[]'::jsonb) as sources,
+        latest_run.safeguard_reasons as exception_safeguard_reasons,
+        latest_run.error_message as exception_error_message
     from public.terra_space_phase3_events e
     left join public.terra_space_phase3_event_types et on et.id = e.event_type_id
     left join lateral (
@@ -110,10 +112,49 @@ _EVENT_QUERY = """
         from public.terra_space_phase3_event_sources es
         where es.event_id = e.id
     ) sources on true
-    where e.dashboard_status = 'published'
+    -- The most recent Phase 3 attempt for this candidate, used only to explain *why* an
+    -- EXCEPTION happened (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md).
+    -- Read-only, same as every other join here.
+    left join lateral (
+        select r.safeguard_reasons, r.error_message
+        from public.terra_space_phase3_event_runs r
+        where r.candidate_key = e.candidate_key
+        order by r.processed_at desc
+        limit 1
+    ) latest_run on e.candidate_key is not null
+    -- Every automatic pipeline outcome (published/hidden) shows by default; only a deliberate
+    -- human decision (rejected/archived/merged) stays excluded. See the decision above.
+    where e.dashboard_status in ('published', 'hidden')
 """
 
 _EVENT_LIST_ORDER = " order by e.event_date desc nulls last, e.created_at desc"
+
+
+def _build_exception_reason(row: dict) -> str | None:
+    """A short, human-readable reason for an EXCEPTION event, from its latest Phase 3 run.
+
+    Prefers a stored error message; otherwise summarizes the safeguard's own reasons, in
+    whatever shape Phase 3 recorded them (a list of strings, or a dict with a 'reasons' list).
+    Returns None when the pipeline recorded nothing usable, or the event is not an EXCEPTION.
+    """
+
+    if row.get("pipeline_outcome") != "EXCEPTION":
+        return None
+    error_message = row.get("exception_error_message")
+    if error_message:
+        return str(error_message)
+    reasons = row.get("exception_safeguard_reasons")
+    if not reasons:
+        return None
+    if isinstance(reasons, list):
+        return "; ".join(str(reason) for reason in reasons) or None
+    if isinstance(reasons, dict):
+        nested = reasons.get("reasons") or reasons.get("reason")
+        if isinstance(nested, list):
+            return "; ".join(str(reason) for reason in nested) or None
+        if nested:
+            return str(nested)
+    return str(reasons)
 
 
 def _to_event_read(row: dict) -> EventRead:
@@ -166,9 +207,10 @@ def _to_event_read(row: dict) -> EventRead:
         event_date=row["event_date"],
         event_date_precision=row["event_date_precision"],
         epistemic_status=row["epistemic_status"],
-        # Every row this query returns is dashboard_status='published'; from Terra Insight's
-        # perspective that is the same as an "approved" event, and no write action is wired to
-        # this route so relaxing this value here cannot let anything be edited.
+        # Every row this query returns is published or hidden; from Terra Insight's perspective
+        # that is the same as an "approved" event (visible), and no write action is wired to this
+        # route so relaxing this value here cannot let anything be edited. `dashboard_status`
+        # below is what actually distinguishes a pipeline exception for display purposes.
         review_status="approved",
         event_type=event_type,
         actors=actors,
@@ -180,6 +222,9 @@ def _to_event_read(row: dict) -> EventRead:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         approved_at=row["published_at"],
+        pipeline_outcome=row["pipeline_outcome"],
+        dashboard_status=row["dashboard_status"],
+        exception_reason=_build_exception_reason(row),
     )
 
 
@@ -273,6 +318,7 @@ def bridge_dashboard_summary(events: list[EventRead]) -> DashboardSummaryRead:
                 for location in event.locations
             )
         ),
+        exception_count=sum(1 for event in events if event.pipeline_outcome == "EXCEPTION"),
     )
 
 
@@ -309,12 +355,16 @@ def filter_bridge_events(
     admin1: str | None = None,
     city_regency: str | None = None,
     document_id: str | None = None,
+    dashboard_status: str | None = None,
     sort: str = "date_desc",
 ) -> list[EventRead]:
     """Same in-memory filter/sort contract as `app.services.events.list_filtered_events`.
 
     `document_id` matches a bridge event's Phase 1 source ID (`EventSourceRead.source_id`),
-    since bridge events carry no SQLite document identity.
+    since bridge events carry no SQLite document identity. `dashboard_status` is the owner's
+    manual visibility filter (see decisions/Automatic-Event-Visibility-With-Manual-Filtering.md):
+    `"published"` or `"hidden"` narrows the view; blank/None returns both, which is the default
+    the caller already receives from `list_bridge_events`.
     """
 
     needle = q.strip().casefold() if q else None
@@ -325,6 +375,8 @@ def filter_bridge_events(
         if event_type_id and (event.event_type is None or event.event_type.id != event_type_id):
             return False
         if epistemic_status and event.epistemic_status != epistemic_status:
+            return False
+        if dashboard_status and event.dashboard_status != dashboard_status:
             return False
         if actor_id and actor_id not in {link.actor.id for link in event.actors}:
             return False

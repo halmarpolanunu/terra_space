@@ -21,6 +21,11 @@
   --status-alleged: #a37fe0;
   --status-planned: #7d93a8;
   --status-unknown: #8a8f94;
+  /* Was referenced by several existing rules (extraction log, taxonomy confirm) but never
+     defined, so those borders/text silently fell back to an unstyled default. Defined now
+     because the Automatic Event Visibility work adds a new, real usage (the Exception badge
+     and callout) that needs it to actually render amber. */
+  --status-warning: #f2a93b;
   --focus: var(--accent);
   --shell-glass: rgba(3, 5, 6, 0.78);
   --sidebar-glass: rgba(5, 7, 8, 0.76);
@@ -467,6 +472,7 @@ body {
 }
 .event-list-title:hover { color: var(--accent); }
 .event-list-meta { color: var(--text-muted); font-size: 0.88rem; }
+.event-list-status-cell { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
 .event-source-count { font-family: var(--font-mono); font-size: 0.75rem; }
 .event-list-row-actions { display: flex; justify-content: flex-end; }
 .event-empty-state {
@@ -493,6 +499,16 @@ body {
 .document-source-page a { color: var(--accent); text-decoration: underline; }
 .event-source-links a::after { content: " \2192"; }
 .event-read-only-note { margin: 0; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; }
+.event-exception-callout {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--status-warning);
+  background: rgba(242, 169, 59, 0.08);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+.event-exception-callout p { margin: 0; }
+.event-exception-callout p + p { margin-top: 0.35rem; color: var(--text-muted); }
 .document-source-page > .btn { justify-self: start; text-decoration: none; }
 .document-source-page .document-meta { margin: 0; }
 .document-source-page .source-document { max-width: 54rem; padding: 1.5rem; border: 1px solid var(--border); background: var(--panel); font-family: var(--font-serif); line-height: 1.75; white-space: pre-wrap; }
@@ -1814,6 +1830,7 @@ body {
 
 .dashboard-list-panel-items li { border-bottom: 1px solid rgba(24, 33, 39, 0.82); }
 .dashboard-list-panel-items li:last-child { border-bottom: 0; }
+.dashboard-list-panel-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 
 .dashboard-list-panel-item {
   width: 100%;

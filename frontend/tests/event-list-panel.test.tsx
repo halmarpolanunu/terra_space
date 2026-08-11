@@ -63,6 +63,26 @@ describe("EventListPanel", () => {
     expect(screen.getByText("Every event in this view has a resolved location.")).toBeVisible();
   });
 
+  it("renders a per-row action when given one, e.g. an Unhide button", () => {
+    const onUnhide = vi.fn();
+    const eventA = makeEvent("event-1", "First report");
+
+    render(
+      <EventListPanel
+        events={[eventA]}
+        onClose={vi.fn()}
+        onSelect={vi.fn()}
+        renderRowAction={(event) => (
+          <button onClick={() => onUnhide(event.id)} type="button">Unhide</button>
+        )}
+        title="Hidden by you"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Unhide" }));
+    expect(onUnhide).toHaveBeenCalledWith("event-1");
+  });
+
   it("calls onClose when the Close button is clicked", () => {
     const onClose = vi.fn();
     render(

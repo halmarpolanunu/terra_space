@@ -101,4 +101,7 @@ def test_dashboard_summary_uses_the_same_filtered_approved_events(tmp_path: Path
         "by_event_type": [{"name": "Airstrike", "count": 1}],
         "incomplete_date_count": 0,
         "incomplete_location_count": 0,
+        # Added for the Supabase bridge's automatic-visibility work; SQLite events never
+        # produce a pipeline exception, so this always defaults to 0 here.
+        "exception_count": 0,
     }

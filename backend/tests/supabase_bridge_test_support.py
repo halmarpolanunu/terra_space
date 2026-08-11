@@ -237,6 +237,44 @@ def insert_location(conn: psycopg.Connection, **overrides: object) -> str:
     return values["id"]
 
 
+def insert_event_run(
+    conn: psycopg.Connection,
+    candidate_key: str,
+    phase1_source_id: str,
+    **overrides: object,
+) -> None:
+    """Insert one append-only phase3_event_runs row -- used to test exception_reason lookup."""
+
+    import json
+
+    values = {
+        "candidate_key": candidate_key,
+        "phase1_source_id": phase1_source_id,
+        "attempt_number": 2,
+        "candidate": json.dumps({}),
+        "factual_status": "SUCCESS",
+        "taxonomy_status": "CLASSIFIED",
+        "safeguard_status": "REJECT",
+        "safeguard_reasons": json.dumps(["Evidence quote does not support the claimed actor."]),
+        "error_message": None,
+        "processed_at": "2026-08-01T00:00:00Z",
+        "outcome_payload": json.dumps({}),
+    }
+    values.update(overrides)
+    conn.execute(
+        """
+        insert into public.terra_space_phase3_event_runs
+            (candidate_key, phase1_source_id, attempt_number, candidate, factual_status,
+             taxonomy_status, safeguard_status, safeguard_reasons, error_message, processed_at,
+             outcome_payload)
+        values (%(candidate_key)s, %(phase1_source_id)s, %(attempt_number)s, %(candidate)s,
+                %(factual_status)s, %(taxonomy_status)s, %(safeguard_status)s,
+                %(safeguard_reasons)s, %(error_message)s, %(processed_at)s, %(outcome_payload)s)
+        """,
+        values,
+    )
+
+
 def insert_event(
     conn: psycopg.Connection,
     phase1_source_id: str,

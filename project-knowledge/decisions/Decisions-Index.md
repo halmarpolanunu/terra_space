@@ -11,6 +11,7 @@ status: active
 - [Fresh Phase-Prefixed Supabase Architecture](Fresh-Phase-Prefixed-Supabase-Architecture.md) - replaces SQLite with a fresh local Supabase source of truth organized by explicit Phase 1, Phase 2, and Phase 3 table roles, with immediate Dashboard visibility and human authority.
 - [One-Click Full News Processing](One-Click-Full-News-Processing.md) - Adds a master n8n workflow that runs the three established local processing stages from one article submission while retaining reusable individual stages.
 - [Automated Final Event Record Pipeline](Automated-Final-Event-Record-Pipeline.md) - Phase 3 turns grounded candidates into automatically finalized or safely withheld detailed event records through local-LLM enrichment, taxonomy classification, deterministic validation, and an independent safeguard.
+- [Automatic Event Visibility With Manual Filtering](Automatic-Event-Visibility-With-Manual-Filtering.md) - Amends Dashboard authority so every processed event, including pipeline exceptions, appears automatically; the owner filters or hides events manually instead of the pipeline hiding them.
 
 - [MVP Local-First Architecture](MVP-Local-First-Architecture.md) - Terra Space MVP is a local single-user app that stores data locally and uses only local LM Studio for AI processing.
 - [Visual Design Direction](Visual-Design-Direction.md) - Calm "mission brief" tactical look on pure black, with a 3D globe, amber accent, serif source documents, and one-thing-at-a-time dense screens.

@@ -81,6 +81,7 @@ describe("EventsPage (Supabase read-only)", () => {
   afterEach(() => {
     currentSearch = "q=bridge&sort=title_asc";
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it("restores URL filters, requests events from the bridge, and replaces the URL on changes", async () => {
@@ -162,6 +163,50 @@ describe("EventsPage (Supabase read-only)", () => {
 
     expect(screen.queryByRole("heading", { name: event.title })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: event.title })).toBeVisible();
+  });
+
+  it("shows a pipeline exception event automatically, marked as an exception", async () => {
+    const published = makeEvent({ id: "event-1", title: "Published event", dashboard_status: "published" });
+    const exception = makeEvent({
+      id: "event-2",
+      title: "Exception event",
+      dashboard_status: "hidden",
+      pipeline_outcome: "EXCEPTION",
+    });
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([published, exception]);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
+
+    render(<EventsPage />);
+
+    expect(await screen.findByRole("button", { name: "Exception event" })).toBeVisible();
+    expect(screen.getByText("Exception")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Published event" })).toBeVisible();
+  });
+
+  it("hides an event from this browser's view and un-hides it from the event detail", async () => {
+    const eventA = makeEvent({ id: "event-1", title: "First event" });
+    const eventB = makeEvent({ id: "event-2", title: "Second event" });
+    vi.mocked(bridgeApi.listBridgeEvents).mockResolvedValue([eventA, eventB]);
+    vi.mocked(bridgeApi.listBridgeEventTypes).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeActors).mockResolvedValue([]);
+    vi.mocked(bridgeApi.listBridgeSources).mockResolvedValue([]);
+
+    render(<EventsPage />);
+    await screen.findByRole("button", { name: "First event" });
+
+    fireEvent.click(screen.getByRole("button", { name: "First event" }));
+    expect(screen.getByRole("heading", { name: "First event" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Hide" }));
+
+    // The open detail panel stays on the same event and now offers Unhide instead of Hide.
+    expect(screen.getByRole("heading", { name: "First event" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Unhide" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to list" }));
+    expect(screen.queryByRole("button", { name: "First event" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Second event" })).toBeVisible();
   });
 });
 
