@@ -39,6 +39,7 @@ _MIGRATIONS_IN_ORDER = [
     _SUPABASE_DIR / "migrations" / "202608160004_issue_first_latest_run_views.sql",
     _SUPABASE_DIR / "migrations" / "202608160005_issue_first_field_grounding.sql",
     _SUPABASE_DIR / "migrations" / "202608160006_issue_first_country_reference.sql",
+    _SUPABASE_DIR / "migrations" / "202608160007_issue_first_country_reference_safety.sql",
 ]
 
 _BUSINESS_TABLES_FK_SAFE_ORDER = [
@@ -129,6 +130,24 @@ def _issue_first_country_reference_ready(conn: psycopg.Connection) -> bool:
     return bool(row and row[0])
 
 
+def _issue_first_country_reference_safety_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        """
+        select exists (
+          select 1
+            from public.terra_space_issue_v2_country_reference
+           where country_iso3 = 'ESH' and country_name = 'Western Sahara'
+        )
+        and exists (
+          select 1
+            from public.terra_space_issue_v2_country_reference
+           where country_iso3 = 'KOR' and country_name = 'South Korea'
+        )
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
 def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         "select to_regclass('public.terra_space_issue_v2_runs') is not null"
@@ -137,22 +156,24 @@ def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
 
 
 def _ensure_schema(conn: psycopg.Connection) -> None:
-    if _issue_first_country_reference_ready(conn):
+    if _issue_first_country_reference_safety_ready(conn):
         return
-    if _issue_first_field_grounding_ready(conn):
+    if _issue_first_country_reference_ready(conn):
         migrations = [_MIGRATIONS_IN_ORDER[-1]]
-    elif _issue_first_latest_run_views_ready(conn):
+    elif _issue_first_field_grounding_ready(conn):
         migrations = _MIGRATIONS_IN_ORDER[-2:]
-    elif _issue_first_pipeline_contract_ready(conn):
+    elif _issue_first_latest_run_views_ready(conn):
         migrations = _MIGRATIONS_IN_ORDER[-3:]
-    elif _issue_first_schema_ready(conn):
+    elif _issue_first_pipeline_contract_ready(conn):
         migrations = _MIGRATIONS_IN_ORDER[-4:]
-    elif _initial_issue_first_schema_ready(conn):
+    elif _issue_first_schema_ready(conn):
         migrations = _MIGRATIONS_IN_ORDER[-5:]
+    elif _initial_issue_first_schema_ready(conn):
+        migrations = _MIGRATIONS_IN_ORDER[-6:]
     elif _schema_ready(conn):
         # The durable test service may already have the prior schema. Replaying the original
         # foundation migration is not idempotent, so apply only the additive Issue-first migrations.
-        migrations = _MIGRATIONS_IN_ORDER[-6:]
+        migrations = _MIGRATIONS_IN_ORDER[-7:]
     else:
         migrations = _MIGRATIONS_IN_ORDER
         for role in ("anon", "authenticated", "service_role"):

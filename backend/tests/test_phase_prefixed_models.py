@@ -5,6 +5,7 @@ global location dedup, JSONB columns, FK restrict/cascade) behave as designed.
 See project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md.
 """
 
+import json
 import uuid
 
 import psycopg
@@ -12,6 +13,7 @@ import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
+from app.data.iso3166_alpha2_to_alpha3 import ALPHA2_TO_ALPHA3
 from app.db.models import (
     Actor,
     ActorAlias,
@@ -458,3 +460,67 @@ def test_issue_first_runs_cannot_be_updated_or_deleted(bridge_db) -> None:  # no
             "delete from public.terra_space_issue_v2_runs where id = %s",
             (run_id,),
         )
+
+
+def test_issue_first_rejects_generic_korea_for_south_korea_when_article_says_north_korea(
+    bridge_db,
+) -> None:  # noqa: F811
+    """A substring must not turn an explicit North Korea claim into a South Korea map arc."""
+
+    source_text = "Source Actor in North Korea addressed Target Actor in North Korea."
+    source_id = insert_source(bridge_db, cleaned_content_text=source_text, raw_content_text=source_text)
+    payload = {
+        "source_id": source_id,
+        "main_issue": {
+            "label": "North Korea statement",
+            "summary": "A statement involved two actors.",
+            "evidence_quote": source_text,
+        },
+        "events": [
+            {
+                "title": "Statement",
+                "evidence_quote": source_text,
+                "relationships": [
+                    {
+                        "evidence_quote": source_text,
+                        "source": {
+                            "name": "Source Actor",
+                            "country_iso3": "KOR",
+                            "country_name": "Korea",
+                            "evidence_quote": source_text,
+                        },
+                        "target": {
+                            "name": "Target Actor",
+                            "country_iso3": "KOR",
+                            "country_name": "Korea",
+                            "evidence_quote": source_text,
+                        },
+                    }
+                ],
+            }
+        ],
+    }
+
+    run_id = bridge_db.execute(
+        "select public.terra_space_issue_v2_record_run(%s::jsonb)",
+        (json.dumps(payload),),
+    ).fetchone()[0]
+    status, reason = bridge_db.execute(
+        "select status, reason from public.terra_space_issue_v2_runs where id = %s", (run_id,)
+    ).fetchone()
+
+    assert status == "failed"
+    assert "country text does not match country_iso3 KOR" in reason
+
+
+def test_issue_first_country_reference_covers_every_checked_in_country_code(bridge_db) -> None:  # noqa: F811
+    """The pipeline's SQL reference must stay aligned with the project-wide code source."""
+
+    reference_codes = {
+        row[0]
+        for row in bridge_db.execute(
+            "select country_iso3 from public.terra_space_issue_v2_country_reference"
+        )
+    }
+
+    assert reference_codes == set(ALPHA2_TO_ALPHA3.values())
