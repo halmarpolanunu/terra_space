@@ -8,6 +8,17 @@ status: active
 
 # terra_space Current Status
 
+## Latest update
+
+**2026-08-16: the reduced Issue-first Terra Insight release is implemented and verified on its
+separate branch.** It adds a parallel validated Issue pipeline contract, GET-only Issue API,
+standalone `/issues` screen, and evidence-backed actor arcs. The current application, routes,
+pipeline, and database data are unchanged as the fallback. No real articles were reprocessed and
+no live database migration was applied. See [Issue-first Implementation](plans/2026-08-15-issue-first-terra-insight-implementation.md).
+
+**Next action:** the owner views the new Issues screen using safe test data. Only after owner
+approval should live migration/reprocessing and any retirement of the current version be planned.
+
 ## Current focus
 
 **2026-08-11 update: the full Terra Space Supabase application transition is implemented and verified by the automated test suites; live browser verification against real local Supabase is still owner-pending, per the owner's own choice not to run write-heavy scenarios against real data unattended.** Following the [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md), Terra Space's own backend now uses local Supabase/PostgreSQL as its only live database — Dashboard and Events have full authority (publish, reject, archive, restore, edit, delete), not just read-only preview. SQLite is preserved, untouched, as rollback material.

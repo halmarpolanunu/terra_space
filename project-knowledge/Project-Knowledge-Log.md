@@ -8,6 +8,15 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-16 - Reduced Issue-first Terra Insight release verified
+
+- Implemented the owner-approved small first release: a parallel validated Issue data path,
+  read-only API, standalone Issues screen, and source-grounded actor arcs.
+- The existing application remains intact as fallback; no live database, current workflow, or
+  current route was changed. Real-article reprocessing and replacement planning are deferred.
+- Verification passed for focused backend tests (25), frontend tests (229), lint, production build,
+  and disposable PostgreSQL schema/pipeline contracts.
+
 ## 2026-08-11 - Full Terra Space Supabase application transition implemented; live cutover verification still owner-pending
 
 - Implemented the [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md)
