@@ -5,40 +5,40 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { FramedPanel } from "@/components/framed-panel";
 import { PageHeader } from "@/components/page-header";
+import { buildRelationshipArcs, WorldMap } from "@/components/world-map";
+import { RelationshipPanel } from "@/app/issues/relationship-panel";
 import {
   getIssue,
   getIssueEvent,
   listIssues,
   type IssueDetail,
   type IssueEventDetail,
-  type IssueEventRead,
   type IssueListItem,
 } from "@/lib/issues-api";
 
 type IssueGlobeSlotProps = {
-  events: IssueEventRead[];
-  selectedEventId?: string;
+  event?: IssueEventDetail;
+  selectedRelationshipId?: string;
 };
 
-/**
- * The visual map shell is deliberately kept separate from the data selection. Task 5 replaces
- * this read-only slot with the MapLibre pins and relationship arcs without changing Issue state.
- */
-export function IssueGlobeSlot({ events, selectedEventId }: IssueGlobeSlotProps) {
-  if (events.length === 0) {
-    return <p className="issues-map-empty" data-testid="issues-globe-slot">No mapped events yet</p>;
+/** Renders only locations that the selected event's validated relationships explicitly support. */
+export function IssueGlobeSlot({ event, selectedRelationshipId }: IssueGlobeSlotProps) {
+  if (!event) {
+    return <p className="issues-map-empty">Select a related event to see proven actor locations.</p>;
   }
-
+  if (event.relationships.length === 0) {
+    return <p className="issues-map-empty">No proven actor-to-actor locations for this event</p>;
+  }
   return (
     <div
-      aria-label="Issue event map"
-      className="issues-globe-slot"
-      data-event-ids={events.map((event) => event.id).join(",")}
-      data-testid="issues-globe-slot"
-      data-selected-event-id={selectedEventId}
+      aria-label="Proven actor relationship map"
+      className="issues-globe"
+      data-selected-event-id={event.id}
     >
-      <p>Event map</p>
-      <span>{events.length} validated event{events.length === 1 ? "" : "s"} ready to map</span>
+      <WorldMap
+        relationshipArcs={buildRelationshipArcs(event.relationships)}
+        selectedRelationshipId={selectedRelationshipId}
+      />
     </div>
   );
 }
@@ -51,6 +51,7 @@ export function IssuesWorkspace() {
   const [issues, setIssues] = useState<IssueListItem[]>([]);
   const [selectedIssueId, setSelectedIssueId] = useState<string>();
   const [selectedEventId, setSelectedEventId] = useState<string>();
+  const [selectedRelationshipId, setSelectedRelationshipId] = useState<string>();
   const [issue, setIssue] = useState<IssueDetail>();
   const [event, setEvent] = useState<IssueEventDetail>();
   const [loadingIssues, setLoadingIssues] = useState(true);
@@ -99,6 +100,7 @@ export function IssuesWorkspace() {
       .then((nextEvent) => {
         if (!active) return;
         setEvent(nextEvent);
+        setSelectedRelationshipId(undefined);
         setError(undefined);
       })
       .catch((nextError: unknown) => {
@@ -111,6 +113,7 @@ export function IssuesWorkspace() {
     if (issueId === selectedIssueId) return;
     setSelectedIssueId(issueId);
     setSelectedEventId(undefined);
+    setSelectedRelationshipId(undefined);
     setIssue(undefined);
     setEvent(undefined);
     setError(undefined);
@@ -119,8 +122,13 @@ export function IssuesWorkspace() {
   function selectEvent(eventId: string) {
     if (eventId === selectedEventId) return;
     setSelectedEventId(eventId);
+    setSelectedRelationshipId(undefined);
     setEvent(undefined);
     setError(undefined);
+  }
+
+  function selectRelationship(relationshipId: string) {
+    setSelectedRelationshipId(relationshipId);
   }
 
   return (
@@ -193,11 +201,20 @@ export function IssuesWorkspace() {
                       <div className="issues-event-detail">
                         <p className="field-label">Event evidence</p>
                         <blockquote className="evidence-quote">{event.evidence_quote}</blockquote>
+                        <RelationshipPanel
+                          onSelect={selectRelationship}
+                          relationships={event.relationships}
+                          selectedRelationshipId={selectedRelationshipId}
+                        />
                       </div>
                     )}
                   </FramedPanel>
                   <FramedPanel className="issues-map-panel" title="Event map">
-                    <IssueGlobeSlot events={issue.events} selectedEventId={selectedEventId} />
+                    {loadingEvent ? (
+                      <p className="issues-map-empty">Loading proven actor locations…</p>
+                    ) : (
+                      <IssueGlobeSlot event={event} selectedRelationshipId={selectedRelationshipId} />
+                    )}
                   </FramedPanel>
                 </div>
               </>

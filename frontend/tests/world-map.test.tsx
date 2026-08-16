@@ -52,7 +52,13 @@ vi.mock("pmtiles", () => ({
 }));
 
 import {
+  buildRelationshipArcs,
   isBehindGlobe,
+  ACTOR_ARC_LAYER_ID,
+  ACTOR_ARC_SOURCE_ID,
+  ACTOR_ENDPOINT_LAYER_ID,
+  ACTOR_ENDPOINT_SOURCE_ID,
+  buildRelationshipEndpoints,
   EVENT_PIN_HALO_LAYER_ID,
   EVENT_PIN_LAYER_ID,
   MAP_UNAVAILABLE_MESSAGE,
@@ -64,6 +70,9 @@ import {
 describe("offline world map configuration", () => {
   beforeEach(() => {
     mapCenter = { lng: 0, lat: 20 };
+    map.getLayer.mockReset();
+    map.getLayer.mockReturnValue(true);
+    map.getSource.mockReset();
   });
 
   afterEach(() => {
@@ -82,6 +91,110 @@ describe("offline world map configuration", () => {
   it("uses only a local PMTiles source", () => {
     expect(WORLD_PMTILES_URL).toBe("/api/backend/api/maps/world.pmtiles");
     expect(JSON.stringify(worldMapStyle)).not.toMatch(/https?:\/\//);
+  });
+
+  it("turns every fully resolved actor relationship into a source-to-target LineString", () => {
+    const arcs = buildRelationshipArcs([
+      {
+        id: "relationship-1",
+        evidence_quote: "A delegation in Jakarta met a delegation in Manila.",
+        source: { actor_name: "Jakarta delegation", location: { longitude: 106.8456, latitude: -6.2088 } },
+        target: { actor_name: "Manila delegation", location: { longitude: 120.9842, latitude: 14.5995 } },
+      },
+      {
+        id: "relationship-2",
+        evidence_quote: "Canberra officials contacted Wellington officials.",
+        source: { actor_name: "Canberra officials", location: { longitude: 149.13, latitude: -35.28 } },
+        target: { actor_name: "Wellington officials", location: { longitude: 174.7762, latitude: -41.2865 } },
+      },
+      {
+        id: "relationship-3",
+        evidence_quote: "Tokyo officials briefed Seoul officials.",
+        source: { actor_name: "Tokyo officials", location: { longitude: 139.6917, latitude: 35.6895 } },
+        target: { actor_name: "Seoul officials", location: { longitude: 126.978, latitude: 37.5665 } },
+      },
+    ]);
+
+    expect(arcs.features).toHaveLength(3);
+    expect(arcs.features.map((arc) => arc.geometry)).toEqual([
+      { type: "LineString", coordinates: [[106.8456, -6.2088], [120.9842, 14.5995]] },
+      { type: "LineString", coordinates: [[149.13, -35.28], [174.7762, -41.2865]] },
+      { type: "LineString", coordinates: [[139.6917, 35.6895], [126.978, 37.5665]] },
+    ]);
+    expect(arcs.features[0].properties).toEqual({
+      relationshipId: "relationship-1",
+      sourceName: "Jakarta delegation",
+      targetName: "Manila delegation",
+      evidenceQuote: "A delegation in Jakarta met a delegation in Manila.",
+    });
+  });
+
+  it("adds the separate arc layer only for supported relationships and dims non-selected arcs", async () => {
+    map.getSource.mockReturnValue(undefined);
+    map.getLayer.mockReturnValue(undefined);
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+    const relationshipArcs = buildRelationshipArcs([
+      {
+        id: "relationship-1",
+        evidence_quote: "Evidence one.",
+        source: { actor_name: "Source one", location: { longitude: 1, latitude: 2 } },
+        target: { actor_name: "Target one", location: { longitude: 3, latitude: 4 } },
+      },
+      {
+        id: "relationship-2",
+        evidence_quote: "Evidence two.",
+        source: { actor_name: "Source two", location: { longitude: 5, latitude: 6 } },
+        target: { actor_name: "Target two", location: { longitude: 7, latitude: 8 } },
+      },
+    ]);
+
+    render(<WorldMap relationshipArcs={relationshipArcs} selectedRelationshipId="relationship-2" />);
+
+    await waitFor(() => expect(map.addSource).toHaveBeenCalledWith(
+      ACTOR_ARC_SOURCE_ID,
+      expect.objectContaining({ data: relationshipArcs }),
+    ));
+    expect(map.addSource).toHaveBeenCalledWith(
+      ACTOR_ENDPOINT_SOURCE_ID,
+      expect.objectContaining({ type: "geojson" }),
+    );
+    expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({
+      id: ACTOR_ARC_LAYER_ID,
+      type: "line",
+      source: ACTOR_ARC_SOURCE_ID,
+      paint: expect.objectContaining({
+        "line-opacity": ["case", ["==", ["get", "relationshipId"], "relationship-2"], 1, 0.24],
+      }),
+    }));
+    expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({
+      id: ACTOR_ENDPOINT_LAYER_ID,
+      type: "circle",
+      source: ACTOR_ENDPOINT_SOURCE_ID,
+    }));
+  });
+
+  it("uses only the validated arc endpoints as the selected event's actor markers", () => {
+    const arcs = buildRelationshipArcs([{
+      id: "relationship-1",
+      evidence_quote: "Evidence.",
+      source: { actor_name: "Source actor", location: { longitude: 106.8456, latitude: -6.2088 } },
+      target: { actor_name: "Target actor", location: { longitude: 120.9842, latitude: 14.5995 } },
+    }]);
+
+    expect(buildRelationshipEndpoints(arcs).features).toEqual([
+      expect.objectContaining({
+        geometry: { type: "Point", coordinates: [106.8456, -6.2088] },
+        properties: expect.objectContaining({ relationshipId: "relationship-1", role: "source", actorName: "Source actor" }),
+      }),
+      expect.objectContaining({
+        geometry: { type: "Point", coordinates: [120.9842, 14.5995] },
+        properties: expect.objectContaining({ relationshipId: "relationship-1", role: "target", actorName: "Target actor" }),
+      }),
+    ]);
   });
 
   it("explains when the local map package is unavailable", () => {

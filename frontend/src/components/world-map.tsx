@@ -15,6 +15,10 @@ export const MAP_UNAVAILABLE_MESSAGE = "Map package is not installed.";
 export const EVENT_PIN_SOURCE_ID = "event-pins";
 export const EVENT_PIN_LAYER_ID = "event-pins";
 export const EVENT_PIN_HALO_LAYER_ID = "event-pin-halo";
+export const ACTOR_ARC_SOURCE_ID = "actor-relationship-arcs";
+export const ACTOR_ARC_LAYER_ID = "actor-relationship-arcs";
+export const ACTOR_ENDPOINT_SOURCE_ID = "actor-relationship-endpoints";
+export const ACTOR_ENDPOINT_LAYER_ID = "actor-relationship-endpoints";
 
 // Distinct pin color for a pipeline exception (dashboard_status: hidden), so a cluster of pins
 // is honest about which events are fully validated versus retained with caveats -- see
@@ -58,8 +62,101 @@ export type EventPinCluster = {
   locationLabel: string;
 };
 
+export type RelationshipArcInput = {
+  id: string;
+  evidence_quote: string;
+  source: {
+    actor_name: string;
+    location: { longitude: number; latitude: number };
+  };
+  target: {
+    actor_name: string;
+    location: { longitude: number; latitude: number };
+  };
+};
+
+export type RelationshipArcFeatureCollection = {
+  type: "FeatureCollection";
+  features: {
+    type: "Feature";
+    geometry: { type: "LineString"; coordinates: [number, number][] };
+    properties: {
+      relationshipId: string;
+      sourceName: string;
+      targetName: string;
+      evidenceQuote: string;
+    };
+  }[];
+};
+
+export type RelationshipEndpointFeatureCollection = {
+  type: "FeatureCollection";
+  features: {
+    type: "Feature";
+    geometry: { type: "Point"; coordinates: [number, number] };
+    properties: {
+      relationshipId: string;
+      role: "source" | "target";
+      actorName: string;
+    };
+  }[];
+};
+
+export function buildRelationshipArcs(
+  relationships: RelationshipArcInput[],
+): RelationshipArcFeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: relationships.map((relationship) => ({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: [
+          [relationship.source.location.longitude, relationship.source.location.latitude],
+          [relationship.target.location.longitude, relationship.target.location.latitude],
+        ],
+      },
+      properties: {
+        relationshipId: relationship.id,
+        sourceName: relationship.source.actor_name,
+        targetName: relationship.target.actor_name,
+        evidenceQuote: relationship.evidence_quote,
+      },
+    })),
+  };
+}
+
+export function buildRelationshipEndpoints(
+  relationshipArcs: RelationshipArcFeatureCollection,
+): RelationshipEndpointFeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: relationshipArcs.features.flatMap((arc) => [
+      {
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: arc.geometry.coordinates[0] },
+        properties: {
+          relationshipId: arc.properties.relationshipId,
+          role: "source" as const,
+          actorName: arc.properties.sourceName,
+        },
+      },
+      {
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: arc.geometry.coordinates[1] },
+        properties: {
+          relationshipId: arc.properties.relationshipId,
+          role: "target" as const,
+          actorName: arc.properties.targetName,
+        },
+      },
+    ]),
+  };
+}
+
 const EMPTY_EVENT_PINS: EventPinFeatureCollection = { type: "FeatureCollection", features: [] };
 const EMPTY_CLUSTERS: EventPinCluster[] = [];
+const EMPTY_RELATIONSHIP_ARCS: RelationshipArcFeatureCollection = { type: "FeatureCollection", features: [] };
 
 export type MapProjectionMode = "globe" | "flat" | "unavailable";
 
@@ -116,6 +213,100 @@ function applySelectedPinPaint(
   map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-stroke-width", selectedPaintValue(selectedEventId, 2, 1));
 }
 
+function arcOpacity(selectedRelationshipId: string | undefined): NumericPaintValue {
+  if (!selectedRelationshipId) return 0.78;
+  return [
+    "case",
+    ["==", ["get", "relationshipId"], selectedRelationshipId],
+    1,
+    0.24,
+  ];
+}
+
+function arcColor(selectedRelationshipId: string | undefined): string | ExpressionSpecification {
+  if (!selectedRelationshipId) return "#f2a93b";
+  return [
+    "case",
+    ["==", ["get", "relationshipId"], selectedRelationshipId],
+    "#ffe0a3",
+    "#8f6a36",
+  ];
+}
+
+function applySelectedArcPaint(map: maplibregl.Map, selectedRelationshipId: string | undefined) {
+  if (!map.getLayer(ACTOR_ARC_LAYER_ID)) return;
+  map.setPaintProperty(ACTOR_ARC_LAYER_ID, "line-opacity", arcOpacity(selectedRelationshipId));
+  map.setPaintProperty(ACTOR_ARC_LAYER_ID, "line-color", arcColor(selectedRelationshipId));
+}
+
+function syncRelationshipArcs(
+  map: maplibregl.Map,
+  relationshipArcs: RelationshipArcFeatureCollection,
+  selectedRelationshipId: string | undefined,
+  arcsWereActive: boolean,
+): boolean {
+  const source = map.getSource(ACTOR_ARC_SOURCE_ID) as {
+    setData: (data: RelationshipArcFeatureCollection) => void;
+  } | undefined;
+  if (relationshipArcs.features.length === 0) {
+    if (!arcsWereActive) return false;
+    if (map.getLayer(ACTOR_ARC_LAYER_ID)) map.removeLayer(ACTOR_ARC_LAYER_ID);
+    map.removeSource(ACTOR_ARC_SOURCE_ID);
+    const endpointSource = map.getSource(ACTOR_ENDPOINT_SOURCE_ID);
+    if (endpointSource) {
+      if (map.getLayer(ACTOR_ENDPOINT_LAYER_ID)) map.removeLayer(ACTOR_ENDPOINT_LAYER_ID);
+      map.removeSource(ACTOR_ENDPOINT_SOURCE_ID);
+    }
+    return false;
+  }
+  if (source) {
+    source.setData(relationshipArcs);
+  } else {
+    map.addSource(ACTOR_ARC_SOURCE_ID, { type: "geojson", data: relationshipArcs as never });
+  }
+  if (!map.getLayer(ACTOR_ARC_LAYER_ID)) {
+    map.addLayer({
+      id: ACTOR_ARC_LAYER_ID,
+      type: "line",
+      source: ACTOR_ARC_SOURCE_ID,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": arcColor(selectedRelationshipId),
+        "line-opacity": arcOpacity(selectedRelationshipId),
+        "line-width": 2.25,
+      },
+    });
+  } else {
+    applySelectedArcPaint(map, selectedRelationshipId);
+  }
+  const relationshipEndpoints = buildRelationshipEndpoints(relationshipArcs);
+  const endpointSource = map.getSource(ACTOR_ENDPOINT_SOURCE_ID) as {
+    setData: (data: RelationshipEndpointFeatureCollection) => void;
+  } | undefined;
+  if (endpointSource) {
+    endpointSource.setData(relationshipEndpoints);
+  } else {
+    map.addSource(ACTOR_ENDPOINT_SOURCE_ID, { type: "geojson", data: relationshipEndpoints as never });
+  }
+  if (!map.getLayer(ACTOR_ENDPOINT_LAYER_ID)) {
+    map.addLayer({
+      id: ACTOR_ENDPOINT_LAYER_ID,
+      type: "circle",
+      source: ACTOR_ENDPOINT_SOURCE_ID,
+      paint: {
+        "circle-color": ["case", ["==", ["get", "role"], "source"], "#ffd17a", "#9ed4e3"],
+        "circle-opacity": arcOpacity(selectedRelationshipId),
+        "circle-radius": 5.5,
+        "circle-stroke-color": "#030506",
+        "circle-stroke-width": 1.25,
+      },
+    });
+  } else if (map.getLayer(ACTOR_ENDPOINT_LAYER_ID)) {
+    map.setPaintProperty(ACTOR_ENDPOINT_LAYER_ID, "circle-opacity", arcOpacity(selectedRelationshipId));
+  }
+  return true;
+}
+
 export const worldMapStyle: StyleSpecification = {
   version: 8,
   sources: {
@@ -154,7 +345,9 @@ type WorldMapProps = {
   onClusterSelect?: (cluster: EventPinCluster) => void;
   onFeatureSelect?: (eventId: string) => void;
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
+  relationshipArcs?: RelationshipArcFeatureCollection;
   selectedEventId?: string;
+  selectedRelationshipId?: string;
 };
 
 function syncClusterMarkers(
@@ -184,7 +377,9 @@ export function WorldMap({
   onClusterSelect,
   onFeatureSelect,
   onProjectionModeChange,
+  relationshipArcs = EMPTY_RELATIONSHIP_ARCS,
   selectedEventId,
+  selectedRelationshipId,
 }: WorldMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -196,6 +391,9 @@ export function WorldMap({
   const updatePinOcclusionRef = useRef<() => void>(() => {});
   const projectionModeChangeRef = useRef(onProjectionModeChange);
   const selectedEventRef = useRef(selectedEventId);
+  const relationshipArcsRef = useRef(relationshipArcs);
+  const selectedRelationshipRef = useRef(selectedRelationshipId);
+  const relationshipArcsActiveRef = useRef(false);
   const selectionRef = useRef(onFeatureSelect);
   const mapLoaded = useRef(false);
   const pinPulseExpanded = useRef(false);
@@ -295,6 +493,12 @@ export function WorldMap({
         setFlatFallback(true);
         projectionModeChangeRef.current?.("flat");
       }
+      relationshipArcsActiveRef.current = syncRelationshipArcs(
+        map,
+        relationshipArcsRef.current,
+        selectedRelationshipRef.current,
+        relationshipArcsActiveRef.current,
+      );
       map.addSource(EVENT_PIN_SOURCE_ID, { type: "geojson", data: pinsRef.current as never });
       map.addLayer({
         id: EVENT_PIN_HALO_LAYER_ID,
@@ -404,6 +608,7 @@ export function WorldMap({
       clusterMarkersRef.current.forEach((marker) => marker.remove());
       clusterMarkersRef.current = [];
       mapLoaded.current = false;
+      relationshipArcsActiveRef.current = false;
       pinPulseExpanded.current = false;
       mapRef.current = null;
       map.remove();
@@ -416,14 +621,31 @@ export function WorldMap({
     clusterSelectionRef.current = onClusterSelect;
     projectionModeChangeRef.current = onProjectionModeChange;
     selectedEventRef.current = selectedEventId;
+    relationshipArcsRef.current = relationshipArcs;
+    selectedRelationshipRef.current = selectedRelationshipId;
     selectionRef.current = onFeatureSelect;
     if (!mapLoaded.current || !mapRef.current) return;
     const source = mapRef.current.getSource(EVENT_PIN_SOURCE_ID) as { setData: (data: EventPinFeatureCollection) => void } | undefined;
     source?.setData(geojson);
+    relationshipArcsActiveRef.current = syncRelationshipArcs(
+      mapRef.current,
+      relationshipArcs,
+      selectedRelationshipId,
+      relationshipArcsActiveRef.current,
+    );
     applySelectedPinPaint(mapRef.current, selectedEventId, pinPulseExpanded.current);
     syncClusterMarkers(mapRef.current, clusters, clusterMarkersRef, clusterSelectionRef);
     updatePinOcclusionRef.current();
-  }, [clusters, geojson, onClusterSelect, onFeatureSelect, onProjectionModeChange, selectedEventId]);
+  }, [
+    clusters,
+    geojson,
+    onClusterSelect,
+    onFeatureSelect,
+    onProjectionModeChange,
+    relationshipArcs,
+    selectedEventId,
+    selectedRelationshipId,
+  ]);
 
   if (unavailable) {
     return <p role="alert">{MAP_UNAVAILABLE_MESSAGE}</p>;

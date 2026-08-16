@@ -1154,30 +1154,33 @@ body {
 .issues-event-item { padding: 0.68rem 0.75rem; font: 0.84rem var(--font-sans); line-height: 1.4; }
 .issues-event-detail { margin: 0.95rem 0 0; padding-top: 0.95rem; border-top: 1px solid var(--border); }
 .issues-event-detail .evidence-quote { margin: 0.5rem 0 0; font-size: 0.92rem; }
-.issues-globe-slot {
-  display: grid;
-  place-content: center;
-  min-height: 18rem;
-  padding: 1.25rem;
-  border: 1px dashed var(--border-bright);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(242, 169, 59, 0.09), transparent 39%),
-    #05080a;
-  color: var(--text-muted);
-  text-align: center;
-}
-.issues-globe-slot p { margin: 0; color: #d9e1e4; font: 650 0.72rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
-.issues-globe-slot span { margin-top: 0.55rem; font-size: 0.86rem; line-height: 1.5; }
+.issues-globe { min-height: 18rem; }
+.issues-globe .world-map { min-height: 18rem; margin-top: 0; }
 .issues-map-empty,
 .issues-empty-state { margin: 0; color: var(--text-muted); line-height: 1.6; }
 .issues-map-empty { display: grid; place-items: center; min-height: 18rem; border: 1px dashed var(--border); text-align: center; }
+.relationship-panel { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.relationship-panel > .field-label { margin: 0 0 0.55rem; }
+.relationship-list { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
+.relationship-list-item { border: 1px solid var(--border); background: #06090b; }
+.relationship-select { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); width: 100%; padding: 0.65rem 0.7rem; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; text-align: left; }
+.relationship-select[aria-pressed="true"] { background: linear-gradient(90deg, rgba(242, 169, 59, 0.15), rgba(242, 169, 59, 0.025)); }
+.relationship-select:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.relationship-arrow { padding: 0 0.45rem; color: var(--text-muted); }
+.relationship-source { color: #ffd17a; }
+.relationship-target { color: #9ed4e3; }
+.relationship-details { padding: 0.6rem 0.7rem; font-size: 0.8rem; line-height: 1.45; }
+.relationship-details p { margin: 0.2rem 0; color: var(--text-muted); }
+.relationship-role { font: 650 0.64rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.relationship-details .evidence-quote { margin: 0.6rem 0 0; font-size: 0.82rem; }
 
 @media (max-width: 64rem) {
   .issues-workspace-layout,
   .issues-exploration-grid { grid-template-columns: 1fr; }
   .issues-list-panel { position: static; }
-  .issues-globe-slot,
+  .issues-globe,
   .issues-map-empty { min-height: 14rem; }
+  .issues-globe .world-map { min-height: 14rem; }
 }
 
 /* Settings: connection controls stay together; populated type rows look editable. */
