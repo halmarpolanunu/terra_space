@@ -1,11 +1,9 @@
-import { Suspense } from "react";
-
+import { loadInitialIssueWorkspace } from "@/app/issues/issues-initial-data";
 import { IssuesWorkspace } from "@/app/issues/issues-workspace";
 
-export default function IssuesPage() {
-  return (
-    <Suspense fallback={<main className="main-content"><h1>Issues</h1><p>Loading Issues…</p></main>}>
-      <IssuesWorkspace />
-    </Suspense>
+export default async function IssuesPage() {
+  const initialIssueWorkspace = await loadInitialIssueWorkspace(
+    process.env.BACKEND_URL ?? "http://backend:8000",
   );
+  return <IssuesWorkspace {...initialIssueWorkspace} />;
 }

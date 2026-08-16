@@ -95,6 +95,26 @@ function makeRelationship(overrides: Partial<ActorRelationshipRead> = {}): Actor
 describe("IssuesWorkspace", () => {
   afterEach(() => vi.clearAllMocks());
 
+  it("renders a server-provided validated Issue and its proven relationship map before client loading", () => {
+    const issue = makeDetail();
+    const event = makeEventDetail({ relationships: [makeRelationship()] });
+
+    render(
+      <IssuesWorkspace
+        initialEvent={event}
+        initialIssue={issue}
+        initialIssues={[issue]}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Border security discussion" })).toBeVisible();
+    expect(screen.getByTestId("issues-relationship-map")).toHaveAttribute(
+      "data-relationship-ids",
+      "relationship-1",
+    );
+    expect(screen.queryByText("Loading valid Issues…")).not.toBeInTheDocument();
+  });
+
   it("selects the newest article-level Issue and sends only its events to the globe slot", async () => {
     const newest = makeIssue();
     const older = makeIssue({

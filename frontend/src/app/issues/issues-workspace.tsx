@@ -21,6 +21,12 @@ type IssueGlobeSlotProps = {
   selectedRelationshipId?: string;
 };
 
+type IssuesWorkspaceProps = {
+  initialIssues?: IssueListItem[];
+  initialIssue?: IssueDetail;
+  initialEvent?: IssueEventDetail;
+};
+
 /** Renders only locations that the selected event's validated relationships explicitly support. */
 export function IssueGlobeSlot({ event, selectedRelationshipId }: IssueGlobeSlotProps) {
   if (!event) {
@@ -47,19 +53,28 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "The validated Issue analysis could not be loaded.";
 }
 
-export function IssuesWorkspace() {
-  const [issues, setIssues] = useState<IssueListItem[]>([]);
-  const [selectedIssueId, setSelectedIssueId] = useState<string>();
-  const [selectedEventId, setSelectedEventId] = useState<string>();
+export function IssuesWorkspace({
+  initialIssues,
+  initialIssue,
+  initialEvent,
+}: IssuesWorkspaceProps) {
+  const [issues, setIssues] = useState<IssueListItem[]>(initialIssues ?? []);
+  const [selectedIssueId, setSelectedIssueId] = useState<string | undefined>(
+    initialIssue?.id ?? initialIssues?.[0]?.id,
+  );
+  const [selectedEventId, setSelectedEventId] = useState<string | undefined>(
+    initialEvent?.id ?? initialIssue?.events[0]?.id,
+  );
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<string>();
-  const [issue, setIssue] = useState<IssueDetail>();
-  const [event, setEvent] = useState<IssueEventDetail>();
-  const [loadingIssues, setLoadingIssues] = useState(true);
+  const [issue, setIssue] = useState<IssueDetail | undefined>(initialIssue);
+  const [event, setEvent] = useState<IssueEventDetail | undefined>(initialEvent);
+  const [loadingIssues, setLoadingIssues] = useState(initialIssues === undefined);
   const [error, setError] = useState<string>();
   const loadingIssue = Boolean(selectedIssueId && !issue && !error);
   const loadingEvent = Boolean(selectedIssueId && selectedEventId && !event && !error);
 
   useEffect(() => {
+    if (initialIssues !== undefined) return;
     let active = true;
     void listIssues()
       .then((nextIssues) => {
@@ -75,10 +90,11 @@ export function IssuesWorkspace() {
         if (active) setLoadingIssues(false);
       });
     return () => { active = false; };
-  }, []);
+  }, [initialIssues]);
 
   useEffect(() => {
     if (!selectedIssueId) return;
+    if (initialIssue?.id === selectedIssueId) return;
     let active = true;
     void getIssue(selectedIssueId)
       .then((nextIssue) => {
@@ -91,10 +107,11 @@ export function IssuesWorkspace() {
         if (active) setError(errorMessage(nextError));
       })
     return () => { active = false; };
-  }, [selectedIssueId]);
+  }, [initialIssue, selectedIssueId]);
 
   useEffect(() => {
     if (!selectedIssueId || !selectedEventId) return;
+    if (initialIssue?.id === selectedIssueId && initialEvent?.id === selectedEventId) return;
     let active = true;
     void getIssueEvent(selectedIssueId, selectedEventId)
       .then((nextEvent) => {
@@ -107,7 +124,7 @@ export function IssuesWorkspace() {
         if (active) setError(errorMessage(nextError));
       })
     return () => { active = false; };
-  }, [selectedEventId, selectedIssueId]);
+  }, [initialEvent, initialIssue, selectedEventId, selectedIssueId]);
 
   function selectIssue(issueId: string) {
     if (issueId === selectedIssueId) return;
