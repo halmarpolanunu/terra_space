@@ -53,6 +53,7 @@ count below. Do not place exports in Git because they can contain credential ref
              "source": {
                "name": "source actor",
                "country_iso3": "ISO alpha-3 country code",
+               "country_name": "country wording explicitly stated in the article",
                "admin1": "optional explicitly stated province/state",
                "city_regency": "optional explicitly stated city/regency",
                "evidence_quote": "exact source quote"
@@ -60,6 +61,7 @@ count below. Do not place exports in Git because they can contain credential ref
              "target": {
                "name": "target actor",
                "country_iso3": "ISO alpha-3 country code",
+               "country_name": "country wording explicitly stated in the article",
                "admin1": "optional explicitly stated province/state",
                "city_regency": "optional explicitly stated city/regency",
                "evidence_quote": "exact source quote"
@@ -82,7 +84,8 @@ count below. Do not place exports in Git because they can contain credential ref
 
 ## Open contract decision
 
-The guarded RPC resolves coordinates only through exact matches in the existing local
+The guarded RPC requires each actor name, country wording, and every supplied admin1/city field
+to appear in that endpoint's exact evidence quote. It resolves coordinates only through exact matches in the existing local
 `terra_space_phase3_location_gazetteer`: city/regency first, then admin1, then country. Never
 send model-generated coordinates or a guessed capital. If either endpoint has no exact local
 match, the Issue and event remain valid but the relationship is omitted, so no arc is drawn.

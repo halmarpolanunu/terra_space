@@ -74,7 +74,8 @@ begin
   insert into public.terra_space_issue_v2_runs (id, source_id, status, stage, processed_at)
   values (valid_run_id, source_id, 'succeeded', 'complete', now());
   insert into public.terra_space_issue_v2_runs (id, source_id, status, stage, reason, processed_at)
-  values (failed_run_id, source_id, 'failed', 'validation', 'Evidence quote was not grounded.', now());
+  values (failed_run_id, source_id, 'failed', 'validation', 'Evidence quote was not grounded.',
+          now() - interval '1 minute');
 
   insert into public.terra_space_issue_v2_issues
     (id, run_id, source_id, label, summary, evidence_quote, validated_at)
