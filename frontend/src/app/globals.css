@@ -1137,7 +1137,7 @@ body {
   line-height: 1.4;
   text-transform: uppercase;
 }
-.issues-detail-column { display: grid; gap: 1.15rem; min-width: 0; }
+.issues-globe-column { min-width: 0; min-height: 38rem; }
 .issues-detail-panel h2 { margin: 0.35rem 0 0; color: #eef3f5; font-size: clamp(1.35rem, 2.2vw, 1.9rem); line-height: 1.15; }
 .issues-source-label { margin: 0; }
 .issues-source-title { margin: 0.28rem 0 1rem; color: #d9e1e4; font-size: 0.9rem; }
@@ -1156,6 +1156,8 @@ body {
 .issues-event-detail .evidence-quote { margin: 0.5rem 0 0; font-size: 0.92rem; }
 .issues-globe { min-height: 18rem; }
 .issues-globe .world-map { min-height: 18rem; margin-top: 0; }
+.issues-globe-only,
+.issues-globe-only .world-map { min-height: 38rem; height: 100%; }
 .issues-map-empty,
 .issues-empty-state { margin: 0; color: var(--text-muted); line-height: 1.6; }
 .issues-map-empty { display: grid; place-items: center; min-height: 18rem; border: 1px dashed var(--border); text-align: center; }
@@ -1181,6 +1183,9 @@ body {
   .issues-globe,
   .issues-map-empty { min-height: 14rem; }
   .issues-globe .world-map { min-height: 14rem; }
+  .issues-globe-column,
+  .issues-globe-only,
+  .issues-globe-only .world-map { min-height: 24rem; }
 }
 
 /* Settings: connection controls stay together; populated type rows look editable. */

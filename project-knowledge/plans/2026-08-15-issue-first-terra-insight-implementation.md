@@ -24,6 +24,24 @@ articles or remove the existing fallback.
 5. Added optional WorldMap actor-arc layers. The Issues screen displays only selected-event,
    evidence-backed endpoints and arcs; it never invents an event location or map pin.
 
+## 2026-08-16 layout revision
+
+The owner removed the selected-Issue card, related-events panel, relationship text, and separate
+map frame after viewing the safe preview. The Issues page now has only two surfaces: the article
+Issue list on the left and a globe on the right. Selecting an Issue displays every valid,
+evidence-backed actor arc from all of that Issue's events on the globe. No event locations or
+arcs are invented.
+
+### Implementation task: simplify the Issues workspace
+
+- [ ] Write a focused frontend test proving that a selected Issue supplies all of its valid event
+  relationships to the single globe surface and that the removed cards are absent.
+- [ ] Run the test to confirm the current layout fails the new expectation.
+- [ ] Replace the detail/event/map panel structure in `frontend/src/app/issues/issues-workspace.tsx`
+  with the Issue list plus a single `WorldMap`; retain the current data API and valid-relationship
+  filtering.
+- [ ] Run the focused test, frontend lint, and production build; visually check the safe preview.
+
 # Verification
 
 - Backend focused suite: 25 passed.

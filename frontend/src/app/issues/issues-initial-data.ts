@@ -3,7 +3,7 @@ import type { IssueDetail, IssueEventDetail, IssueListItem } from "@/lib/issues-
 type InitialIssueWorkspace = {
   initialIssues: IssueListItem[];
   initialIssue?: IssueDetail;
-  initialEvent?: IssueEventDetail;
+  initialEvents?: IssueEventDetail[];
 };
 
 async function getJson<T>(apiRoot: string, path: string): Promise<T | undefined> {
@@ -25,12 +25,13 @@ export async function loadInitialIssueWorkspace(apiRoot: string): Promise<Initia
   if (!firstIssueId) return { initialIssues };
 
   const initialIssue = await getJson<IssueDetail>(apiRoot, `/${encodeURIComponent(firstIssueId)}`);
-  const firstEventId = initialIssue?.events[0]?.id;
-  if (!initialIssue || !firstEventId) return { initialIssues, initialIssue };
+  if (!initialIssue) return { initialIssues };
 
-  const initialEvent = await getJson<IssueEventDetail>(
-    apiRoot,
-    `/${encodeURIComponent(firstIssueId)}/events/${encodeURIComponent(firstEventId)}`,
+  const initialEvents = await Promise.all(
+    initialIssue.events.map((event) => getJson<IssueEventDetail>(
+      apiRoot,
+      `/${encodeURIComponent(firstIssueId)}/events/${encodeURIComponent(event.id)}`,
+    )),
   );
-  return { initialIssues, initialIssue, initialEvent };
+  return { initialIssues, initialIssue, initialEvents: initialEvents.filter((event): event is IssueEventDetail => Boolean(event)) };
 }

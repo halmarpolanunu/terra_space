@@ -6,45 +6,29 @@ import { AppShell } from "@/components/app-shell";
 import { FramedPanel } from "@/components/framed-panel";
 import { PageHeader } from "@/components/page-header";
 import { buildRelationshipArcs, WorldMap } from "@/components/world-map";
-import { RelationshipPanel } from "@/app/issues/relationship-panel";
 import {
   getIssue,
   getIssueEvent,
   listIssues,
+  type ActorRelationshipRead,
   type IssueDetail,
   type IssueEventDetail,
   type IssueListItem,
 } from "@/lib/issues-api";
 
-type IssueGlobeSlotProps = {
-  event?: IssueEventDetail;
-  selectedRelationshipId?: string;
-};
+type IssueGlobeSlotProps = { relationships: ActorRelationshipRead[] };
 
 type IssuesWorkspaceProps = {
   initialIssues?: IssueListItem[];
   initialIssue?: IssueDetail;
-  initialEvent?: IssueEventDetail;
+  initialEvents?: IssueEventDetail[];
 };
 
-/** Renders only locations that the selected event's validated relationships explicitly support. */
-export function IssueGlobeSlot({ event, selectedRelationshipId }: IssueGlobeSlotProps) {
-  if (!event) {
-    return <p className="issues-map-empty">Select a related event to see proven actor locations.</p>;
-  }
-  if (event.relationships.length === 0) {
-    return <p className="issues-map-empty">No proven actor-to-actor locations for this event</p>;
-  }
+/** Shows every source-grounded actor arc from the selected Issue without inventing event locations. */
+export function IssueGlobeSlot({ relationships }: IssueGlobeSlotProps) {
   return (
-    <div
-      aria-label="Proven actor relationship map"
-      className="issues-globe"
-      data-selected-event-id={event.id}
-    >
-      <WorldMap
-        relationshipArcs={buildRelationshipArcs(event.relationships)}
-        selectedRelationshipId={selectedRelationshipId}
-      />
+    <div aria-label="Proven actor relationship map" className="issues-globe issues-globe-only">
+      <WorldMap relationshipArcs={buildRelationshipArcs(relationships)} />
     </div>
   );
 }
@@ -53,25 +37,18 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "The validated Issue analysis could not be loaded.";
 }
 
-export function IssuesWorkspace({
-  initialIssues,
-  initialIssue,
-  initialEvent,
-}: IssuesWorkspaceProps) {
+export function IssuesWorkspace({ initialIssues, initialIssue, initialEvents }: IssuesWorkspaceProps) {
   const [issues, setIssues] = useState<IssueListItem[]>(initialIssues ?? []);
   const [selectedIssueId, setSelectedIssueId] = useState<string | undefined>(
     initialIssue?.id ?? initialIssues?.[0]?.id,
   );
-  const [selectedEventId, setSelectedEventId] = useState<string | undefined>(
-    initialEvent?.id ?? initialIssue?.events[0]?.id,
-  );
-  const [selectedRelationshipId, setSelectedRelationshipId] = useState<string>();
   const [issue, setIssue] = useState<IssueDetail | undefined>(initialIssue);
-  const [event, setEvent] = useState<IssueEventDetail | undefined>(initialEvent);
+  const [eventDetails, setEventDetails] = useState<IssueEventDetail[]>(initialEvents ?? []);
   const [loadingIssues, setLoadingIssues] = useState(initialIssues === undefined);
   const [error, setError] = useState<string>();
   const loadingIssue = Boolean(selectedIssueId && !issue && !error);
-  const loadingEvent = Boolean(selectedIssueId && selectedEventId && !event && !error);
+  const loadingRelationships = Boolean(issue && eventDetails.length < issue.events.length && !error);
+  const relationships = eventDetails.flatMap((event) => event.relationships);
 
   useEffect(() => {
     if (initialIssues !== undefined) return;
@@ -94,58 +71,30 @@ export function IssuesWorkspace({
 
   useEffect(() => {
     if (!selectedIssueId) return;
-    if (initialIssue?.id === selectedIssueId) return;
+    if (initialIssue?.id === selectedIssueId && initialEvents !== undefined) return;
     let active = true;
     void getIssue(selectedIssueId)
-      .then((nextIssue) => {
+      .then(async (nextIssue) => {
         if (!active) return;
         setIssue(nextIssue);
-        setSelectedEventId(nextIssue.events[0]?.id);
         setError(undefined);
+        const nextEvents = await Promise.all(
+          nextIssue.events.map((candidate) => getIssueEvent(selectedIssueId, candidate.id)),
+        );
+        if (active) setEventDetails(nextEvents);
       })
       .catch((nextError: unknown) => {
         if (active) setError(errorMessage(nextError));
-      })
+      });
     return () => { active = false; };
-  }, [initialIssue, selectedIssueId]);
-
-  useEffect(() => {
-    if (!selectedIssueId || !selectedEventId) return;
-    if (initialIssue?.id === selectedIssueId && initialEvent?.id === selectedEventId) return;
-    let active = true;
-    void getIssueEvent(selectedIssueId, selectedEventId)
-      .then((nextEvent) => {
-        if (!active) return;
-        setEvent(nextEvent);
-        setSelectedRelationshipId(undefined);
-        setError(undefined);
-      })
-      .catch((nextError: unknown) => {
-        if (active) setError(errorMessage(nextError));
-      })
-    return () => { active = false; };
-  }, [initialEvent, initialIssue, selectedEventId, selectedIssueId]);
+  }, [initialEvents, initialIssue, selectedIssueId]);
 
   function selectIssue(issueId: string) {
     if (issueId === selectedIssueId) return;
     setSelectedIssueId(issueId);
-    setSelectedEventId(undefined);
-    setSelectedRelationshipId(undefined);
     setIssue(undefined);
-    setEvent(undefined);
+    setEventDetails([]);
     setError(undefined);
-  }
-
-  function selectEvent(eventId: string) {
-    if (eventId === selectedEventId) return;
-    setSelectedEventId(eventId);
-    setSelectedRelationshipId(undefined);
-    setEvent(undefined);
-    setError(undefined);
-  }
-
-  function selectRelationship(relationshipId: string) {
-    setSelectedRelationshipId(relationshipId);
   }
 
   return (
@@ -182,62 +131,8 @@ export function IssuesWorkspace({
               </ul>
             )}
           </FramedPanel>
-          <div className="issues-detail-column">
-            {loadingIssue ? (
-              <FramedPanel className="issues-detail-panel" title="Selected Issue"><p className="issues-empty-state">Loading selected Issue…</p></FramedPanel>
-            ) : issue ? (
-              <>
-                <FramedPanel className="issues-detail-panel" meta="Validated" title="Selected Issue">
-                  <p className="issues-source-label">Source article</p>
-                  <p className="issues-source-title">{issue.source_title}</p>
-                  <h2>{issue.label}</h2>
-                  <p className="issues-summary">{issue.summary}</p>
-                  <blockquote className="evidence-quote">{issue.evidence_quote}</blockquote>
-                </FramedPanel>
-                <div className="issues-exploration-grid">
-                  <FramedPanel className="issues-events-panel" meta={`${issue.events.length} event${issue.events.length === 1 ? "" : "s"}`} title="Related events">
-                    {issue.events.length === 0 ? (
-                      <p className="issues-empty-state">No mapped events yet</p>
-                    ) : (
-                      <ul className="issues-events-list">
-                        {issue.events.map((candidate) => (
-                          <li key={candidate.id}>
-                            <button
-                              aria-pressed={candidate.id === selectedEventId}
-                              className="issues-event-item"
-                              onClick={() => selectEvent(candidate.id)}
-                              type="button"
-                            >
-                              {candidate.title}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {loadingEvent ? <p className="issues-event-detail">Loading event evidence…</p> : event && (
-                      <div className="issues-event-detail">
-                        <p className="field-label">Event evidence</p>
-                        <blockquote className="evidence-quote">{event.evidence_quote}</blockquote>
-                        <RelationshipPanel
-                          onSelect={selectRelationship}
-                          relationships={event.relationships}
-                          selectedRelationshipId={selectedRelationshipId}
-                        />
-                      </div>
-                    )}
-                  </FramedPanel>
-                  <FramedPanel className="issues-map-panel" title="Event map">
-                    {loadingEvent ? (
-                      <p className="issues-map-empty">Loading proven actor locations…</p>
-                    ) : (
-                      <IssueGlobeSlot event={event} selectedRelationshipId={selectedRelationshipId} />
-                    )}
-                  </FramedPanel>
-                </div>
-              </>
-            ) : !loadingIssues && !error ? (
-              <FramedPanel className="issues-detail-panel" title="Selected Issue"><p className="issues-empty-state">Select a validated Issue to explore its source article and related events.</p></FramedPanel>
-            ) : null}
+          <div aria-busy={loadingIssue || loadingRelationships} className="issues-globe-column">
+            <IssueGlobeSlot relationships={relationships} />
           </div>
         </div>
       </section>
