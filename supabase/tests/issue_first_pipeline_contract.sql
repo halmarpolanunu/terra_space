@@ -340,30 +340,30 @@ begin
     source_domain, source_url, author, collection_source, processing_status
   ) values (
     v_source_id, 'Country grounding source', '2026-08-16',
-    'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.',
-    'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.',
+    'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.',
+    'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.',
     'example.test', 'https://example.test/country-grounding', 'Test author', 'test', 'completed'
   );
   v_run_id := public.terra_space_issue_v2_record_run(jsonb_build_object(
     'source_id', v_source_id::text,
     'main_issue', jsonb_build_object(
       'label', 'Assistance announcement', 'summary', 'Summary.',
-      'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.'
+      'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.'
     ),
     'events', jsonb_build_array(jsonb_build_object(
       'title', 'Assistance announced',
-      'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.',
+      'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.',
       'relationships', jsonb_build_array(jsonb_build_object(
-        'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.',
+        'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.',
         'source', jsonb_build_object(
           'name', 'Ministry of Defence', 'country_iso3', 'IDN', 'country_name', 'Morocco',
           'city_regency', 'Jakarta',
-          'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.'
+          'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.'
         ),
         'target', jsonb_build_object(
           'name', 'government', 'country_iso3', 'IDN', 'country_name', 'Indonesia',
           'city_regency', 'Bandung',
-          'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.'
+          'evidence_quote', 'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.'
         )
       ))
     ))
