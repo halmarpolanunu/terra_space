@@ -10,14 +10,20 @@ status: active
 
 ## Latest update
 
-**2026-08-16: the reduced Issue-first Terra Insight release is implemented and verified on its
-separate branch.** It adds a parallel validated Issue pipeline contract, GET-only Issue API,
-standalone `/issues` screen, and evidence-backed actor arcs. The current application, routes,
-pipeline, and database data are unchanged as the fallback. No real articles were reprocessed and
-no live database migration was applied. See [Issue-first Implementation](plans/2026-08-15-issue-first-terra-insight-implementation.md).
+**2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
+`codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel
+validated Issue pipeline contract, GET-only Issue API, standalone `/issues` screen, and
+evidence-backed actor arcs. The owner simplified the preview to an Issue list on the left and a
+single globe on the right: selecting an Issue displays all of its valid actor arcs together. The
+article card, event list, evidence/relationship text, and separate map frame were removed.
 
-**Next action:** the owner views the new Issues screen using safe test data. Only after owner
-approval should live migration/reprocessing and any retirement of the current version be planned.
+The current application, routes, pipeline, and database data remain unchanged as the fallback. No
+real articles were reprocessed and no live database migration was applied. Safe preview processes
+were stopped at the owner's request after review. See [Issue-first Implementation](plans/2026-08-15-issue-first-terra-insight-implementation.md).
+
+**Next action:** when the owner returns, decide whether to keep refining the safe preview or plan
+the owner-approved real local rollout. Do not apply the new migrations to the live local Supabase
+database, reprocess articles, or remove the current application without explicit owner approval.
 
 ## Current focus
 

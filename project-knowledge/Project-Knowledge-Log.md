@@ -17,6 +17,17 @@ status: active
 - Verification passed for focused backend tests (25), frontend tests (229), lint, production build,
   and disposable PostgreSQL schema/pipeline contracts.
 
+## 2026-08-16 - Owner simplified the Issue preview
+
+- The owner reviewed the safe `/issues` preview and kept only the article-level Issue list plus a
+  single globe. Removed the selected-article card, related-event list, relationship/evidence text,
+  and separate map panel.
+- Selecting an Issue now displays every valid, evidence-backed actor arc from all its events on
+  the globe. The screen does not invent event locations or arcs.
+- Verified after the revision: 228 frontend tests, lint, production build, and Project Knowledge
+  validation passed. The local preview, disposable database, local Supabase, and n8n services were
+  shut down at the owner's request; no project files or database data were deleted.
+
 ## 2026-08-11 - Full Terra Space Supabase application transition implemented; live cutover verification still owner-pending
 
 - Implemented the [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md)
