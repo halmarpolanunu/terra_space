@@ -15,12 +15,13 @@ create table if not exists public.terra_space_issue_v2_runs (
   prompt_version text,
   processed_at   timestamptz not null default now(),
   created_at     timestamptz not null default now(),
-  check (status = 'succeeded' or nullif(btrim(coalesce(reason, '')), '') is not null)
+  check (status = 'succeeded' or nullif(btrim(coalesce(reason, '')), '') is not null),
+  unique (id, source_id)
 );
 
 create table if not exists public.terra_space_issue_v2_issues (
   id             uuid primary key default gen_random_uuid(),
-  run_id         uuid not null references public.terra_space_issue_v2_runs (id) on delete restrict,
+  run_id         uuid not null,
   source_id      uuid not null references public.terra_space_phase1_sources (id) on delete restrict,
   label          text not null check (btrim(label) <> ''),
   summary        text not null check (btrim(summary) <> ''),
@@ -28,7 +29,9 @@ create table if not exists public.terra_space_issue_v2_issues (
   validated_at   timestamptz,
   created_at     timestamptz not null default now(),
   unique (id, run_id),
-  unique (run_id, source_id)
+  unique (run_id, source_id),
+  foreign key (run_id, source_id)
+    references public.terra_space_issue_v2_runs (id, source_id) on delete restrict
 );
 
 create table if not exists public.terra_space_issue_v2_events (
@@ -103,6 +106,60 @@ deferrable initially immediate
 for each row
 when (new.validated_at is not null)
 execute function public.terra_space_issue_v2_require_complete_relationship();
+
+-- Once a relationship is validated, changing any endpoint must not be able to leave it with only
+-- one side. The trigger checks both the old and new relationship when an endpoint is moved.
+create or replace function public.terra_space_issue_v2_keep_validated_relationships_complete()
+returns trigger
+language plpgsql
+as $$
+declare
+  relationship_ids uuid[];
+  checked_relationship_id uuid;
+  relationship_validated_at timestamptz;
+  source_count integer;
+  target_count integer;
+begin
+  if tg_op = 'INSERT' then
+    relationship_ids := array[new.relationship_id];
+  elsif tg_op = 'DELETE' then
+    relationship_ids := array[old.relationship_id];
+  else
+    relationship_ids := array[old.relationship_id, new.relationship_id];
+  end if;
+
+  foreach checked_relationship_id in array relationship_ids loop
+    select validated_at
+      into relationship_validated_at
+      from public.terra_space_issue_v2_relationships
+     where id = checked_relationship_id;
+    if relationship_validated_at is not null then
+      select count(*) filter (where role = 'source'),
+             count(*) filter (where role = 'target')
+        into source_count, target_count
+        from public.terra_space_issue_v2_relationship_endpoints
+       where relationship_id = checked_relationship_id;
+      if source_count <> 1 or target_count <> 1 then
+        raise exception 'Endpoint changes cannot leave a validated actor relationship incomplete.'
+          using errcode = '23514';
+      end if;
+    end if;
+  end loop;
+
+  if tg_op = 'DELETE' then
+    return old;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists terra_space_issue_v2_endpoints_keep_relationships_complete
+  on public.terra_space_issue_v2_relationship_endpoints;
+create constraint trigger terra_space_issue_v2_endpoints_keep_relationships_complete
+after insert or update or delete on public.terra_space_issue_v2_relationship_endpoints
+deferrable initially immediate
+for each row
+execute function public.terra_space_issue_v2_keep_validated_relationships_complete();
 
 create index if not exists terra_space_issue_v2_runs_source_processed_idx
   on public.terra_space_issue_v2_runs (source_id, processed_at desc);

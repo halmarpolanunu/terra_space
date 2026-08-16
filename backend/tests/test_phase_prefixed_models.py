@@ -314,3 +314,147 @@ def test_issue_first_relationship_cannot_be_validated_without_a_target_endpoint(
              where id = %s""",
             (relationship_id,),
         )
+
+
+def _create_validated_issue_first_relationship(bridge_db) -> dict[str, str]:
+    """Create one complete, validated relationship for endpoint-mutation tests."""
+
+    source_id = insert_source(bridge_db, cleaned_content_text="Both actor locations are stated.")
+    run_id = str(uuid.uuid4())
+    issue_id = str(uuid.uuid4())
+    event_id = str(uuid.uuid4())
+    relationship_id = str(uuid.uuid4())
+    source_location_id = str(uuid.uuid4())
+    target_location_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, source_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_issues
+           (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+           values (%s, %s, %s, 'Issue', 'Summary', 'Both actor locations are stated.', now())""",
+        (issue_id, run_id, source_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_events
+           (id, issue_id, run_id, title, evidence_quote, validated_at)
+           values (%s, %s, %s, 'Event', 'Both actor locations are stated.', now())""",
+        (event_id, issue_id, run_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationships
+           (id, event_id, evidence_quote)
+           values (%s, %s, 'Both actor locations are stated.')""",
+        (relationship_id, event_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_locations
+           (id, label, latitude, longitude, evidence_quote)
+           values
+             (%s, 'Jakarta', -6.2, 106.8, 'Both actor locations are stated.'),
+             (%s, 'Bandung', -6.9, 107.6, 'Both actor locations are stated.')""",
+        (source_location_id, target_location_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationship_endpoints
+           (relationship_id, role, actor_name, location_id, evidence_quote)
+           values
+             (%s, 'source', 'Source actor', %s, 'Both actor locations are stated.'),
+             (%s, 'target', 'Target actor', %s, 'Both actor locations are stated.')""",
+        (relationship_id, source_location_id, relationship_id, target_location_id),
+    )
+    bridge_db.execute(
+        """update public.terra_space_issue_v2_relationships
+              set validated_at = now()
+            where id = %s""",
+        (relationship_id,),
+    )
+    return {
+        "source_id": source_id,
+        "run_id": run_id,
+        "event_id": event_id,
+        "relationship_id": relationship_id,
+    }
+
+
+def test_issue_first_issue_source_must_match_its_run_source(bridge_db) -> None:  # noqa: F811
+    """An Issue from article B must never be attached to the run that processed article A."""
+
+    run_source_id = insert_source(bridge_db, title="Run source")
+    other_source_id = insert_source(bridge_db, title="Other source")
+    run_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, run_source_id),
+    )
+
+    with pytest.raises(psycopg.errors.ForeignKeyViolation):
+        bridge_db.execute(
+            """insert into public.terra_space_issue_v2_issues
+               (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+               values (%s, %s, %s, 'Wrong source', 'Summary', 'Evidence.', now())""",
+            (str(uuid.uuid4()), run_id, other_source_id),
+        )
+
+
+def test_issue_first_endpoint_delete_cannot_break_a_validated_relationship(bridge_db) -> None:  # noqa: F811
+    """Deleting one end of a visible arc must fail instead of leaving a false relationship."""
+
+    record = _create_validated_issue_first_relationship(bridge_db)
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        bridge_db.execute(
+            """delete from public.terra_space_issue_v2_relationship_endpoints
+                 where relationship_id = %s and role = 'target'""",
+            (record["relationship_id"],),
+        )
+
+
+def test_issue_first_endpoint_move_cannot_break_a_validated_relationship(bridge_db) -> None:  # noqa: F811
+    """Moving an endpoint away from a visible arc must also fail, not silently unground it."""
+
+    record = _create_validated_issue_first_relationship(bridge_db)
+    destination_relationship_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationships
+           (id, event_id, evidence_quote)
+           values (%s, %s, 'Both actor locations are stated.')""",
+        (destination_relationship_id, record["event_id"]),
+    )
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        bridge_db.execute(
+            """update public.terra_space_issue_v2_relationship_endpoints
+                  set relationship_id = %s
+                where relationship_id = %s and role = 'target'""",
+            (destination_relationship_id, record["relationship_id"]),
+        )
+
+
+def test_issue_first_runs_cannot_be_updated_or_deleted(bridge_db) -> None:  # noqa: F811
+    """Pipeline run history is audit data, so neither rewrite nor removal is allowed."""
+
+    source_id = insert_source(bridge_db)
+    run_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, source_id),
+    )
+
+    with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
+        bridge_db.execute(
+            "update public.terra_space_issue_v2_runs set stage = 'changed' where id = %s",
+            (run_id,),
+        )
+    with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
+        bridge_db.execute(
+            "delete from public.terra_space_issue_v2_runs where id = %s",
+            (run_id,),
+        )
