@@ -33,9 +33,16 @@ _MIGRATIONS_IN_ORDER = [
     _SUPABASE_DIR / "migrations" / "202608100001_fresh_phase_prefixed_foundation.sql",
     _SUPABASE_DIR / "migrations" / "20260811125624_rename_active_tables_to_terra_space_prefix.sql",
     _SUPABASE_DIR / "migrations" / "20260811125738_refresh_renamed_pipeline_authority_function.sql",
+    _SUPABASE_DIR / "migrations" / "202608160001_issue_first_parallel.sql",
 ]
 
 _BUSINESS_TABLES_FK_SAFE_ORDER = [
+    "terra_space_issue_v2_relationship_endpoints",
+    "terra_space_issue_v2_relationships",
+    "terra_space_issue_v2_events",
+    "terra_space_issue_v2_issues",
+    "terra_space_issue_v2_locations",
+    "terra_space_issue_v2_runs",
     "terra_space_phase3_duplicate_flags",
     "terra_space_phase3_event_locations",
     "terra_space_phase3_event_actors",
@@ -66,16 +73,29 @@ def _schema_ready(conn: psycopg.Connection) -> bool:
     return bool(row and row[0])
 
 
+def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "select to_regclass('public.terra_space_issue_v2_runs') is not null"
+    ).fetchone()
+    return bool(row and row[0])
+
+
 def _ensure_schema(conn: psycopg.Connection) -> None:
-    if _schema_ready(conn):
+    if _issue_first_schema_ready(conn):
         return
-    for role in ("anon", "authenticated", "service_role"):
-        conn.execute(
-            f"do $$ begin "  # noqa: S608 -- role names are a fixed local literal set, not input
-            f"if not exists (select from pg_roles where rolname = '{role}') then "
-            f"create role {role}; end if; end $$;"
-        )
-    for migration_file in _MIGRATIONS_IN_ORDER:
+    migrations = _MIGRATIONS_IN_ORDER
+    if _schema_ready(conn):
+        # The durable test service may already have the prior schema. Replaying the original
+        # foundation migration is not idempotent, so apply only the additive parallel migration.
+        migrations = [_MIGRATIONS_IN_ORDER[-1]]
+    else:
+        for role in ("anon", "authenticated", "service_role"):
+            conn.execute(
+                f"do $$ begin "  # noqa: S608 -- role names are a fixed local literal set, not input
+                f"if not exists (select from pg_roles where rolname = '{role}') then "
+                f"create role {role}; end if; end $$;"
+            )
+    for migration_file in migrations:
         conn.execute(migration_file.read_text(encoding="utf-8"))
 
 
