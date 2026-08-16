@@ -34,6 +34,7 @@ _MIGRATIONS_IN_ORDER = [
     _SUPABASE_DIR / "migrations" / "20260811125624_rename_active_tables_to_terra_space_prefix.sql",
     _SUPABASE_DIR / "migrations" / "20260811125738_refresh_renamed_pipeline_authority_function.sql",
     _SUPABASE_DIR / "migrations" / "202608160001_issue_first_parallel.sql",
+    _SUPABASE_DIR / "migrations" / "202608160002_issue_first_integrity_upgrade.sql",
 ]
 
 _BUSINESS_TABLES_FK_SAFE_ORDER = [
@@ -75,6 +76,21 @@ def _schema_ready(conn: psycopg.Connection) -> bool:
 
 def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
+        """
+        select exists (
+          select 1
+            from pg_trigger
+           where tgrelid = to_regclass('public.terra_space_issue_v2_relationship_endpoints')
+             and tgname = 'terra_space_issue_v2_endpoints_keep_relationships_complete'
+             and not tgisinternal
+        )
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
         "select to_regclass('public.terra_space_issue_v2_runs') is not null"
     ).fetchone()
     return bool(row and row[0])
@@ -83,12 +99,14 @@ def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
 def _ensure_schema(conn: psycopg.Connection) -> None:
     if _issue_first_schema_ready(conn):
         return
-    migrations = _MIGRATIONS_IN_ORDER
-    if _schema_ready(conn):
-        # The durable test service may already have the prior schema. Replaying the original
-        # foundation migration is not idempotent, so apply only the additive parallel migration.
+    if _initial_issue_first_schema_ready(conn):
         migrations = [_MIGRATIONS_IN_ORDER[-1]]
+    elif _schema_ready(conn):
+        # The durable test service may already have the prior schema. Replaying the original
+        # foundation migration is not idempotent, so apply only the additive Issue-first migrations.
+        migrations = _MIGRATIONS_IN_ORDER[-2:]
     else:
+        migrations = _MIGRATIONS_IN_ORDER
         for role in ("anon", "authenticated", "service_role"):
             conn.execute(
                 f"do $$ begin "  # noqa: S608 -- role names are a fixed local literal set, not input
