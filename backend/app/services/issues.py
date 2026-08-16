@@ -21,18 +21,11 @@ from app.schemas.issues import (
 )
 
 _ISSUE_COLUMNS = """
-    issue.id, issue.source_id, source.title as source_title, issue.label, issue.summary,
-    issue.evidence_quote, run.processed_at, issue.created_at
-"""
-
-_ISSUE_FROM = """
-    from public.terra_space_issue_v2_valid_issues issue
-    join public.terra_space_issue_v2_runs run on run.id = issue.run_id
-    join public.terra_space_phase1_sources source on source.id = issue.source_id
+    id, source_id, source_title, label, summary, evidence_quote, processed_at, created_at
 """
 
 _EVENT_COLUMNS = """
-    event.id, event.title, event.evidence_quote, event.created_at
+    id, title, evidence_quote, created_at
 """
 
 
@@ -44,8 +37,8 @@ def list_issues(engine: Engine) -> list[IssueListItem]:
             text(
                 f"""
                 select {_ISSUE_COLUMNS}
-                {_ISSUE_FROM}
-                order by run.processed_at desc, issue.created_at desc, issue.id desc
+                from public.terra_space_issue_v2_valid_issue_list_items
+                order by processed_at desc, created_at desc, id desc
                 """
             )
         ).mappings()
@@ -60,8 +53,8 @@ def get_issue(engine: Engine, issue_id: str) -> IssueDetail | None:
             text(
                 f"""
                 select {_ISSUE_COLUMNS}
-                {_ISSUE_FROM}
-                where issue.id = :issue_id
+                from public.terra_space_issue_v2_valid_issue_list_items
+                where id = :issue_id
                 """
             ),
             {"issue_id": issue_id},
@@ -72,9 +65,9 @@ def get_issue(engine: Engine, issue_id: str) -> IssueDetail | None:
             text(
                 f"""
                 select {_EVENT_COLUMNS}
-                from public.terra_space_issue_v2_valid_events event
-                where event.issue_id = :issue_id
-                order by event.created_at asc, event.id asc
+                from public.terra_space_issue_v2_valid_events
+                where issue_id = :issue_id
+                order by created_at asc, id asc
                 """
             ),
             {"issue_id": issue_id},
@@ -93,8 +86,8 @@ def get_issue_event(engine: Engine, issue_id: str, event_id: str) -> IssueEventD
             text(
                 f"""
                 select {_EVENT_COLUMNS}
-                from public.terra_space_issue_v2_valid_events event
-                where event.issue_id = :issue_id and event.id = :event_id
+                from public.terra_space_issue_v2_valid_events
+                where issue_id = :issue_id and id = :event_id
                 """
             ),
             {"issue_id": issue_id, "event_id": event_id},
@@ -105,37 +98,16 @@ def get_issue_event(engine: Engine, issue_id: str, event_id: str) -> IssueEventD
             text(
                 """
                 select
-                    relationship.id, relationship.evidence_quote,
-                    source_endpoint.actor_name as source_actor_name,
-                    source_endpoint.evidence_quote as source_evidence_quote,
-                    source_location.id as source_location_id,
-                    source_location.label as source_location_label,
-                    source_location.latitude as source_latitude,
-                    source_location.longitude as source_longitude,
-                    source_location.evidence_quote as source_location_evidence_quote,
-                    target_endpoint.actor_name as target_actor_name,
-                    target_endpoint.evidence_quote as target_evidence_quote,
-                    target_location.id as target_location_id,
-                    target_location.label as target_location_label,
-                    target_location.latitude as target_latitude,
-                    target_location.longitude as target_longitude,
-                    target_location.evidence_quote as target_location_evidence_quote
-                from public.terra_space_issue_v2_valid_events event
-                join public.terra_space_issue_v2_relationships relationship
-                  on relationship.event_id = event.id
-                 and relationship.validated_at is not null
-                join public.terra_space_issue_v2_relationship_endpoints source_endpoint
-                  on source_endpoint.relationship_id = relationship.id
-                 and source_endpoint.role = 'source'
-                join public.terra_space_issue_v2_locations source_location
-                  on source_location.id = source_endpoint.location_id
-                join public.terra_space_issue_v2_relationship_endpoints target_endpoint
-                  on target_endpoint.relationship_id = relationship.id
-                 and target_endpoint.role = 'target'
-                join public.terra_space_issue_v2_locations target_location
-                  on target_location.id = target_endpoint.location_id
-                where event.issue_id = :issue_id and event.id = :event_id
-                order by relationship.created_at asc, relationship.id asc
+                    id, evidence_quote,
+                    source_actor_name, source_evidence_quote,
+                    source_location_id, source_location_label, source_latitude,
+                    source_longitude, source_location_evidence_quote,
+                    target_actor_name, target_evidence_quote,
+                    target_location_id, target_location_label, target_latitude,
+                    target_longitude, target_location_evidence_quote
+                from public.terra_space_issue_v2_valid_relationships
+                where issue_id = :issue_id and event_id = :event_id
+                order by created_at asc, id asc
                 """
             ),
             {"issue_id": issue_id, "event_id": event_id},

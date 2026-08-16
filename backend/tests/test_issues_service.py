@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import text
+
 from app.services.issues import get_issue, get_issue_event, list_issues
 from tests.supabase_bridge_test_support import (  # noqa: F401
     bridge_db,
@@ -229,6 +231,66 @@ def test_event_detail_returns_valid_relationships_in_created_order(
     assert event.relationships[0].source.location.latitude == 1.0
     assert event.relationships[0].target.actor_name == "First target actor"
     assert event.relationships[0].target.location.longitude == 4.0
+
+
+def test_read_projections_only_expose_complete_current_relationships(
+    bridge_db, bridge_read_only_engine
+) -> None:
+    """The API must consume a database projection, never assemble analytical arcs from raw rows."""
+
+    now = datetime(2026, 8, 16, tzinfo=UTC)
+    source_id = insert_source(bridge_db)
+    _, [event_id] = _seed_issue(
+        bridge_db,
+        source_id=source_id,
+        label="Projection Issue",
+        processed_at=now,
+        event_titles=["Projection event"],
+    )
+    _seed_relationship(bridge_db, event_id=event_id, label="Complete", created_at=now)
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_relationships
+            (id, event_id, evidence_quote, created_at)
+        values (%s, %s, 'Incomplete relationship evidence', %s)
+        """,
+        (str(uuid.uuid4()), event_id, now),
+    )
+
+    with bridge_read_only_engine.connect() as conn:
+        rows = conn.execute(
+            text("select id from public.terra_space_issue_v2_valid_relationships where event_id = :event_id"),
+            {"event_id": event_id},
+        ).all()
+
+    assert len(rows) == 1
+
+
+def test_later_failed_run_hides_prior_issue_events_and_relationships(
+    bridge_db, bridge_read_only_engine
+) -> None:
+    now = datetime(2026, 8, 16, tzinfo=UTC)
+    source_id = insert_source(bridge_db)
+    issue_id, [event_id] = _seed_issue(
+        bridge_db,
+        source_id=source_id,
+        label="Superseded Issue",
+        processed_at=now,
+        event_titles=["Superseded event"],
+    )
+    _seed_relationship(bridge_db, event_id=event_id, label="Prior", created_at=now)
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_runs
+            (id, source_id, status, stage, reason, processed_at)
+        values (%s, %s, 'failed', 'persistence', 'Database write failed.', %s)
+        """,
+        (str(uuid.uuid4()), source_id, now + timedelta(minutes=1)),
+    )
+
+    assert list_issues(bridge_read_only_engine) == []
+    assert get_issue(bridge_read_only_engine, issue_id) is None
+    assert get_issue_event(bridge_read_only_engine, issue_id, event_id) is None
 
 
 def test_unknown_issue_or_event_is_absent(bridge_db, bridge_read_only_engine) -> None:
