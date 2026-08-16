@@ -35,6 +35,7 @@ _MIGRATIONS_IN_ORDER = [
     _SUPABASE_DIR / "migrations" / "20260811125738_refresh_renamed_pipeline_authority_function.sql",
     _SUPABASE_DIR / "migrations" / "202608160001_issue_first_parallel.sql",
     _SUPABASE_DIR / "migrations" / "202608160002_issue_first_integrity_upgrade.sql",
+    _SUPABASE_DIR / "migrations" / "202608160003_issue_first_pipeline_contract.sql",
 ]
 
 _BUSINESS_TABLES_FK_SAFE_ORDER = [
@@ -89,6 +90,13 @@ def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
     return bool(row and row[0])
 
 
+def _issue_first_pipeline_contract_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "select to_regprocedure('public.terra_space_issue_v2_record_run(jsonb)') is not null"
+    ).fetchone()
+    return bool(row and row[0])
+
+
 def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         "select to_regclass('public.terra_space_issue_v2_runs') is not null"
@@ -97,14 +105,16 @@ def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
 
 
 def _ensure_schema(conn: psycopg.Connection) -> None:
-    if _issue_first_schema_ready(conn):
+    if _issue_first_pipeline_contract_ready(conn):
         return
-    if _initial_issue_first_schema_ready(conn):
+    if _issue_first_schema_ready(conn):
         migrations = [_MIGRATIONS_IN_ORDER[-1]]
+    elif _initial_issue_first_schema_ready(conn):
+        migrations = _MIGRATIONS_IN_ORDER[-2:]
     elif _schema_ready(conn):
         # The durable test service may already have the prior schema. Replaying the original
         # foundation migration is not idempotent, so apply only the additive Issue-first migrations.
-        migrations = _MIGRATIONS_IN_ORDER[-2:]
+        migrations = _MIGRATIONS_IN_ORDER[-3:]
     else:
         migrations = _MIGRATIONS_IN_ORDER
         for role in ("anon", "authenticated", "service_role"):
