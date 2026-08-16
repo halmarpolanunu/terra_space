@@ -221,7 +221,7 @@ def test_issue_first_valid_views_exclude_unvalidated_and_failed_results(bridge_d
         insert into public.terra_space_issue_v2_runs
             (id, source_id, status, stage, reason, processed_at)
         values
-            (%s, %s, 'succeeded', 'complete', null, now()),
+            (%s, %s, 'succeeded', 'complete', null, now() + interval '1 minute'),
             (%s, %s, 'failed', 'validation', 'Evidence was not grounded.', now())
         """,
         (valid_run_id, source_id, failed_run_id, source_id),
