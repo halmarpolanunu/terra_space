@@ -8,13 +8,22 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Main integrated pipeline activated through n8n MCP
+
+- Repaired the local n8n MCP package connection, then used it to validate and activate the main
+  **Terra Space - Full News Processing** workflow and its four referenced child workflows: Phase 1,
+  Event Candidates, Event Records, and Issue-first Analysis.
+- The main graph remains the single normal entry form. It invokes Issue-first after Phase 1 in
+  parallel with the existing Phase 2/3 path; no fallback route, workflow path, or data was removed.
+- No test or synthetic article was submitted during activation, so the verified 22-source rollout
+  result remains unchanged.
+
 ## 2026-08-20 - Issue-first wired into the main processing workflow
 
 - The main **Terra Space - Full News Processing** workflow now invokes the guarded Issue-first
   workflow after Phase 1 successfully saves each article. It runs in parallel with the existing
   Phase 2/3 Event path, which was not removed or rewired.
-- Both workflows validate with zero structural errors. They remain inactive, so the integration
-  does not yet accept new public submissions or create new records without a later owner decision.
+- Both workflows validated with zero structural errors before later owner-approved activation.
 
 ## 2026-08-20 - Issue-first rollout merged to local main
 

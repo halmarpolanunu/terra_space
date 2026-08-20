@@ -40,8 +40,8 @@ status: in-progress
 
 ## Reprocessing ledger
 
-The owner approved a sequential full reprocessing pass through the separate workflow. It is now
-inactive again.
+The owner approved a sequential full reprocessing pass through the separate workflow. It completed
+without changing Phase 1 sources or fallback data.
 
 | Source articles processed | Valid Issues | Valid events | Actor relationships | Notes |
 |---:|---:|---:|---:|---|
@@ -59,10 +59,9 @@ inactive again.
 
 ## Pipeline handoff
 
-- Created the separate, inactive **Terra Space - Issue-first Analysis** workflow
+- Created the separate **Terra Space - Issue-first Analysis** workflow
   (`X4pXtWCkHwjydklX`) with 10 nodes. The main **Terra Space - Full News Processing** workflow
   now invokes it after a successful Phase 1 save, alongside the existing Phase 2/3 Event path.
-  Both workflows remain inactive.
 - Its only Issue-first write is the guarded `terra_space_issue_v2_record_run(jsonb)` database
   function. It never writes Issue, event, relationship, endpoint, or location rows directly.
 - Structural validation reports **0 errors**. Strict validation also reports existing general
@@ -71,6 +70,16 @@ inactive again.
 - Local LM Studio answered its health request (HTTP 200). It needs
   `reasoning_effort: 'none'` for this extraction workflow; otherwise its default reasoning mode
   consumes the response budget without returning the required JSON.
+
+### Main activation, 2026-08-20
+
+- The owner approved activation through n8n MCP. The main workflow and all four referenced child
+  workflows (Phase 1, Event Candidates, Event Records, and Issue-first Analysis) are now active.
+- Current n8n requires referenced child workflows to be published before it will activate a parent;
+  activating those children was therefore required for the single main form to run end to end.
+- MCP validation immediately beforehand reported zero errors and zero warnings for both the 10-node
+  main workflow and the 10-node Issue-first child. No article was submitted or reprocessed during
+  activation.
 
 ## Pilot result and fixes
 

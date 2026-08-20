@@ -11,21 +11,24 @@ status: active
 ## Latest update
 
 **2026-08-20: the verified Issue-first rollout is merged into local `main`.** The separate
-Issue-first workflow is inactive after processing all 22 existing sources. It produced 9 valid
+Issue-first workflow produced 9 valid
 Issues and 35 valid events; 13 results remain withheld by pipeline validation, with no manual
 review or correction. `/issues` is live beside the unchanged `/dashboard` and `/events` fallback
 routes. No relationship arc was stored because no article supplied two fully grounded actor
 locations. See the [rollout evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md).
 
-**Next action:** keep the fallback and the Issue-first workflow inactive while the owner uses the
-new experience. Analytics, pipeline-status UI, and any retirement of existing routes remain
+**Next action:** use the active main form for the next real article and observe its normal
+pipeline result in the existing fallback and Issue-first views. Do not create synthetic articles
+only for testing. Analytics, pipeline-status UI, and any retirement of existing routes remain
 separate owner-approved work.
 
 **2026-08-20 workflow integration:** the main **Terra Space - Full News Processing** workflow
 now starts the guarded Issue-first workflow immediately after Phase 1 saves an article, in parallel
-with its existing Phase 2/3 event flow. The main workflow and its child both remain inactive; no
-new public trigger was enabled and no article was reprocessed as part of wiring the integration.
-Both workflows validate with zero structural errors.
+with its existing Phase 2/3 event flow. The main workflow and the four required child workflows
+were activated after MCP validation confirmed the whole graph has zero errors and zero warnings.
+No article was reprocessed or created during activation. The main form is the normal entry point;
+the child workflows are published because current n8n requires every referenced sub-workflow to be
+published before it can activate the parent.
 
 **2026-08-20 local Supabase environment note:** this machine reserves Windows ports
 `54271`–`54370`, so Supabase cannot use its default `54320`–`54329` port group. The
