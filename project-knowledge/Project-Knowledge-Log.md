@@ -8,6 +8,17 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Issue-first n8n controlled pilot succeeded
+
+- The separate Issue-first workflow completed a single real-source pilot through the guarded
+  recorder, producing one valid Issue and four valid events. No relationship was stored because
+  the source lacked two evidence-backed actor locations; no coordinates or arcs were inferred.
+- The workflow was returned to inactive immediately after the pilot. Existing workflows and the
+  fallback Dashboard/Events experience remain unchanged.
+- Fixed only workflow compatibility and normalization: supported HTTP Request version, a
+  per-item Code-node return format, read-only Phase 1 database query, local-model reasoning mode,
+  and optional Markdown JSON fences. Pipeline validation rules were not relaxed.
+
 ## 2026-08-20 - Owner-approved Issue-first local rollout reached n8n pilot blocker
 
 - A scoped local database backup was completed and all eight additive Issue-first migrations were

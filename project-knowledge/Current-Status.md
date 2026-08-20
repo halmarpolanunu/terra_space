@@ -10,37 +10,21 @@ status: active
 
 ## Latest update
 
-**2026-08-20: the owner-approved local Issue-first rollout is in its controlled-pilot checkpoint
+**2026-08-20: the owner-approved local Issue-first rollout completed one controlled pilot
 on branch `codex/issue-first-terra-insight`.** A scoped local database backup was completed at
 `data/database-backups/2026-08-20_105757/`; all eight additive Issue-first migrations were
 applied to the local Supabase database and verified. The 22 existing Phase 1 source articles and
 all fallback Dashboard/Events data remain untouched. A separate n8n workflow, **Terra Space -
-Issue-first Analysis** (`X4pXtWCkHwjydklX`), was created and validated but deliberately remains
-inactive. It reads one existing source, calls local LM Studio once, and writes only through the
-guarded Issue-first recorder. See the [rollout evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md)
+Issue-first Analysis** (`X4pXtWCkHwjydklX`), is now inactive after the pilot. It reads one
+existing source, calls local LM Studio once, and writes only through the guarded Issue-first
+recorder. The successful pilot produced one valid Issue and four valid events; it correctly
+produced no actor arc because the article did not meet the two evidence-backed endpoint-location
+requirement. See the [rollout evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md)
 and [n8n handoff](plans/evidence/issue-first/README.md).
 
-**Next action:** run one article through that workflow using n8n editor manual test mode, inspect
-the resulting succeeded or failed diagnostic run, and only then decide whether to reprocess all 22
-articles. Do not activate the new workflow, alter the old workflows, or remove the fallback until
-the pilot is accepted.
-
-**Pilot blocker discovered 2026-08-20:** the owner then approved a temporary MCP-only activation
-for the pilot, but local n8n 2.73.0 failed internally with `Cannot read properties of undefined
-(reading 'execute')`. Its local container has a broken `n8n-nodes-opensearch` community package
-whose missing `@langchain/classic/agents` dependency interrupts workflow activation. The workflow
-remains inactive and no source or Issue-first row changed. Do not bypass the guarded workflow or
-modify the fallback. See the rollout evidence's
-[pilot blocker](plans/evidence/issue-first/live-rollout-2026-08-20.md#pilot-execution-blocker).
-
-**2026-08-20 follow-up:** the owner authorized removal of that broken community package. Its
-folder, manifest entry, and the one matching n8n internal registry record were removed after
-backing up the small configuration/record; n8n restarted without the old missing-package warning.
-The `reading 'execute'` activation error persists, however, so the package was not the cause of
-the pilot block. The n8n stack trace places the remaining fault inside its own workflow telemetry
-node-graph code on n8n 2.32.5, before the Terra Space workflow can activate. The workflow remains
-inactive with zero executions and the pilot is still blocked. Do not upgrade or replace n8n without
-the owner's separate approval, because that would affect every local workflow.
+**Next action:** inspect this valid pilot in the Issues screen, then decide whether to activate the
+separate workflow and reprocess all 22 existing source articles. Do not alter old workflows or
+remove the fallback until the owner accepts the reprocessing result.
 
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
 `codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel

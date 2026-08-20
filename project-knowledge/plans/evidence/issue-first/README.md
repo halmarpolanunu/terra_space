@@ -12,7 +12,8 @@ okf_version: "0.1"
 ## Current checkpoint
 
 This repository does not contain n8n workflow exports. Authenticated local n8n access was used on
-2026-08-20 to inspect the current workflow metadata and create one separate Issue-first workflow.
+2026-08-20 to inspect the current workflow metadata, create one separate Issue-first workflow,
+and complete one controlled pilot.
 The four existing workflows remain unchanged and inactive. Raw exports remain outside Git because
 they can contain credential references.
 
@@ -32,17 +33,18 @@ count below. Do not place exports in Git because they can contain credential ref
 
 | Workflow | ID | Active state | Nodes | Validation |
 |---|---|---:|---:|---|
-| Terra Space - Issue-first Analysis | `X4pXtWCkHwjydklX` | inactive | 10 | valid: 0 errors, 5 expected Code-node error-handling warnings |
+| Terra Space - Issue-first Analysis | `X4pXtWCkHwjydklX` | inactive | 9 | valid: 0 errors, 0 warnings |
 
-It accepts one existing Phase 1 source ID through a chat/manual entry point or an internal
-workflow input, reads the article, makes one local LM Studio request, and sends only one JSON
+It accepts one existing Phase 1 source ID through a chat entry point, reads the article using a
+read-only PostgreSQL query, makes one local LM Studio request, and sends only one JSON
 payload to the guarded `terra_space_issue_v2_record_run(jsonb)` recorder. It has no direct writes
 to Issue, event, relationship, or location tables. The local LM Studio health endpoint returned
 HTTP 200 on 2026-08-20.
 
-The n8n API refuses to test an inactive chat-trigger workflow. It was intentionally left inactive,
-so the pilot must be started from the n8n editor's manual test mode. Do not activate it merely to
-run a test.
+The workflow was temporarily activated for one MCP-controlled pilot, then returned to inactive.
+That pilot produced one valid Issue and four valid events. It configured LM Studio with
+`reasoning_effort: 'none'`, required for this loaded Gemma model to return JSON instead of using
+the whole response budget on internal reasoning.
 
 ## Manual copy procedure
 
