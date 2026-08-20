@@ -10,6 +10,14 @@ status: active
 
 ## Latest update
 
+**2026-08-20 locked preview checkpoint:** the owner approved a pause after verifying that the
+Issues screen again shows its 9 valid Issues. The current Issue-first preview is locked at Git
+tag `issue-first-preview-2026-08-20`; do not modify, merge, reprocess, or activate the separate
+Issue-first workflow until the owner resumes. The globe has no arcs because the completed
+reprocessing pass stored zero relationships with evidence-backed locations for both actors—not
+because Issue data is missing. On resumption, choose between pipeline-level relationship/location
+enrichment plus a new full reprocessing pass, or final branch-to-`main` integration.
+
 **2026-08-20 Issue preview recovery:** the local Supabase database retained its 9 valid Issues
 and 35 valid Issue events. A preview restart lacked the read-only `TERRA_SUPABASE_URL`, so the
 Issue API returned 503 and the server-rendered page incorrectly showed an empty list. The local
