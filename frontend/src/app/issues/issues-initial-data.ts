@@ -1,17 +1,22 @@
 import type { IssueDetail, IssueEventDetail, IssueListItem } from "@/lib/issues-api";
 
 type InitialIssueWorkspace = {
-  initialIssues: IssueListItem[];
+  initialIssues?: IssueListItem[];
   initialIssue?: IssueDetail;
   initialEvents?: IssueEventDetail[];
+  initialError?: string;
 };
 
-async function getJson<T>(apiRoot: string, path: string): Promise<T | undefined> {
+type InitialFetchResult<T> = { value?: T; error?: string };
+
+async function getJson<T>(apiRoot: string, path: string): Promise<InitialFetchResult<T>> {
   try {
     const response = await fetch(`${apiRoot}/api/issues${path}`, { cache: "no-store" });
-    return response.ok ? (await response.json() as T) : undefined;
+    if (response.ok) return { value: await response.json() as T };
+    const body = await response.json().catch(() => null);
+    return { error: body?.detail ?? `Request failed with status ${response.status}` };
   } catch {
-    return undefined;
+    return { error: "The validated Issue analysis could not be loaded." };
   }
 }
 
@@ -20,11 +25,13 @@ async function getJson<T>(apiRoot: string, path: string): Promise<T | undefined>
  * browser-side refresh occurs. The browser can still fetch later selections normally.
  */
 export async function loadInitialIssueWorkspace(apiRoot: string): Promise<InitialIssueWorkspace> {
-  const initialIssues = await getJson<IssueListItem[]>(apiRoot, "") ?? [];
+  const initialIssuesResult = await getJson<IssueListItem[]>(apiRoot, "");
+  if (initialIssuesResult.error) return { initialError: initialIssuesResult.error };
+  const initialIssues = initialIssuesResult.value ?? [];
   const firstIssueId = initialIssues[0]?.id;
   if (!firstIssueId) return { initialIssues };
 
-  const initialIssue = await getJson<IssueDetail>(apiRoot, `/${encodeURIComponent(firstIssueId)}`);
+  const initialIssue = (await getJson<IssueDetail>(apiRoot, `/${encodeURIComponent(firstIssueId)}`)).value;
   if (!initialIssue) return { initialIssues };
 
   const initialEvents = await Promise.all(
@@ -33,5 +40,11 @@ export async function loadInitialIssueWorkspace(apiRoot: string): Promise<Initia
       `/${encodeURIComponent(firstIssueId)}/events/${encodeURIComponent(event.id)}`,
     )),
   );
-  return { initialIssues, initialIssue, initialEvents: initialEvents.filter((event): event is IssueEventDetail => Boolean(event)) };
+  return {
+    initialIssues,
+    initialIssue,
+    initialEvents: initialEvents
+      .map((result) => result.value)
+      .filter((event): event is IssueEventDetail => Boolean(event)),
+  };
 }

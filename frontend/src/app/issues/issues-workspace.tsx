@@ -22,6 +22,7 @@ type IssuesWorkspaceProps = {
   initialIssues?: IssueListItem[];
   initialIssue?: IssueDetail;
   initialEvents?: IssueEventDetail[];
+  initialError?: string;
 };
 
 /** Shows every source-grounded actor arc from the selected Issue without inventing event locations. */
@@ -37,21 +38,21 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "The validated Issue analysis could not be loaded.";
 }
 
-export function IssuesWorkspace({ initialIssues, initialIssue, initialEvents }: IssuesWorkspaceProps) {
+export function IssuesWorkspace({ initialIssues, initialIssue, initialEvents, initialError }: IssuesWorkspaceProps) {
   const [issues, setIssues] = useState<IssueListItem[]>(initialIssues ?? []);
   const [selectedIssueId, setSelectedIssueId] = useState<string | undefined>(
     initialIssue?.id ?? initialIssues?.[0]?.id,
   );
   const [issue, setIssue] = useState<IssueDetail | undefined>(initialIssue);
   const [eventDetails, setEventDetails] = useState<IssueEventDetail[]>(initialEvents ?? []);
-  const [loadingIssues, setLoadingIssues] = useState(initialIssues === undefined);
-  const [error, setError] = useState<string>();
+  const [loadingIssues, setLoadingIssues] = useState(initialIssues === undefined && !initialError);
+  const [error, setError] = useState<string | undefined>(initialError);
   const loadingIssue = Boolean(selectedIssueId && !issue && !error);
   const loadingRelationships = Boolean(issue && eventDetails.length < issue.events.length && !error);
   const relationships = eventDetails.flatMap((event) => event.relationships);
 
   useEffect(() => {
-    if (initialIssues !== undefined) return;
+    if (initialIssues !== undefined || initialError) return;
     let active = true;
     void listIssues()
       .then((nextIssues) => {
@@ -67,7 +68,7 @@ export function IssuesWorkspace({ initialIssues, initialIssue, initialEvents }: 
         if (active) setLoadingIssues(false);
       });
     return () => { active = false; };
-  }, [initialIssues]);
+  }, [initialError, initialIssues]);
 
   useEffect(() => {
     if (!selectedIssueId) return;
@@ -108,8 +109,10 @@ export function IssuesWorkspace({ initialIssues, initialIssue, initialEvents }: 
         />
         {error && <p className="document-error" role="alert">{error}</p>}
         <div className="issues-workspace-layout">
-          <FramedPanel className="issues-list-panel" meta={loadingIssues ? "Loading" : `${issues.length} valid`} title="Article Issues">
-            {loadingIssues ? (
+          <FramedPanel className="issues-list-panel" meta={error ? "Unavailable" : loadingIssues ? "Loading" : `${issues.length} valid`} title="Article Issues">
+            {error ? (
+              <p className="issues-empty-state">Validated Issue service is unavailable.</p>
+            ) : loadingIssues ? (
               <p className="issues-empty-state">Loading valid Issues…</p>
             ) : issues.length === 0 ? (
               <p className="issues-empty-state">No validated Issues yet. Processed articles will appear here only after the pipeline accepts them.</p>

@@ -34,7 +34,7 @@ describe("AppShell", () => {
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
   });
 
-  it("renders the permanent local and LM Studio readouts above every page", async () => {
+  it("keeps only the local-workspace readout above every page", () => {
     render(
       <AppShell currentPath="/dashboard">
         <h1>Dashboard</h1>
@@ -43,8 +43,8 @@ describe("AppShell", () => {
 
     const statusBar = screen.getByRole("banner");
     expect(within(statusBar).getByText("Local // offline-safe")).toBeVisible();
-    expect(await within(statusBar).findByText("Offline", { exact: true })).toBeVisible();
-    expect(within(statusBar).getByText("LM Studio", { exact: true })).toBeVisible();
+    expect(within(statusBar).queryByText("LM Studio", { exact: true })).not.toBeInTheDocument();
+    expect(within(statusBar).queryByText("Offline", { exact: true })).not.toBeInTheDocument();
     expect(within(statusBar).getByRole("link", { name: "Terra Space home" })).toHaveAttribute(
       "href",
       "/dashboard",

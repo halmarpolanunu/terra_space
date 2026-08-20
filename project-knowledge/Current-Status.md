@@ -84,23 +84,16 @@ the same Syria location and confirms all eight events are saved while sharing on
 (`5` focused Phase-3 model tests pass). `Terra Space - Event Records` validates at 0 errors and 0
 warnings. A fresh owner-triggered master rerun remains the live confirmation step; it was not run
 automatically because it would create real pipeline records.
-**2026-08-20: the owner-approved local Issue-first rollout completed its full reprocessing pass
-on branch `codex/issue-first-terra-insight`.** A scoped local database backup was completed at
-`data/database-backups/2026-08-20_105757/`; all eight additive Issue-first migrations were
-applied to the local Supabase database and verified. The 22 existing Phase 1 source articles and
-all fallback Dashboard/Events data remain untouched. A separate n8n workflow, **Terra Space -
-Issue-first Analysis** (`X4pXtWCkHwjydklX`), is inactive after reprocessing. It reads an
-existing source, calls local LM Studio once, and writes only through the guarded Issue-first
-recorder. All 22 source articles were reprocessed: 9 produced valid Issues and 35 valid events;
-13 were withheld by pipeline validation, and no actor relationship met the strict two-endpoint
-evidence-and-location requirement, so no arc was stored. The Issues API and screen were then
-verified against the real local database (HTTP 200). See the [rollout
-evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md) and [n8n
-handoff](plans/evidence/issue-first/README.md).
+**2026-08-20 Issue preview recovery:** the local Supabase database retained its 9 valid Issues
+and 35 valid Issue events. A preview restart lacked the read-only `TERRA_SUPABASE_URL`, so the
+Issue API returned 503 and the server-rendered page incorrectly showed an empty list. The local
+read-only connection was restored; the Issue API and `/issues` preview again return all 9 valid
+Issues. The screen now preserves an unavailable-API error instead of presenting it as “0 valid.”
 
-**Next action:** complete the owner-approved branch-to-`main` merge after the final fallback and
-repository checks. Do not remove the existing Dashboard/Events fallback or activate the separate
-workflow; it remains available but inactive.
+**2026-08-20 header simplification:** the global LM Studio status indicator was removed
+from the application header. Processing belongs to the backend/n8n pipeline, so its
+connection status no longer distracts from Terra Insight; LM Studio connection controls
+remain in Settings.
 
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
 `codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel
