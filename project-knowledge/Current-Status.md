@@ -42,7 +42,10 @@ service key. All 14 Supabase nodes in the three active Terra Space pipeline work
 that shared credential; the active main, Phase 1, Phase 2, Phase 3, and Issue-first
 workflows passed MCP structural validation with zero errors and zero warnings. The next
 normal article submission is the live connection check; no synthetic source article was
-created for this repair.
+created for this repair. A later live run identified one separate Phase 3 HTTP request
+that had its old API port `54321` written directly into the node instead of using the
+shared credential; it was updated and confirmed in both the saved and active workflow
+versions as port `55421`.
 
 **2026-08-15: owner set a pipeline-only data-correction rule while designing the Issue-first Terra
 Insight experience.** Terra Space will not offer event or Main Issue review, approval, edits, or
