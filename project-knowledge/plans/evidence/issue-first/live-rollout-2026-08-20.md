@@ -62,6 +62,11 @@ Not started. No source article has been reprocessed through the Issue-first path
   `Cannot read properties of undefined (reading 'execute')`.
 - A fresh metadata read confirms the workflow is still **inactive**. No pilot execution occurred,
   and no Phase 1 or Issue-first analytic data changed.
+- Local n8n container logs identify the immediate platform defect: the installed
+  `n8n-nodes-opensearch` community package cannot load because `@langchain/classic/agents` is
+  missing. The failing package interrupts n8n's workflow-node graph/telemetry code while it saves
+  or activates workflows. Repairing or removing that package affects the shared n8n installation
+  and therefore requires a separate owner decision.
 - Do not work around this by modifying existing workflows or directly writing Issue-first tables.
   Resume only after the local n8n activation defect is corrected or an owner-approved manual test
   path is available.

@@ -27,8 +27,10 @@ the pilot is accepted.
 
 **Pilot blocker discovered 2026-08-20:** the owner then approved a temporary MCP-only activation
 for the pilot, but local n8n 2.73.0 failed internally with `Cannot read properties of undefined
-(reading 'execute')`. The workflow remains inactive and no source or Issue-first row changed.
-Do not bypass the guarded workflow or modify the fallback. See the rollout evidence's
+(reading 'execute')`. Its local container has a broken `n8n-nodes-opensearch` community package
+whose missing `@langchain/classic/agents` dependency interrupts workflow activation. The workflow
+remains inactive and no source or Issue-first row changed. Do not bypass the guarded workflow or
+modify the fallback. See the rollout evidence's
 [pilot blocker](plans/evidence/issue-first/live-rollout-2026-08-20.md#pilot-execution-blocker).
 
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
