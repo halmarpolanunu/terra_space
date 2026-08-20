@@ -79,5 +79,7 @@ Not started. No source article has been reprocessed through the Issue-first path
   saved under n8n's local backups folder before removal.
 - Restarted `n8n_local_hp`. It now starts without the prior missing-community-package warning.
 - A new MCP activation attempt still fails with the same `reading 'execute'` error. Therefore the
-  removed package was broken but not the sole activation cause. The Issue-first workflow is
-  confirmed inactive with **0 executions**; no application or Issue-first data changed.
+  removed package was not the activation cause. The n8n stack trace places the remaining error in
+  its own workflow telemetry node-graph code on n8n 2.32.5, before the Issue-first workflow can
+  activate. The workflow is confirmed inactive with **0 executions**; no application or
+  Issue-first data changed. Do not upgrade or replace n8n without a separate owner decision.

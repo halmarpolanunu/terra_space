@@ -36,8 +36,11 @@ modify the fallback. See the rollout evidence's
 **2026-08-20 follow-up:** the owner authorized removal of that broken community package. Its
 folder, manifest entry, and the one matching n8n internal registry record were removed after
 backing up the small configuration/record; n8n restarted without the old missing-package warning.
-The `reading 'execute'` activation error persists, however, so the package was not the sole cause.
-The workflow remains inactive with zero executions and the pilot is still blocked.
+The `reading 'execute'` activation error persists, however, so the package was not the cause of
+the pilot block. The n8n stack trace places the remaining fault inside its own workflow telemetry
+node-graph code on n8n 2.32.5, before the Terra Space workflow can activate. The workflow remains
+inactive with zero executions and the pilot is still blocked. Do not upgrade or replace n8n without
+the owner's separate approval, because that would affect every local workflow.
 
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
 `codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel

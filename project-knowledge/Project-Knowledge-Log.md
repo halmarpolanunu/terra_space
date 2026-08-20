@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Owner-approved Issue-first local rollout reached n8n pilot blocker
+
+- A scoped local database backup was completed and all eight additive Issue-first migrations were
+  applied to local Supabase without changing the 22 Phase 1 source articles or the fallback
+  Dashboard/Events data.
+- A separate inactive n8n Issue-first workflow was created and structurally validated. Its pilot
+  has not run: n8n 2.32.5 fails activation in its own workflow telemetry node-graph code before
+  execution begins.
+- At the owner's request, the broken `n8n-nodes-opensearch` community package and its one internal
+  registry record were removed after a small local backup. The package warning disappeared, but
+  the activation bug remains; no Terra Space analytics data was written.
+
 ## 2026-08-16 - Reduced Issue-first Terra Insight release verified
 
 - Implemented the owner-approved small first release: a parallel validated Issue data path,
