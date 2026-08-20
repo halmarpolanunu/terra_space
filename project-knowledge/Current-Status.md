@@ -36,6 +36,14 @@ local Supabase configuration at `D:\local-supabase\supabase\config.toml` therefo
 the matching `55420`–`55429` range instead (API `55421`, database `55422`, Studio
 `55423`).
 
+**2026-08-20 n8n Supabase connection repair:** the shared n8n **Supabase account**
+credential was repaired with the active local API port `55421` and its matching local
+service key. All 14 Supabase nodes in the three active Terra Space pipeline workflows use
+that shared credential; the active main, Phase 1, Phase 2, Phase 3, and Issue-first
+workflows passed MCP structural validation with zero errors and zero warnings. The next
+normal article submission is the live connection check; no synthetic source article was
+created for this repair.
+
 **2026-08-15: owner set a pipeline-only data-correction rule while designing the Issue-first Terra
 Insight experience.** Terra Space will not offer event or Main Issue review, approval, edits, or
 other correction controls. Defects must be fixed in the responsible pipeline stage and affected
