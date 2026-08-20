@@ -10,21 +10,23 @@ status: active
 
 ## Latest update
 
-**2026-08-20: the owner-approved local Issue-first rollout completed one controlled pilot
+**2026-08-20: the owner-approved local Issue-first rollout completed its full reprocessing pass
 on branch `codex/issue-first-terra-insight`.** A scoped local database backup was completed at
 `data/database-backups/2026-08-20_105757/`; all eight additive Issue-first migrations were
 applied to the local Supabase database and verified. The 22 existing Phase 1 source articles and
 all fallback Dashboard/Events data remain untouched. A separate n8n workflow, **Terra Space -
-Issue-first Analysis** (`X4pXtWCkHwjydklX`), is now inactive after the pilot. It reads one
+Issue-first Analysis** (`X4pXtWCkHwjydklX`), is inactive after reprocessing. It reads an
 existing source, calls local LM Studio once, and writes only through the guarded Issue-first
-recorder. The successful pilot produced one valid Issue and four valid events; it correctly
-produced no actor arc because the article did not meet the two evidence-backed endpoint-location
-requirement. See the [rollout evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md)
-and [n8n handoff](plans/evidence/issue-first/README.md).
+recorder. All 22 source articles were reprocessed: 9 produced valid Issues and 35 valid events;
+13 were withheld by pipeline validation, and no actor relationship met the strict two-endpoint
+evidence-and-location requirement, so no arc was stored. The Issues API and screen were then
+verified against the real local database (HTTP 200). See the [rollout
+evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md) and [n8n
+handoff](plans/evidence/issue-first/README.md).
 
-**Next action:** inspect this valid pilot in the Issues screen, then decide whether to activate the
-separate workflow and reprocess all 22 existing source articles. Do not alter old workflows or
-remove the fallback until the owner accepts the reprocessing result.
+**Next action:** complete the owner-approved branch-to-`main` merge after the final fallback and
+repository checks. Do not remove the existing Dashboard/Events fallback or activate the separate
+workflow; it remains available but inactive.
 
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
 `codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel

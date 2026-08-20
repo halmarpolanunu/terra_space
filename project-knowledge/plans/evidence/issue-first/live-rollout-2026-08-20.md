@@ -40,11 +40,22 @@ status: in-progress
 
 ## Reprocessing ledger
 
-One controlled pilot completed; bulk reprocessing has not started.
+The owner approved a sequential full reprocessing pass through the separate workflow. It is now
+inactive again.
 
 | Source articles processed | Valid Issues | Valid events | Actor relationships | Notes |
 |---:|---:|---:|---:|---|
-| 1 of 22 | 1 | 4 | 0 | The article did not provide two fully evidence-backed actor locations, so no arc was stored. |
+| 22 of 22 | 9 | 35 | 0 | Thirteen articles were withheld by validation; none met the two evidence-backed endpoint-location requirement, so no arc was stored. |
+
+### Full-pass result
+
+- Every source received exactly one new latest Issue-first run; existing Phase 1 articles and all
+  fallback data were only read, never modified.
+- The 13 unsuccessful latest runs are explicit pipeline validation diagnostics, not candidates for
+  manual Issue or event review. Their prior results are correctly hidden by the valid/latest
+  views.
+- The verified Issues API returned the 9 valid Issue list items and their event details with HTTP
+  200. The standalone Issues screen reads that API successfully.
 
 ## Pipeline handoff
 

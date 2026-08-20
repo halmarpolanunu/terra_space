@@ -8,6 +8,19 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Full Issue-first reprocessing completed
+
+- With the owner's approval, the separate Issue-first workflow reprocessed all 22 existing Phase
+  1 sources sequentially, then returned to inactive. It created 9 valid Issues and 35 valid
+  events. Thirteen latest runs were withheld by the pipeline's validation rules; no manual Issue
+  or event review/correction occurred.
+- No relationship arc was stored because no processed article supplied two fully evidence-backed,
+  locally resolved actor locations. This is expected under the owner's no-inference rule, not a
+  missing map rendering feature.
+- The real local Issues API and screen were verified after reprocessing. The existing
+  Dashboard/Events experience remains intact as fallback while the verified branch is prepared
+  for its owner-approved local merge to `main`.
+
 ## 2026-08-20 - Issue-first n8n controlled pilot succeeded
 
 - The separate Issue-first workflow completed a single real-source pilot through the guarded
