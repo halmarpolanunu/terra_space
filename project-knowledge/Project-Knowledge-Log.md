@@ -8,6 +8,13 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Issue-first rollout merged to local main
+
+- The verified parallel Issue-first schema, pipeline contract, read-only API, `/issues` workspace,
+  and full reprocessing result were merged into local `main`.
+- The existing Dashboard and Events routes remain available as the fallback; no current route,
+  workflow, or data was removed. The Issue-first workflow remains inactive after the run.
+
 ## 2026-08-16 - Issue-first first release reduced
 
 - The owner reduced the Issue-first redesign to a small first release: parallel validated Issue
@@ -51,6 +58,61 @@ status: active
   Focused verification: 5 tests passed; `Terra Space - Event Records` validation reported 0 errors
   and 0 warnings. The master workflow was not rerun automatically because doing so would create
   real pipeline data; owner-triggered execution remains the final live check.
+## 2026-08-20 - Full Issue-first reprocessing completed
+
+- With the owner's approval, the separate Issue-first workflow reprocessed all 22 existing Phase
+  1 sources sequentially, then returned to inactive. It created 9 valid Issues and 35 valid
+  events. Thirteen latest runs were withheld by the pipeline's validation rules; no manual Issue
+  or event review/correction occurred.
+- No relationship arc was stored because no processed article supplied two fully evidence-backed,
+  locally resolved actor locations. This is expected under the owner's no-inference rule, not a
+  missing map rendering feature.
+- The real local Issues API and screen were verified after reprocessing. The existing
+  Dashboard/Events experience remains intact as fallback while the verified branch is prepared
+  for its owner-approved local merge to `main`.
+
+## 2026-08-20 - Issue-first n8n controlled pilot succeeded
+
+- The separate Issue-first workflow completed a single real-source pilot through the guarded
+  recorder, producing one valid Issue and four valid events. No relationship was stored because
+  the source lacked two evidence-backed actor locations; no coordinates or arcs were inferred.
+- The workflow was returned to inactive immediately after the pilot. Existing workflows and the
+  fallback Dashboard/Events experience remain unchanged.
+- Fixed only workflow compatibility and normalization: supported HTTP Request version, a
+  per-item Code-node return format, read-only Phase 1 database query, local-model reasoning mode,
+  and optional Markdown JSON fences. Pipeline validation rules were not relaxed.
+
+## 2026-08-20 - Owner-approved Issue-first local rollout reached n8n pilot blocker
+
+- A scoped local database backup was completed and all eight additive Issue-first migrations were
+  applied to local Supabase without changing the 22 Phase 1 source articles or the fallback
+  Dashboard/Events data.
+- A separate inactive n8n Issue-first workflow was created and structurally validated. Its pilot
+  has not run: n8n 2.32.5 fails activation in its own workflow telemetry node-graph code before
+  execution begins.
+- At the owner's request, the broken `n8n-nodes-opensearch` community package and its one internal
+  registry record were removed after a small local backup. The package warning disappeared, but
+  the activation bug remains; no Terra Space analytics data was written.
+
+## 2026-08-16 - Reduced Issue-first Terra Insight release verified
+
+- Implemented the owner-approved small first release: a parallel validated Issue data path,
+  read-only API, standalone Issues screen, and source-grounded actor arcs.
+- The existing application remains intact as fallback; no live database, current workflow, or
+  current route was changed. Real-article reprocessing and replacement planning are deferred.
+- Verification passed for focused backend tests (25), frontend tests (229), lint, production build,
+  and disposable PostgreSQL schema/pipeline contracts.
+
+## 2026-08-16 - Owner simplified the Issue preview
+
+- The owner reviewed the safe `/issues` preview and kept only the article-level Issue list plus a
+  single globe. Removed the selected-article card, related-event list, relationship/evidence text,
+  and separate map panel.
+- Selecting an Issue now displays every valid, evidence-backed actor arc from all its events on
+  the globe. The screen does not invent event locations or arcs.
+- Verified after the revision: 228 frontend tests, lint, production build, and Project Knowledge
+  validation passed. The local preview, disposable database, local Supabase, and n8n services were
+  shut down at the owner's request; no project files or database data were deleted.
 
 ## 2026-08-11 - Full Terra Space Supabase application transition implemented; live cutover verification still owner-pending
 

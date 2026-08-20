@@ -5,6 +5,7 @@ export const NAV_GROUPS = [
     label: "Terra Insight",
     items: [
       { href: "/dashboard", label: "Dashboard" },
+      { href: "/issues", label: "Issues" },
       { href: "/events", label: "Events" },
     ],
   },

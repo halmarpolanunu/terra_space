@@ -6,13 +6,16 @@ See project-knowledge/plans/2026-08-10-terra-space-supabase-transition.md.
 """
 
 import json
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 
 import psycopg
+import pytest
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import IntegrityError
 
+from app.data.iso3166_alpha2_to_alpha3 import ALPHA2_TO_ALPHA3
 from app.db.models import (
     Actor,
     ActorAlias,
@@ -28,7 +31,11 @@ from app.db.models import (
 )
 from app.services.locations import get_or_create_location
 from tests.postgres_test_support import postgres_db, postgres_session_factory  # noqa: F401
-from tests.supabase_bridge_test_support import TEST_DATABASE_DSN, bridge_db  # noqa: F401
+from tests.supabase_bridge_test_support import (  # noqa: F401
+    TEST_DATABASE_DSN,
+    bridge_db,
+    insert_source,
+)
 
 # Every ORM model mapped in Task 2, and the live table it must match.
 _MAPPED_MODELS = [
@@ -206,3 +213,394 @@ def test_deleting_a_source_referenced_by_an_event_is_blocked_by_the_database(
         postgres_db.rollback()
     else:
         raise AssertionError("expected the live FK to block deleting a referenced source")
+
+
+def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> None:  # noqa: F811
+    """A relationship is directional: accepting two sources would let the globe draw an
+    unsupported actor pairing. The database, rather than the future UI, must reject it."""
+
+    source_id = insert_source(bridge_db, cleaned_content_text="Source and target evidence.")
+    run_id = str(uuid.uuid4())
+    issue_id = str(uuid.uuid4())
+    event_id = str(uuid.uuid4())
+    relationship_id = str(uuid.uuid4())
+    location_id = str(uuid.uuid4())
+
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_runs
+            (id, source_id, status, stage, processed_at)
+        values (%s, %s, 'succeeded', 'complete', now())
+        """,
+        (run_id, source_id),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_issues
+            (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+        values (%s, %s, %s, 'Issue', 'Issue summary', 'Source and target evidence.', now())
+        """,
+        (issue_id, run_id, source_id),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_events
+            (id, issue_id, run_id, title, evidence_quote, validated_at)
+        values (%s, %s, %s, 'Event', 'Source and target evidence.', now())
+        """,
+        (event_id, issue_id, run_id),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_relationships
+            (id, event_id, evidence_quote)
+        values (%s, %s, 'Source and target evidence.')
+        """,
+        (relationship_id, event_id),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_locations
+            (id, label, latitude, longitude, evidence_quote)
+        values (%s, 'Jakarta', -6.2, 106.8, 'Source and target evidence.')
+        """,
+        (location_id,),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_relationship_endpoints
+            (relationship_id, role, actor_name, location_id, evidence_quote)
+        values (%s, 'source', 'Source actor', %s, 'Source and target evidence.')
+        """,
+        (relationship_id, location_id),
+    )
+
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        bridge_db.execute(
+            """
+            insert into public.terra_space_issue_v2_relationship_endpoints
+                (relationship_id, role, actor_name, location_id, evidence_quote)
+            values (%s, 'source', 'Another source actor', %s, 'Source and target evidence.')
+            """,
+            (relationship_id, location_id),
+        )
+
+
+def test_issue_first_valid_views_exclude_unvalidated_and_failed_results(bridge_db) -> None:  # noqa: F811
+    """A pipeline result that was not validated, or whose run failed, must never become
+    analysis data even though the diagnostic rows remain stored for observability."""
+
+    source_id = insert_source(bridge_db, cleaned_content_text="Valid analysis evidence.")
+    valid_run_id = str(uuid.uuid4())
+    failed_run_id = str(uuid.uuid4())
+    valid_issue_id = str(uuid.uuid4())
+    failed_issue_id = str(uuid.uuid4())
+    valid_event_id = str(uuid.uuid4())
+    unvalidated_event_id = str(uuid.uuid4())
+
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_runs
+            (id, source_id, status, stage, reason, processed_at)
+        values
+            (%s, %s, 'succeeded', 'complete', null, now() + interval '1 minute'),
+            (%s, %s, 'failed', 'validation', 'Evidence was not grounded.', now())
+        """,
+        (valid_run_id, source_id, failed_run_id, source_id),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_issues
+            (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+        values
+            (%s, %s, %s, 'Valid issue', 'Summary', 'Valid analysis evidence.', now()),
+            (%s, %s, %s, 'Failed issue', 'Summary', 'Valid analysis evidence.', now())
+        """,
+        (valid_issue_id, valid_run_id, source_id, failed_issue_id, failed_run_id, source_id),
+    )
+    bridge_db.execute(
+        """
+        insert into public.terra_space_issue_v2_events
+            (id, issue_id, run_id, title, evidence_quote, validated_at)
+        values
+            (%s, %s, %s, 'Valid event', 'Valid analysis evidence.', now()),
+            (%s, %s, %s, 'Unvalidated event', 'Valid analysis evidence.', null)
+        """,
+        (valid_event_id, valid_issue_id, valid_run_id, unvalidated_event_id, valid_issue_id, valid_run_id),
+    )
+
+    visible_issue_ids = {
+        row[0]
+        for row in bridge_db.execute("select id from public.terra_space_issue_v2_valid_issues")
+    }
+    visible_event_ids = {
+        row[0]
+        for row in bridge_db.execute("select id from public.terra_space_issue_v2_valid_events")
+    }
+
+    assert visible_issue_ids == {uuid.UUID(valid_issue_id)}
+    assert visible_event_ids == {uuid.UUID(valid_event_id)}
+
+
+def test_issue_first_relationship_cannot_be_validated_without_a_target_endpoint(bridge_db) -> None:  # noqa: F811
+    """A half-grounded relationship must remain withheld: a validated arc needs both the
+    source and target locations the article explicitly supports."""
+
+    source_id = insert_source(bridge_db, cleaned_content_text="Only the source location is stated.")
+    run_id = str(uuid.uuid4())
+    issue_id = str(uuid.uuid4())
+    event_id = str(uuid.uuid4())
+    relationship_id = str(uuid.uuid4())
+    location_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, source_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_issues
+           (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+           values (%s, %s, %s, 'Issue', 'Summary', 'Only the source location is stated.', now())""",
+        (issue_id, run_id, source_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_events
+           (id, issue_id, run_id, title, evidence_quote, validated_at)
+           values (%s, %s, %s, 'Event', 'Only the source location is stated.', now())""",
+        (event_id, issue_id, run_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationships
+           (id, event_id, evidence_quote)
+           values (%s, %s, 'Only the source location is stated.')""",
+        (relationship_id, event_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_locations
+           (id, label, latitude, longitude, evidence_quote)
+           values (%s, 'Jakarta', -6.2, 106.8, 'Only the source location is stated.')""",
+        (location_id,),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationship_endpoints
+           (relationship_id, role, actor_name, location_id, evidence_quote)
+           values (%s, 'source', 'Source actor', %s, 'Only the source location is stated.')""",
+        (relationship_id, location_id),
+    )
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        bridge_db.execute(
+            """update public.terra_space_issue_v2_relationships
+               set validated_at = now()
+             where id = %s""",
+            (relationship_id,),
+        )
+
+
+def _create_validated_issue_first_relationship(bridge_db) -> dict[str, str]:
+    """Create one complete, validated relationship for endpoint-mutation tests."""
+
+    source_id = insert_source(bridge_db, cleaned_content_text="Both actor locations are stated.")
+    run_id = str(uuid.uuid4())
+    issue_id = str(uuid.uuid4())
+    event_id = str(uuid.uuid4())
+    relationship_id = str(uuid.uuid4())
+    source_location_id = str(uuid.uuid4())
+    target_location_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, source_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_issues
+           (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+           values (%s, %s, %s, 'Issue', 'Summary', 'Both actor locations are stated.', now())""",
+        (issue_id, run_id, source_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_events
+           (id, issue_id, run_id, title, evidence_quote, validated_at)
+           values (%s, %s, %s, 'Event', 'Both actor locations are stated.', now())""",
+        (event_id, issue_id, run_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationships
+           (id, event_id, evidence_quote)
+           values (%s, %s, 'Both actor locations are stated.')""",
+        (relationship_id, event_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_locations
+           (id, label, latitude, longitude, evidence_quote)
+           values
+             (%s, 'Jakarta', -6.2, 106.8, 'Both actor locations are stated.'),
+             (%s, 'Bandung', -6.9, 107.6, 'Both actor locations are stated.')""",
+        (source_location_id, target_location_id),
+    )
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationship_endpoints
+           (relationship_id, role, actor_name, location_id, evidence_quote)
+           values
+             (%s, 'source', 'Source actor', %s, 'Both actor locations are stated.'),
+             (%s, 'target', 'Target actor', %s, 'Both actor locations are stated.')""",
+        (relationship_id, source_location_id, relationship_id, target_location_id),
+    )
+    bridge_db.execute(
+        """update public.terra_space_issue_v2_relationships
+              set validated_at = now()
+            where id = %s""",
+        (relationship_id,),
+    )
+    return {
+        "source_id": source_id,
+        "run_id": run_id,
+        "event_id": event_id,
+        "relationship_id": relationship_id,
+    }
+
+
+def test_issue_first_issue_source_must_match_its_run_source(bridge_db) -> None:  # noqa: F811
+    """An Issue from article B must never be attached to the run that processed article A."""
+
+    run_source_id = insert_source(bridge_db, title="Run source")
+    other_source_id = insert_source(bridge_db, title="Other source")
+    run_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, run_source_id),
+    )
+
+    with pytest.raises(psycopg.errors.ForeignKeyViolation):
+        bridge_db.execute(
+            """insert into public.terra_space_issue_v2_issues
+               (id, run_id, source_id, label, summary, evidence_quote, validated_at)
+               values (%s, %s, %s, 'Wrong source', 'Summary', 'Evidence.', now())""",
+            (str(uuid.uuid4()), run_id, other_source_id),
+        )
+
+
+def test_issue_first_endpoint_delete_cannot_break_a_validated_relationship(bridge_db) -> None:  # noqa: F811
+    """Deleting one end of a visible arc must fail instead of leaving a false relationship."""
+
+    record = _create_validated_issue_first_relationship(bridge_db)
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        bridge_db.execute(
+            """delete from public.terra_space_issue_v2_relationship_endpoints
+                 where relationship_id = %s and role = 'target'""",
+            (record["relationship_id"],),
+        )
+
+
+def test_issue_first_endpoint_move_cannot_break_a_validated_relationship(bridge_db) -> None:  # noqa: F811
+    """Moving an endpoint away from a visible arc must also fail, not silently unground it."""
+
+    record = _create_validated_issue_first_relationship(bridge_db)
+    destination_relationship_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_relationships
+           (id, event_id, evidence_quote)
+           values (%s, %s, 'Both actor locations are stated.')""",
+        (destination_relationship_id, record["event_id"]),
+    )
+
+    with pytest.raises(psycopg.errors.CheckViolation):
+        bridge_db.execute(
+            """update public.terra_space_issue_v2_relationship_endpoints
+                  set relationship_id = %s
+                where relationship_id = %s and role = 'target'""",
+            (destination_relationship_id, record["relationship_id"]),
+        )
+
+
+def test_issue_first_runs_cannot_be_updated_or_deleted(bridge_db) -> None:  # noqa: F811
+    """Pipeline run history is audit data, so neither rewrite nor removal is allowed."""
+
+    source_id = insert_source(bridge_db)
+    run_id = str(uuid.uuid4())
+    bridge_db.execute(
+        """insert into public.terra_space_issue_v2_runs
+           (id, source_id, status, stage, processed_at)
+           values (%s, %s, 'succeeded', 'complete', now())""",
+        (run_id, source_id),
+    )
+
+    with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
+        bridge_db.execute(
+            "update public.terra_space_issue_v2_runs set stage = 'changed' where id = %s",
+            (run_id,),
+        )
+    with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
+        bridge_db.execute(
+            "delete from public.terra_space_issue_v2_runs where id = %s",
+            (run_id,),
+        )
+
+
+def test_issue_first_rejects_generic_korea_for_south_korea_when_article_says_north_korea(
+    bridge_db,
+) -> None:  # noqa: F811
+    """A substring must not turn an explicit North Korea claim into a South Korea map arc."""
+
+    source_text = "Source Actor in North Korea addressed Target Actor in North Korea."
+    source_id = insert_source(bridge_db, cleaned_content_text=source_text, raw_content_text=source_text)
+    payload = {
+        "source_id": source_id,
+        "main_issue": {
+            "label": "North Korea statement",
+            "summary": "A statement involved two actors.",
+            "evidence_quote": source_text,
+        },
+        "events": [
+            {
+                "title": "Statement",
+                "evidence_quote": source_text,
+                "relationships": [
+                    {
+                        "evidence_quote": source_text,
+                        "source": {
+                            "name": "Source Actor",
+                            "country_iso3": "KOR",
+                            "country_name": "Korea",
+                            "evidence_quote": source_text,
+                        },
+                        "target": {
+                            "name": "Target Actor",
+                            "country_iso3": "KOR",
+                            "country_name": "Korea",
+                            "evidence_quote": source_text,
+                        },
+                    }
+                ],
+            }
+        ],
+    }
+
+    run_id = bridge_db.execute(
+        "select public.terra_space_issue_v2_record_run(%s::jsonb)",
+        (json.dumps(payload),),
+    ).fetchone()[0]
+    status, reason = bridge_db.execute(
+        "select status, reason from public.terra_space_issue_v2_runs where id = %s", (run_id,)
+    ).fetchone()
+
+    assert status == "failed"
+    assert "country text does not match country_iso3 KOR" in reason
+
+
+def test_issue_first_country_reference_covers_every_checked_in_country_code(bridge_db) -> None:  # noqa: F811
+    """The pipeline's SQL reference must stay aligned with the project-wide code source."""
+
+    reference_codes = {
+        row[0]
+        for row in bridge_db.execute(
+            "select country_iso3 from public.terra_space_issue_v2_country_reference"
+        )
+    }
+
+    assert reference_codes == set(ALPHA2_TO_ALPHA3.values())

@@ -29,14 +29,34 @@ _SUPABASE_DIR = Path(__file__).resolve().parents[2] / "supabase"
 # The legacy-table rename migration is skipped here on purpose: a fresh test database never had
 # the pre-phase-prefix production tables it renames (terra_space_news_v2 and friends), so it has
 # nothing to do here. See the implementation plan's "Pre-existing discrepancy" section.
+_PHASE3_ATOMIC_LOCATION_MIGRATION = (
+    _SUPABASE_DIR / "migrations" / "20260811190923_make_phase3_location_creation_atomic.sql"
+)
+_ISSUE_FIRST_MIGRATIONS = [
+    _SUPABASE_DIR / "migrations" / "202608160001_issue_first_parallel.sql",
+    _SUPABASE_DIR / "migrations" / "202608160002_issue_first_integrity_upgrade.sql",
+    _SUPABASE_DIR / "migrations" / "202608160003_issue_first_pipeline_contract.sql",
+    _SUPABASE_DIR / "migrations" / "202608160004_issue_first_latest_run_views.sql",
+    _SUPABASE_DIR / "migrations" / "202608160005_issue_first_field_grounding.sql",
+    _SUPABASE_DIR / "migrations" / "202608160006_issue_first_country_reference.sql",
+    _SUPABASE_DIR / "migrations" / "202608160007_issue_first_country_reference_safety.sql",
+    _SUPABASE_DIR / "migrations" / "202608160008_issue_first_read_projections.sql",
+]
 _MIGRATIONS_IN_ORDER = [
     _SUPABASE_DIR / "migrations" / "202608100001_fresh_phase_prefixed_foundation.sql",
     _SUPABASE_DIR / "migrations" / "20260811125624_rename_active_tables_to_terra_space_prefix.sql",
     _SUPABASE_DIR / "migrations" / "20260811125738_refresh_renamed_pipeline_authority_function.sql",
-    _SUPABASE_DIR / "migrations" / "20260811190923_make_phase3_location_creation_atomic.sql",
+    _PHASE3_ATOMIC_LOCATION_MIGRATION,
+    *_ISSUE_FIRST_MIGRATIONS,
 ]
 
 _BUSINESS_TABLES_FK_SAFE_ORDER = [
+    "terra_space_issue_v2_relationship_endpoints",
+    "terra_space_issue_v2_relationships",
+    "terra_space_issue_v2_events",
+    "terra_space_issue_v2_issues",
+    "terra_space_issue_v2_locations",
+    "terra_space_issue_v2_runs",
     "terra_space_phase3_duplicate_flags",
     "terra_space_phase3_event_locations",
     "terra_space_phase3_event_actors",
@@ -79,19 +99,131 @@ def _atomic_location_creation_ready(conn: psycopg.Connection) -> bool:
     return bool(row and row[0])
 
 
-def _ensure_schema(conn: psycopg.Connection) -> None:
-    if _atomic_location_creation_ready(conn):
-        return
-    if _schema_ready(conn):
-        conn.execute(_MIGRATIONS_IN_ORDER[-1].read_text(encoding="utf-8"))
-        return
-    for role in ("anon", "authenticated", "service_role"):
-        conn.execute(
-            f"do $$ begin "  # noqa: S608 -- role names are a fixed local literal set, not input
-            f"if not exists (select from pg_roles where rolname = '{role}') then "
-            f"create role {role}; end if; end $$;"
+def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        """
+        select exists (
+          select 1
+            from pg_trigger
+           where tgrelid = to_regclass('public.terra_space_issue_v2_relationship_endpoints')
+             and tgname = 'terra_space_issue_v2_endpoints_keep_relationships_complete'
+              and not tgisinternal
         )
-    for migration_file in _MIGRATIONS_IN_ORDER:
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _issue_first_pipeline_contract_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "select to_regprocedure('public.terra_space_issue_v2_record_run(jsonb)') is not null"
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _issue_first_latest_run_views_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        """
+        select coalesce(pg_get_viewdef(to_regclass('public.terra_space_issue_v2_valid_issues'), true), '')
+          like '%latest_runs%'
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _issue_first_field_grounding_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        """
+        select coalesce(
+          obj_description(to_regprocedure('public.terra_space_issue_v2_record_run(jsonb)'), 'pg_proc'),
+          ''
+        ) like '%actor%location claims%'
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _issue_first_country_reference_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "select to_regclass('public.terra_space_issue_v2_country_reference') is not null"
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _issue_first_country_reference_safety_ready(conn: psycopg.Connection) -> bool:
+    table_exists = conn.execute(
+        "select to_regclass('public.terra_space_issue_v2_country_reference') is not null"
+    ).fetchone()
+    if not table_exists or not table_exists[0]:
+        return False
+
+    row = conn.execute(
+        """
+        select exists (
+          select 1
+            from public.terra_space_issue_v2_country_reference
+           where country_iso3 = 'ESH' and country_name = 'Western Sahara'
+        )
+        and exists (
+          select 1
+            from public.terra_space_issue_v2_country_reference
+           where country_iso3 = 'KOR' and country_name = 'South Korea'
+        )
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _issue_first_read_projections_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "select to_regclass('public.terra_space_issue_v2_valid_relationships') is not null"
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        "select to_regclass('public.terra_space_issue_v2_runs') is not null"
+    ).fetchone()
+    return bool(row and row[0])
+
+
+def _ensure_schema(conn: psycopg.Connection) -> None:
+    if not _schema_ready(conn):
+        for role in ("anon", "authenticated", "service_role"):
+            conn.execute(
+                f"do $$ begin "  # noqa: S608 -- role names are a fixed local literal set, not input
+                f"if not exists (select from pg_roles where rolname = '{role}') then "
+                f"create role {role}; end if; end $$;"
+            )
+        for migration_file in _MIGRATIONS_IN_ORDER:
+            conn.execute(migration_file.read_text(encoding="utf-8"))
+        return
+
+    if not _atomic_location_creation_ready(conn):
+        conn.execute(_PHASE3_ATOMIC_LOCATION_MIGRATION.read_text(encoding="utf-8"))
+
+    if _issue_first_read_projections_ready(conn):
+        return
+    if _issue_first_country_reference_safety_ready(conn):
+        migrations = [_ISSUE_FIRST_MIGRATIONS[-1]]
+    elif _issue_first_country_reference_ready(conn):
+        migrations = _ISSUE_FIRST_MIGRATIONS[-2:]
+    elif _issue_first_field_grounding_ready(conn):
+        migrations = _ISSUE_FIRST_MIGRATIONS[-3:]
+    elif _issue_first_latest_run_views_ready(conn):
+        migrations = _ISSUE_FIRST_MIGRATIONS[-4:]
+    elif _issue_first_pipeline_contract_ready(conn):
+        migrations = _ISSUE_FIRST_MIGRATIONS[-5:]
+    elif _issue_first_schema_ready(conn):
+        migrations = _ISSUE_FIRST_MIGRATIONS[-6:]
+    elif _initial_issue_first_schema_ready(conn):
+        migrations = _ISSUE_FIRST_MIGRATIONS[-7:]
+    else:
+        # The durable test service may already have the prior schema. Replaying the original
+        # foundation migration is not idempotent, so apply only the additive Issue-first migrations.
+        migrations = _ISSUE_FIRST_MIGRATIONS
+    for migration_file in migrations:
         conn.execute(migration_file.read_text(encoding="utf-8"))
 
 

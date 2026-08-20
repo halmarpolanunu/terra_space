@@ -6,6 +6,7 @@ from app.api.routes.actors import create_actors_router
 from app.api.routes.documents import create_documents_router
 from app.api.routes.events import create_events_router
 from app.api.routes.health import create_health_router
+from app.api.routes.issues import create_issues_router
 from app.api.routes.maps import create_maps_router
 from app.api.routes.settings import create_settings_router
 from app.api.routes.supabase_bridge import create_supabase_bridge_router
@@ -61,6 +62,7 @@ def create_app(
     )
     app.state.supabase_engine = supabase_engine
     app.include_router(create_supabase_bridge_router(supabase_engine))
+    app.include_router(create_issues_router(supabase_engine))
     return app
 
 app = create_app()

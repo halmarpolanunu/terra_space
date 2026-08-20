@@ -10,6 +10,17 @@ status: active
 
 ## Latest update
 
+**2026-08-20: the verified Issue-first rollout is merged into local `main`.** The separate
+Issue-first workflow is inactive after processing all 22 existing sources. It produced 9 valid
+Issues and 35 valid events; 13 results remain withheld by pipeline validation, with no manual
+review or correction. `/issues` is live beside the unchanged `/dashboard` and `/events` fallback
+routes. No relationship arc was stored because no article supplied two fully grounded actor
+locations. See the [rollout evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md).
+
+**Next action:** keep the fallback and the Issue-first workflow inactive while the owner uses the
+new experience. Analytics, pipeline-status UI, and any retirement of existing routes remain
+separate owner-approved work.
+
 **2026-08-20 local Supabase environment note:** this machine reserves Windows ports
 `54271`–`54370`, so Supabase cannot use its default `54320`–`54329` port group. The
 local Supabase configuration at `D:\local-supabase\supabase\config.toml` therefore uses
@@ -47,6 +58,38 @@ the same Syria location and confirms all eight events are saved while sharing on
 (`5` focused Phase-3 model tests pass). `Terra Space - Event Records` validates at 0 errors and 0
 warnings. A fresh owner-triggered master rerun remains the live confirmation step; it was not run
 automatically because it would create real pipeline records.
+**2026-08-20: the owner-approved local Issue-first rollout completed its full reprocessing pass
+on branch `codex/issue-first-terra-insight`.** A scoped local database backup was completed at
+`data/database-backups/2026-08-20_105757/`; all eight additive Issue-first migrations were
+applied to the local Supabase database and verified. The 22 existing Phase 1 source articles and
+all fallback Dashboard/Events data remain untouched. A separate n8n workflow, **Terra Space -
+Issue-first Analysis** (`X4pXtWCkHwjydklX`), is inactive after reprocessing. It reads an
+existing source, calls local LM Studio once, and writes only through the guarded Issue-first
+recorder. All 22 source articles were reprocessed: 9 produced valid Issues and 35 valid events;
+13 were withheld by pipeline validation, and no actor relationship met the strict two-endpoint
+evidence-and-location requirement, so no arc was stored. The Issues API and screen were then
+verified against the real local database (HTTP 200). See the [rollout
+evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md) and [n8n
+handoff](plans/evidence/issue-first/README.md).
+
+**Next action:** complete the owner-approved branch-to-`main` merge after the final fallback and
+repository checks. Do not remove the existing Dashboard/Events fallback or activate the separate
+workflow; it remains available but inactive.
+
+**2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
+`codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel
+validated Issue pipeline contract, GET-only Issue API, standalone `/issues` screen, and
+evidence-backed actor arcs. The owner simplified the preview to an Issue list on the left and a
+single globe on the right: selecting an Issue displays all of its valid actor arcs together. The
+article card, event list, evidence/relationship text, and separate map frame were removed.
+
+The current application, routes, pipeline, and database data remain unchanged as the fallback. No
+real articles were reprocessed and no live database migration was applied. Safe preview processes
+were stopped at the owner's request after review. See [Issue-first Implementation](plans/2026-08-15-issue-first-terra-insight-implementation.md).
+
+**Next action:** when the owner returns, decide whether to keep refining the safe preview or plan
+the owner-approved real local rollout. Do not apply the new migrations to the live local Supabase
+database, reprocess articles, or remove the current application without explicit owner approval.
 
 ## Current focus
 
