@@ -54,3 +54,14 @@ Not started. No source article has been reprocessed through the Issue-first path
 - Local LM Studio answered its health request (HTTP 200). The n8n API will not remotely test an
   inactive chat-trigger workflow. Keep the workflow inactive; perform the first one-source pilot
   from n8n's manual editor test mode, then inspect the resulting run before any batch action.
+
+## Pilot execution blocker
+
+- The owner approved a temporary activation solely to run the MCP pilot on 2026-08-20.
+- `n8n_update_partial_workflow` saved the request but n8n 2.73.0 failed activation internally with
+  `Cannot read properties of undefined (reading 'execute')`.
+- A fresh metadata read confirms the workflow is still **inactive**. No pilot execution occurred,
+  and no Phase 1 or Issue-first analytic data changed.
+- Do not work around this by modifying existing workflows or directly writing Issue-first tables.
+  Resume only after the local n8n activation defect is corrected or an owner-approved manual test
+  path is available.
