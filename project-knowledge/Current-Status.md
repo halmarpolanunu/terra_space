@@ -10,6 +10,21 @@ status: active
 
 ## Latest update
 
+**2026-08-20: the owner-approved local Issue-first rollout is in its controlled-pilot checkpoint
+on branch `codex/issue-first-terra-insight`.** A scoped local database backup was completed at
+`data/database-backups/2026-08-20_105757/`; all eight additive Issue-first migrations were
+applied to the local Supabase database and verified. The 22 existing Phase 1 source articles and
+all fallback Dashboard/Events data remain untouched. A separate n8n workflow, **Terra Space -
+Issue-first Analysis** (`X4pXtWCkHwjydklX`), was created and validated but deliberately remains
+inactive. It reads one existing source, calls local LM Studio once, and writes only through the
+guarded Issue-first recorder. See the [rollout evidence](plans/evidence/issue-first/live-rollout-2026-08-20.md)
+and [n8n handoff](plans/evidence/issue-first/README.md).
+
+**Next action:** run one article through that workflow using n8n editor manual test mode, inspect
+the resulting succeeded or failed diagnostic run, and only then decide whether to reprocess all 22
+articles. Do not activate the new workflow, alter the old workflows, or remove the fallback until
+the pilot is accepted.
+
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
 `codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel
 validated Issue pipeline contract, GET-only Issue API, standalone `/issues` screen, and

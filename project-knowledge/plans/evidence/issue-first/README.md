@@ -3,7 +3,7 @@ type: Evidence
 title: Issue-first n8n Workflow Baseline and Copy Handoff
 description: Safe manual procedure for exporting current n8n workflows and creating inactive Issue-first copies when authenticated n8n access is available.
 tags: [project-knowledge, evidence, n8n, issue-first, pipeline]
-status: planned
+status: active
 okf_version: "0.1"
 ---
 
@@ -11,9 +11,10 @@ okf_version: "0.1"
 
 ## Current checkpoint
 
-This repository does not contain n8n workflow exports. The local n8n service answered an
-unauthenticated request with HTTP 401 on 2026-08-16, so this build cannot safely export, change,
-or validate a workflow. No current workflow has been changed by this task.
+This repository does not contain n8n workflow exports. Authenticated local n8n access was used on
+2026-08-20 to inspect the current workflow metadata and create one separate Issue-first workflow.
+The four existing workflows remain unchanged and inactive. Raw exports remain outside Git because
+they can contain credential references.
 
 Before anyone changes a copy, an owner with n8n access must export the currently inactive
 workflows and save their files outside Git in a new, date-stamped `.n8n-backups/` folder. Record
@@ -22,10 +23,26 @@ count below. Do not place exports in Git because they can contain credential ref
 
 | Workflow | ID | Export file | SHA-256 | Active state | Version ID | Node count |
 |---|---|---|---|---|---|---|
-| Terra Space - Input News Manual | `gABPryH3jTe2Ktz5` | pending owner export | pending | verify in n8n | pending | pending |
-| Terra Space - Event Candidates | `pO6m1mpaHz2Ae5ZR` | pending owner export | pending | verify in n8n | pending | pending |
-| Terra Space - Event Records | `qsbIodzbMPxgQeRg` | pending owner export | pending | verify in n8n | pending | pending |
-| Terra Space - Full News Processing | `SwXzUU9aHg4NZ9Kx` | pending owner export | pending | verify in n8n | pending | pending |
+| Terra Space - Input News Manual | `gABPryH3jTe2Ktz5` | pending owner export | pending | inactive | n8n backup API reports none | 11 |
+| Terra Space - Event Candidates | `pO6m1mpaHz2Ae5ZR` | pending owner export | pending | inactive | n8n backup API reports none | 21 |
+| Terra Space - Event Records | `qsbIodzbMPxgQeRg` | pending owner export | pending | inactive | n8n backup API reports none | 31 |
+| Terra Space - Full News Processing | `SwXzUU9aHg4NZ9Kx` | pending owner export | pending | inactive | n8n backup API reports none | 9 |
+
+## Issue-first workflow created for the rollout
+
+| Workflow | ID | Active state | Nodes | Validation |
+|---|---|---:|---:|---|
+| Terra Space - Issue-first Analysis | `X4pXtWCkHwjydklX` | inactive | 10 | valid: 0 errors, 5 expected Code-node error-handling warnings |
+
+It accepts one existing Phase 1 source ID through a chat/manual entry point or an internal
+workflow input, reads the article, makes one local LM Studio request, and sends only one JSON
+payload to the guarded `terra_space_issue_v2_record_run(jsonb)` recorder. It has no direct writes
+to Issue, event, relationship, or location tables. The local LM Studio health endpoint returned
+HTTP 200 on 2026-08-20.
+
+The n8n API refuses to test an inactive chat-trigger workflow. It was intentionally left inactive,
+so the pilot must be started from the n8n editor's manual test mode. Do not activate it merely to
+run a test.
 
 ## Manual copy procedure
 

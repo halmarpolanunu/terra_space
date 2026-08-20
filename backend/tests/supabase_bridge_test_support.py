@@ -105,7 +105,7 @@ def _issue_first_pipeline_contract_ready(conn: psycopg.Connection) -> bool:
 def _issue_first_latest_run_views_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         """
-        select coalesce(pg_get_viewdef('public.terra_space_issue_v2_valid_issues'::regclass, true), '')
+        select coalesce(pg_get_viewdef(to_regclass('public.terra_space_issue_v2_valid_issues'), true), '')
           like '%latest_runs%'
         """
     ).fetchone()
@@ -116,7 +116,7 @@ def _issue_first_field_grounding_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         """
         select coalesce(
-          obj_description('public.terra_space_issue_v2_record_run(jsonb)'::regprocedure, 'pg_proc'),
+          obj_description(to_regprocedure('public.terra_space_issue_v2_record_run(jsonb)'), 'pg_proc'),
           ''
         ) like '%actor%location claims%'
         """
@@ -132,6 +132,12 @@ def _issue_first_country_reference_ready(conn: psycopg.Connection) -> bool:
 
 
 def _issue_first_country_reference_safety_ready(conn: psycopg.Connection) -> bool:
+    table_exists = conn.execute(
+        "select to_regclass('public.terra_space_issue_v2_country_reference') is not null"
+    ).fetchone()
+    if not table_exists or not table_exists[0]:
+        return False
+
     row = conn.execute(
         """
         select exists (
