@@ -16,6 +16,22 @@ implementation plan or decision, link it from here and mark it resolved instead 
 
 ## Open items
 
+### Issue-first coverage is limited by evidence grounding (2026-08-20)
+
+- **Context:** an owner-approved fresh rebuild reprocessed all 24 saved source articles. Eleven
+  passed Issue-first validation; 13 were withheld. This is not missing data in the Event pipeline:
+  the Phase 3 Events remain visible in Dashboard/Events, while the read-only Issues view accepts
+  only fully validated analytical data.
+- **Observed causes:** 5 withheld runs lacked country/city wording in the actor endpoint evidence;
+  4 used an event or relationship quote that was not an exact source substring; 2 named an actor
+  not supported by its evidence; and 2 paired a textual country name with the wrong ISO code.
+- **Required direction:** improve the Issue-first pipeline prompt and, where appropriate, its
+  non-inferential normalization so it copies quotes verbatim and supplies an endpoint only when
+  all actor and location wording is explicitly present. Reprocess affected articles after a
+  pipeline change. Do **not** add a manual Issue/Event review, approval, or correction path.
+- **Status:** Open, not yet scheduled. Revisit before expanding Analytics or retiring the current
+  Events fallback, so the owner can judge Issue coverage on a stronger pipeline.
+
 ### Legacy `terra_space_*` Supabase tables have no RLS policies (2026-08-10)
 
 - **Context:** discovered while starting the [Fresh Phase-Prefixed Supabase Foundation

@@ -8,6 +8,13 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Issue-first evidence-grounding follow-up recorded
+
+- After the full fresh rebuild, 13 of 24 sources were intentionally withheld from Issues because
+  the model output did not satisfy exact quote, actor, or country/location grounding rules.
+- Recorded the owner-visible follow-up in the [Feedback Backlog](Feedback-Backlog.md#issue-first-coverage-is-limited-by-evidence-grounding-2026-08-20): improve the pipeline and reprocess
+  affected sources, never manually repair the analytical result.
+
 ## 2026-08-20 - Owner-approved fresh rebuild from all saved articles
 
 - Created and verified a full local Supabase backup before the reset. The reset retained all 24

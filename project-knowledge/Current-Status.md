@@ -10,6 +10,15 @@ status: active
 
 ## Latest update
 
+**Open Issue-first pipeline-quality follow-up:** after the fresh 24-source rebuild, 13 sources
+were withheld from Issues because the extracted evidence was not sufficiently grounded: 5 lacked
+location wording in the endpoint evidence, 4 altered an event/relationship quote, 2 lacked actor
+name support, and 2 paired a country name with the wrong ISO code. This is an intended safety
+outcome, not a data-loss defect: the affected Phase 3 Events remain available while Issue-first
+withholds the analytical output. Future work must improve the Issue-first prompt/normalization and
+then reprocess affected sources; do not manually edit, approve, or repair Issues or Events. See
+[Feedback Backlog](Feedback-Backlog.md#issue-first-coverage-is-limited-by-evidence-grounding-2026-08-20).
+
 **2026-08-20 owner-approved fresh pipeline rebuild:** a full local Supabase backup was created
 and verified at `data/backups/supabase/20260820-165447/local-supabase.dump` before reset. The
 reset removed only derived output—Phase 2 candidates/runs, Phase 3 Events/runs/derived actors and
