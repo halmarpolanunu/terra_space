@@ -31,10 +31,6 @@ vi.mock("@/lib/documents-api", async () => {
   return { ...actual, listDocuments: vi.fn() };
 });
 
-vi.mock("@/components/service-status", () => ({
-  ServiceStatusPanel: () => <p>LM Studio is offline. Check Settings and try again.</p>,
-}));
-
 vi.mock("maplibre-gl", () => ({
   default: { Map: vi.fn(function Map() { return { on: vi.fn(), remove: vi.fn() }; }), addProtocol: vi.fn() },
 }));
@@ -112,17 +108,6 @@ describe("Dashboard workspace", () => {
     currentSearch = "q=bridge&sort=title_asc";
     vi.clearAllMocks();
     window.localStorage.clear();
-  });
-
-  it("retains the local service-status panel alongside the Dashboard workspace", () => {
-    vi.mocked(eventsApi.listEvents).mockResolvedValue([]);
-    vi.mocked(eventsApi.listEventTypes).mockResolvedValue([]);
-    vi.mocked(eventsApi.listActors).mockResolvedValue([]);
-    vi.mocked(documentsApi.listDocuments).mockResolvedValue([]);
-
-    render(<DashboardPage />);
-
-    expect(screen.getByText("LM Studio is offline. Check Settings and try again.")).toBeVisible();
   });
 
   it("uses one URL filter value and derives every displayed Dashboard view from the event response", async () => {

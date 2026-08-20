@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Navigation } from "@/components/navigation";
-import { ServiceStatusPanel } from "@/components/service-status";
 import { WorkspaceAmbiance } from "@/components/workspace-ambiance";
 import { getWorkspaceBackground } from "@/lib/workspace-backgrounds";
 
@@ -39,7 +38,6 @@ export function AppShell({ currentPath, children }: AppShellProps) {
         </Link>
         <div className="system-readouts">
           <span className="system-local-readout">Local // offline-safe</span>
-          <ServiceStatusPanel />
         </div>
       </header>
       <aside className="sidebar">

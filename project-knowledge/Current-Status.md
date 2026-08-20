@@ -10,6 +10,11 @@ status: active
 
 ## Latest update
 
+**2026-08-20 header simplification:** the global LM Studio status indicator was removed
+from the application header. Processing belongs to the backend/n8n pipeline, so its
+connection status no longer distracts from Terra Insight; LM Studio connection controls
+remain in Settings.
+
 **2026-08-20: the owner-approved local Issue-first rollout completed its full reprocessing pass
 on branch `codex/issue-first-terra-insight`.** A scoped local database backup was completed at
 `data/database-backups/2026-08-20_105757/`; all eight additive Issue-first migrations were
