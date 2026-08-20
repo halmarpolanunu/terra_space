@@ -70,3 +70,14 @@ Not started. No source article has been reprocessed through the Issue-first path
 - Do not work around this by modifying existing workflows or directly writing Issue-first tables.
   Resume only after the local n8n activation defect is corrected or an owner-approved manual test
   path is available.
+
+### OpenSearch package removal, owner-authorized 2026-08-20
+
+- Removed only `/home/node/.n8n/nodes/node_modules/n8n-nodes-opensearch` from the local n8n
+  volume, and removed its exact `n8n-nodes-opensearch` registry row from n8n's internal
+  `installed_packages` table. A small record of that row and the prior nodes `package.json` were
+  saved under n8n's local backups folder before removal.
+- Restarted `n8n_local_hp`. It now starts without the prior missing-community-package warning.
+- A new MCP activation attempt still fails with the same `reading 'execute'` error. Therefore the
+  removed package was broken but not the sole activation cause. The Issue-first workflow is
+  confirmed inactive with **0 executions**; no application or Issue-first data changed.

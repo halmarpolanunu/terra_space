@@ -33,6 +33,12 @@ remains inactive and no source or Issue-first row changed. Do not bypass the gua
 modify the fallback. See the rollout evidence's
 [pilot blocker](plans/evidence/issue-first/live-rollout-2026-08-20.md#pilot-execution-blocker).
 
+**2026-08-20 follow-up:** the owner authorized removal of that broken community package. Its
+folder, manifest entry, and the one matching n8n internal registry record were removed after
+backing up the small configuration/record; n8n restarted without the old missing-package warning.
+The `reading 'execute'` activation error persists, however, so the package was not the sole cause.
+The workflow remains inactive with zero executions and the pilot is still blocked.
+
 **2026-08-16: the reduced Issue-first Terra Insight release is complete on branch
 `codex/issue-first-terra-insight`, with the safe preview owner-reviewed.** It adds a parallel
 validated Issue pipeline contract, GET-only Issue API, standalone `/issues` screen, and
