@@ -10,6 +10,15 @@ status: active
 
 ## Latest update
 
+**2026-08-20 Issue-first evidence-quote fix verified:** via n8n MCP, the active Issue-first
+prompt was upgraded to `issue-first-v2` to require character-for-character source quotes and to
+forbid abbreviations inside evidence. The workflow validated at 0 errors / 0 warnings, then only
+the previously submitted source was reprocessed through the Issue-first branch (not Phase 1–3).
+Run `a44a571b-6b47-4379-b1b1-b073ee79be56` succeeded and published one valid Issue with 5 valid
+Issue events and 1 complete evidence-backed actor relationship. The read API sees the new Issue;
+the valid total is now 10 Issues / 40 Issue events. The earlier rejected run remains preserved as
+history. No manual Issue or Event correction occurred.
+
 **2026-08-20 first new-article live check:** main workflow execution `1825` successfully saved
 the real CNBC article *UAE severs trade with Iran after reported missile strike* (source
 `a4bbad2b-7b38-466e-bbc3-4c97f4bfd367`). Phase 2 found 6 candidates; Phase 3 created 5 `FINAL`

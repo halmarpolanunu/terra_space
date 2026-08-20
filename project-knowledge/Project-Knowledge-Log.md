@@ -8,6 +8,17 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Verbatim evidence quote fix verified in the live Issue-first branch
+
+- Updated the active n8n Issue-first prompt through MCP to `issue-first-v2`: every evidence quote
+  must be copied character-for-character as a continuous article substring, with no abbreviation,
+  paraphrase, or substitution. Workflow validation reported 0 errors and 0 warnings.
+- Reprocessed only the first newly submitted article through the Issue-first branch. The new run
+  succeeded, publishing one valid Issue, 5 valid Issue events, and 1 complete evidence-backed
+  actor relationship. The prior failed validation run remains in its run history.
+- The read API confirms the current total is 10 valid Issues and 40 valid Issue events. This
+  resolved the demonstrated prompt-quality defect without manual correction or an inferred fact.
+
 ## 2026-08-20 - First live article check after main integration
 
 - The first newly submitted real article completed the main n8n workflow successfully (execution
