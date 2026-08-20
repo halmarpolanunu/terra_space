@@ -19,4 +19,15 @@ describe("loadInitialIssueWorkspace", () => {
       initialIssues: [issue], initialIssue: detail, initialEvents: [event],
     });
   });
+
+  it("preserves an unavailable Issue API error instead of treating it as no valid Issues", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ detail: "The validated Issue analysis is not configured on this backend." }), { status: 503 })),
+    );
+
+    await expect(loadInitialIssueWorkspace("http://preview-api:8001")).resolves.toEqual({
+      initialError: "The validated Issue analysis is not configured on this backend.",
+    });
+  });
 });

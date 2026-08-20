@@ -10,6 +10,12 @@ status: active
 
 ## Latest update
 
+**2026-08-20 Issue preview recovery:** the local Supabase database retained its 9 valid Issues
+and 35 valid Issue events. A preview restart lacked the read-only `TERRA_SUPABASE_URL`, so the
+Issue API returned 503 and the server-rendered page incorrectly showed an empty list. The local
+read-only connection was restored; the Issue API and `/issues` preview again return all 9 valid
+Issues. The screen now preserves an unavailable-API error instead of presenting it as “0 valid.”
+
 **2026-08-20 header simplification:** the global LM Studio status indicator was removed
 from the application header. Processing belongs to the backend/n8n pipeline, so its
 connection status no longer distracts from Terra Insight; LM Studio connection controls

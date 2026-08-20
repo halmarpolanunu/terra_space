@@ -41,6 +41,14 @@ describe("IssuesWorkspace", () => {
     expect(screen.queryByRole("heading", { name: "Event map" })).not.toBeInTheDocument();
   });
 
+  it("shows an unavailable Issue service instead of a false empty state", () => {
+    render(<IssuesWorkspace initialError="The validated Issue analysis is not configured on this backend." />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("The validated Issue analysis is not configured on this backend.");
+    expect(screen.getByText("Unavailable")).toBeVisible();
+    expect(screen.queryByText("No validated Issues yet. Processed articles will appear here only after the pipeline accepts them.")).not.toBeInTheDocument();
+  });
+
   it("combines proven arcs from every event of the selected Issue", async () => {
     vi.mocked(issuesApi.listIssues).mockResolvedValue([issue]);
     vi.mocked(issuesApi.getIssue).mockResolvedValue(detail);
