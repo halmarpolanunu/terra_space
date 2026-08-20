@@ -10,6 +10,17 @@ status: active
 
 ## Latest update
 
+**2026-08-20 first new-article live check:** main workflow execution `1825` successfully saved
+the real CNBC article *UAE severs trade with Iran after reported missile strike* (source
+`a4bbad2b-7b38-466e-bbc3-4c97f4bfd367`). Phase 2 found 6 candidates; Phase 3 created 5 `FINAL`
+Event records and retained 1 `EXCEPTION`. Issue-first also ran, but correctly withheld its
+proposed Issue because the first event evidence quote changed the source wording from
+“The United Arab Emirates” to “The UAE”; the evidence rule requires a verbatim source quote.
+The main workflow therefore succeeded without a technical error, no new Issue was published, and
+the valid Issue totals remain 9 Issues / 35 Issue events. The next pipeline change, if approved,
+is to make the Issue-first prompt preserve evidence quotes verbatim and then reprocess this one
+source through the pipeline—never repair the Issue by hand.
+
 **2026-08-20 main runtime consolidation:** the Issue-first work is merged into local `main`.
 The final application now runs only as the `terra_space` Docker Compose group (one healthy
 frontend on `localhost:3000` and one healthy backend); the temporary Issue-first preview and

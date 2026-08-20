@@ -8,6 +8,19 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - First live article check after main integration
+
+- The first newly submitted real article completed the main n8n workflow successfully (execution
+  `1825`): Phase 2 found 6 candidates, and Phase 3 produced 5 final Event records plus 1
+  expected pipeline exception.
+- Issue-first processed the same source but withheld the proposed Issue. Its first event quote
+  used “The UAE” where the source said “The United Arab Emirates”; quote validation correctly
+  requires the exact source wording.
+- This is a pipeline-quality finding, not a manual-review task and not a technical workflow
+  failure. If pursued, fix the Issue-first prompt/normalization to preserve verbatim quotes and
+  reprocess the source through the normal pipeline. The valid Issue total remains 9 Issues and
+  35 Issue events.
+
 ## 2026-08-20 - Issue-first main release checkpoint and runtime consolidation
 
 - Simplified the application header: the global LM Studio connection indicator was removed.
