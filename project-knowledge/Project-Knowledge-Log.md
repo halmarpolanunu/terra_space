@@ -8,6 +8,14 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Issue-first wired into the main processing workflow
+
+- The main **Terra Space - Full News Processing** workflow now invokes the guarded Issue-first
+  workflow after Phase 1 successfully saves each article. It runs in parallel with the existing
+  Phase 2/3 Event path, which was not removed or rewired.
+- Both workflows validate with zero structural errors. They remain inactive, so the integration
+  does not yet accept new public submissions or create new records without a later owner decision.
+
 ## 2026-08-20 - Issue-first rollout merged to local main
 
 - The verified parallel Issue-first schema, pipeline contract, read-only API, `/issues` workspace,

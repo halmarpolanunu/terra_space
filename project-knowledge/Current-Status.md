@@ -21,6 +21,12 @@ locations. See the [rollout evidence](plans/evidence/issue-first/live-rollout-20
 new experience. Analytics, pipeline-status UI, and any retirement of existing routes remain
 separate owner-approved work.
 
+**2026-08-20 workflow integration:** the main **Terra Space - Full News Processing** workflow
+now starts the guarded Issue-first workflow immediately after Phase 1 saves an article, in parallel
+with its existing Phase 2/3 event flow. The main workflow and its child both remain inactive; no
+new public trigger was enabled and no article was reprocessed as part of wiring the integration.
+Both workflows validate with zero structural errors.
+
 **2026-08-20 local Supabase environment note:** this machine reserves Windows ports
 `54271`–`54370`, so Supabase cannot use its default `54320`–`54329` port group. The
 local Supabase configuration at `D:\local-supabase\supabase\config.toml` therefore uses

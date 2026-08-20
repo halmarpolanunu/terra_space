@@ -60,10 +60,14 @@ inactive again.
 ## Pipeline handoff
 
 - Created the separate, inactive **Terra Space - Issue-first Analysis** workflow
-  (`X4pXtWCkHwjydklX`) with 9 nodes. Existing n8n workflows remain inactive and unchanged.
+  (`X4pXtWCkHwjydklX`) with 10 nodes. The main **Terra Space - Full News Processing** workflow
+  now invokes it after a successful Phase 1 save, alongside the existing Phase 2/3 Event path.
+  Both workflows remain inactive.
 - Its only Issue-first write is the guarded `terra_space_issue_v2_record_run(jsonb)` database
   function. It never writes Issue, event, relationship, endpoint, or location rows directly.
-- Structural validation reports **0 errors and 0 warnings**.
+- Structural validation reports **0 errors**. Strict validation also reports existing general
+  Code-node/error-handling advisories; they do not identify a broken connection or an Issue-first
+  integration defect.
 - Local LM Studio answered its health request (HTTP 200). It needs
   `reasoning_effort: 'none'` for this extraction workflow; otherwise its default reasoning mode
   consumes the response budget without returning the required JSON.
