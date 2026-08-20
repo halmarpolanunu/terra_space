@@ -10,6 +10,12 @@ status: active
 
 ## Latest update
 
+**2026-08-20 Phase 3 recovery:** after the local Supabase endpoint repair, the saved
+real source article was rerun from Phase 3 only—without creating a second source article.
+The run completed with no technical error: two Event records reached `FINAL`, while one
+was retained as an `EXCEPTION` because the pipeline safeguard rejected it. This is normal
+pipeline validation, not a review or manual correction.
+
 **2026-08-20: the verified Issue-first rollout is merged into local `main`.** The separate
 Issue-first workflow produced 9 valid
 Issues and 35 valid events; 13 results remain withheld by pipeline validation, with no manual
