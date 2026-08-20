@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Owner-approved fresh rebuild from all saved articles
+
+- Created and verified a full local Supabase backup before the reset. The reset retained all 24
+  Phase 1 source articles and stable configuration/reference data, while removing only derived
+  Phase 2, Phase 3, and Issue-first output and run history.
+- Reprocessed every retained source sequentially through the active n8n Phase 2, Phase 3, and
+  Issue-first workflows. The existing single-source Phase 2 and Phase 3 chat entry points were
+  made explicit and validated through MCP (0 errors / 0 warnings) for this controlled operation;
+  the ordinary main workflow remains unchanged.
+- Rebuilt outputs: 85 Events (61 `FINAL`, 24 `EXCEPTION`), 11 valid Issues, 48 valid Issue
+  events, and 2 complete evidence-backed relationship arcs. All 24 sources have both a Phase 2
+  result and an Issue-first run. Thirteen Issue-first results were correctly withheld by pipeline
+  validation, with no manual correction or location inference.
+
 ## 2026-08-20 - Verbatim evidence quote fix verified in the live Issue-first branch
 
 - Updated the active n8n Issue-first prompt through MCP to `issue-first-v2`: every evidence quote

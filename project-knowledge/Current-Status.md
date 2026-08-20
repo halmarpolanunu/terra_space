@@ -10,6 +10,19 @@ status: active
 
 ## Latest update
 
+**2026-08-20 owner-approved fresh pipeline rebuild:** a full local Supabase backup was created
+and verified at `data/backups/supabase/20260820-165447/local-supabase.dump` before reset. The
+reset removed only derived output—Phase 2 candidates/runs, Phase 3 Events/runs/derived actors and
+locations, and all Issue-first runs/output—while retaining all 24 Phase 1 source articles,
+taxonomy, gazetteer, settings, workflows, and containers. All 24 sources were then reprocessed
+sequentially through Phase 2, Phase 3, and Issue-first using n8n MCP. The rebuilt result is 85
+Events (61 `FINAL`, 24 `EXCEPTION`), 11 valid Issues, 48 valid Issue events, and 2 complete
+evidence-backed relationship arcs. Thirteen Issue-first runs were withheld by validation; this is
+expected under the no-inference rule. The read API confirmed all 11 valid Issues and no source is
+missing a Phase 2 result or Issue-first run. The Phase 2 and Phase 3 single-source chat entries
+were also explicitly enabled and validated (0 errors / 0 warnings) to support this controlled
+reprocess path.
+
 **2026-08-20 Issue-first evidence-quote fix verified:** via n8n MCP, the active Issue-first
 prompt was upgraded to `issue-first-v2` to require character-for-character source quotes and to
 forbid abbreviations inside evidence. The workflow validated at 0 errors / 0 warnings, then only
