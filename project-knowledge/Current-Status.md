@@ -10,6 +10,14 @@ status: active
 
 ## Latest update
 
+**2026-08-20 main runtime consolidation:** the Issue-first work is merged into local `main`.
+The final application now runs only as the `terra_space` Docker Compose group (one healthy
+frontend on `localhost:3000` and one healthy backend); the temporary Issue-first preview and
+both disposable bridge-test database containers were removed without deleting any volume or
+Supabase data. The final `/api/issues` check returned 9 valid Issues and the browser preview
+rendered the same 9 results. The `issue-first-preview-2026-08-20` Git tag remains as the
+pre-merge checkpoint.
+
 **2026-08-20 Phase 3 recovery:** after the local Supabase endpoint repair, the saved
 real source article was rerun from Phase 3 only—without creating a second source article.
 The run completed with no technical error: two Event records reached `FINAL`, while one
