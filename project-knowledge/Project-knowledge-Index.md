@@ -27,6 +27,8 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 - [Phase 4 Implementation Plan](plans/2026-07-14-phase-4-events-dashboard.md) — task-by-task build plan for Events and Dashboard
 - [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md) — task-by-task build plan for Settings and final MVP verification
+- [Issue-First Terra Insight Design](plans/2026-08-15-issue-first-terra-insight-design.md) — approved design direction for valid article-level Issues, issue-filtered globe exploration, and evidence-backed actor arcs
+- [Issue-First Terra Insight Implementation Plan](plans/2026-08-15-issue-first-terra-insight-implementation.md) — phased parallel build, full reprocess verification, and owner-gated retirement plan
 - [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md) — build plan that closed Phase 1's remaining item
 - [Design Pass Audit](plans/2026-07-15-design-pass-audit.md) — screen-by-screen findings for the deferred aesthetic design pass
 - [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md) — approved globe-dominant 3D Dashboard and controlled-cinematic motion specification

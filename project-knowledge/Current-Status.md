@@ -8,6 +8,46 @@ status: active
 
 # terra_space Current Status
 
+## Latest update
+
+**2026-08-20 local Supabase environment note:** this machine reserves Windows ports
+`54271`–`54370`, so Supabase cannot use its default `54320`–`54329` port group. The
+local Supabase configuration at `D:\local-supabase\supabase\config.toml` therefore uses
+the matching `55420`–`55429` range instead (API `55421`, database `55422`, Studio
+`55423`).
+
+**2026-08-15: owner set a pipeline-only data-correction rule while designing the Issue-first Terra
+Insight experience.** Terra Space will not offer event or Main Issue review, approval, edits, or
+other correction controls. Defects must be fixed in the responsible pipeline stage and affected
+source articles reprocessed, while preserving run history. Terra Insight will become a read-only
+Issue-first analysis workspace: a selected article-level Main Issue filters its related events on
+the globe; selecting an event can show all evidence-backed source-to-target actor arcs. The
+standalone Events and Event Review menus are to be removed in the forthcoming redesign; a future
+Analytics menu will analyse all Issues together. See [Pipeline-Only Data Correction](decisions/Pipeline-Only-Data-Correction.md).
+Only fully pipeline-valid Issues will enter Terra Insight; exceptions remain in pipeline
+observability. After implementation and verification, the owner plans to reprocess every article
+currently stored in the Terra Space database. The current application and pipeline remain the
+fallback until the owner confirms the redesigned version is solid after that reprocess; only then
+may the current version be removed.
+
+**2026-08-16 scope revision:** keep the first Issue-first release deliberately small: build only
+the parallel validated data path and one new Issues screen, then demonstrate it with safe test
+data. Analytics, Pipeline Status, full-database reprocessing, and removal of current menus/routes
+are deferred. The current application and pipeline remain unchanged as the fallback.
+
+**2026-08-11: fixed a real parallel-save failure in the n8n Phase 3 pipeline.** Master workflow
+execution `1697` failed after Phase 2 found four candidates because several Phase 3 event requests
+tried to create the same country-level Syria location simultaneously. The database's unique-place
+protection correctly rejected the duplicate insert, but the authority function did not safely
+reuse the already-created row. Migration `20260811190923_make_phase3_location_creation_atomic`
+now uses an atomic create-or-reuse operation inside
+`terra_space_phase3_create_pipeline_event`; it changes only the function code and does not modify
+or delete existing data. A real PostgreSQL regression test sends eight simultaneous candidates for
+the same Syria location and confirms all eight events are saved while sharing one location row
+(`5` focused Phase-3 model tests pass). `Terra Space - Event Records` validates at 0 errors and 0
+warnings. A fresh owner-triggered master rerun remains the live confirmation step; it was not run
+automatically because it would create real pipeline records.
+
 ## Current focus
 
 **2026-08-11 update: the full Terra Space Supabase application transition is implemented and verified by the automated test suites; live browser verification against real local Supabase is still owner-pending, per the owner's own choice not to run write-heavy scenarios against real data unattended.** Following the [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md), Terra Space's own backend now uses local Supabase/PostgreSQL as its only live database — Dashboard and Events have full authority (publish, reject, archive, restore, edit, delete), not just read-only preview. SQLite is preserved, untouched, as rollback material.

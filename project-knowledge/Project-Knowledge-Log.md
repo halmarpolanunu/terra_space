@@ -8,6 +8,50 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-16 - Issue-first first release reduced
+
+- The owner reduced the Issue-first redesign to a small first release: parallel validated Issue
+  data, evidence-backed arcs, and a new Issues screen only.
+- Deferred Analytics, Pipeline Status, full-database reprocessing, and any removal of current
+  Dashboard, Events, Event Review, or pipeline paths until the owner sees the new screen working
+  with safe test data. The current version remains the fallback.
+
+## 2026-08-15 - Pipeline-only data correction and Issue-first Insight direction
+
+- The owner set a new operating rule: Terra Space must not provide event or Main Issue review.
+  Data defects are corrected in the responsible pipeline stage and affected source articles are
+  reprocessed, with prior run history retained.
+- Recorded [Pipeline-Only Data Correction](decisions/Pipeline-Only-Data-Correction.md). It makes
+  Terra Insight read-only analysis, removes the eventual standalone Events and Event Review menus,
+  reserves a future cross-Issue Analytics menu, and supersedes automatic analytic visibility for
+  pipeline exceptions: only fully pipeline-valid Issues enter Terra Insight.
+- The in-progress design specifies an article-level Main Issue list beside an Issue-filtered globe.
+  Selecting an event will show every evidence-backed source-to-target actor arc, but only when the
+  pipeline has explicitly extracted and validated both actor locations.
+- After the redesigned pipeline and schema are verified, the owner plans to reprocess every
+  article currently available in the Terra Space database. This remains owner-triggered work.
+- The current application and pipeline are the required fallback throughout the redesign,
+  verification, and full reprocess. They may be removed only after owner-confirmed live success
+  of the redesigned version.
+
+## 2026-08-11 - Fixed parallel Phase 3 location-save failure in the n8n pipeline
+
+- Investigated the latest failed `Terra Space - Full News Processing` execution (`1697`): Phase 2
+  successfully produced four candidates, then child Phase 3 execution `1700` stopped at `Create
+  Authoritative Phase 3 Event` with PostgreSQL error `duplicate key value violates unique
+  constraint "phase3_locations_unique_place"`. Several candidates referred to the same
+  country-level Syria location.
+- Root cause: `terra_space_phase3_create_pipeline_event` first selected a location and then used
+  a separate ordinary insert. Parallel n8n HTTP requests could all observe no location before the
+  first insert committed, allowing the unique index to reject the others.
+- Applied migration `20260811190923_make_phase3_location_creation_atomic`. It replaces only that
+  stored function's location block with an atomic insert-or-reuse operation; no existing row was
+  created, changed, or deleted by the migration. A real PostgreSQL regression test creates eight
+  events concurrently for Syria and confirms one shared location row plus eight event links.
+  Focused verification: 5 tests passed; `Terra Space - Event Records` validation reported 0 errors
+  and 0 warnings. The master workflow was not rerun automatically because doing so would create
+  real pipeline data; owner-triggered execution remains the final live check.
+
 ## 2026-08-11 - Full Terra Space Supabase application transition implemented; live cutover verification still owner-pending
 
 - Implemented the [Terra Space Supabase Application Transition Plan](plans/2026-08-10-terra-space-supabase-transition.md)

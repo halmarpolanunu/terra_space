@@ -8,6 +8,7 @@ status: active
 
 # Decisions
 
+- [Pipeline-Only Data Correction](Pipeline-Only-Data-Correction.md) - Terra Insight and Terra Sense do not provide event or issue review; data defects are corrected in the pipeline and corrected sources are reprocessed.
 - [Fresh Phase-Prefixed Supabase Architecture](Fresh-Phase-Prefixed-Supabase-Architecture.md) - replaces SQLite with a fresh local Supabase source of truth organized by explicit Phase 1, Phase 2, and Phase 3 table roles, with immediate Dashboard visibility and human authority.
 - [One-Click Full News Processing](One-Click-Full-News-Processing.md) - Adds a master n8n workflow that runs the three established local processing stages from one article submission while retaining reusable individual stages.
 - [Automated Final Event Record Pipeline](Automated-Final-Event-Record-Pipeline.md) - Phase 3 turns grounded candidates into automatically finalized or safely withheld detailed event records through local-LLM enrichment, taxonomy classification, deterministic validation, and an independent safeguard.

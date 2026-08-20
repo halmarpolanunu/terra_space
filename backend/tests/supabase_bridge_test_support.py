@@ -23,7 +23,7 @@ from sqlalchemy.engine import Engine
 from app.db.supabase_bridge import create_supabase_read_only_engine
 
 TEST_DATABASE_URL = "postgresql+psycopg://postgres:postgres@127.0.0.1:55432/terra_space_bridge_test"
-_PSYCOPG_DSN = "host=127.0.0.1 port=55432 dbname=terra_space_bridge_test user=postgres password=postgres"
+TEST_DATABASE_DSN = "host=127.0.0.1 port=55432 dbname=terra_space_bridge_test user=postgres password=postgres"
 
 _SUPABASE_DIR = Path(__file__).resolve().parents[2] / "supabase"
 # The legacy-table rename migration is skipped here on purpose: a fresh test database never had
@@ -33,6 +33,7 @@ _MIGRATIONS_IN_ORDER = [
     _SUPABASE_DIR / "migrations" / "202608100001_fresh_phase_prefixed_foundation.sql",
     _SUPABASE_DIR / "migrations" / "20260811125624_rename_active_tables_to_terra_space_prefix.sql",
     _SUPABASE_DIR / "migrations" / "20260811125738_refresh_renamed_pipeline_authority_function.sql",
+    _SUPABASE_DIR / "migrations" / "20260811190923_make_phase3_location_creation_atomic.sql",
 ]
 
 _BUSINESS_TABLES_FK_SAFE_ORDER = [
@@ -56,7 +57,7 @@ _BUSINESS_TABLES_FK_SAFE_ORDER = [
 
 
 def _connect() -> psycopg.Connection:
-    return psycopg.connect(_PSYCOPG_DSN, autocommit=True)
+    return psycopg.connect(TEST_DATABASE_DSN, autocommit=True)
 
 
 def _schema_ready(conn: psycopg.Connection) -> bool:
@@ -66,8 +67,23 @@ def _schema_ready(conn: psycopg.Connection) -> bool:
     return bool(row and row[0])
 
 
+def _atomic_location_creation_ready(conn: psycopg.Connection) -> bool:
+    row = conn.execute(
+        """
+        select coalesce(
+          pg_get_functiondef('public.terra_space_phase3_create_pipeline_event(jsonb)'::regprocedure),
+          ''
+        ) like '%on conflict do nothing\n    returning id into v_location_id;%'
+        """
+    ).fetchone()
+    return bool(row and row[0])
+
+
 def _ensure_schema(conn: psycopg.Connection) -> None:
+    if _atomic_location_creation_ready(conn):
+        return
     if _schema_ready(conn):
+        conn.execute(_MIGRATIONS_IN_ORDER[-1].read_text(encoding="utf-8"))
         return
     for role in ("anon", "authenticated", "service_role"):
         conn.execute(
