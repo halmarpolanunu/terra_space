@@ -8,6 +8,24 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-08-20 - Issue-first main release checkpoint and runtime consolidation
+
+- Simplified the application header: the global LM Studio connection indicator was removed.
+  Processing is handled by the backend and n8n, while the Local AI controls remain available in
+  Settings.
+- Improved the Issues screen's failure behavior. If its read-only API connection is unavailable,
+  it now shows an unavailable-data message instead of incorrectly showing `0 valid`. The local
+  read-only connection was restored and verified with 9 valid Issues and 35 valid Issue events.
+- The verified Issue-first work is integrated into local `main` at merge commit `03db2d8` and
+  release tag `terra-space-main-2026-08-20`. The pre-merge checkpoint tag
+  `issue-first-preview-2026-08-20` remains available as a rollback reference.
+- `terra_space` is the single canonical local application runtime. The obsolete Issue-first
+  preview and two disposable test database containers were removed without deleting volumes or
+  Supabase data. The running main frontend/backend, local Supabase, and n8n services were kept.
+- Final checks confirmed that `/api/issues` and the rendered Issues page both report 9 valid
+  Issues. The globe currently has no relationship arcs because no accepted article supplied two
+  evidence-backed, locally resolved actor locations; no location was inferred.
+
 ## 2026-08-20 - Main integrated pipeline activated through n8n MCP
 
 - Repaired the local n8n MCP package connection, then used it to validate and activate the main
