@@ -1,0 +1,274 @@
+{
+  "name": "Terra Space - GDELT DOC Scheduled Collector (SEA/ASEAN/SCS)",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "content": "GDELT supplies article discovery metadata. Full article text must be fetched separately from the original publisher, subject to access rules.\n\nOperational notes:\n- DOC API caps at maxrecords=250 per request, no offset pagination. If a run returns exactly 250 articles, some articles in that window were likely NOT captured (see window_possibly_truncated column in Supabase).\n- Schedule interval and the HTTP Request 'timespan' param (currently: 24h) must be changed TOGETHER if you switch cadence (e.g. to 48h).\n- Requires the Supabase table 'gdelt_doc_articles' (already created) with a UNIQUE constraint on source_url.\n- Query is filtered to a curated domain allowlist (~26 ASEAN/regional/wire/PRC-state outlets, using 'domain:' to catch subdomains) AND sourcelang:english. Edit the domain list directly in the GDELT DOC Search node's query parameter if sources need to change.\n- Not live-verified against GDELT due to persistent rate-limiting during setup (2026-07-28) - verify results on first real run.",
+        "height": 340,
+        "width": 480,
+        "color": 5
+      },
+      "id": "sticky_1",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "path": "gdelt-scs-v2-test",
+        "options": {}
+      },
+      "id": "webhook_test_1",
+      "name": "Manual API Test Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        112,
+        496
+      ],
+      "webhookId": "9f5c5e1b-8c81-4de8-bd76-3e00f515e2ad"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "gdelt_doc_articles",
+        "returnAll": true,
+        "filterType": "none"
+      },
+      "id": "supabase_get_1",
+      "name": "Get Existing URLs",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        464,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.gdeltproject.org/api/v2/doc/doc",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "(\"South China Sea\" OR ASEAN OR \"Southeast Asia\") (domain:channelnewsasia.com OR domain:scmp.com OR domain:asia.nikkei.com OR domain:thediplomat.com OR domain:asiatimes.com OR domain:benarnews.org OR domain:reuters.com OR domain:apnews.com OR domain:aljazeera.com OR domain:bbc.com OR domain:rappler.com OR domain:inquirer.net OR domain:philstar.com OR domain:e.vnexpress.net OR domain:vietnamnews.vn OR domain:tuoitrenews.vn OR domain:thestar.com.my OR domain:freemalaysiatoday.com OR domain:thejakartapost.com OR domain:en.antaranews.com OR domain:straitstimes.com OR domain:todayonline.com OR domain:bangkokpost.com OR domain:nationthailand.com OR domain:globaltimes.cn OR domain:chinadaily.com.cn OR domain:cgtn.com) sourcelang:english"
+            },
+            {
+              "name": "mode",
+              "value": "artlist"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "maxrecords",
+              "value": "250"
+            },
+            {
+              "name": "sort",
+              "value": "datedesc"
+            },
+            {
+              "name": "timespan",
+              "value": "24h"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 5000
+            }
+          }
+        }
+      },
+      "id": "http_1",
+      "name": "GDELT DOC Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = [];\ntry {\n  const gdeltItem = $('GDELT DOC Search').first();\n  raw = (gdeltItem && gdeltItem.json && gdeltItem.json.articles) || [];\n} catch (e) {\n  raw = [];\n}\nconst possiblyTruncated = raw.length === 250;\n\nlet existingUrls;\ntry {\n  existingUrls = new Set($('Get Existing URLs').all().map(i => i.json.source_url).filter(Boolean));\n} catch (e) {\n  existingUrls = new Set();\n}\n\nconst seenInBatch = new Set();\nconst results = [];\n\nfor (const a of raw) {\n  const url = a.url || null;\n  if (!url) continue;\n  if (existingUrls.has(url) || seenInBatch.has(url)) continue;\n  seenInBatch.add(url);\n\n  results.push({\n    json: {\n      title: a.title || null,\n      source_url: url,\n      mobile_url: a.url_mobile || null,\n      source_domain: a.domain || null,\n      source_country: a.sourcecountry || null,\n      language: a.language || null,\n      gdelt_seen_at: a.seendate || null,\n      social_image_url: a.socialimage || null,\n      collection_source: 'GDELT_DOC_2',\n      full_text: null,\n      crawl_status: 'not_attempted',\n      query_topic: 'asean_southeast_asia_south_china_sea',\n      window_possibly_truncated: possiblyTruncated,\n      fetched_at: new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "code_1",
+      "name": "Shape & Dedupe",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "gdelt_doc_articles",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.title }}"
+            },
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $json.source_url }}"
+            },
+            {
+              "fieldId": "mobile_url",
+              "fieldValue": "={{ $json.mobile_url }}"
+            },
+            {
+              "fieldId": "source_domain",
+              "fieldValue": "={{ $json.source_domain }}"
+            },
+            {
+              "fieldId": "source_country",
+              "fieldValue": "={{ $json.source_country }}"
+            },
+            {
+              "fieldId": "language",
+              "fieldValue": "={{ $json.language }}"
+            },
+            {
+              "fieldId": "gdelt_seen_at",
+              "fieldValue": "={{ $json.gdelt_seen_at }}"
+            },
+            {
+              "fieldId": "social_image_url",
+              "fieldValue": "={{ $json.social_image_url }}"
+            },
+            {
+              "fieldId": "collection_source",
+              "fieldValue": "={{ $json.collection_source }}"
+            },
+            {
+              "fieldId": "full_text",
+              "fieldValue": "={{ $json.full_text }}"
+            },
+            {
+              "fieldId": "crawl_status",
+              "fieldValue": "={{ $json.crawl_status }}"
+            },
+            {
+              "fieldId": "query_topic",
+              "fieldValue": "={{ $json.query_topic }}"
+            },
+            {
+              "fieldId": "window_possibly_truncated",
+              "fieldValue": "={{ $json.window_possibly_truncated }}"
+            },
+            {
+              "fieldId": "fetched_at",
+              "fieldValue": "={{ $json.fetched_at }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase_create_1",
+      "name": "Create New Articles",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "manual_trigger_2",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        208,
+        64
+      ]
+    }
+  ],
+  "connections": {
+    "Manual API Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Existing URLs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GDELT DOC Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape & Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Create New Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing URLs": {
+      "main": [
+        [
+          {
+            "node": "Shape & Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GDELT DOC Search": {
+      "main": [
+        [
+          {
+            "node": "Shape & Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Existing URLs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GDELT DOC Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": []
+}

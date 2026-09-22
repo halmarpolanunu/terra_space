@@ -1,0 +1,390 @@
+{
+  "name": "Terra Space - Phase 1 - Input New Article",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Terra Space - Manual News Entry (Phase 1)",
+        "formDescription": "Save one news article now. It will be queued for cleaning when you later run Process All Saved Articles.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Published Date",
+              "fieldType": "date",
+              "fieldName": "p1_published_date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Title",
+              "fieldName": "p1_title",
+              "placeholder": "Italian students apologise after Bangkok train incident sparks outrage in Thailand",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Raw Content Text",
+              "fieldType": "textarea",
+              "fieldName": "p1_raw_content_text",
+              "placeholder": "Five Italian students and their supervisor have apologised to a Thai woman after a video of their confrontation on a Bangkok train went viral.",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Source Domain",
+              "fieldName": "p1_source_domain",
+              "placeholder": "independent.co.uk",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Source URL",
+              "fieldName": "p1_source_url",
+              "placeholder": "https://www.independent.co.uk/asia/southeast-asia/bangkok-bts-train-incident-italian-students-apology-b3022046.html",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Author",
+              "fieldName": "p1_author",
+              "placeholder": "Optional"
+            }
+          ]
+        },
+        "options": {
+          "path": "terra-space-manual-news-entry"
+        }
+      },
+      "id": "form_trigger_manual_p1",
+      "name": "Manual News Entry Form (Phase 1)",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        -192
+      ],
+      "webhookId": "989a6527-a73a-48cb-8759-a6a2b3424021"
+    },
+    {
+      "parameters": {
+        "tableId": "=terra_space_phase1_sources",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "title",
+              "fieldValue": "={{ $json.p1_title }}"
+            },
+            {
+              "fieldId": "publication_date",
+              "fieldValue": "={{ $json.p1_published_date }}"
+            },
+            {
+              "fieldId": "raw_content_text",
+              "fieldValue": "={{ $json.p1_raw_content_text }}"
+            },
+            {
+              "fieldId": "cleaned_content_text",
+              "fieldValue": "={{ $json.p1_clean_content_text }}"
+            },
+            {
+              "fieldId": "source_domain",
+              "fieldValue": "={{ $json.p1_source_domain }}"
+            },
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $json.p1_source_url }}"
+            },
+            {
+              "fieldId": "author",
+              "fieldValue": "={{ $json.p1_author }}"
+            },
+            {
+              "fieldId": "collection_source",
+              "fieldValue": "manual_input"
+            },
+            {
+              "fieldId": "processing_status",
+              "fieldValue": "={{ $json.p1_processing_status }}"
+            },
+            {
+              "fieldId": "processing_error",
+              "fieldValue": "={{ $json.p1_processing_error }}"
+            }
+          ]
+        }
+      },
+      "id": "supabase_insert_p1_manual",
+      "name": "Save Manual News to Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n  ...item,\n  json: {\n    ...item.json,\n    p1_clean_content_text: null,\n    p1_processing_status: 'queued',\n    p1_processing_error: null,\n  },\n}));"
+      },
+      "id": "code_prepare_clean_p1",
+      "name": "Prepare Queued Source for Supabase",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        0
+      ],
+      "notes": "Prepares a valid intake submission for queued-only storage. No cleaning occurs in this workflow."
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "p1_published_date"
+            },
+            {
+              "name": "p1_title"
+            },
+            {
+              "name": "p1_raw_content_text"
+            },
+            {
+              "name": "p1_source_domain"
+            },
+            {
+              "name": "p1_source_url"
+            },
+            {
+              "name": "p1_author"
+            }
+          ]
+        }
+      },
+      "id": "exec_trigger_p1_internal",
+      "name": "Phase 1 Internal Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        32,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const required = [\n  'p1_published_date', 'p1_title', 'p1_raw_content_text',\n  'p1_source_domain', 'p1_source_url',\n];\nfor (const field of required) {\n  if (!String($json[field] ?? '').trim()) {\n    throw new Error(`Phase 1 input is missing ${field}.`);\n  }\n}\nreturn [{\n  json: {\n    ...$json,\n    p1_published_date: String($json.p1_published_date).trim(),\n    p1_title: String($json.p1_title).trim(),\n    p1_raw_content_text: String($json.p1_raw_content_text).trim(),\n    p1_source_domain: String($json.p1_source_domain).trim(),\n    p1_source_url: String($json.p1_source_url).trim(),\n    p1_author: String($json.p1_author ?? '').trim(),\n    p1_collection_source: 'manual_input',\n  },\n}];"
+      },
+      "id": "code_normalize_p1_input",
+      "name": "Normalize Phase 1 Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        -96
+      ],
+      "notes": "Shared entry point for the interactive form and internal input. Validates required article fields, accepts an empty author, and does not call LM Studio."
+    },
+    {
+      "parameters": {
+        "jsCode": "const savedSource = $('Save Manual News to Supabase').first().json;\nconst source = $('Prepare Queued Source for Supabase').first().json;\nif (!savedSource.id) throw new Error('Phase 1 save did not return an id.');\nreturn [{\n  json: {\n    stage: 'PHASE_1',\n    status: 'QUEUED',\n    p1_uuid: savedSource.id,\n    p1_title: source.p1_title,\n  },\n}];"
+      },
+      "id": "code_p1_stage_result",
+      "name": "Build Phase 1 Stage Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        0
+      ],
+      "notes": "Phase 1 intake result: the article was saved and awaits the owner-triggered queue processor."
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase1_sources",
+        "limit": 1,
+        "orderBy": "created_at.asc",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "source_url",
+              "condition": "eq",
+              "keyValue": "={{ $json.p1_source_url }}"
+            }
+          ]
+        }
+      },
+      "id": "postgres_check_submitted_url_duplicate",
+      "name": "Check Submitted URL for Duplicate",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -96
+      ],
+      "alwaysOutputData": true,
+      "notes": "Uses the regular Supabase node to check whether the trimmed submitted Source URL already exists."
+    },
+    {
+      "parameters": {
+        "jsCode": "const original = $('Normalize Phase 1 Input').item.json;\nconst existing = $json.id ? $json : null;\nreturn [{\n  json: {\n    ...original,\n    p1_is_duplicate_url: Boolean(existing),\n    p1_existing_source_id: existing?.id ?? null,\n    p1_existing_source_title: existing?.title ?? null,\n  },\n}];"
+      },
+      "id": "code_attach_url_duplicate_result",
+      "name": "Attach URL Duplicate Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -96
+      ],
+      "notes": "Keeps the original form data and exposes the regular Supabase lookup result for routing."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "is-submitted-url-duplicate",
+              "leftValue": "={{ $json.p1_is_duplicate_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if_submitted_url_duplicate",
+      "name": "Is Submitted URL Already Saved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        -96
+      ],
+      "notes": "True: return a duplicate rejection without saving or queuing. False: save the article as queued."
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    stage: 'PHASE_1',\n    status: 'REJECTED_DUPLICATE',\n    p1_uuid: $json.p1_existing_source_id,\n    p1_title: $json.p1_existing_source_title ?? $json.p1_title,\n    p1_source_url: $json.p1_source_url,\n    rejection_reason: 'The submitted Source URL is already saved.',\n  },\n}];"
+      },
+      "id": "code_build_duplicate_rejection_result",
+      "name": "Build Duplicate Rejection Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -192
+      ],
+      "notes": "Duplicate result only. It does not create a source row, queue item, or processing run."
+    }
+  ],
+  "connections": {
+    "Prepare Queued Source for Supabase": {
+      "main": [
+        [
+          {
+            "node": "Save Manual News to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual News Entry Form (Phase 1)": {
+      "main": [
+        [
+          {
+            "node": "Normalize Phase 1 Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 1 Internal Input": {
+      "main": [
+        [
+          {
+            "node": "Normalize Phase 1 Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Manual News to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Build Phase 1 Stage Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Phase 1 Input": {
+      "main": [
+        [
+          {
+            "node": "Check Submitted URL for Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Submitted URL for Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Attach URL Duplicate Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach URL Duplicate Result": {
+      "main": [
+        [
+          {
+            "node": "Is Submitted URL Already Saved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Submitted URL Already Saved?": {
+      "main": [
+        [
+          {
+            "node": "Build Duplicate Rejection Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Queued Source for Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": []
+}

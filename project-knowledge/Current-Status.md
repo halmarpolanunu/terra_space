@@ -10,6 +10,14 @@ status: active
 
 ## Latest update
 
+**2026-09-22 Portable n8n setup package completed:** the repository now carries a
+credential-free export of all seven current Terra Space workflows under
+tools/n8n/portable/workflows. The package includes a checked import command for a Docker n8n
+container, a machine-readable manifest, and a test that confirms each export is present, inactive,
+and does not contain credential markers. All seven exported workflows passed n8n runtime
+validation with zero errors and zero warnings. The other device still needs its own local Supabase,
+HTTP Basic Auth replay, and LM Studio setup; credentials and existing database data remain local.
+
 **2026-09-22 Terra Space objects moved into their dedicated schema:** after owner approval,
 moved all 24 live `terra_space_*` tables, their eight identity sequences, and six supporting views
 from PostgreSQL `public` to the existing `terra_space` schema. No pipeline data was deleted or

@@ -8,6 +8,15 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-22 — Portable n8n workflow setup package
+
+- Added a credential-free export of the seven current workflows in the Terra_Space n8n folder
+  under tools/n8n/portable/workflows.
+- Added a Docker n8n import command, a package test, and an import manifest. The package keeps
+  every imported workflow inactive and intentionally excludes credentials and local data.
+- Recorded the exact other-device setup procedure in
+  [Terra Space n8n Portable Setup](Terra-Space-n8n-Portable-Setup.md).
+
 ## 2026-09-22 - Terra Space schema location
 
 - Owner replaced the former public-schema choice. The live Terra Space tables, supporting views,

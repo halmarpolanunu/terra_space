@@ -1,0 +1,49 @@
+{
+  "packageName": "Terra Space n8n portable setup",
+  "exportedAt": "2026-09-22",
+  "folderName": "Terra_Space",
+  "workflowFiles": [
+    {
+      "file": "01-gdelt-doc-scheduled-collector.json",
+      "name": "Terra Space - GDELT DOC Scheduled Collector (SEA/ASEAN/SCS)",
+      "nodes": 7,
+      "needs": ["Supabase API credential"]
+    },
+    {
+      "file": "02-phase1-input-new-article.json",
+      "name": "Terra Space - Phase 1 - Input New Article",
+      "nodes": 10,
+      "needs": ["Supabase API credential"]
+    },
+    {
+      "file": "03-phase1-process-new-articles.json",
+      "name": "Terra Space - Phase 1 - Process New Articles",
+      "nodes": 16,
+      "needs": ["Supabase API credential", "LM Studio running locally"]
+    },
+    {
+      "file": "04-phase2-detect-main-issues.json",
+      "name": "Terra Space - Phase 2 - Detect Main Issues",
+      "nodes": 21,
+      "needs": ["Supabase API credential", "HTTP Basic Auth credential for the controlled replay webhook", "LM Studio running locally"]
+    },
+    {
+      "file": "05-phase3-detect-event-candidates.json",
+      "name": "Terra Space - Phase 3 - Detect Event Candidates",
+      "nodes": 18,
+      "needs": ["Supabase API credential", "HTTP Basic Auth credential for the controlled replay webhook", "LM Studio running locally"]
+    },
+    {
+      "file": "06-phase4-extract-event-facts.json",
+      "name": "Terra Space - Phase 4 - Extract Event Facts",
+      "nodes": 28,
+      "needs": ["Supabase API credential", "HTTP Basic Auth credential for the controlled replay webhook", "LM Studio running locally"]
+    },
+    {
+      "file": "07-phase5-generate-and-qualify-events.json",
+      "name": "Terra Space - Phase 5 - Generate and Qualify Events",
+      "nodes": 73,
+      "needs": ["Supabase API credential", "LM Studio running locally"]
+    }
+  ]
+}

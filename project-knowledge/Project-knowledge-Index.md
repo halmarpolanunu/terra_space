@@ -19,6 +19,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Project Knowledge Log](Project-Knowledge-Log.md) — meaningful changes to the knowledge bundle
 - [Phase 4 Review Audit — 2026-09-08](Phase-4-Review-Audit-2026-09-08.md) — candidate-by-candidate classification of the 21 review-flagged results in sequences 98–107
 - [Terra Space Operating Guide](Terra-Space-Operating-Guide.md) — superseded historical guide to the pre-reset pipeline
+- [Terra Space n8n Portable Setup](Terra-Space-n8n-Portable-Setup.md) — imports the current inactive workflow package on another local device
 
 ## Planning and decisions
 
