@@ -19,7 +19,7 @@ def test_read_only_engine_rejects_a_write(bridge_read_only_engine) -> None:
         with bridge_read_only_engine.connect() as conn:
             conn.execute(
                 text(
-                    "insert into public.terra_space_phase3_actors (id, name, is_active) "
+                    "insert into terra_space.terra_space_phase3_actors (id, name, is_active) "
                     "values (gen_random_uuid(), 'should never be written', true)"
                 )
             )

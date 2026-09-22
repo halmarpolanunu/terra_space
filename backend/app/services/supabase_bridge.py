@@ -38,7 +38,7 @@ def list_bridge_sources(engine: Engine) -> list[BridgeSourceRead]:
 
     with engine.connect() as conn:
         rows = conn.execute(
-            text(f"select {_SOURCE_COLUMNS} from public.terra_space_phase1_sources order by created_at desc")
+            text(f"select {_SOURCE_COLUMNS} from terra_space.terra_space_phase1_sources order by created_at desc")
         ).mappings()
         return [BridgeSourceRead.model_validate(dict(row)) for row in rows]
 
@@ -48,7 +48,7 @@ def get_bridge_source(engine: Engine, source_id: str) -> BridgeSourceRead | None
 
     with engine.connect() as conn:
         row = conn.execute(
-            text(f"select {_SOURCE_COLUMNS} from public.terra_space_phase1_sources where id = :id"),
+            text(f"select {_SOURCE_COLUMNS} from terra_space.terra_space_phase1_sources where id = :id"),
             {"id": source_id},
         ).mappings().first()
         return BridgeSourceRead.model_validate(dict(row)) if row else None
@@ -64,8 +64,8 @@ def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewR
                 select
                     c.phase1_source_id, s.title as source_title, c.main_issue_status,
                     c.main_issue, c.event_detection_status, c.event_candidates, c.processed_at
-                from public.terra_space_phase2_event_candidates c
-                join public.terra_space_phase1_sources s on s.id = c.phase1_source_id
+                from terra_space.terra_space_phase2_event_candidates c
+                join terra_space.terra_space_phase1_sources s on s.id = c.phase1_source_id
                 order by c.processed_at desc
                 """
             )
@@ -84,14 +84,14 @@ _EVENT_QUERY = """
         coalesce(sources.sources, '[]'::jsonb) as sources,
         latest_run.safeguard_reasons as exception_safeguard_reasons,
         latest_run.error_message as exception_error_message
-    from public.terra_space_phase3_events e
-    left join public.terra_space_phase3_event_types et on et.id = e.event_type_id
+    from terra_space.terra_space_phase3_events e
+    left join terra_space.terra_space_phase3_event_types et on et.id = e.event_type_id
     left join lateral (
         select jsonb_agg(jsonb_build_object(
             'role', ea.role, 'id', a.id, 'name', a.name, 'is_active', a.is_active
         )) as actors
-        from public.terra_space_phase3_event_actors ea
-        join public.terra_space_phase3_actors a on a.id = ea.actor_id
+        from terra_space.terra_space_phase3_event_actors ea
+        join terra_space.terra_space_phase3_actors a on a.id = ea.actor_id
         where ea.event_id = e.id
     ) actors on true
     left join lateral (
@@ -100,8 +100,8 @@ _EVENT_QUERY = """
             'city_regency', l.city_regency, 'latitude', l.latitude, 'longitude', l.longitude,
             'coordinate_precision', l.coordinate_precision
         )) as locations
-        from public.terra_space_phase3_event_locations el
-        join public.terra_space_phase3_locations l on l.id = el.location_id
+        from terra_space.terra_space_phase3_event_locations el
+        join terra_space.terra_space_phase3_locations l on l.id = el.location_id
         where el.event_id = e.id
     ) locations on true
     left join lateral (
@@ -109,7 +109,7 @@ _EVENT_QUERY = """
             'phase1_source_id', es.phase1_source_id, 'reference_label', es.reference_label,
             'evidence_quote', es.evidence_quote
         )) as sources
-        from public.terra_space_phase3_event_sources es
+        from terra_space.terra_space_phase3_event_sources es
         where es.event_id = e.id
     ) sources on true
     -- The most recent Phase 3 attempt for this candidate, used only to explain *why* an
@@ -117,7 +117,7 @@ _EVENT_QUERY = """
     -- Read-only, same as every other join here.
     left join lateral (
         select r.safeguard_reasons, r.error_message
-        from public.terra_space_phase3_event_runs r
+        from terra_space.terra_space_phase3_event_runs r
         where r.candidate_key = e.candidate_key
         order by r.processed_at desc
         limit 1
@@ -249,7 +249,7 @@ def list_bridge_event_types(engine: Engine) -> list[EventTypeRead]:
             text(
                 """
                 select id, name, description, is_active
-                from public.terra_space_phase3_event_types
+                from terra_space.terra_space_phase3_event_types
                 order by name
                 """
             )
@@ -271,7 +271,7 @@ def list_bridge_actors(engine: Engine) -> list[ActorRead]:
 
     with engine.connect() as conn:
         rows = conn.execute(
-            text("select id, name, is_active from public.terra_space_phase3_actors order by name")
+            text("select id, name, is_active from terra_space.terra_space_phase3_actors order by name")
         ).mappings()
         return [ActorRead(id=row["id"], name=row["name"], is_active=row["is_active"]) for row in rows]
 

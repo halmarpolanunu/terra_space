@@ -75,3 +75,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Validate-ProjectKnow
 ```
 
 Fix all errors before reporting the work complete. Explain any remaining warnings.
+
+## n8n workflow placement
+
+When creating a new n8n workflow for Terra Space, place it in n8n's `Terra_Space` folder.
+
+## n8n MCP rule
+
+The project's n8n MCP is already configured. For every n8n task—including inspection,
+editing, validation, execution, status checks, and workflow management—use the n8n MCP
+first. Do not open or automate the n8n browser UI unless the MCP genuinely cannot perform
+the required action, the limitation has been explained to the project owner, and the owner
+explicitly approves the browser fallback.

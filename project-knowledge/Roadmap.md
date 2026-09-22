@@ -104,6 +104,56 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
   activate. Deliberately not run automatically: those scenarios publish/reject/archive/delete real
   event rows, which needs the owner's own confirmation first. Status: planned.
 
+## Post-reset Detection Pipeline
+
+- [x] **Phase 1: Clean source articles** - the owner-verified local cleaning baseline produces
+  complete cleaned articles. Status: completed.
+- [x] **Phase 2: Detect Main Issues** - every article has a complete Main Issue and any uncertainty
+  is retained as `NEEDS_REVIEW`, not treated as a pipeline stop. Status: completed.
+- [x] **Phase 3: Detect Event Candidates** - the clean 50-article baseline has 50 latest results and
+  109 complete candidates: 99 `VALID` and 10 genuine `NEEDS_REVIEW`. Every evidence quote is an
+  exact cleaned-source substring, no latest result is failed, the Phase 3 queue is empty, and all
+  109 candidates are ready in the Phase 4 pending view. Status: completed.
+- [x] **Phase 4: Extract Event Facts** - extract minimal per-candidate dates, epistemic status,
+  actors, locations, and grounded evidence while retaining `NEEDS_REVIEW` output and retrying only
+  technical failures. The production-readiness repair covers candidate-scoped dates, epistemic
+  evidence, actors and roles, physical locations, metonyms, actor-affiliation countries, neighboring
+  clauses, Markdown-grounded evidence, and grounded date normalization. The verified replay contains
+  113 results (16 `VALID`, 97 `NEEDS_REVIEW`), zero technical failures, an empty queue, and 249
+  preserved processing-history rows. All 31 focused Phase 3/4 tests pass and the whole-table dry run
+  reports zero affected rows. The replay workflow is unpublished. Final events remain out of scope.
+  The clean replay now contains 109 results and 109 runs: 43 `VALID`, 56 `INCOMPLETE`, and 10
+  genuine inherited `NEEDS_REVIEW`, with zero failed or pending results. All 341 retained evidence
+  fields are exact article substrings and remain inside their Phase 3 candidate boundaries.
+  Status: completed.
+- [ ] **Phase 5: Generate and Qualify Events** - use one inactive n8n workflow with five
+  checkpointed stages. Phase 5A is completed with 109 verified prepared records: 43 NORMAL and 66
+  LIMITED, with exact upstream preservation and no failures. Phase 5B is accepted for progression:
+  109 latest results contain 56 `CLASSIFIED`, 53 visible `UNCLASSIFIED`, zero `FAILED`, and 40
+  isolated `PENDING_REVIEW` proposals. The provisional 12-type taxonomy may be refined later, but
+  proposal consolidation remains required before Phase 5E qualification or production release.
+  Phase 5C is complete for the 109-event baseline. It uses 38 universally safe geographic
+  references and 24 actor references; uncertain items remain visible rather than guessed. All 109
+  events have one latest result and one unique history row, with zero pending or failed results and
+  110 deduplicated unresolved-reference suggestions. Audit found zero invalid coordinate mappings,
+  timeline-basis mismatches, or duplicate identities. Phase 5D is connected in the same inactive
+  workflow and uses strict deterministic possible-duplicate recommendations without merging or
+  model calls. Its eight-event pilot completed successfully with zero recommendations and zero
+  writes; a read-only full-baseline evaluation also found zero qualifying pairs among 31 actual
+  same-date pairs. The temporary pilot filter was removed after owner approval, with no full data
+  run. The live positive-write path awaits a real qualifying pair. Work is stopped before Phase 5E.
+  It uses approved offline geographic and actor references, separate Event Geography and Actor
+  Network outputs, visible unresolved cases, optional non-authoritative AI suggestions, and
+  targeted reruns. The 5C database foundation, pure transformer, connected inactive n8n group,
+  controlled pilot, and full baseline run are complete.
+  Stage 5B assigns
+  approved Event Types while keeping unmatched events visibly Unclassified; 5C prepares honest
+  timeline references, event geography, and typed actor geography; 5D recommends possible
+  duplicates without merging; and 5E makes every retained event visible while qualifying safe
+  events as final under separately approved rules. Stop for owner review after every stage. See
+  [Phase 5 Event Generation and Qualification](decisions/Phase-5-Conservative-Event-Drafts.md).
+  The single Phase 5 workflow remains inactive. Status: in-progress.
+
 ## Deferred Beyond MVP
 
 - Terra Brief module integration.

@@ -80,7 +80,7 @@ declare
 begin
   -- A domain may not have a parent, and a non-domain must have one.
   begin
-    insert into public.terra_space_phase3_taxonomy_nodes (name, level, parent_id)
+    insert into terra_space.terra_space_phase3_taxonomy_nodes (name, level, parent_id)
     values ('test category with no parent', 'category', null);
     raise exception 'FAIL: a category was allowed without a parent';
   exception when check_violation then
@@ -88,13 +88,13 @@ begin
   end;
 
   -- Only an event_type leaf may carry an event type.
-  insert into public.terra_space_phase3_event_types (name, description)
+  insert into terra_space.terra_space_phase3_event_types (name, description)
   values ('test type for structure', 'Temporary row used only by the test transaction.');
 
   begin
-    insert into public.terra_space_phase3_taxonomy_nodes (name, level, parent_id, event_type_id)
+    insert into terra_space.terra_space_phase3_taxonomy_nodes (name, level, parent_id, event_type_id)
     select 'test domain carrying a type', 'domain', null, id
-      from public.terra_space_phase3_event_types where name = 'test type for structure';
+      from terra_space.terra_space_phase3_event_types where name = 'test type for structure';
     raise exception 'FAIL: a domain was allowed to carry an event type';
   exception when check_violation then
     null;
@@ -111,19 +111,19 @@ $$;
 do $$
 begin
   begin
-    perform public.terra_space_phase3_create_pipeline_event(jsonb_build_object('phase1_source_id', gen_random_uuid()));
+    perform terra_space.terra_space_phase3_create_pipeline_event(jsonb_build_object('phase1_source_id', gen_random_uuid()));
     raise exception 'FAIL: a missing candidate_key was accepted';
   exception when sqlstate '22023' then null;
   end;
 
   begin
-    perform public.terra_space_phase3_create_pipeline_event(jsonb_build_object('candidate_key', 'k'));
+    perform terra_space.terra_space_phase3_create_pipeline_event(jsonb_build_object('candidate_key', 'k'));
     raise exception 'FAIL: a missing phase1_source_id was accepted';
   exception when sqlstate '22023' then null;
   end;
 
   begin
-    perform public.terra_space_phase3_create_pipeline_event(jsonb_build_object(
+    perform terra_space.terra_space_phase3_create_pipeline_event(jsonb_build_object(
       'candidate_key', 'k', 'phase1_source_id', gen_random_uuid(),
       'pipeline_outcome', 'FINAL', 'title', 't', 'summary', 's'));
     raise exception 'FAIL: an unknown Phase 1 source was accepted';
@@ -145,10 +145,10 @@ declare
   v_first_id      uuid;
   v_second_id     uuid;
   v_exception_id  uuid;
-  v_row           public.terra_space_phase3_events%rowtype;
+  v_row           terra_space.terra_space_phase3_events%rowtype;
   v_count         integer;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source
   )
@@ -158,10 +158,10 @@ begin
   )
   returning id into v_source_id;
 
-  select id into v_type_id from public.terra_space_phase3_event_types where is_active limit 1;
+  select id into v_type_id from terra_space.terra_space_phase3_event_types where is_active limit 1;
 
   -- A FINAL result becomes a published event straight away.
-  v_first_id := public.terra_space_phase3_create_pipeline_event(jsonb_build_object(
+  v_first_id := terra_space.terra_space_phase3_create_pipeline_event(jsonb_build_object(
     'candidate_key',        'test-candidate-1',
     'phase1_source_id',     v_source_id::text,
     'pipeline_outcome',     'FINAL',
@@ -190,7 +190,7 @@ begin
                             )
   ));
 
-  select * into v_row from public.terra_space_phase3_events where id = v_first_id;
+  select * into v_row from terra_space.terra_space_phase3_events where id = v_first_id;
   if v_row.dashboard_status <> 'published' then
     raise exception 'FAIL: FINAL did not publish, status is %', v_row.dashboard_status;
   end if;
@@ -214,31 +214,31 @@ begin
   end if;
 
   -- Two real actors were linked; the blank one was ignored rather than invented.
-  select count(*) into v_count from public.terra_space_phase3_event_actors where event_id = v_first_id;
+  select count(*) into v_count from terra_space.terra_space_phase3_event_actors where event_id = v_first_id;
   if v_count <> 2 then
     raise exception 'FAIL: expected 2 linked actors, found %', v_count;
   end if;
 
-  select count(*) into v_count from public.terra_space_phase3_event_locations where event_id = v_first_id;
+  select count(*) into v_count from terra_space.terra_space_phase3_event_locations where event_id = v_first_id;
   if v_count <> 1 then
     raise exception 'FAIL: expected 1 linked location, found %', v_count;
   end if;
 
   select count(*) into v_count
-    from public.terra_space_phase3_event_locations el
-    join public.terra_space_phase3_locations l on l.id = el.location_id
+    from terra_space.terra_space_phase3_event_locations el
+    join terra_space.terra_space_phase3_locations l on l.id = el.location_id
    where el.event_id = v_first_id and l.country_iso3 = 'UKR' and l.latitude is not null;
   if v_count <> 1 then
     raise exception 'FAIL: the location was not normalised or its coordinates were dropped';
   end if;
 
-  select count(*) into v_count from public.terra_space_phase3_event_sources where event_id = v_first_id;
+  select count(*) into v_count from terra_space.terra_space_phase3_event_sources where event_id = v_first_id;
   if v_count <> 1 then
     raise exception 'FAIL: expected 1 linked source, found %', v_count;
   end if;
 
   -- An EXCEPTION result is kept but stays out of Terra Insight.
-  v_exception_id := public.terra_space_phase3_create_pipeline_event(jsonb_build_object(
+  v_exception_id := terra_space.terra_space_phase3_create_pipeline_event(jsonb_build_object(
     'candidate_key',    'test-candidate-2',
     'phase1_source_id', v_source_id::text,
     'pipeline_outcome', 'EXCEPTION',
@@ -246,7 +246,7 @@ begin
     'summary',          'The independent check rejected this one.',
     'epistemic_status', 'something the model made up'
   ));
-  select * into v_row from public.terra_space_phase3_events where id = v_exception_id;
+  select * into v_row from terra_space.terra_space_phase3_events where id = v_exception_id;
   if v_row.dashboard_status <> 'hidden' then
     raise exception 'FAIL: EXCEPTION did not hide, status is %', v_row.dashboard_status;
   end if;
@@ -259,7 +259,7 @@ begin
   end if;
 
   -- Now simulate the owner editing the published event by hand.
-  update public.terra_space_phase3_events
+  update terra_space.terra_space_phase3_events
      set title = 'Owner corrected title',
          dashboard_status = 'rejected',
          human_modified_at = now(),
@@ -267,7 +267,7 @@ begin
    where id = v_first_id;
 
   -- Run the pipeline again for the same candidate key, with different content.
-  v_second_id := public.terra_space_phase3_create_pipeline_event(jsonb_build_object(
+  v_second_id := terra_space.terra_space_phase3_create_pipeline_event(jsonb_build_object(
     'candidate_key',    'test-candidate-1',
     'phase1_source_id', v_source_id::text,
     'pipeline_outcome', 'FINAL',
@@ -281,12 +281,12 @@ begin
   end if;
 
   select count(*) into v_count
-    from public.terra_space_phase3_events where candidate_key = 'test-candidate-1';
+    from terra_space.terra_space_phase3_events where candidate_key = 'test-candidate-1';
   if v_count <> 1 then
     raise exception 'FAIL: expected exactly 1 event for the candidate key, found %', v_count;
   end if;
 
-  select * into v_row from public.terra_space_phase3_events where id = v_first_id;
+  select * into v_row from terra_space.terra_space_phase3_events where id = v_first_id;
   if v_row.title <> 'Owner corrected title' then
     raise exception 'FAIL: the rerun overwrote the owner''s title, now %', v_row.title;
   end if;
@@ -299,7 +299,7 @@ begin
   end if;
 
   -- The rerun must not have duplicated the links either.
-  select count(*) into v_count from public.terra_space_phase3_event_actors where event_id = v_first_id;
+  select count(*) into v_count from terra_space.terra_space_phase3_event_actors where event_id = v_first_id;
   if v_count <> 2 then
     raise exception 'FAIL: the rerun changed the linked actors, now %', v_count;
   end if;
@@ -318,10 +318,10 @@ declare
   v_before    timestamptz;
   v_after     timestamptz;
 begin
-  select id into v_source_id from public.terra_space_phase1_sources where source_domain = 'example.test' limit 1;
+  select id into v_source_id from terra_space.terra_space_phase1_sources where source_domain = 'example.test' limit 1;
 
   begin
-    insert into public.terra_space_phase3_events (
+    insert into terra_space.terra_space_phase3_events (
       phase1_source_id, origin, pipeline_outcome, dashboard_status,
       title, summary, epistemic_status
     )
@@ -333,11 +333,11 @@ begin
   -- The trigger stamps updated_at itself. Everything in this file runs inside one
   -- transaction, where now() is frozen, so the check is that a deliberately wrong value
   -- written by the caller is replaced by the current time rather than kept.
-  update public.terra_space_phase1_sources
+  update terra_space.terra_space_phase1_sources
      set title = 'Test source renamed',
          updated_at = '2000-01-01T00:00:00Z'
    where id = v_source_id;
-  select updated_at into v_after from public.terra_space_phase1_sources where id = v_source_id;
+  select updated_at into v_after from terra_space.terra_space_phase1_sources where id = v_source_id;
   if v_after <> now() then
     raise exception 'FAIL: updated_at was not stamped by the trigger, it is %', v_after;
   end if;
@@ -358,20 +358,20 @@ begin
   select string_agg(format('%s=%s', t, n), ', ')
     into v_counts
     from (
-      select 'terra_space_phase1_sources' as t, count(*) as n from public.terra_space_phase1_sources
-      union all select 'terra_space_phase1_attachments', count(*) from public.terra_space_phase1_attachments
-      union all select 'terra_space_phase1_processing_runs', count(*) from public.terra_space_phase1_processing_runs
-      union all select 'terra_space_phase2_event_candidates', count(*) from public.terra_space_phase2_event_candidates
-      union all select 'terra_space_phase2_candidate_runs', count(*) from public.terra_space_phase2_candidate_runs
-      union all select 'terra_space_phase3_events', count(*) from public.terra_space_phase3_events
-      union all select 'terra_space_phase3_event_runs', count(*) from public.terra_space_phase3_event_runs
-      union all select 'terra_space_phase3_event_sources', count(*) from public.terra_space_phase3_event_sources
-      union all select 'terra_space_phase3_event_actors', count(*) from public.terra_space_phase3_event_actors
-      union all select 'terra_space_phase3_event_locations', count(*) from public.terra_space_phase3_event_locations
-      union all select 'terra_space_phase3_duplicate_flags', count(*) from public.terra_space_phase3_duplicate_flags
-      union all select 'terra_space_phase3_actors', count(*) from public.terra_space_phase3_actors
-      union all select 'terra_space_phase3_actor_aliases', count(*) from public.terra_space_phase3_actor_aliases
-      union all select 'terra_space_phase3_locations', count(*) from public.terra_space_phase3_locations
+      select 'terra_space_phase1_sources' as t, count(*) as n from terra_space.terra_space_phase1_sources
+      union all select 'terra_space_phase1_attachments', count(*) from terra_space.terra_space_phase1_attachments
+      union all select 'terra_space_phase1_processing_runs', count(*) from terra_space.terra_space_phase1_processing_runs
+      union all select 'terra_space_phase2_event_candidates', count(*) from terra_space.terra_space_phase2_event_candidates
+      union all select 'terra_space_phase2_candidate_runs', count(*) from terra_space.terra_space_phase2_candidate_runs
+      union all select 'terra_space_phase3_events', count(*) from terra_space.terra_space_phase3_events
+      union all select 'terra_space_phase3_event_runs', count(*) from terra_space.terra_space_phase3_event_runs
+      union all select 'terra_space_phase3_event_sources', count(*) from terra_space.terra_space_phase3_event_sources
+      union all select 'terra_space_phase3_event_actors', count(*) from terra_space.terra_space_phase3_event_actors
+      union all select 'terra_space_phase3_event_locations', count(*) from terra_space.terra_space_phase3_event_locations
+      union all select 'terra_space_phase3_duplicate_flags', count(*) from terra_space.terra_space_phase3_duplicate_flags
+      union all select 'terra_space_phase3_actors', count(*) from terra_space.terra_space_phase3_actors
+      union all select 'terra_space_phase3_actor_aliases', count(*) from terra_space.terra_space_phase3_actor_aliases
+      union all select 'terra_space_phase3_locations', count(*) from terra_space.terra_space_phase3_locations
     ) s
    where n > 0;
 

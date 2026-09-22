@@ -14,6 +14,7 @@ import { AppShell } from "@/components/app-shell";
 import { EventFilterBar, type DocumentOption } from "@/components/event-filter-bar";
 import { EventList } from "@/components/event-list";
 import { EventTimeline } from "@/components/event-timeline";
+import { Phase5EventSection } from "@/components/phase5-event-section";
 import {
   ACTIVE_FILTER_KEYS,
   EVENT_SORT_OPTIONS,
@@ -42,6 +43,7 @@ import {
 } from "@/lib/events-api";
 import { listDocuments } from "@/lib/documents-api";
 import { hideEvent, unhideEvent, useHiddenEventIds } from "@/lib/hidden-events";
+import { listPhase5Events, type Phase5Event } from "@/lib/bridge-api";
 
 export function DashboardWorkspace() {
   const router = useRouter();
@@ -54,6 +56,7 @@ export function DashboardWorkspace() {
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
+  const [phase5Events, setPhase5Events] = useState<Phase5Event[]>([]);
   const [editing, setEditing] = useState(false);
   const [activePanel, setActivePanel] = useState<CommandDeckPanel>(null);
   const [projectionMode, setProjectionMode] = useState<"globe" | "flat" | "unavailable">("globe");
@@ -95,12 +98,14 @@ export function DashboardWorkspace() {
       listEventTypes(),
       listActors(),
       listDocuments(),
-    ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments]) => {
+      listPhase5Events().catch(() => []),
+    ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments, nextPhase5Events]) => {
       if (!active) return;
       setAllEvents(nextEvents);
       setEventTypes(nextEventTypes);
       setActors(nextActors);
       setDocuments(nextDocuments.map(({ id, title }) => ({ id, title })));
+      setPhase5Events(nextPhase5Events);
       setError(undefined);
     }).catch(() => {
       if (active) setError("Terra Space backend is unavailable. Try again after it starts.");
@@ -296,6 +301,7 @@ export function DashboardWorkspace() {
           sortLabel={sortLabel}
           stageLabel="Global operating picture"
           summary={(
+            <>
             <DashboardSummaryContent
               events={events}
               hiddenByOwnerCount={hiddenByOwnerEvents.length}
@@ -320,6 +326,8 @@ export function DashboardWorkspace() {
                 emptyMessage: "Every event in this view has a resolved location.",
               })}
             />
+            <Phase5EventSection events={phase5Events} />
+            </>
           )}
           title="Dashboard"
         />

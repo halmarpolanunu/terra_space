@@ -82,7 +82,7 @@ def _connect() -> psycopg.Connection:
 
 def _schema_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
-        "select to_regclass('public.terra_space_phase1_sources') is not null"
+        "select to_regclass('terra_space.terra_space_phase1_sources') is not null"
     ).fetchone()
     return bool(row and row[0])
 
@@ -91,7 +91,7 @@ def _atomic_location_creation_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         """
         select coalesce(
-          pg_get_functiondef('public.terra_space_phase3_create_pipeline_event(jsonb)'::regprocedure),
+          pg_get_functiondef('terra_space.terra_space_phase3_create_pipeline_event(jsonb)'::regprocedure),
           ''
         ) like '%on conflict do nothing\n    returning id into v_location_id;%'
         """
@@ -105,7 +105,7 @@ def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
         select exists (
           select 1
             from pg_trigger
-           where tgrelid = to_regclass('public.terra_space_issue_v2_relationship_endpoints')
+           where tgrelid = to_regclass('terra_space.terra_space_issue_v2_relationship_endpoints')
              and tgname = 'terra_space_issue_v2_endpoints_keep_relationships_complete'
               and not tgisinternal
         )
@@ -116,7 +116,7 @@ def _issue_first_schema_ready(conn: psycopg.Connection) -> bool:
 
 def _issue_first_pipeline_contract_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
-        "select to_regprocedure('public.terra_space_issue_v2_record_run(jsonb)') is not null"
+        "select to_regprocedure('terra_space.terra_space_issue_v2_record_run(jsonb)') is not null"
     ).fetchone()
     return bool(row and row[0])
 
@@ -124,7 +124,7 @@ def _issue_first_pipeline_contract_ready(conn: psycopg.Connection) -> bool:
 def _issue_first_latest_run_views_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         """
-        select coalesce(pg_get_viewdef(to_regclass('public.terra_space_issue_v2_valid_issues'), true), '')
+        select coalesce(pg_get_viewdef(to_regclass('terra_space.terra_space_issue_v2_valid_issues'), true), '')
           like '%latest_runs%'
         """
     ).fetchone()
@@ -135,7 +135,7 @@ def _issue_first_field_grounding_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
         """
         select coalesce(
-          obj_description(to_regprocedure('public.terra_space_issue_v2_record_run(jsonb)'), 'pg_proc'),
+          obj_description(to_regprocedure('terra_space.terra_space_issue_v2_record_run(jsonb)'), 'pg_proc'),
           ''
         ) like '%actor%location claims%'
         """
@@ -145,14 +145,14 @@ def _issue_first_field_grounding_ready(conn: psycopg.Connection) -> bool:
 
 def _issue_first_country_reference_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
-        "select to_regclass('public.terra_space_issue_v2_country_reference') is not null"
+        "select to_regclass('terra_space.terra_space_issue_v2_country_reference') is not null"
     ).fetchone()
     return bool(row and row[0])
 
 
 def _issue_first_country_reference_safety_ready(conn: psycopg.Connection) -> bool:
     table_exists = conn.execute(
-        "select to_regclass('public.terra_space_issue_v2_country_reference') is not null"
+        "select to_regclass('terra_space.terra_space_issue_v2_country_reference') is not null"
     ).fetchone()
     if not table_exists or not table_exists[0]:
         return False
@@ -161,12 +161,12 @@ def _issue_first_country_reference_safety_ready(conn: psycopg.Connection) -> boo
         """
         select exists (
           select 1
-            from public.terra_space_issue_v2_country_reference
+            from terra_space.terra_space_issue_v2_country_reference
            where country_iso3 = 'ESH' and country_name = 'Western Sahara'
         )
         and exists (
           select 1
-            from public.terra_space_issue_v2_country_reference
+            from terra_space.terra_space_issue_v2_country_reference
            where country_iso3 = 'KOR' and country_name = 'South Korea'
         )
         """
@@ -176,14 +176,14 @@ def _issue_first_country_reference_safety_ready(conn: psycopg.Connection) -> boo
 
 def _issue_first_read_projections_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
-        "select to_regclass('public.terra_space_issue_v2_valid_relationships') is not null"
+        "select to_regclass('terra_space.terra_space_issue_v2_valid_relationships') is not null"
     ).fetchone()
     return bool(row and row[0])
 
 
 def _initial_issue_first_schema_ready(conn: psycopg.Connection) -> bool:
     row = conn.execute(
-        "select to_regclass('public.terra_space_issue_v2_runs') is not null"
+        "select to_regclass('terra_space.terra_space_issue_v2_runs') is not null"
     ).fetchone()
     return bool(row and row[0])
 
@@ -279,7 +279,7 @@ def insert_source(conn: psycopg.Connection, **overrides: object) -> str:
     values.update(overrides)
     conn.execute(
         """
-        insert into public.terra_space_phase1_sources
+        insert into terra_space.terra_space_phase1_sources
             (id, title, publication_date, raw_content_text, cleaned_content_text,
              source_domain, source_url, author, collection_source, processing_status)
         values (%(id)s, %(title)s, %(publication_date)s, %(raw_content_text)s,
@@ -330,7 +330,7 @@ def insert_candidate_result(conn: psycopg.Connection, phase1_source_id: str, **o
     values.update(overrides)
     conn.execute(
         """
-        insert into public.terra_space_phase2_event_candidates
+        insert into terra_space.terra_space_phase2_event_candidates
             (id, phase1_source_id, main_issue_status, main_issue, event_detection_status,
              event_candidates, model_name, prompt_version, processed_at)
         values (%(id)s, %(phase1_source_id)s, %(main_issue_status)s, %(main_issue)s,
@@ -345,7 +345,7 @@ def insert_event_type(conn: psycopg.Connection, name: str = "Test Event Type") -
     type_id = str(uuid.uuid4())
     conn.execute(
         """
-        insert into public.terra_space_phase3_event_types (id, name, description, is_active)
+        insert into terra_space.terra_space_phase3_event_types (id, name, description, is_active)
         values (%s, %s, %s, true)
         """,
         (type_id, name, "A test event type."),
@@ -356,7 +356,7 @@ def insert_event_type(conn: psycopg.Connection, name: str = "Test Event Type") -
 def insert_actor(conn: psycopg.Connection, name: str) -> str:
     actor_id = str(uuid.uuid4())
     conn.execute(
-        "insert into public.terra_space_phase3_actors (id, name, is_active) values (%s, %s, true)",
+        "insert into terra_space.terra_space_phase3_actors (id, name, is_active) values (%s, %s, true)",
         (actor_id, name),
     )
     return actor_id
@@ -375,7 +375,7 @@ def insert_location(conn: psycopg.Connection, **overrides: object) -> str:
     values.update(overrides)
     conn.execute(
         """
-        insert into public.terra_space_phase3_locations
+        insert into terra_space.terra_space_phase3_locations
             (id, country_iso3, admin1, city_regency, latitude, longitude, coordinate_precision)
         values (%(id)s, %(country_iso3)s, %(admin1)s, %(city_regency)s, %(latitude)s,
                 %(longitude)s, %(coordinate_precision)s)
@@ -411,7 +411,7 @@ def insert_event_run(
     values.update(overrides)
     conn.execute(
         """
-        insert into public.terra_space_phase3_event_runs
+        insert into terra_space.terra_space_phase3_event_runs
             (candidate_key, phase1_source_id, attempt_number, candidate, factual_status,
              taxonomy_status, safeguard_status, safeguard_reasons, error_message, processed_at,
              outcome_payload)
@@ -456,7 +456,7 @@ def insert_event(
     values.update({k: v for k, v in overrides.items() if k in values})
     conn.execute(
         """
-        insert into public.terra_space_phase3_events
+        insert into terra_space.terra_space_phase3_events
             (id, candidate_key, phase1_source_id, origin, pipeline_outcome, dashboard_status,
              title, summary, event_date, event_date_precision, epistemic_status, event_type_id,
              pipeline_candidate, pipeline_event_snapshot)
@@ -470,18 +470,18 @@ def insert_event(
     event_id = values["id"]
     for actor_id, role in actor_ids or []:
         conn.execute(
-            "insert into public.terra_space_phase3_event_actors (event_id, actor_id, role) "
+            "insert into terra_space.terra_space_phase3_event_actors (event_id, actor_id, role) "
             "values (%s, %s, %s)",
             (event_id, actor_id, role),
         )
     for location_id in location_ids or []:
         conn.execute(
-            "insert into public.terra_space_phase3_event_locations (event_id, location_id) "
+            "insert into terra_space.terra_space_phase3_event_locations (event_id, location_id) "
             "values (%s, %s)",
             (event_id, location_id),
         )
     conn.execute(
-        "insert into public.terra_space_phase3_event_sources "
+        "insert into terra_space.terra_space_phase3_event_sources "
         "(event_id, phase1_source_id, reference_label, evidence_quote) values (%s, %s, %s, %s)",
         (event_id, phase1_source_id, values["title"], "Quote."),
     )

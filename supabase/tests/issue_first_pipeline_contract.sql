@@ -29,7 +29,7 @@ declare
   v_tie_higher_issue_id uuid := gen_random_uuid();
   v_labels text[];
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values
@@ -37,20 +37,20 @@ begin
      'example.test', 'https://example.test/latest', 'Test author', 'test', 'completed'),
     (v_tie_source_id, 'Tie-break source', '2026-08-16', 'Evidence.', 'Evidence.',
      'example.test', 'https://example.test/tie', 'Test author', 'test', 'completed');
-  insert into public.terra_space_issue_v2_runs (id, source_id, status, stage, reason, processed_at)
+  insert into terra_space.terra_space_issue_v2_runs (id, source_id, status, stage, reason, processed_at)
   values
     (v_old_run_id, v_source_id, 'succeeded', 'complete', null, '2026-08-16T01:00:00Z'),
     (v_new_run_id, v_source_id, 'succeeded', 'complete', null, '2026-08-16T02:00:00Z'),
     (v_tie_lower_run_id, v_tie_source_id, 'succeeded', 'complete', null, '2026-08-16T03:00:00Z'),
     (v_tie_higher_run_id, v_tie_source_id, 'succeeded', 'complete', null, '2026-08-16T03:00:00Z');
-  insert into public.terra_space_issue_v2_issues
+  insert into terra_space.terra_space_issue_v2_issues
     (id, run_id, source_id, label, summary, evidence_quote, validated_at)
   values
     (v_old_issue_id, v_old_run_id, v_source_id, 'Old Issue', 'Summary', 'Evidence.', now()),
     (v_new_issue_id, v_new_run_id, v_source_id, 'New Issue', 'Summary', 'Evidence.', now()),
     (v_tie_lower_issue_id, v_tie_lower_run_id, v_tie_source_id, 'Tie lower', 'Summary', 'Evidence.', now()),
     (v_tie_higher_issue_id, v_tie_higher_run_id, v_tie_source_id, 'Tie higher', 'Summary', 'Evidence.', now());
-  insert into public.terra_space_issue_v2_events
+  insert into terra_space.terra_space_issue_v2_events
     (id, issue_id, run_id, title, evidence_quote, validated_at)
   values
     (gen_random_uuid(), v_old_issue_id, v_old_run_id, 'Old Event', 'Evidence.', now()),
@@ -58,33 +58,33 @@ begin
     (gen_random_uuid(), v_tie_lower_issue_id, v_tie_lower_run_id, 'Tie lower event', 'Evidence.', now()),
     (gen_random_uuid(), v_tie_higher_issue_id, v_tie_higher_run_id, 'Tie higher event', 'Evidence.', now());
   select array_agg(label order by label) into v_labels
-    from public.terra_space_issue_v2_valid_issues
+    from terra_space.terra_space_issue_v2_valid_issues
    where source_id = v_source_id;
   if v_labels is distinct from array['New Issue'] then
     raise exception 'FAIL: valid-only view exposed stale succeeded output: %', v_labels;
   end if;
   select array_agg(title order by title) into v_labels
-    from public.terra_space_issue_v2_valid_events where run_id in (v_old_run_id, v_new_run_id);
+    from terra_space.terra_space_issue_v2_valid_events where run_id in (v_old_run_id, v_new_run_id);
   if v_labels is distinct from array['New Event'] then
     raise exception 'FAIL: valid-only event view exposed stale succeeded output: %', v_labels;
   end if;
   select array_agg(label order by label) into v_labels
-    from public.terra_space_issue_v2_valid_issues
+    from terra_space.terra_space_issue_v2_valid_issues
    where source_id = v_tie_source_id;
   if v_labels is distinct from array['Tie higher'] then
     raise exception 'FAIL: valid-only view did not use the deterministic latest-run tie-break: %', v_labels;
   end if;
-  insert into public.terra_space_issue_v2_runs
+  insert into terra_space.terra_space_issue_v2_runs
     (id, source_id, status, stage, reason, processed_at)
   values (v_failed_run_id, v_source_id, 'failed', 'validation', 'A later validation failed.',
           '2026-08-16T04:00:00Z');
   if exists (
-    select 1 from public.terra_space_issue_v2_valid_issues where source_id = v_source_id
+    select 1 from terra_space.terra_space_issue_v2_valid_issues where source_id = v_source_id
   ) then
     raise exception 'FAIL: later failed run left stale analytical Issue visible';
   end if;
   if exists (
-    select 1 from public.terra_space_issue_v2_valid_events where run_id in (v_old_run_id, v_new_run_id)
+    select 1 from terra_space.terra_space_issue_v2_valid_events where run_id in (v_old_run_id, v_new_run_id)
   ) then
     raise exception 'FAIL: later failed run left stale analytical event visible';
   end if;
@@ -106,7 +106,7 @@ declare
   v_run_status text;
   v_run_reason text;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -121,13 +121,13 @@ begin
     'test',
     'completed'
   );
-  insert into public.terra_space_phase3_location_gazetteer
+  insert into terra_space.terra_space_phase3_location_gazetteer
     (lookup_key, country_iso3, admin1, city_regency, latitude, longitude, coordinate_precision)
   values
     ('IDN' || chr(31) || 'jakarta', 'IDN', null, 'jakarta', -6.208800, 106.845600, 'city_regency'),
     ('IDN' || chr(31) || 'bandung', 'IDN', null, 'bandung', -6.917500, 107.619100, 'city_regency');
 
-  v_run_id := public.terra_space_issue_v2_record_run(
+  v_run_id := terra_space.terra_space_issue_v2_record_run(
     jsonb_build_object(
       'source_id', v_source_id::text,
       'main_issue', jsonb_build_object(
@@ -167,33 +167,33 @@ begin
   );
 
   select status, reason into v_run_status, v_run_reason
-    from public.terra_space_issue_v2_runs
+    from terra_space.terra_space_issue_v2_runs
    where id = v_run_id;
   if v_run_status <> 'succeeded' then
     raise exception 'FAIL: grounded payload unexpectedly failed: %', v_run_reason;
   end if;
 
   select count(*) into v_visible_issues
-    from public.terra_space_issue_v2_valid_issues
+    from terra_space.terra_space_issue_v2_valid_issues
    where source_id = v_source_id;
   select count(*) into v_visible_events
-    from public.terra_space_issue_v2_valid_events event
-   join public.terra_space_issue_v2_issues issue on issue.id = event.issue_id
+    from terra_space.terra_space_issue_v2_valid_events event
+   join terra_space.terra_space_issue_v2_issues issue on issue.id = event.issue_id
    where issue.source_id = v_source_id;
   if v_visible_issues <> 1 or v_visible_events <> 1 then
     raise exception 'FAIL: grounded payload did not create one visible Issue and event';
   end if;
   select event.id, relationship.id
     into v_event_id, v_relationship_id
-    from public.terra_space_issue_v2_valid_events event
-    join public.terra_space_issue_v2_relationships relationship on relationship.event_id = event.id
+    from terra_space.terra_space_issue_v2_valid_events event
+    join terra_space.terra_space_issue_v2_relationships relationship on relationship.event_id = event.id
    where event.run_id = v_run_id
      and relationship.validated_at is not null;
   if v_event_id is null or v_relationship_id is null then
     raise exception 'FAIL: exact local endpoint locations did not create a valid relationship';
   end if;
   select count(*) into v_endpoint_count
-    from public.terra_space_issue_v2_relationship_endpoints
+    from terra_space.terra_space_issue_v2_relationship_endpoints
    where relationship_id = v_relationship_id;
   if v_endpoint_count <> 2 then
     raise exception 'FAIL: valid relationship did not have its two endpoints';
@@ -211,7 +211,7 @@ declare
   v_visible_events integer;
   v_relationships integer;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -227,7 +227,7 @@ begin
     'completed'
   );
 
-  v_run_id := public.terra_space_issue_v2_record_run(
+  v_run_id := terra_space.terra_space_issue_v2_record_run(
     jsonb_build_object(
       'source_id', v_source_id::text,
       'main_issue', jsonb_build_object(
@@ -264,11 +264,11 @@ begin
   );
 
   select count(*) into v_visible_events
-    from public.terra_space_issue_v2_valid_events
+    from terra_space.terra_space_issue_v2_valid_events
    where run_id = v_run_id;
   select count(*) into v_relationships
-    from public.terra_space_issue_v2_relationships relationship
-   join public.terra_space_issue_v2_events event on event.id = relationship.event_id
+    from terra_space.terra_space_issue_v2_relationships relationship
+   join terra_space.terra_space_issue_v2_events event on event.id = relationship.event_id
    where event.run_id = v_run_id;
   if v_visible_events <> 1 or v_relationships <> 0 then
     raise exception 'FAIL: unmatched endpoint did not preserve the event while omitting its relationship';
@@ -286,7 +286,7 @@ declare
   v_status text;
   v_reason text;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -295,7 +295,7 @@ begin
     'The Ministry of Defence in Jakarta, Indonesia announced assistance to the government in Bandung, Indonesia.',
     'example.test', 'https://example.test/actor-grounding', 'Test author', 'test', 'completed'
   );
-  v_run_id := public.terra_space_issue_v2_record_run(jsonb_build_object(
+  v_run_id := terra_space.terra_space_issue_v2_record_run(jsonb_build_object(
     'source_id', v_source_id::text,
     'main_issue', jsonb_build_object(
       'label', 'Assistance announcement', 'summary', 'Summary.',
@@ -320,7 +320,7 @@ begin
     ))
   ));
   select status, reason into v_status, v_reason
-    from public.terra_space_issue_v2_runs where id = v_run_id;
+    from terra_space.terra_space_issue_v2_runs where id = v_run_id;
   if v_status <> 'failed' or v_reason not ilike '%source actor name%' then
     raise exception 'FAIL: invented source actor did not fail endpoint validation: % / %', v_status, v_reason;
   end if;
@@ -335,7 +335,7 @@ declare
   v_status text;
   v_reason text;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -344,7 +344,7 @@ begin
     'The Ministry of Defence in Jakarta, Indonesia discussed Morocco before announcing assistance to the government in Bandung, Indonesia.',
     'example.test', 'https://example.test/country-grounding', 'Test author', 'test', 'completed'
   );
-  v_run_id := public.terra_space_issue_v2_record_run(jsonb_build_object(
+  v_run_id := terra_space.terra_space_issue_v2_record_run(jsonb_build_object(
     'source_id', v_source_id::text,
     'main_issue', jsonb_build_object(
       'label', 'Assistance announcement', 'summary', 'Summary.',
@@ -369,7 +369,7 @@ begin
     ))
   ));
   select status, reason into v_status, v_reason
-    from public.terra_space_issue_v2_runs where id = v_run_id;
+    from terra_space.terra_space_issue_v2_runs where id = v_run_id;
   if v_status <> 'failed' or v_reason not ilike '%source location country text%' then
     raise exception 'FAIL: mismatched country text did not fail endpoint validation: % / %', v_status, v_reason;
   end if;
@@ -380,7 +380,7 @@ $$;
 -- An unexpected database write failure is not a bad extraction. It remains observable as a
 -- failed run, but its stage identifies persistence so an upstream pipeline correction is not
 -- mistakenly prescribed.
-create function public.terra_space_issue_v2_test_force_persistence_failure()
+create function terra_space.terra_space_issue_v2_test_force_persistence_failure()
 returns trigger
 language plpgsql
 as $$
@@ -389,8 +389,8 @@ begin
 end;
 $$;
 create trigger terra_space_issue_v2_test_force_persistence_failure
-before insert on public.terra_space_issue_v2_issues
-for each row execute function public.terra_space_issue_v2_test_force_persistence_failure();
+before insert on terra_space.terra_space_issue_v2_issues
+for each row execute function terra_space.terra_space_issue_v2_test_force_persistence_failure();
 
 do $$
 declare
@@ -399,7 +399,7 @@ declare
   v_stage text;
   v_reason text;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -407,7 +407,7 @@ begin
     'The government announced a policy.', 'example.test', 'https://example.test/persistence',
     'Test author', 'test', 'completed'
   );
-  v_run_id := public.terra_space_issue_v2_record_run(jsonb_build_object(
+  v_run_id := terra_space.terra_space_issue_v2_record_run(jsonb_build_object(
     'source_id', v_source_id::text,
     'main_issue', jsonb_build_object(
       'label', 'Policy announcement', 'summary', 'Summary.',
@@ -416,7 +416,7 @@ begin
     'events', jsonb_build_array()
   ));
   select stage, reason into v_stage, v_reason
-    from public.terra_space_issue_v2_runs where id = v_run_id;
+    from terra_space.terra_space_issue_v2_runs where id = v_run_id;
   if v_stage <> 'persistence' or v_reason not like 'Database persistence failed:%' then
     raise exception 'FAIL: database failure was mislabeled as validation: % / %', v_stage, v_reason;
   end if;
@@ -425,8 +425,8 @@ end;
 $$;
 
 drop trigger terra_space_issue_v2_test_force_persistence_failure
-  on public.terra_space_issue_v2_issues;
-drop function public.terra_space_issue_v2_test_force_persistence_failure();
+  on terra_space.terra_space_issue_v2_issues;
+drop function terra_space.terra_space_issue_v2_test_force_persistence_failure();
 
 -- An endpoint location whose evidence quote does not occur in the source must leave a durable
 -- failed run for diagnosis, but must never create an analytical Issue or event.
@@ -438,7 +438,7 @@ declare
   v_visible_issues integer;
   v_visible_events integer;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -454,7 +454,7 @@ begin
     'completed'
   );
 
-  v_run_id := public.terra_space_issue_v2_record_run(
+  v_run_id := terra_space.terra_space_issue_v2_record_run(
     jsonb_build_object(
       'source_id', v_source_id::text,
       'main_issue', jsonb_build_object(
@@ -491,7 +491,7 @@ begin
   );
 
   select count(*) into v_failed_runs
-    from public.terra_space_issue_v2_runs
+    from terra_space.terra_space_issue_v2_runs
    where id = v_run_id
      and source_id = v_source_id
      and status = 'failed'
@@ -502,11 +502,11 @@ begin
   end if;
 
   select count(*) into v_visible_issues
-    from public.terra_space_issue_v2_valid_issues
+    from terra_space.terra_space_issue_v2_valid_issues
    where source_id = v_source_id;
   select count(*) into v_visible_events
-    from public.terra_space_issue_v2_valid_events event
-   join public.terra_space_issue_v2_issues issue on issue.id = event.issue_id
+    from terra_space.terra_space_issue_v2_valid_events event
+   join terra_space.terra_space_issue_v2_issues issue on issue.id = event.issue_id
    where issue.source_id = v_source_id;
   if v_visible_issues <> 0 or v_visible_events <> 0 then
     raise exception 'FAIL: failed endpoint validation created analytical rows';

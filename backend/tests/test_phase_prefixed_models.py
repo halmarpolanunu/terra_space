@@ -94,7 +94,7 @@ def test_locations_dedupe_globally_by_normalized_place(bridge_db, postgres_db) -
     try:
         postgres_db.execute(
             text(
-                "insert into public.terra_space_phase3_locations (country_iso3, admin1) "
+                "insert into terra_space.terra_space_phase3_locations (country_iso3, admin1) "
                 "values ('IDN', 'Jakarta')"
             )
         )
@@ -116,7 +116,7 @@ def test_pipeline_event_creation_reuses_one_location_when_candidates_arrive_toge
 
     source_id = bridge_db.execute(
         """
-        insert into public.terra_space_phase1_sources
+        insert into terra_space.terra_space_phase1_sources
             (title, publication_date, raw_content_text, cleaned_content_text, source_domain,
              source_url, author, collection_source)
         values ('Concurrent location source', '2026-08-11', 'Raw.', 'Cleaned.', 'example.test',
@@ -148,7 +148,7 @@ def test_pipeline_event_creation_reuses_one_location_when_candidates_arrive_toge
             start_together.wait()
             return str(
                 connection.execute(
-                    "select public.terra_space_phase3_create_pipeline_event(%s::jsonb)",
+                    "select terra_space.terra_space_phase3_create_pipeline_event(%s::jsonb)",
                     (json.dumps(payload),),
                 ).fetchone()[0]
             )
@@ -159,15 +159,15 @@ def test_pipeline_event_creation_reuses_one_location_when_candidates_arrive_toge
     assert len(set(event_ids)) == candidate_count
     location_count = bridge_db.execute(
         """
-        select count(*) from public.terra_space_phase3_locations
+        select count(*) from terra_space.terra_space_phase3_locations
         where country_iso3 = 'SYR' and admin1 is null and city_regency is null
         """
     ).fetchone()[0]
     linked_event_count = bridge_db.execute(
         """
         select count(distinct event_id)
-        from public.terra_space_phase3_event_locations event_locations
-        join public.terra_space_phase3_locations locations
+        from terra_space.terra_space_phase3_event_locations event_locations
+        join terra_space.terra_space_phase3_locations locations
           on locations.id = event_locations.location_id
         where locations.country_iso3 = 'SYR'
           and locations.admin1 is null
@@ -228,7 +228,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
 
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_runs
+        insert into terra_space.terra_space_issue_v2_runs
             (id, source_id, status, stage, processed_at)
         values (%s, %s, 'succeeded', 'complete', now())
         """,
@@ -236,7 +236,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_issues
+        insert into terra_space.terra_space_issue_v2_issues
             (id, run_id, source_id, label, summary, evidence_quote, validated_at)
         values (%s, %s, %s, 'Issue', 'Issue summary', 'Source and target evidence.', now())
         """,
@@ -244,7 +244,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_events
+        insert into terra_space.terra_space_issue_v2_events
             (id, issue_id, run_id, title, evidence_quote, validated_at)
         values (%s, %s, %s, 'Event', 'Source and target evidence.', now())
         """,
@@ -252,7 +252,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_relationships
+        insert into terra_space.terra_space_issue_v2_relationships
             (id, event_id, evidence_quote)
         values (%s, %s, 'Source and target evidence.')
         """,
@@ -260,7 +260,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_locations
+        insert into terra_space.terra_space_issue_v2_locations
             (id, label, latitude, longitude, evidence_quote)
         values (%s, 'Jakarta', -6.2, 106.8, 'Source and target evidence.')
         """,
@@ -268,7 +268,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_relationship_endpoints
+        insert into terra_space.terra_space_issue_v2_relationship_endpoints
             (relationship_id, role, actor_name, location_id, evidence_quote)
         values (%s, 'source', 'Source actor', %s, 'Source and target evidence.')
         """,
@@ -278,7 +278,7 @@ def test_issue_first_relationship_rejects_two_source_endpoints(bridge_db) -> Non
     with pytest.raises(psycopg.errors.UniqueViolation):
         bridge_db.execute(
             """
-            insert into public.terra_space_issue_v2_relationship_endpoints
+            insert into terra_space.terra_space_issue_v2_relationship_endpoints
                 (relationship_id, role, actor_name, location_id, evidence_quote)
             values (%s, 'source', 'Another source actor', %s, 'Source and target evidence.')
             """,
@@ -300,7 +300,7 @@ def test_issue_first_valid_views_exclude_unvalidated_and_failed_results(bridge_d
 
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_runs
+        insert into terra_space.terra_space_issue_v2_runs
             (id, source_id, status, stage, reason, processed_at)
         values
             (%s, %s, 'succeeded', 'complete', null, now() + interval '1 minute'),
@@ -310,7 +310,7 @@ def test_issue_first_valid_views_exclude_unvalidated_and_failed_results(bridge_d
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_issues
+        insert into terra_space.terra_space_issue_v2_issues
             (id, run_id, source_id, label, summary, evidence_quote, validated_at)
         values
             (%s, %s, %s, 'Valid issue', 'Summary', 'Valid analysis evidence.', now()),
@@ -320,7 +320,7 @@ def test_issue_first_valid_views_exclude_unvalidated_and_failed_results(bridge_d
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_events
+        insert into terra_space.terra_space_issue_v2_events
             (id, issue_id, run_id, title, evidence_quote, validated_at)
         values
             (%s, %s, %s, 'Valid event', 'Valid analysis evidence.', now()),
@@ -331,11 +331,11 @@ def test_issue_first_valid_views_exclude_unvalidated_and_failed_results(bridge_d
 
     visible_issue_ids = {
         row[0]
-        for row in bridge_db.execute("select id from public.terra_space_issue_v2_valid_issues")
+        for row in bridge_db.execute("select id from terra_space.terra_space_issue_v2_valid_issues")
     }
     visible_event_ids = {
         row[0]
-        for row in bridge_db.execute("select id from public.terra_space_issue_v2_valid_events")
+        for row in bridge_db.execute("select id from terra_space.terra_space_issue_v2_valid_events")
     }
 
     assert visible_issue_ids == {uuid.UUID(valid_issue_id)}
@@ -353,37 +353,37 @@ def test_issue_first_relationship_cannot_be_validated_without_a_target_endpoint(
     relationship_id = str(uuid.uuid4())
     location_id = str(uuid.uuid4())
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_runs
+        """insert into terra_space.terra_space_issue_v2_runs
            (id, source_id, status, stage, processed_at)
            values (%s, %s, 'succeeded', 'complete', now())""",
         (run_id, source_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_issues
+        """insert into terra_space.terra_space_issue_v2_issues
            (id, run_id, source_id, label, summary, evidence_quote, validated_at)
            values (%s, %s, %s, 'Issue', 'Summary', 'Only the source location is stated.', now())""",
         (issue_id, run_id, source_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_events
+        """insert into terra_space.terra_space_issue_v2_events
            (id, issue_id, run_id, title, evidence_quote, validated_at)
            values (%s, %s, %s, 'Event', 'Only the source location is stated.', now())""",
         (event_id, issue_id, run_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_relationships
+        """insert into terra_space.terra_space_issue_v2_relationships
            (id, event_id, evidence_quote)
            values (%s, %s, 'Only the source location is stated.')""",
         (relationship_id, event_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_locations
+        """insert into terra_space.terra_space_issue_v2_locations
            (id, label, latitude, longitude, evidence_quote)
            values (%s, 'Jakarta', -6.2, 106.8, 'Only the source location is stated.')""",
         (location_id,),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_relationship_endpoints
+        """insert into terra_space.terra_space_issue_v2_relationship_endpoints
            (relationship_id, role, actor_name, location_id, evidence_quote)
            values (%s, 'source', 'Source actor', %s, 'Only the source location is stated.')""",
         (relationship_id, location_id),
@@ -391,7 +391,7 @@ def test_issue_first_relationship_cannot_be_validated_without_a_target_endpoint(
 
     with pytest.raises(psycopg.errors.CheckViolation):
         bridge_db.execute(
-            """update public.terra_space_issue_v2_relationships
+            """update terra_space.terra_space_issue_v2_relationships
                set validated_at = now()
              where id = %s""",
             (relationship_id,),
@@ -409,31 +409,31 @@ def _create_validated_issue_first_relationship(bridge_db) -> dict[str, str]:
     source_location_id = str(uuid.uuid4())
     target_location_id = str(uuid.uuid4())
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_runs
+        """insert into terra_space.terra_space_issue_v2_runs
            (id, source_id, status, stage, processed_at)
            values (%s, %s, 'succeeded', 'complete', now())""",
         (run_id, source_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_issues
+        """insert into terra_space.terra_space_issue_v2_issues
            (id, run_id, source_id, label, summary, evidence_quote, validated_at)
            values (%s, %s, %s, 'Issue', 'Summary', 'Both actor locations are stated.', now())""",
         (issue_id, run_id, source_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_events
+        """insert into terra_space.terra_space_issue_v2_events
            (id, issue_id, run_id, title, evidence_quote, validated_at)
            values (%s, %s, %s, 'Event', 'Both actor locations are stated.', now())""",
         (event_id, issue_id, run_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_relationships
+        """insert into terra_space.terra_space_issue_v2_relationships
            (id, event_id, evidence_quote)
            values (%s, %s, 'Both actor locations are stated.')""",
         (relationship_id, event_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_locations
+        """insert into terra_space.terra_space_issue_v2_locations
            (id, label, latitude, longitude, evidence_quote)
            values
              (%s, 'Jakarta', -6.2, 106.8, 'Both actor locations are stated.'),
@@ -441,7 +441,7 @@ def _create_validated_issue_first_relationship(bridge_db) -> dict[str, str]:
         (source_location_id, target_location_id),
     )
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_relationship_endpoints
+        """insert into terra_space.terra_space_issue_v2_relationship_endpoints
            (relationship_id, role, actor_name, location_id, evidence_quote)
            values
              (%s, 'source', 'Source actor', %s, 'Both actor locations are stated.'),
@@ -449,7 +449,7 @@ def _create_validated_issue_first_relationship(bridge_db) -> dict[str, str]:
         (relationship_id, source_location_id, relationship_id, target_location_id),
     )
     bridge_db.execute(
-        """update public.terra_space_issue_v2_relationships
+        """update terra_space.terra_space_issue_v2_relationships
               set validated_at = now()
             where id = %s""",
         (relationship_id,),
@@ -469,7 +469,7 @@ def test_issue_first_issue_source_must_match_its_run_source(bridge_db) -> None: 
     other_source_id = insert_source(bridge_db, title="Other source")
     run_id = str(uuid.uuid4())
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_runs
+        """insert into terra_space.terra_space_issue_v2_runs
            (id, source_id, status, stage, processed_at)
            values (%s, %s, 'succeeded', 'complete', now())""",
         (run_id, run_source_id),
@@ -477,7 +477,7 @@ def test_issue_first_issue_source_must_match_its_run_source(bridge_db) -> None: 
 
     with pytest.raises(psycopg.errors.ForeignKeyViolation):
         bridge_db.execute(
-            """insert into public.terra_space_issue_v2_issues
+            """insert into terra_space.terra_space_issue_v2_issues
                (id, run_id, source_id, label, summary, evidence_quote, validated_at)
                values (%s, %s, %s, 'Wrong source', 'Summary', 'Evidence.', now())""",
             (str(uuid.uuid4()), run_id, other_source_id),
@@ -491,7 +491,7 @@ def test_issue_first_endpoint_delete_cannot_break_a_validated_relationship(bridg
 
     with pytest.raises(psycopg.errors.CheckViolation):
         bridge_db.execute(
-            """delete from public.terra_space_issue_v2_relationship_endpoints
+            """delete from terra_space.terra_space_issue_v2_relationship_endpoints
                  where relationship_id = %s and role = 'target'""",
             (record["relationship_id"],),
         )
@@ -503,7 +503,7 @@ def test_issue_first_endpoint_move_cannot_break_a_validated_relationship(bridge_
     record = _create_validated_issue_first_relationship(bridge_db)
     destination_relationship_id = str(uuid.uuid4())
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_relationships
+        """insert into terra_space.terra_space_issue_v2_relationships
            (id, event_id, evidence_quote)
            values (%s, %s, 'Both actor locations are stated.')""",
         (destination_relationship_id, record["event_id"]),
@@ -511,7 +511,7 @@ def test_issue_first_endpoint_move_cannot_break_a_validated_relationship(bridge_
 
     with pytest.raises(psycopg.errors.CheckViolation):
         bridge_db.execute(
-            """update public.terra_space_issue_v2_relationship_endpoints
+            """update terra_space.terra_space_issue_v2_relationship_endpoints
                   set relationship_id = %s
                 where relationship_id = %s and role = 'target'""",
             (destination_relationship_id, record["relationship_id"]),
@@ -524,7 +524,7 @@ def test_issue_first_runs_cannot_be_updated_or_deleted(bridge_db) -> None:  # no
     source_id = insert_source(bridge_db)
     run_id = str(uuid.uuid4())
     bridge_db.execute(
-        """insert into public.terra_space_issue_v2_runs
+        """insert into terra_space.terra_space_issue_v2_runs
            (id, source_id, status, stage, processed_at)
            values (%s, %s, 'succeeded', 'complete', now())""",
         (run_id, source_id),
@@ -532,12 +532,12 @@ def test_issue_first_runs_cannot_be_updated_or_deleted(bridge_db) -> None:  # no
 
     with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
         bridge_db.execute(
-            "update public.terra_space_issue_v2_runs set stage = 'changed' where id = %s",
+            "update terra_space.terra_space_issue_v2_runs set stage = 'changed' where id = %s",
             (run_id,),
         )
     with pytest.raises(psycopg.errors.ObjectNotInPrerequisiteState):
         bridge_db.execute(
-            "delete from public.terra_space_issue_v2_runs where id = %s",
+            "delete from terra_space.terra_space_issue_v2_runs where id = %s",
             (run_id,),
         )
 
@@ -582,11 +582,11 @@ def test_issue_first_rejects_generic_korea_for_south_korea_when_article_says_nor
     }
 
     run_id = bridge_db.execute(
-        "select public.terra_space_issue_v2_record_run(%s::jsonb)",
+        "select terra_space.terra_space_issue_v2_record_run(%s::jsonb)",
         (json.dumps(payload),),
     ).fetchone()[0]
     status, reason = bridge_db.execute(
-        "select status, reason from public.terra_space_issue_v2_runs where id = %s", (run_id,)
+        "select status, reason from terra_space.terra_space_issue_v2_runs where id = %s", (run_id,)
     ).fetchone()
 
     assert status == "failed"
@@ -599,7 +599,7 @@ def test_issue_first_country_reference_covers_every_checked_in_country_code(brid
     reference_codes = {
         row[0]
         for row in bridge_db.execute(
-            "select country_iso3 from public.terra_space_issue_v2_country_reference"
+            "select country_iso3 from terra_space.terra_space_issue_v2_country_reference"
         )
     }
 

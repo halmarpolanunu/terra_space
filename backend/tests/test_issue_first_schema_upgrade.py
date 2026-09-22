@@ -50,7 +50,7 @@ def test_issue_first_integrity_upgrade_protects_the_original_schema() -> None:
             # This is the state an installation at b2d389a has before the forward upgrade.
             assert conn.execute(
                 """select count(*) from pg_constraint
-                   where conrelid = 'public.terra_space_issue_v2_issues'::regclass
+                   where conrelid = 'terra_space.terra_space_issue_v2_issues'::regclass
                      and contype = 'f'
                      and pg_get_constraintdef(oid) like '%(run_id, source_id)%'"""
             ).fetchone()[0] == 0
@@ -61,14 +61,14 @@ def test_issue_first_integrity_upgrade_protects_the_original_schema() -> None:
             other_source_id = insert_source(conn, title="Other source")
             run_id = str(uuid.uuid4())
             conn.execute(
-                """insert into public.terra_space_issue_v2_runs
+                """insert into terra_space.terra_space_issue_v2_runs
                    (id, source_id, status, stage, processed_at)
                    values (%s, %s, 'succeeded', 'complete', now())""",
                 (run_id, run_source_id),
             )
             with pytest.raises(psycopg.errors.ForeignKeyViolation):
                 conn.execute(
-                    """insert into public.terra_space_issue_v2_issues
+                    """insert into terra_space.terra_space_issue_v2_issues
                        (id, run_id, source_id, label, summary, evidence_quote, validated_at)
                        values (%s, %s, %s, 'Wrong source', 'Summary', 'Evidence.', now())""",
                     (str(uuid.uuid4()), run_id, other_source_id),
@@ -81,19 +81,19 @@ def test_issue_first_integrity_upgrade_protects_the_original_schema() -> None:
             source_location_id = str(uuid.uuid4())
             target_location_id = str(uuid.uuid4())
             conn.execute(
-                """insert into public.terra_space_issue_v2_issues
+                """insert into terra_space.terra_space_issue_v2_issues
                    (id, run_id, source_id, label, summary, evidence_quote, validated_at)
                    values (%s, %s, %s, 'Issue', 'Summary', 'Both locations are stated.', now())""",
                 (issue_id, run_id, run_source_id),
             )
             conn.execute(
-                """insert into public.terra_space_issue_v2_events
+                """insert into terra_space.terra_space_issue_v2_events
                    (id, issue_id, run_id, title, evidence_quote, validated_at)
                    values (%s, %s, %s, 'Event', 'Both locations are stated.', now())""",
                 (event_id, issue_id, run_id),
             )
             conn.execute(
-                """insert into public.terra_space_issue_v2_relationships
+                """insert into terra_space.terra_space_issue_v2_relationships
                    (id, event_id, evidence_quote)
                    values
                      (%s, %s, 'Both locations are stated.'),
@@ -101,7 +101,7 @@ def test_issue_first_integrity_upgrade_protects_the_original_schema() -> None:
                 (relationship_id, event_id, destination_relationship_id, event_id),
             )
             conn.execute(
-                """insert into public.terra_space_issue_v2_locations
+                """insert into terra_space.terra_space_issue_v2_locations
                    (id, label, latitude, longitude, evidence_quote)
                    values
                      (%s, 'Jakarta', -6.2, 106.8, 'Both locations are stated.'),
@@ -109,7 +109,7 @@ def test_issue_first_integrity_upgrade_protects_the_original_schema() -> None:
                 (source_location_id, target_location_id),
             )
             conn.execute(
-                """insert into public.terra_space_issue_v2_relationship_endpoints
+                """insert into terra_space.terra_space_issue_v2_relationship_endpoints
                    (relationship_id, role, actor_name, location_id, evidence_quote)
                    values
                      (%s, 'source', 'Source actor', %s, 'Both locations are stated.'),
@@ -117,20 +117,20 @@ def test_issue_first_integrity_upgrade_protects_the_original_schema() -> None:
                 (relationship_id, source_location_id, relationship_id, target_location_id),
             )
             conn.execute(
-                """update public.terra_space_issue_v2_relationships
+                """update terra_space.terra_space_issue_v2_relationships
                       set validated_at = now()
                     where id = %s""",
                 (relationship_id,),
             )
             with pytest.raises(psycopg.errors.CheckViolation):
                 conn.execute(
-                    """delete from public.terra_space_issue_v2_relationship_endpoints
+                    """delete from terra_space.terra_space_issue_v2_relationship_endpoints
                          where relationship_id = %s and role = 'target'""",
                     (relationship_id,),
                 )
             with pytest.raises(psycopg.errors.CheckViolation):
                 conn.execute(
-                    """update public.terra_space_issue_v2_relationship_endpoints
+                    """update terra_space.terra_space_issue_v2_relationship_endpoints
                           set relationship_id = %s
                         where relationship_id = %s and role = 'target'""",
                     (destination_relationship_id, relationship_id),

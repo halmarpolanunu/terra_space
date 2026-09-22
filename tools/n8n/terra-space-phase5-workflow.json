@@ -1,0 +1,3299 @@
+{
+  "name": "Terra Space - Phase 5 - Generate and Qualify Events",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jakarta",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "binaryMode": "separate"
+  },
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "p5_manual_trigger",
+      "name": "When I Click Execute Workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        160
+      ],
+      "notes": "Owner-started only. The workflow remains inactive during Phase 5 development."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "terra-space-phase5-mcp-run",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "id": "p5_mcp_run_trigger",
+      "name": "MCP Run Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -48,
+        320
+      ],
+      "notes": "Dedicated owner-controlled MCP trigger. Keep the workflow inactive except while starting an explicitly approved run.",
+      "webhookId": "7679bb3c-056e-4349-9036-f2554f21dddb"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_pending_event_records",
+        "returnAll": true,
+        "orderBy": "sequence_id.asc,candidate_id.asc",
+        "filterType": "string",
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5a_get_pending",
+      "name": "Get Pending Phase 5A Records",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "position": [
+        240,
+        128
+      ],
+      "notes": "Reads every eligible pending Phase 5A record. Full processing still requires an owner-started manual execution."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5a-pending-row-present",
+              "leftValue": "={{ $json.phase4_event_fact_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p5a_has_pending_gate",
+      "name": "Any Pending Phase 5A Records?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        320
+      ],
+      "notes": "Routes real pending Phase 5A rows into Phase 5A processing. When the queue is empty, the control item safely bypasses Phase 5A writes and starts Phase 5B."
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "p5a_loop",
+      "name": "Process One Record at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        480,
+        128
+      ],
+      "notes": "Processes exactly one pending Phase 5A record at a time."
+    },
+    {
+      "parameters": {
+        "jsCode": "function attemptId() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {\n    const random = Math.floor(Math.random() * 16);\n    return (character === 'x' ? random : (random & 3) | 8).toString(16);\n  });\n}\n\nfunction preparePhase5ARecord(input) {\n  if (!['VALID', 'INCOMPLETE', 'NEEDS_REVIEW'].includes(input.phase4_status)) {\n    throw new Error(\n      `Phase 4 status is not eligible for Phase 5A: ${input.phase4_status}`,\n    );\n  }\n\n  const limited = input.phase4_status !== 'VALID';\n  if (limited && !String(input.phase4_review_reason ?? '').trim()) {\n    throw new Error('A limited record must preserve its Phase 4 reason.');\n  }\n\n  return {\n    phase4_event_fact_id: input.phase4_event_fact_id,\n    phase3_event_candidate_result_id: input.phase3_event_candidate_result_id,\n    phase1_source_id: input.phase1_source_id,\n    candidate_id: input.candidate_id,\n    source_publication_date: input.source_publication_date ?? null,\n    phase3_result_status: input.phase3_result_status,\n    phase3_result_reason: input.phase3_result_reason ?? null,\n    phase3_candidate_status: input.phase3_candidate_status,\n    phase3_candidate_reason: input.phase3_candidate_reason ?? null,\n    candidate_title: input.candidate_title,\n    candidate_description: input.candidate_description,\n    candidate_evidence_quote: input.candidate_evidence_quote,\n    phase4_status: input.phase4_status,\n    phase4_extraction_status: input.phase4_extraction_status,\n    phase4_safeguard_status: input.phase4_safeguard_status,\n    phase4_review_reason: input.phase4_review_reason ?? null,\n    phase4_error_message: input.phase4_error_message ?? null,\n    facts: JSON.parse(JSON.stringify(input.facts)),\n    event_path: limited ? 'LIMITED' : 'NORMAL',\n    phase5a_status: 'PREPARED',\n    error_message: null,\n    submission_key: attemptId(),\n  };\n}\n\nfunction prepareTechnicalFailure(input, error) {\n  const eligible = ['VALID', 'INCOMPLETE', 'NEEDS_REVIEW'].includes(input.phase4_status);\n  const limited = input.phase4_status !== 'VALID';\n  if (!eligible || (limited && !String(input.phase4_review_reason ?? '').trim())) {\n    throw error;\n  }\n\n  return {\n    phase4_event_fact_id: input.phase4_event_fact_id,\n    phase3_event_candidate_result_id: input.phase3_event_candidate_result_id,\n    phase1_source_id: input.phase1_source_id,\n    candidate_id: input.candidate_id,\n    source_publication_date: input.source_publication_date ?? null,\n    phase3_result_status: input.phase3_result_status,\n    phase3_result_reason: input.phase3_result_reason ?? null,\n    phase3_candidate_status: input.phase3_candidate_status,\n    phase3_candidate_reason: input.phase3_candidate_reason ?? null,\n    candidate_title: input.candidate_title,\n    candidate_description: input.candidate_description,\n    candidate_evidence_quote: input.candidate_evidence_quote,\n    phase4_status: input.phase4_status,\n    phase4_extraction_status: input.phase4_extraction_status,\n    phase4_safeguard_status: input.phase4_safeguard_status,\n    phase4_review_reason: input.phase4_review_reason ?? null,\n    phase4_error_message: input.phase4_error_message ?? null,\n    facts: JSON.parse(JSON.stringify(input.facts)),\n    event_path: limited ? 'LIMITED' : 'NORMAL',\n    phase5a_status: 'FAILED',\n    error_message: String(error?.message ?? error),\n    submission_key: attemptId(),\n  };\n}\n\nreturn $input.all().map(item => {\n  const processedAt = new Date().toISOString();\n  try {\n    return {\n      json: {\n        ...preparePhase5ARecord(item.json),\n        existing_phase5_record_id: item.json.existing_phase5_record_id ?? null,\n        existing_phase5a_status: item.json.existing_phase5a_status ?? null,\n        processed_at: processedAt,\n      },\n    };\n  } catch (error) {\n    return {\n      json: {\n        ...prepareTechnicalFailure(item.json, error),\n        existing_phase5_record_id: item.json.existing_phase5_record_id ?? null,\n        existing_phase5a_status: item.json.existing_phase5a_status ?? null,\n        processed_at: processedAt,\n      },\n    };\n  }\n});"
+      },
+      "id": "p5a_prepare",
+      "name": "Prepare Phase 5A Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        48
+      ],
+      "notes": "Deterministically copies approved upstream fields and routes VALID to NORMAL, otherwise LIMITED. Eligible record-level transform errors become retryable FAILED rows. No model call or enrichment."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5a-existing-failed",
+              "leftValue": "={{ $json.existing_phase5_record_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p5a_is_retry",
+      "name": "Is Failed Retry?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        960,
+        16
+      ],
+      "notes": "Only a latest technical FAILED Phase 5A record can arrive here with an existing ID."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "=terra_space_phase5_event_records",
+        "filterType": "string",
+        "filterString": "={{ 'id=eq.' + $json.existing_phase5_record_id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase4_event_fact_id",
+              "fieldValue": "={{ $json.phase4_event_fact_id }}"
+            },
+            {
+              "fieldId": "phase3_event_candidate_result_id",
+              "fieldValue": "={{ $json.phase3_event_candidate_result_id }}"
+            },
+            {
+              "fieldId": "phase1_source_id",
+              "fieldValue": "={{ $json.phase1_source_id }}"
+            },
+            {
+              "fieldId": "candidate_id",
+              "fieldValue": "={{ $json.candidate_id }}"
+            },
+            {
+              "fieldId": "source_publication_date",
+              "fieldValue": "={{ $json.source_publication_date }}"
+            },
+            {
+              "fieldId": "phase3_result_status",
+              "fieldValue": "={{ $json.phase3_result_status }}"
+            },
+            {
+              "fieldId": "phase3_result_reason",
+              "fieldValue": "={{ $json.phase3_result_reason }}"
+            },
+            {
+              "fieldId": "phase3_candidate_status",
+              "fieldValue": "={{ $json.phase3_candidate_status }}"
+            },
+            {
+              "fieldId": "phase3_candidate_reason",
+              "fieldValue": "={{ $json.phase3_candidate_reason }}"
+            },
+            {
+              "fieldId": "candidate_title",
+              "fieldValue": "={{ $json.candidate_title }}"
+            },
+            {
+              "fieldId": "candidate_description",
+              "fieldValue": "={{ $json.candidate_description }}"
+            },
+            {
+              "fieldId": "candidate_evidence_quote",
+              "fieldValue": "={{ $json.candidate_evidence_quote }}"
+            },
+            {
+              "fieldId": "phase4_status",
+              "fieldValue": "={{ $json.phase4_status }}"
+            },
+            {
+              "fieldId": "phase4_extraction_status",
+              "fieldValue": "={{ $json.phase4_extraction_status }}"
+            },
+            {
+              "fieldId": "phase4_safeguard_status",
+              "fieldValue": "={{ $json.phase4_safeguard_status }}"
+            },
+            {
+              "fieldId": "phase4_review_reason",
+              "fieldValue": "={{ $json.phase4_review_reason }}"
+            },
+            {
+              "fieldId": "phase4_error_message",
+              "fieldValue": "={{ $json.phase4_error_message }}"
+            },
+            {
+              "fieldId": "facts",
+              "fieldValue": "={{ $json.facts }}"
+            },
+            {
+              "fieldId": "event_path",
+              "fieldValue": "={{ $json.event_path }}"
+            },
+            {
+              "fieldId": "phase5a_status",
+              "fieldValue": "={{ $json.phase5a_status }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $json.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5a_update_latest",
+      "name": "Update Failed Phase 5A Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        -32
+      ],
+      "notes": "Updates only the exact retryable FAILED latest row. It never deletes and reinserts."
+    },
+    {
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_records",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase4_event_fact_id",
+              "fieldValue": "={{ $json.phase4_event_fact_id }}"
+            },
+            {
+              "fieldId": "phase3_event_candidate_result_id",
+              "fieldValue": "={{ $json.phase3_event_candidate_result_id }}"
+            },
+            {
+              "fieldId": "phase1_source_id",
+              "fieldValue": "={{ $json.phase1_source_id }}"
+            },
+            {
+              "fieldId": "candidate_id",
+              "fieldValue": "={{ $json.candidate_id }}"
+            },
+            {
+              "fieldId": "source_publication_date",
+              "fieldValue": "={{ $json.source_publication_date }}"
+            },
+            {
+              "fieldId": "phase3_result_status",
+              "fieldValue": "={{ $json.phase3_result_status }}"
+            },
+            {
+              "fieldId": "phase3_result_reason",
+              "fieldValue": "={{ $json.phase3_result_reason }}"
+            },
+            {
+              "fieldId": "phase3_candidate_status",
+              "fieldValue": "={{ $json.phase3_candidate_status }}"
+            },
+            {
+              "fieldId": "phase3_candidate_reason",
+              "fieldValue": "={{ $json.phase3_candidate_reason }}"
+            },
+            {
+              "fieldId": "candidate_title",
+              "fieldValue": "={{ $json.candidate_title }}"
+            },
+            {
+              "fieldId": "candidate_description",
+              "fieldValue": "={{ $json.candidate_description }}"
+            },
+            {
+              "fieldId": "candidate_evidence_quote",
+              "fieldValue": "={{ $json.candidate_evidence_quote }}"
+            },
+            {
+              "fieldId": "phase4_status",
+              "fieldValue": "={{ $json.phase4_status }}"
+            },
+            {
+              "fieldId": "phase4_extraction_status",
+              "fieldValue": "={{ $json.phase4_extraction_status }}"
+            },
+            {
+              "fieldId": "phase4_safeguard_status",
+              "fieldValue": "={{ $json.phase4_safeguard_status }}"
+            },
+            {
+              "fieldId": "phase4_review_reason",
+              "fieldValue": "={{ $json.phase4_review_reason }}"
+            },
+            {
+              "fieldId": "phase4_error_message",
+              "fieldValue": "={{ $json.phase4_error_message }}"
+            },
+            {
+              "fieldId": "facts",
+              "fieldValue": "={{ $json.facts }}"
+            },
+            {
+              "fieldId": "event_path",
+              "fieldValue": "={{ $json.event_path }}"
+            },
+            {
+              "fieldId": "phase5a_status",
+              "fieldValue": "={{ $json.phase5a_status }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $json.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5a_create_latest",
+      "name": "Create Phase 5A Record",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        128
+      ],
+      "notes": "Creates one latest Phase 5A event record for a first attempt."
+    },
+    {
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_record_processing_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.submission_key }}"
+            },
+            {
+              "fieldId": "phase4_event_fact_id",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase4_event_fact_id }}"
+            },
+            {
+              "fieldId": "phase3_event_candidate_result_id",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase3_event_candidate_result_id }}"
+            },
+            {
+              "fieldId": "phase1_source_id",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase1_source_id }}"
+            },
+            {
+              "fieldId": "candidate_id",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.candidate_id }}"
+            },
+            {
+              "fieldId": "source_publication_date",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.source_publication_date }}"
+            },
+            {
+              "fieldId": "phase3_result_status",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase3_result_status }}"
+            },
+            {
+              "fieldId": "phase3_result_reason",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase3_result_reason }}"
+            },
+            {
+              "fieldId": "phase3_candidate_status",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase3_candidate_status }}"
+            },
+            {
+              "fieldId": "phase3_candidate_reason",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase3_candidate_reason }}"
+            },
+            {
+              "fieldId": "candidate_title",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.candidate_title }}"
+            },
+            {
+              "fieldId": "candidate_description",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.candidate_description }}"
+            },
+            {
+              "fieldId": "candidate_evidence_quote",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.candidate_evidence_quote }}"
+            },
+            {
+              "fieldId": "phase4_status",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase4_status }}"
+            },
+            {
+              "fieldId": "phase4_extraction_status",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase4_extraction_status }}"
+            },
+            {
+              "fieldId": "phase4_safeguard_status",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase4_safeguard_status }}"
+            },
+            {
+              "fieldId": "phase4_review_reason",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase4_review_reason }}"
+            },
+            {
+              "fieldId": "phase4_error_message",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase4_error_message }}"
+            },
+            {
+              "fieldId": "facts",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.facts }}"
+            },
+            {
+              "fieldId": "event_path",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.event_path }}"
+            },
+            {
+              "fieldId": "phase5a_status",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.phase5a_status }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $('Prepare Phase 5A Record').item.json.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5a_append_run",
+      "name": "Append Phase 5A Processing Run",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        112
+      ],
+      "notes": "Appends one immutable history snapshot after the latest-row write succeeds."
+    },
+    {
+      "parameters": {},
+      "id": "p5a_complete",
+      "name": "Phase 5A Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        320
+      ],
+      "notes": "Single safe handoff into Phase 5B after either completing real Phase 5A rows or confirming that Phase 5A has no pending rows."
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_pending_event_type_classifications",
+        "returnAll": true,
+        "orderBy": "sequence_id.asc,candidate_id.asc",
+        "filterType": "string",
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5b_get_pending",
+      "name": "Get Pending Phase 5B Events",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        112
+      ],
+      "notes": "Reads only PREPARED Phase 5A rows with no final Phase 5B result or an exact retryable FAILED result.",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const clone=value=>JSON.parse(JSON.stringify(value));\nconst items = $input.all();\nreturn items.map((item) => {\n  const types = item.json.active_event_types;\n  if (!Array.isArray(types) || types.length !== 12) throw new Error('Phase 5B requires exactly 12 active Event Type definitions.');\n  const normalized = new Set();\n  for (const type of types) {\n    for (const field of ['id','name','description','domain','category','subcategory','path']) {\n      if (typeof type?.[field] !== 'string' || !type[field].trim()) throw new Error('An active Event Type definition is incomplete.');\n    }\n    const key = type.name.trim().toLocaleLowerCase('en-US');\n    if (normalized.has(key)) throw new Error('Active Event Type names are not unique.');\n    normalized.add(key);\n  }\n  return {json:{...item.json, active_event_types: clone(types)}};\n});"
+      },
+      "id": "p5b_get_types",
+      "name": "Get Active Event Types",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        112
+      ],
+      "notes": "Validates the exact 12 active definitions supplied by the protected pending view."
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "p5b_loop",
+      "name": "Process One Phase 5B Event at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2208,
+        112
+      ],
+      "notes": "Processes exactly one Phase 5B event at a time."
+    },
+    {
+      "parameters": {
+        "jsCode": "const clone=value=>JSON.parse(JSON.stringify(value));\nfunction submissionKey() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, character => {\n    const random = Math.floor(Math.random() * 16);\n    return (character === 'x' ? random : (random & 3) | 8).toString(16);\n  });\n}\nconst event = clone($json);\nif (!event.phase5_event_record_id || event.phase5a_status !== 'PREPARED') throw new Error('Phase 5B requires one identified PREPARED Phase 5A event.');\nif (!Array.isArray(event.active_event_types) || event.active_event_types.length !== 12) throw new Error('Phase 5B requires exactly 12 active Event Types.');\nif (event.existing_phase5b_classification_id && event.existing_phase5b_status !== 'FAILED') throw new Error('Only an exact latest FAILED Phase 5B result may be retried.');\nreturn [{json:{\n  event,\n  active_event_types: clone(event.active_event_types),\n  metadata:{\n    classifier_model:'google/gemma-4-12b-qat',\n    classifier_prompt_version:'phase5b-event-type-classifier-v2',\n    safeguard_model:'google/gemma-4-12b-qat',\n    safeguard_prompt_version:'phase5b-event-type-safeguard-v2',\n  },\n  retry_count:0, attempt_trace:[], safeguard_feedback:null,\n  existing_phase5b_classification_id:event.existing_phase5b_classification_id ?? null,\n  existing_phase5b_status:event.existing_phase5b_status ?? null,\n  submission_key:submissionKey(),\n}}];"
+      },
+      "id": "p5b_prepare_attempt",
+      "name": "Prepare Classification Attempt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        32
+      ],
+      "notes": "Creates local processing metadata and a unique history submission key."
+    },
+    {
+      "parameters": {
+        "jsCode": "const clone=value=>JSON.parse(JSON.stringify(value));\nfunction nonblank(value,label){if(typeof value!=='string'||!value.trim())throw new Error(label+' must be nonblank.');return value.trim();}\nconst state=clone($json);const event=state.event;\nconst prepared={\n  title:nonblank(event.candidate_title,'Event title'),\n  description:nonblank(event.candidate_description,'Event description'),\n  evidence:nonblank(event.candidate_evidence_quote,'Event evidence'),\n  extracted_facts:clone(event.facts??{}),\n  source_publication_date:event.source_publication_date??null,\n  statuses:{event_path:event.event_path,phase5a_status:event.phase5a_status,phase3_result_status:event.phase3_result_status,phase3_candidate_status:event.phase3_candidate_status,phase4_status:event.phase4_status,phase4_extraction_status:event.phase4_extraction_status,phase4_safeguard_status:event.phase4_safeguard_status},\n  reasons:{phase3_result_reason:event.phase3_result_reason??null,phase3_candidate_reason:event.phase3_candidate_reason??null,phase4_review_reason:event.phase4_review_reason??null,phase4_error_message:event.phase4_error_message??null},\n};\nconst classifier_response_format={\"type\":\"json_schema\",\"json_schema\":{\"name\":\"phase5b_classifier_output\",\"strict\":true,\"schema\":{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"selected_event_type\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"classification_reason\":{\"type\":\"string\",\"minLength\":1},\"new_type_proposal\":{\"anyOf\":[{\"type\":\"null\"},{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"name\":{\"type\":\"string\",\"minLength\":1},\"description\":{\"type\":\"string\",\"minLength\":1},\"reason\":{\"type\":\"string\",\"minLength\":1},\"possible_overlap\":{\"type\":\"string\",\"minLength\":1}},\"required\":[\"name\",\"description\",\"reason\",\"possible_overlap\"]}]}},\"required\":[\"selected_event_type\",\"classification_reason\",\"new_type_proposal\"]}}};\nconst prompt=JSON.stringify({\n  task:'Classify one bounded prepared event against the active Event Types.',\n  rules:['Use only the prepared event below. Do not use outside knowledge.','Select exactly one approved type or null. Do not force a closest match.','Do not infer missing facts. Preserve uncertainty and LIMITED status context.','Return only the required JSON object with no extra fields.','A new type proposal is optional and is allowed only when selected_event_type is null.','Do not copy an evidence quote into a new type proposal; the workflow attaches the complete bounded prepared-event evidence deterministically.','If the prepared event does not support a new type proposal, return no proposal by setting new_type_proposal to null; keep selected_event_type null so the event remains Unclassified.'],\n  prepared_event:prepared,active_event_types:clone(state.active_event_types),\n  safeguard_feedback:state.safeguard_feedback??null,\n  required_output:{selected_event_type:'Exact active Event Type name, or null',classification_reason:'Short evidence-grounded reason',new_type_proposal:'Exact proposal object, or null'},\n});\nreturn [{json:{...state,classifier_prompt:prompt,classifier_response_format}}];"
+      },
+      "id": "p5b_build_classifier",
+      "name": "Build Classifier Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        32
+      ],
+      "notes": "Builds the bounded evidence-only classifier prompt and preserves retry feedback."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:1234/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'google/gemma-4-12b-qat', messages: [{ role: 'user', content: $json.classifier_prompt }], temperature: 0.1, max_tokens: 1024, reasoning_effort: 'none', response_format: $json.classifier_response_format } }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "p5b_classify",
+      "name": "Classify Event Type (LM Studio)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2880,
+        32
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput",
+      "notes": "Local classifier call only."
+    },
+    {
+      "parameters": {
+        "jsCode": "const clone=value=>JSON.parse(JSON.stringify(value));\nconst base=$('Build Classifier Prompt').item.json;\nfunction failure(message){return [{json:{...base,classification_parsed:false,action:'FINALIZE',record:{\nphase5_event_record_id:base.event.phase5_event_record_id,event_type_id:null,event_type_name:null,classification_status:'FAILED',assignment_source:null,classification_reason:null,safeguard_status:'NOT_RUN',safeguard_reason:null,corrective_retry_count:base.retry_count,...base.metadata,attempt_trace:clone(base.attempt_trace),error_message:String(message).trim().slice(0,4000),processed_at:new Date().toISOString()},proposal:null}}];}\nif($json?.error)return failure($json.error.message??$json.error.description??'Classifier request failed.');\nconst raw=String($json?.choices?.[0]?.message?.content??'');if(!raw.trim())return failure('Classifier response was empty.');\nlet value;try{value=JSON.parse(raw);}catch{return failure('Classifier output must be valid JSON.');}\nconst exactKeys=(object,keys)=>object&&typeof object==='object'&&!Array.isArray(object)&&Object.keys(object).sort().join('|')===[...keys].sort().join('|');\nconst nonblank=value=>typeof value==='string'&&Boolean(value.trim());\nif(!exactKeys(value,['selected_event_type','classification_reason','new_type_proposal'])||!nonblank(value.classification_reason))return failure('Classifier output did not match the exact required shape.');\nconst normalize=value=>value.trim().toLocaleLowerCase('en-US');let selected=null;\nif(value.selected_event_type!==null){if(!nonblank(value.selected_event_type))return failure('Selected Event Type must be null or nonblank.');selected=base.active_event_types.find(type=>normalize(type.name)===normalize(value.selected_event_type));if(!selected)return failure('Selected value is not an active Event Type.');}\nlet proposal=null;\nif(value.new_type_proposal!==null){\n if(selected)return failure('A proposal is allowed only for an Unclassified event.');\n const required=['name','description','reason','possible_overlap'];\n if(!exactKeys(value.new_type_proposal,required)||required.some(key=>!nonblank(value.new_type_proposal[key])))return failure('New Event Type proposal did not match the exact required shape.');\n proposal=Object.fromEntries(required.map(key=>[key,value.new_type_proposal[key].trim()]));\n proposal.supporting_evidence=nonblank(base.event.candidate_evidence_quote)?base.event.candidate_evidence_quote.trim():'';\n if(!proposal.supporting_evidence)return failure('Prepared event evidence must be nonblank.');\n if(base.active_event_types.some(type=>normalize(type.name)===normalize(proposal.name)))return failure('Proposal name matches an active Event Type.');\n}\nreturn [{json:{...base,classification_parsed:true,classification:{selected_event_type:selected?.name??null,selected_event_type_id:selected?.id??null,classification_reason:value.classification_reason.trim(),new_type_proposal:proposal},classifier_raw_output:raw}}];"
+      },
+      "id": "p5b_parse_classifier",
+      "name": "Parse Classifier Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        32
+      ],
+      "notes": "Strict exact-type and evidence-grounded proposal parser."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5b_classification_parsed-condition",
+              "leftValue": "={{ $json.classification_parsed === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p5b_classification_parsed",
+      "name": "Classification Parsed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3328,
+        32
+      ],
+      "notes": "Valid semantic output reaches safeguard; failure reaches persistence."
+    },
+    {
+      "parameters": {
+        "jsCode": "const clone=value=>JSON.parse(JSON.stringify(value));\nconst state=clone($json);const event=state.event;\nconst safeguard_response_format={\"type\":\"json_schema\",\"json_schema\":{\"name\":\"phase5b_safeguard_output\",\"strict\":true,\"schema\":{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{\"decision\":{\"type\":\"string\",\"enum\":[\"ACCEPT\",\"REJECT\"]},\"reason\":{\"anyOf\":[{\"type\":\"null\"},{\"type\":\"string\",\"minLength\":1}]}},\"required\":[\"decision\",\"reason\"]}}};\nconst prompt=JSON.stringify({\n task:'Independently verify one proposed Phase 5B classification.',\n rules:['Independently check the result using only the prepared event and active definitions below.','Reject unsupported inference, a forced closest match, or an invalid proposal.','Both review modes below are valid. Do not reject an Unclassified result merely because no active Event Type was selected.','A new-type proposal is optional and permitted only in the Unclassified mode; verify that its name, description, reason, and possible overlap are grounded in the prepared event.','Return only ACCEPT with a null reason, or REJECT with one concrete nonblank reason.','Do not return, replace, or suggest an Event Type in the safeguard output.'],\n prepared_event:{title:event.candidate_title,description:event.candidate_description,evidence:event.candidate_evidence_quote,extracted_facts:clone(event.facts??{}),source_publication_date:event.source_publication_date??null,statuses:{event_path:event.event_path,phase5a_status:event.phase5a_status,phase3_result_status:event.phase3_result_status,phase3_candidate_status:event.phase3_candidate_status,phase4_status:event.phase4_status,phase4_extraction_status:event.phase4_extraction_status,phase4_safeguard_status:event.phase4_safeguard_status},reasons:{phase3_result_reason:event.phase3_result_reason??null,phase3_candidate_reason:event.phase3_candidate_reason??null,phase4_review_reason:event.phase4_review_reason??null,phase4_error_message:event.phase4_error_message??null}},\n active_event_types:clone(state.active_event_types),proposed_classification:clone(state.classification),\n valid_review_modes:{approved_type_match:'Verify that the selected name and ID identify one active type and that its definition is supported by the prepared event.',unclassified:'Verify that no active type is sufficiently supported; a grounded new-type proposal is optional and permitted, and must not be rejected merely because no active type was selected.'},\n required_output:{decision:'ACCEPT or REJECT',reason:'null for ACCEPT; concrete reason for REJECT'},\n});\nreturn [{json:{...state,safeguard_prompt:prompt,safeguard_response_format}}];"
+      },
+      "id": "p5b_build_safeguard",
+      "name": "Build Safeguard Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        -128
+      ],
+      "notes": "Builds the independent bounded safeguard prompt."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:1234/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { model: 'google/gemma-4-12b-qat', messages: [{ role: 'user', content: $json.safeguard_prompt }], temperature: 0.1, max_tokens: 1024, reasoning_effort: 'none', response_format: $json.safeguard_response_format } }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "p5b_safeguard",
+      "name": "Safeguard Event Type (LM Studio)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3776,
+        -128
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput",
+      "notes": "Independent local safeguard call."
+    },
+    {
+      "parameters": {
+        "jsCode": "const clone=value=>JSON.parse(JSON.stringify(value));\nconst base=$('Build Safeguard Prompt').item.json;\nfunction technicalFailure(message){return [{json:{...base,action:'FINALIZE',record:{phase5_event_record_id:base.event.phase5_event_record_id,event_type_id:null,event_type_name:null,classification_status:'FAILED',assignment_source:null,classification_reason:null,safeguard_status:'FAILED',safeguard_reason:null,corrective_retry_count:base.retry_count,...base.metadata,attempt_trace:clone(base.attempt_trace),error_message:String(message).trim().slice(0,4000),processed_at:new Date().toISOString()},proposal:null}}];}\nif($json?.error)return technicalFailure($json.error.message??$json.error.description??'Safeguard request failed.');\nconst raw=String($json?.choices?.[0]?.message?.content??'');if(!raw.trim())return technicalFailure('Safeguard response was empty.');\nlet decision;try{decision=JSON.parse(raw);}catch{return technicalFailure('Safeguard output must be valid JSON.');}\nconst keys=decision&&typeof decision==='object'&&!Array.isArray(decision)?Object.keys(decision).sort().join('|'):'';\nif(keys!=='decision|reason')return technicalFailure('Safeguard output did not match the exact required shape.');\nif(decision.decision==='ACCEPT'&&decision.reason!==null)return technicalFailure('ACCEPT requires a null reason.');\nif(decision.decision==='REJECT'&&(typeof decision.reason!=='string'||!decision.reason.trim()))return technicalFailure('REJECT requires a concrete reason.');\nif(!['ACCEPT','REJECT'].includes(decision.decision))return technicalFailure('Safeguard decision must be ACCEPT or REJECT.');\nif(!Array.isArray(base.attempt_trace)||base.attempt_trace.length!==base.retry_count)return technicalFailure('Audit trace length does not match the corrective retry count.');\nconst parsed={decision:decision.decision,reason:decision.reason===null?null:decision.reason.trim()};\nconst trace=clone(base.attempt_trace);trace.push({attempt:base.retry_count+1,classification:clone(base.classification),safeguard:clone(parsed)});\nif(parsed.decision==='REJECT'&&base.retry_count<2)return [{json:{...base,action:'RETRY',retry_count:base.retry_count+1,safeguard_feedback:parsed.reason,attempt_trace:trace,proposal:null}}];\nconst common={phase5_event_record_id:base.event.phase5_event_record_id,corrective_retry_count:base.retry_count,...base.metadata,attempt_trace:trace,processed_at:new Date().toISOString(),error_message:null};\nif(parsed.decision==='REJECT')return [{json:{...base,action:'FINALIZE',record:{...common,event_type_id:null,event_type_name:null,classification_status:'UNCLASSIFIED',assignment_source:null,classification_reason:'No approved Event Type passed the independent safeguard after three attempts.',safeguard_status:'REJECT',safeguard_reason:parsed.reason},proposal:null}}];\nif(base.classification.selected_event_type_id)return [{json:{...base,action:'FINALIZE',record:{...common,event_type_id:base.classification.selected_event_type_id,event_type_name:base.classification.selected_event_type,classification_status:'CLASSIFIED',assignment_source:'AI_ASSIGNED',classification_reason:base.classification.classification_reason,safeguard_status:'ACCEPT',safeguard_reason:null},proposal:null}}];\nconst proposal=base.classification.new_type_proposal?{phase5_event_record_id:base.event.phase5_event_record_id,proposed_name:base.classification.new_type_proposal.name,proposed_description:base.classification.new_type_proposal.description,proposal_reason:base.classification.new_type_proposal.reason,possible_overlap:base.classification.new_type_proposal.possible_overlap,supporting_evidence:base.classification.new_type_proposal.supporting_evidence,review_status:'PENDING_REVIEW'}:null;\nreturn [{json:{...base,action:'FINALIZE',record:{...common,event_type_id:null,event_type_name:null,classification_status:'UNCLASSIFIED',assignment_source:null,classification_reason:base.classification.classification_reason,safeguard_status:'ACCEPT',safeguard_reason:null},proposal}}];"
+      },
+      "id": "p5b_apply_safeguard",
+      "name": "Apply Safeguard Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        -128
+      ],
+      "notes": "Applies ACCEPT/REJECT, two corrective retries, conservative fallback, and audit trace."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5b_retry-condition",
+              "leftValue": "={{ $json.action === 'RETRY' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p5b_retry",
+      "name": "Retry Classification?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4224,
+        -128
+      ],
+      "notes": "Retries return to classifier; final records continue to persistence."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5b_existing_failed-condition",
+              "leftValue": "={{ Boolean($json.existing_phase5b_classification_id) && $json.existing_phase5b_status === 'FAILED' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p5b_existing_failed",
+      "name": "Existing Failed Classification?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4448,
+        80
+      ],
+      "notes": "Only an exact FAILED latest result can be updated."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "=terra_space_phase5_event_type_classifications",
+        "filterType": "string",
+        "filterString": "={{ 'id=eq.' + $json.existing_phase5b_classification_id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $json.record.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "event_type_id",
+              "fieldValue": "={{ $json.record.event_type_id }}"
+            },
+            {
+              "fieldId": "event_type_name",
+              "fieldValue": "={{ $json.record.event_type_name }}"
+            },
+            {
+              "fieldId": "classification_status",
+              "fieldValue": "={{ $json.record.classification_status }}"
+            },
+            {
+              "fieldId": "assignment_source",
+              "fieldValue": "={{ $json.record.assignment_source }}"
+            },
+            {
+              "fieldId": "classification_reason",
+              "fieldValue": "={{ $json.record.classification_reason }}"
+            },
+            {
+              "fieldId": "safeguard_status",
+              "fieldValue": "={{ $json.record.safeguard_status }}"
+            },
+            {
+              "fieldId": "safeguard_reason",
+              "fieldValue": "={{ $json.record.safeguard_reason }}"
+            },
+            {
+              "fieldId": "corrective_retry_count",
+              "fieldValue": "={{ $json.record.corrective_retry_count }}"
+            },
+            {
+              "fieldId": "classifier_model",
+              "fieldValue": "={{ $json.record.classifier_model }}"
+            },
+            {
+              "fieldId": "classifier_prompt_version",
+              "fieldValue": "={{ $json.record.classifier_prompt_version }}"
+            },
+            {
+              "fieldId": "safeguard_model",
+              "fieldValue": "={{ $json.record.safeguard_model }}"
+            },
+            {
+              "fieldId": "safeguard_prompt_version",
+              "fieldValue": "={{ $json.record.safeguard_prompt_version }}"
+            },
+            {
+              "fieldId": "attempt_trace",
+              "fieldValue": "={{ $json.record.attempt_trace }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.record.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $json.record.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5b_update_latest",
+      "name": "Update Failed Phase 5B Classification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4672,
+        0
+      ],
+      "notes": "Updates only the exact retryable FAILED row."
+    },
+    {
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_type_classifications",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $json.record.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "event_type_id",
+              "fieldValue": "={{ $json.record.event_type_id }}"
+            },
+            {
+              "fieldId": "event_type_name",
+              "fieldValue": "={{ $json.record.event_type_name }}"
+            },
+            {
+              "fieldId": "classification_status",
+              "fieldValue": "={{ $json.record.classification_status }}"
+            },
+            {
+              "fieldId": "assignment_source",
+              "fieldValue": "={{ $json.record.assignment_source }}"
+            },
+            {
+              "fieldId": "classification_reason",
+              "fieldValue": "={{ $json.record.classification_reason }}"
+            },
+            {
+              "fieldId": "safeguard_status",
+              "fieldValue": "={{ $json.record.safeguard_status }}"
+            },
+            {
+              "fieldId": "safeguard_reason",
+              "fieldValue": "={{ $json.record.safeguard_reason }}"
+            },
+            {
+              "fieldId": "corrective_retry_count",
+              "fieldValue": "={{ $json.record.corrective_retry_count }}"
+            },
+            {
+              "fieldId": "classifier_model",
+              "fieldValue": "={{ $json.record.classifier_model }}"
+            },
+            {
+              "fieldId": "classifier_prompt_version",
+              "fieldValue": "={{ $json.record.classifier_prompt_version }}"
+            },
+            {
+              "fieldId": "safeguard_model",
+              "fieldValue": "={{ $json.record.safeguard_model }}"
+            },
+            {
+              "fieldId": "safeguard_prompt_version",
+              "fieldValue": "={{ $json.record.safeguard_prompt_version }}"
+            },
+            {
+              "fieldId": "attempt_trace",
+              "fieldValue": "={{ $json.record.attempt_trace }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $json.record.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $json.record.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5b_create_latest",
+      "name": "Create Phase 5B Classification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4672,
+        160
+      ],
+      "notes": "Creates the first latest Phase 5B classification."
+    },
+    {
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_type_classification_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.submission_key }}"
+            },
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "event_type_id",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.event_type_id }}"
+            },
+            {
+              "fieldId": "event_type_name",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.event_type_name }}"
+            },
+            {
+              "fieldId": "classification_status",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.classification_status }}"
+            },
+            {
+              "fieldId": "assignment_source",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.assignment_source }}"
+            },
+            {
+              "fieldId": "classification_reason",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.classification_reason }}"
+            },
+            {
+              "fieldId": "safeguard_status",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.safeguard_status }}"
+            },
+            {
+              "fieldId": "safeguard_reason",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.safeguard_reason }}"
+            },
+            {
+              "fieldId": "corrective_retry_count",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.corrective_retry_count }}"
+            },
+            {
+              "fieldId": "classifier_model",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.classifier_model }}"
+            },
+            {
+              "fieldId": "classifier_prompt_version",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.classifier_prompt_version }}"
+            },
+            {
+              "fieldId": "safeguard_model",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.safeguard_model }}"
+            },
+            {
+              "fieldId": "safeguard_prompt_version",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.safeguard_prompt_version }}"
+            },
+            {
+              "fieldId": "attempt_trace",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.attempt_trace }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.record.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5b_append_run",
+      "name": "Append Phase 5B Classification Run",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4896,
+        80
+      ],
+      "notes": "Appends one immutable Phase 5B history snapshot."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5b_has_proposal-condition",
+              "leftValue": "={{ $('Existing Failed Classification?').item.json.proposal !== null }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "p5b_has_proposal",
+      "name": "Has Event Type Proposal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5120,
+        80
+      ],
+      "notes": "Only an accepted final Unclassified result can create a proposal."
+    },
+    {
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_type_proposals",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "proposed_name",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.proposed_name }}"
+            },
+            {
+              "fieldId": "proposed_description",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.proposed_description }}"
+            },
+            {
+              "fieldId": "proposal_reason",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.proposal_reason }}"
+            },
+            {
+              "fieldId": "possible_overlap",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.possible_overlap }}"
+            },
+            {
+              "fieldId": "supporting_evidence",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.supporting_evidence }}"
+            },
+            {
+              "fieldId": "review_status",
+              "fieldValue": "={{ $('Existing Failed Classification?').item.json.proposal.review_status }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "id": "p5b_create_proposal",
+      "name": "Create Phase 5B Event Type Proposal",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        5344,
+        -16
+      ],
+      "notes": "Creates PENDING_REVIEW only; no taxonomy row is created."
+    },
+    {
+      "id": "p5b_has_pending_gate",
+      "name": "Any Pending Phase 5B Events?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2352,
+        256
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5b-pending-row-present",
+              "leftValue": "={{ $json.phase5_event_record_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Routes real pending Phase 5B rows to classification and an empty control item to the Phase 5C handoff."
+    },
+    {
+      "id": "p5b_complete",
+      "name": "Phase 5B Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6048,
+        48
+      ],
+      "parameters": {},
+      "notes": "Single safe handoff into Phase 5C after completing Phase 5B rows or confirming the Phase 5B queue is empty."
+    },
+    {
+      "id": "p5c_get_pending",
+      "name": "Get Pending Phase 5C Events",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6272,
+        48
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_pending_timeline_geographies",
+        "returnAll": true,
+        "orderBy": "sequence_id.asc,candidate_id.asc",
+        "filterType": "string",
+        "filterString": "",
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Reads all eligible Phase 5C inputs, including approved references and existing unresolved suggestions. No upstream record is changed.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5c_prepare",
+      "name": "Prepare Phase 5C Timeline and Geography",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6720,
+        160
+      ],
+      "parameters": {
+        "jsCode": "const DATE_PATTERNS = {\n  exact: /^\\d{4}-\\d{2}-\\d{2}$/,\n  month: /^\\d{4}-\\d{2}$/,\n  year: /^\\d{4}$/,\n};\n\nconst RELATIONSHIPS = new Set(['REPRESENTED_COUNTRY', 'HEADQUARTERS', 'NATIONALITY']);\n\nfunction normalizeLabel(value) {\n  return String(value ?? '').trim().toLocaleLowerCase('en-US').replace(/\\s+/g, ' ');\n}\n\nfunction requireNonblank(value, label) {\n  const text = String(value ?? '').trim();\n  if (!text) throw new Error(`${label} is required`);\n  return text;\n}\n\nfunction isRealDate(value) {\n  if (!DATE_PATTERNS.exact.test(value)) return false;\n  const [year, month, day] = value.split('-').map(Number);\n  const parsed = new Date(Date.UTC(year, month - 1, day));\n  return parsed.getUTCFullYear() === year\n    && parsed.getUTCMonth() === month - 1\n    && parsed.getUTCDate() === day;\n}\n\nfunction validPublicationDate(value) {\n  if (!isRealDate(String(value ?? ''))) throw new Error('A valid publication date is required');\n  return value;\n}\n\nfunction prepareTimeline({ eventDate, precision, publicationDate }) {\n  if (!['exact', 'month', 'year', 'unknown'].includes(precision)) {\n    throw new Error('Event date precision must be exact, month, year, or unknown');\n  }\n\n  if (precision === 'unknown') {\n    if (eventDate !== null && eventDate !== undefined && eventDate !== '') {\n      throw new Error('Unknown date precision requires a null event date');\n    }\n    const fallback = validPublicationDate(publicationDate);\n    return {\n      eventDate: null,\n      precision,\n      timelineSortDate: fallback,\n      timelineReferenceDate: fallback,\n      timelineReferenceBasis: 'SOURCE_PUBLICATION_DATE',\n    };\n  }\n\n  const original = requireNonblank(eventDate, 'Event date');\n  if (precision === 'exact' && !isRealDate(original)) throw new Error('Event date must be a valid exact date');\n  if (precision === 'month' && (!DATE_PATTERNS.month.test(original) || Number(original.slice(5, 7)) < 1 || Number(original.slice(5, 7)) > 12)) {\n    throw new Error('Event date must use a valid YYYY-MM month');\n  }\n  if (precision === 'year' && !DATE_PATTERNS.year.test(original)) throw new Error('Event date must use a valid YYYY year');\n\n  const sortDate = precision === 'exact' ? original : precision === 'month' ? `${original}-01` : `${original}-01-01`;\n  return {\n    eventDate: original,\n    precision,\n    timelineSortDate: sortDate,\n    timelineReferenceDate: sortDate,\n    timelineReferenceBasis: 'EVENT_DATE',\n  };\n}\n\nfunction isApprovedPlace(reference) {\n  const latitude = Number(reference?.latitude);\n  const longitude = Number(reference?.longitude);\n  return reference\n    && typeof reference.canonical_name === 'string'\n    && Array.isArray(reference.aliases)\n    && Number.isFinite(latitude)\n    && latitude >= -90\n    && latitude <= 90\n    && Number.isFinite(longitude)\n    && longitude >= -180\n    && longitude <= 180\n    && reference.is_active !== false;\n}\n\nfunction buildAliasIndex(records, aliasField, typeLabel) {\n  const index = new Map();\n  for (const record of records ?? []) {\n    if (!record || record.is_active === false || !Array.isArray(record[aliasField])) continue;\n    const aliases = new Set([...(record[aliasField] ?? []), record.canonical_name, record.canonical_actor_name].map(normalizeLabel).filter(Boolean));\n    for (const alias of aliases) {\n      const existing = index.get(alias);\n      if (existing && existing.id !== record.id) throw new Error(`${typeLabel} alias collision for ${alias}`);\n      index.set(alias, record);\n    }\n  }\n  return index;\n}\n\nfunction suggestionIndex(suggestions, kind) {\n  const index = new Map();\n  for (const suggestion of suggestions ?? []) {\n    if (suggestion?.suggestion_kind !== kind) continue;\n    const key = normalizeLabel(suggestion.normalized_input ?? suggestion.display_input);\n    if (key && !index.has(key)) index.set(key, suggestion);\n  }\n  return index;\n}\n\nfunction unresolvedSuggestion(kind, subject) {\n  const normalized = normalizeLabel(subject.name);\n  return {\n    suggestion_kind: kind,\n    normalized_input: normalized,\n    display_input: String(subject.name).trim(),\n    proposed_canonical_name: null,\n    proposed_relationship_type: null,\n    proposed_geographic_reference_id: null,\n    proposed_actor_reference_id: null,\n    suggestion_source: 'SYSTEM_UNRESOLVED',\n    model_name: null,\n    prompt_version: null,\n    suggestion_reason: `No approved ${kind.toLowerCase()} reference matched the normalized input.`,\n    supporting_occurrences: [{\n      role: subject.role ?? null,\n      level: subject.level ?? null,\n      evidence_quote: String(subject.evidence_quote ?? '').slice(0, 500),\n    }],\n    raw_output: null,\n    review_status: 'PENDING_REVIEW',\n  };\n}\n\nfunction geographyStatus(total, resolved) {\n  if (total === 0) return 'NO_LOCATION_STATED';\n  if (resolved === total) return 'RESOLVED';\n  if (resolved > 0) return 'PARTIAL';\n  return 'AWAITING_REFERENCE_REVIEW';\n}\n\nfunction actorStatus(total, resolved) {\n  if (total === 0) return 'NO_ACTORS_STATED';\n  if (resolved === total) return 'RESOLVED';\n  if (resolved > 0) return 'PARTIAL';\n  return 'AWAITING_REFERENCE_REVIEW';\n}\n\nfunction resolveEventGeographies(locations = [], approvedPlaces = [], suggestions = []) {\n  const placeIndex = buildAliasIndex((approvedPlaces ?? []).filter(isApprovedPlace), 'aliases', 'Geographic reference');\n  const existingSuggestions = suggestionIndex(suggestions, 'LOCATION');\n  const geographies = [];\n  const unresolved = [];\n  const newSuggestions = [];\n  const resolvedIds = new Set();\n  const newSuggestionKeys = new Set();\n  const uniqueInputs = new Set();\n  let resolvedInputs = 0;\n\n  for (const location of locations ?? []) {\n    const name = requireNonblank(location?.name, 'Location name');\n    const normalized = normalizeLabel(name);\n    if (uniqueInputs.has(normalized)) continue;\n    uniqueInputs.add(normalized);\n    const reference = placeIndex.get(normalized);\n    if (reference) {\n      resolvedInputs += 1;\n      if (resolvedIds.has(reference.id)) continue;\n      resolvedIds.add(reference.id);\n      geographies.push({\n        original_name: name,\n        level: location.level ?? null,\n        evidence_quote: location.evidence_quote ?? null,\n        geographic_reference_id: reference.id,\n        canonical_name: reference.canonical_name,\n        country_iso3: reference.country_iso3 ?? null,\n        latitude: Number(reference.latitude),\n        longitude: Number(reference.longitude),\n        coordinate_precision: reference.coordinate_precision,\n        source_name: reference.source_name,\n        source_version: reference.source_version,\n      });\n      continue;\n    }\n\n    const existing = existingSuggestions.get(normalized);\n    const item = {\n      original_name: name,\n      level: location.level ?? null,\n      evidence_quote: location.evidence_quote ?? null,\n      reason: 'NO_APPROVED_GEOGRAPHIC_REFERENCE',\n      suggestion_id: existing?.id ?? null,\n    };\n    unresolved.push(item);\n    if (!existing && !newSuggestionKeys.has(normalized)) {\n      newSuggestionKeys.add(normalized);\n      newSuggestions.push(unresolvedSuggestion('LOCATION', location));\n    }\n  }\n\n  return {\n    status: geographyStatus(uniqueInputs.size, resolvedInputs),\n    geographies,\n    unresolved,\n    newSuggestions,\n  };\n}\n\nfunction resolveActorGeographies(actors = [], approvedActors = [], approvedPlaces = [], suggestions = []) {\n  const actorIndex = buildAliasIndex(approvedActors ?? [], 'aliases', 'Actor reference');\n  const placesById = new Map((approvedPlaces ?? []).filter(isApprovedPlace).map((reference) => [reference.id, reference]));\n  const existingSuggestions = suggestionIndex(suggestions, 'ACTOR');\n  const geographies = [];\n  const unresolved = [];\n  const newSuggestions = [];\n  const newSuggestionKeys = new Set();\n  let considered = 0;\n\n  for (const actor of actors ?? []) {\n    const name = requireNonblank(actor?.name, 'Actor name');\n    const normalized = normalizeLabel(name);\n    considered += 1;\n    const reference = actorIndex.get(normalized);\n    const placeReference = reference ? placesById.get(reference.geographic_reference_id) : null;\n    let reason = null;\n    if (!reference) reason = 'NO_APPROVED_ACTOR_REFERENCE';\n    else if (!RELATIONSHIPS.has(reference.relationship_type)) reason = 'INVALID_ACTOR_RELATIONSHIP';\n    else if (!placeReference) reason = 'NO_APPROVED_GEOGRAPHIC_REFERENCE';\n    else if (placeReference.is_private_home === true) reason = 'PRIVATE_HOME_EXCLUDED';\n\n    if (!reason) {\n      geographies.push({\n        original_name: name,\n        role: actor.role ?? null,\n        evidence_quote: actor.evidence_quote ?? null,\n        actor_reference_id: reference.id,\n        canonical_actor_name: reference.canonical_actor_name,\n        actor_kind: reference.actor_kind,\n        relationship_type: reference.relationship_type,\n        geographic_reference_id: placeReference.id,\n        canonical_geography_name: placeReference.canonical_name,\n        country_iso3: placeReference.country_iso3 ?? null,\n        latitude: Number(placeReference.latitude),\n        longitude: Number(placeReference.longitude),\n        coordinate_precision: placeReference.coordinate_precision,\n        source_name: reference.source_name,\n        source_version: reference.source_version,\n      });\n      continue;\n    }\n\n    const existing = existingSuggestions.get(normalized);\n    unresolved.push({\n      original_name: name,\n      role: actor.role ?? null,\n      evidence_quote: actor.evidence_quote ?? null,\n      reason,\n      suggestion_id: existing?.id ?? null,\n    });\n    if (!existing && !newSuggestionKeys.has(normalized)) {\n      newSuggestionKeys.add(normalized);\n      newSuggestions.push(unresolvedSuggestion('ACTOR', actor));\n    }\n  }\n\n  return {\n    status: actorStatus(considered, geographies.length),\n    geographies,\n    unresolved,\n    newSuggestions,\n  };\n}\n\nfunction buildSuggestionPrompt(subject) {\n  return JSON.stringify({\n    name: String(subject?.name ?? '').trim(),\n    kind: subject?.kind ?? null,\n    role: subject?.role ?? null,\n    level: subject?.level ?? null,\n    evidence_quote: String(subject?.evidence_quote ?? '').slice(0, 500),\n  });\n}\n\nfunction parseSuggestionOutput(raw) {\n  if (typeof raw !== 'string' || !raw.trim()) return null;\n  try {\n    const parsed = JSON.parse(raw);\n    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;\n    if ('latitude' in parsed || 'longitude' in parsed || 'coordinates' in parsed) return null;\n    const proposedCanonicalName = requireNonblank(parsed.proposed_canonical_name, 'Proposed canonical name');\n    const reason = requireNonblank(parsed.reason, 'Suggestion reason');\n    const proposedRelationshipType = parsed.proposed_relationship_type ?? null;\n    if (proposedRelationshipType !== null && !RELATIONSHIPS.has(proposedRelationshipType)) return null;\n    return { proposedCanonicalName, proposedRelationshipType, reason };\n  } catch {\n    return null;\n  }\n}\n\nfunction stableUuid(value) {\n  const input = String(value);\n  let a = 0x811c9dc5;\n  let b = 0x9e3779b9;\n  let c = 0x85ebca6b;\n  let d = 0xc2b2ae35;\n  for (let index = 0; index < input.length; index += 1) {\n    const code = input.charCodeAt(index);\n    a = Math.imul(a ^ code, 0x01000193) >>> 0;\n    b = Math.imul(b ^ code, 0x27d4eb2d) >>> 0;\n    c = Math.imul(c ^ code, 0x165667b1) >>> 0;\n    d = Math.imul(d ^ code, 0x9e3779b1) >>> 0;\n  }\n  const hex = [a, b, c, d].map((number) => number.toString(16).padStart(8, '0')).join('');\n  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;\n}\n\nfunction deduplicateSuggestions(suggestions) {\n  const seen = new Set();\n  return suggestions.filter((suggestion) => {\n    const key = `${suggestion.suggestion_kind}:${suggestion.normalized_input}`;\n    if (seen.has(key)) return false;\n    seen.add(key);\n    return true;\n  });\n}\n\nfunction latestPayload(input, timeline, eventResult, actorResult, status, errorMessage = null) {\n  const limitations = [];\n  if (eventResult.status !== 'RESOLVED') limitations.push(`EVENT_GEOGRAPHY_${eventResult.status}`);\n  if (actorResult.status !== 'RESOLVED') limitations.push(actorResult.status === 'NO_ACTORS_STATED' ? 'NO_ACTORS_STATED' : `ACTOR_GEOGRAPHY_${actorResult.status}`);\n  return {\n    phase5_event_record_id: input.phase5_event_record_id,\n    phase5b_classification_id: input.phase5b_classification_id,\n    event_date: timeline.eventDate,\n    event_date_precision: timeline.precision,\n    timeline_sort_date: timeline.timelineSortDate,\n    timeline_reference_date: timeline.timelineReferenceDate,\n    timeline_reference_basis: timeline.timelineReferenceBasis,\n    event_geographies: [\n      ...eventResult.geographies.map((item) => ({ ...item, resolution_status: 'RESOLVED' })),\n      ...eventResult.unresolved.map((item) => ({ ...item, resolution_status: 'UNRESOLVED' })),\n    ],\n    actor_geographies: [\n      ...actorResult.geographies.map((item) => ({ ...item, resolution_status: 'RESOLVED' })),\n      ...actorResult.unresolved.map((item) => ({ ...item, resolution_status: 'UNRESOLVED' })),\n    ],\n    event_geography_status: eventResult.status,\n    actor_geography_status: actorResult.status,\n    phase5c_status: status,\n    limitation_reasons: limitations,\n    error_message: errorMessage,\n    processed_at: input.processed_at ?? new Date().toISOString(),\n  };\n}\n\nfunction buildPhase5cResult(input) {\n  const snapshot = JSON.parse(JSON.stringify(input));\n  const identity = `${snapshot.phase5_event_record_id}|${snapshot.phase5b_classification_id}`;\n  try {\n    requireNonblank(snapshot.phase5_event_record_id, 'Phase 5 event record ID');\n    requireNonblank(snapshot.phase5b_classification_id, 'Phase 5B classification ID');\n    const timeline = prepareTimeline({\n      eventDate: snapshot.facts?.event_date ?? null,\n      precision: snapshot.facts?.event_date_precision,\n      publicationDate: snapshot.source_publication_date,\n    });\n    const eventResult = resolveEventGeographies(\n      snapshot.facts?.locations ?? [],\n      snapshot.approved_geographic_references ?? [],\n      snapshot.open_reference_suggestions ?? [],\n    );\n    const actorResult = resolveActorGeographies(\n      snapshot.facts?.actors ?? [],\n      snapshot.approved_actor_geographic_references ?? [],\n      snapshot.approved_geographic_references ?? [],\n      snapshot.open_reference_suggestions ?? [],\n    );\n    const latest = latestPayload(snapshot, timeline, eventResult, actorResult, 'PREPARED');\n    const submissionKey = stableUuid(`${identity}|${JSON.stringify({ ...latest, processed_at: null })}`);\n    return {\n      latest,\n      history: { submission_key: submissionKey, ...latest },\n      newSuggestions: deduplicateSuggestions([...eventResult.newSuggestions, ...actorResult.newSuggestions]),\n    };\n  } catch (error) {\n    const timeline = prepareTimeline({ eventDate: null, precision: 'unknown', publicationDate: snapshot.source_publication_date });\n    const emptyEvent = { status: 'NO_LOCATION_STATED', geographies: [], unresolved: [], newSuggestions: [] };\n    const emptyActors = { status: 'NO_ACTORS_STATED', geographies: [], unresolved: [], newSuggestions: [] };\n    const latest = latestPayload(snapshot, timeline, emptyEvent, emptyActors, 'FAILED', String(error?.message ?? error));\n    const submissionKey = stableUuid(`${identity}|FAILED|${latest.error_message}`);\n    return { latest, history: { submission_key: submissionKey, ...latest }, newSuggestions: [] };\n  }\n}\n\n\nreturn $input.all().map(item => {\n  const result = buildPhase5cResult(item.json);\n  return { json: {\n    ...result,\n    existing_phase5c_result_id: item.json.existing_phase5c_result_id ?? null,\n    existing_phase5c_status: item.json.existing_phase5c_status ?? null,\n  }};\n});"
+      },
+      "notes": "Pure deterministic Phase 5C transformer. Uses only approved references; unresolved names stay visible and never receive invented coordinates."
+    },
+    {
+      "id": "p5c_prepare_suggestions",
+      "name": "Prepare Phase 5C Suggestions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6944,
+        272
+      ],
+      "parameters": {
+        "jsCode": "const seen = new Set();\nreturn $input.all().flatMap(item => item.json.newSuggestions ?? []).filter(row => {\n  const key = `${row.suggestion_kind}:${row.normalized_input}`;\n  if (seen.has(key)) return false;\n  seen.add(key);\n  return true;\n}).map(row => ({ json: row }));"
+      },
+      "notes": "Flattens and batch-deduplicates new SYSTEM_UNRESOLVED suggestions. The input snapshot already excludes existing open suggestions. No model call is used."
+    },
+    {
+      "id": "p5c_create_suggestion",
+      "name": "Create Phase 5C Reference Suggestion",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7392,
+        304
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_reference_suggestions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "suggestion_kind",
+              "fieldValue": "={{ $json.suggestion_kind }}"
+            },
+            {
+              "fieldId": "normalized_input",
+              "fieldValue": "={{ $json.normalized_input }}"
+            },
+            {
+              "fieldId": "display_input",
+              "fieldValue": "={{ $json.display_input }}"
+            },
+            {
+              "fieldId": "proposed_canonical_name",
+              "fieldValue": "={{ $json.proposed_canonical_name }}"
+            },
+            {
+              "fieldId": "proposed_relationship_type",
+              "fieldValue": "={{ $json.proposed_relationship_type }}"
+            },
+            {
+              "fieldId": "proposed_geographic_reference_id",
+              "fieldValue": "={{ $json.proposed_geographic_reference_id }}"
+            },
+            {
+              "fieldId": "proposed_actor_reference_id",
+              "fieldValue": "={{ $json.proposed_actor_reference_id }}"
+            },
+            {
+              "fieldId": "suggestion_source",
+              "fieldValue": "={{ $json.suggestion_source }}"
+            },
+            {
+              "fieldId": "model_name",
+              "fieldValue": "={{ $json.model_name }}"
+            },
+            {
+              "fieldId": "prompt_version",
+              "fieldValue": "={{ $json.prompt_version }}"
+            },
+            {
+              "fieldId": "suggestion_reason",
+              "fieldValue": "={{ $json.suggestion_reason }}"
+            },
+            {
+              "fieldId": "supporting_occurrences",
+              "fieldValue": "={{ $json.supporting_occurrences }}"
+            },
+            {
+              "fieldId": "raw_output",
+              "fieldValue": "={{ $json.raw_output }}"
+            },
+            {
+              "fieldId": "review_status",
+              "fieldValue": "={{ $json.review_status }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Creates batch-deduplicated PENDING_REVIEW suggestions only. It never creates an approved reference or coordinate."
+    },
+    {
+      "id": "p5c_existing_failed",
+      "name": "Has Existing Phase 5C Result?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        7392,
+        -16
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "p5c-existing-failed",
+              "leftValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.existing_phase5c_result_id !== null }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "notes": "Only a retryable existing Phase 5C result is updated; first attempts create a row."
+    },
+    {
+      "id": "p5c_update_latest",
+      "name": "Update Failed Phase 5C Result",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7616,
+        -80
+      ],
+      "parameters": {
+        "operation": "update",
+        "tableId": "=terra_space_phase5_timeline_geographies",
+        "filterType": "string",
+        "filterString": "={{ 'id=eq.' + $('Prepare Phase 5C Timeline and Geography').item.json.existing_phase5c_result_id }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "phase5b_classification_id",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.phase5b_classification_id }}"
+            },
+            {
+              "fieldId": "event_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_date }}"
+            },
+            {
+              "fieldId": "event_date_precision",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_date_precision }}"
+            },
+            {
+              "fieldId": "timeline_sort_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.timeline_sort_date }}"
+            },
+            {
+              "fieldId": "timeline_reference_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.timeline_reference_date }}"
+            },
+            {
+              "fieldId": "timeline_reference_basis",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.timeline_reference_basis }}"
+            },
+            {
+              "fieldId": "event_geographies",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_geographies }}"
+            },
+            {
+              "fieldId": "actor_geographies",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.actor_geographies }}"
+            },
+            {
+              "fieldId": "event_geography_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_geography_status }}"
+            },
+            {
+              "fieldId": "actor_geography_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.actor_geography_status }}"
+            },
+            {
+              "fieldId": "phase5c_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.phase5c_status }}"
+            },
+            {
+              "fieldId": "limitation_reasons",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.limitation_reasons }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Updates only the exact pending-view result identity. No delete or replacement of other rows."
+    },
+    {
+      "id": "p5c_create_latest",
+      "name": "Create Phase 5C Result",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7616,
+        64
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_timeline_geographies",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "phase5b_classification_id",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.phase5b_classification_id }}"
+            },
+            {
+              "fieldId": "event_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_date }}"
+            },
+            {
+              "fieldId": "event_date_precision",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_date_precision }}"
+            },
+            {
+              "fieldId": "timeline_sort_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.timeline_sort_date }}"
+            },
+            {
+              "fieldId": "timeline_reference_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.timeline_reference_date }}"
+            },
+            {
+              "fieldId": "timeline_reference_basis",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.timeline_reference_basis }}"
+            },
+            {
+              "fieldId": "event_geographies",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_geographies }}"
+            },
+            {
+              "fieldId": "actor_geographies",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.actor_geographies }}"
+            },
+            {
+              "fieldId": "event_geography_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.event_geography_status }}"
+            },
+            {
+              "fieldId": "actor_geography_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.actor_geography_status }}"
+            },
+            {
+              "fieldId": "phase5c_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.phase5c_status }}"
+            },
+            {
+              "fieldId": "limitation_reasons",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.limitation_reasons }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.latest.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Creates one latest Phase 5C timeline/geography result."
+    },
+    {
+      "id": "p5c_append_run",
+      "name": "Append Phase 5C Timeline Geography Run",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        7840,
+        -16
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_timeline_geography_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.submission_key }}"
+            },
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "phase5b_classification_id",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.phase5b_classification_id }}"
+            },
+            {
+              "fieldId": "event_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.event_date }}"
+            },
+            {
+              "fieldId": "event_date_precision",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.event_date_precision }}"
+            },
+            {
+              "fieldId": "timeline_sort_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.timeline_sort_date }}"
+            },
+            {
+              "fieldId": "timeline_reference_date",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.timeline_reference_date }}"
+            },
+            {
+              "fieldId": "timeline_reference_basis",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.timeline_reference_basis }}"
+            },
+            {
+              "fieldId": "event_geographies",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.event_geographies }}"
+            },
+            {
+              "fieldId": "actor_geographies",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.actor_geographies }}"
+            },
+            {
+              "fieldId": "event_geography_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.event_geography_status }}"
+            },
+            {
+              "fieldId": "actor_geography_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.actor_geography_status }}"
+            },
+            {
+              "fieldId": "phase5c_status",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.phase5c_status }}"
+            },
+            {
+              "fieldId": "limitation_reasons",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.limitation_reasons }}"
+            },
+            {
+              "fieldId": "error_message",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.error_message }}"
+            },
+            {
+              "fieldId": "processed_at",
+              "fieldValue": "={{ $('Prepare Phase 5C Timeline and Geography').item.json.history.processed_at }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Appends one immutable Phase 5C history snapshot for each prepared event."
+    },
+    {
+      "id": "p5c_has_pending_gate",
+      "name": "Any Pending Phase 5C Events?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        6496,
+        16
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "p5c_has_pending_gate-condition",
+              "leftValue": "={{ Boolean($json.phase5_event_record_id) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p5c_complete",
+      "name": "Phase 5C Complete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8272,
+        16
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5c_complete: true } }];"
+      },
+      "notes": "One control item after either an empty Phase 5C queue or the completed Phase 5C batch. Handoff to Phase 5D once."
+    },
+    {
+      "id": "p5d_get_events",
+      "name": "Get Phase 5D Event Records",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8528,
+        16
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_event_records",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5D input. Empty results emit one control item so the next stage can finish safely.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5d_after_events",
+      "name": "Continue After Phase 5D Event Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8752,
+        16
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5d_control: true } }];"
+      },
+      "notes": "Collapses a multi-item read to one control item, preventing repeated downstream database reads."
+    },
+    {
+      "id": "p5d_get_timelines",
+      "name": "Get Phase 5D Timeline Results",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8976,
+        16
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_timeline_geographies",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5D input. Empty results emit one control item so the next stage can finish safely.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5d_after_timelines",
+      "name": "Continue After Phase 5D Timeline Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9200,
+        16
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5d_control: true } }];"
+      },
+      "notes": "Collapses a multi-item read to one control item, preventing repeated downstream database reads."
+    },
+    {
+      "id": "p5d_get_latest",
+      "name": "Get Existing Phase 5D Recommendations",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        9424,
+        16
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_duplicate_recommendations",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5D input. Empty results emit one control item so the next stage can finish safely.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5d_after_latest",
+      "name": "Continue After Phase 5D Latest Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9648,
+        16
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5d_control: true } }];"
+      },
+      "notes": "Collapses a multi-item read to one control item, preventing repeated downstream database reads."
+    },
+    {
+      "id": "p5d_get_history",
+      "name": "Get Phase 5D Recommendation History",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        9872,
+        16
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_duplicate_recommendation_runs",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5D input. Empty results emit one control item so the next stage can finish safely.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5d_prepare",
+      "name": "Prepare Phase 5D Recommendations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        10096,
+        16
+      ],
+      "parameters": {
+        "jsCode": "const RULE_VERSION = 'phase5d-strict-v1';\nconst STOPWORDS = new Set('a an and at by for from in into of on the to with'.split(' '));\nconst GENERIC_SUBJECTS = new Set(['authorities', 'government', 'officials', 'people', 'residents']);\nconst ACTION_CONTRASTS = [\n  [new Set(['propose', 'proposes']), new Set(['approve', 'approves'])],\n  [new Set(['plan', 'plans']), new Set(['implement', 'implements'])],\n];\n\nfunction normalizeWords(value) {\n  return String(value ?? '').toLocaleLowerCase('en-US').match(/[\\p{L}\\p{N}]+/gu) ?? [];\n}\n\nfunction titleTokens(title) {\n  return new Set(normalizeWords(title).filter((word) => !STOPWORDS.has(word)));\n}\n\nfunction normalizedName(value) {\n  return normalizeWords(value).join(' ');\n}\n\nfunction actualExactDate(timeline) {\n  if (timeline?.event_date_precision !== 'exact') return null;\n  const date = timeline.event_date;\n  if (typeof date !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) return null;\n  const parsed = new Date(`${date}T00:00:00.000Z`);\n  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date ? null : date;\n}\n\nfunction sharedValues(a, b) {\n  return [...a].filter((value) => b.has(value)).sort();\n}\n\nfunction actorNames(event) {\n  return new Set((event.facts?.actors ?? [])\n    .map((actor) => normalizedName(actor?.name))\n    .filter((name) => name && !GENERIC_SUBJECTS.has(name)));\n}\n\nfunction specificPlaces(event) {\n  return new Set((event.timeline?.event_geographies ?? [])\n    .filter((place) => place?.resolution_status === 'RESOLVED'\n      && ['admin1', 'city_regency'].includes(place.coordinate_precision)\n      && typeof place.geographic_reference_id === 'string')\n    .map((place) => place.geographic_reference_id));\n}\n\nfunction conflictingActions(a, b) {\n  for (const [left, right] of ACTION_CONTRASTS) {\n    const aLeft = [...left].some((word) => a.has(word));\n    const aRight = [...right].some((word) => a.has(word));\n    const bLeft = [...left].some((word) => b.has(word));\n    const bRight = [...right].some((word) => b.has(word));\n    if ((aLeft && bRight) || (aRight && bLeft)) return true;\n  }\n  return false;\n}\n\nfunction evaluateDuplicates(events) {\n  if (!Array.isArray(events)) throw new TypeError('Events must be an array');\n  const ordered = [...events].sort((a, b) => String(a?.id).localeCompare(String(b?.id)));\n  const recommendations = [];\n  const summary = {\n    events_considered: ordered.length,\n    pairs_considered: 0,\n    excluded_date: 0,\n    excluded_title: 0,\n    excluded_action: 0,\n    excluded_subject: 0,\n    recommended: 0,\n  };\n\n  for (let i = 0; i < ordered.length; i += 1) {\n    const a = ordered[i];\n    if (!a?.id) throw new Error('Each event needs an ID');\n    if (i > 0 && a.id === ordered[i - 1].id) throw new Error(`Duplicate event ID: ${a.id}`);\n  }\n\n  for (let i = 0; i < ordered.length; i += 1) {\n    const a = ordered[i];\n    const date = actualExactDate(a.timeline);\n    for (let j = i + 1; j < ordered.length; j += 1) {\n      const b = ordered[j];\n      summary.pairs_considered += 1;\n      if (!date || actualExactDate(b.timeline) !== date) {\n        summary.excluded_date += 1;\n        continue;\n      }\n\n      const titleA = titleTokens(a.title);\n      const titleB = titleTokens(b.title);\n      const sharedTokens = sharedValues(titleA, titleB);\n      if (sharedTokens.length < 3) {\n        summary.excluded_title += 1;\n        continue;\n      }\n      const score = sharedTokens.length / new Set([...titleA, ...titleB]).size;\n      if (score < 0.75) {\n        summary.excluded_title += 1;\n        continue;\n      }\n      if (conflictingActions(titleA, titleB)) {\n        summary.excluded_action += 1;\n        continue;\n      }\n\n      const sharedActors = sharedValues(actorNames(a), actorNames(b));\n      const sharedPlaces = sharedValues(specificPlaces(a), specificPlaces(b));\n      if (sharedActors.length === 0 && sharedPlaces.length === 0) {\n        summary.excluded_subject += 1;\n        continue;\n      }\n\n      recommendations.push({\n        event_record_id_a: a.id,\n        event_record_id_b: b.id,\n        event_date: date,\n        status: 'POSSIBLE_DUPLICATE',\n        rule_version: RULE_VERSION,\n        title_overlap_score: score,\n        shared_title_tokens: sharedTokens,\n        shared_actor_names: sharedActors,\n        shared_geographic_reference_ids: sharedPlaces,\n        reason_codes: [\n          'TITLE_OVERLAP',\n          ...(sharedActors.length ? ['SHARED_ACTOR'] : []),\n          ...(sharedPlaces.length ? ['SHARED_SPECIFIC_PLACE'] : []),\n        ],\n      });\n      summary.recommended += 1;\n    }\n  }\n\n  return { recommendations, summary };\n}\n\nfunction recommendDuplicates(events) {\n  return evaluateDuplicates(events).recommendations;\n}\n\n\n\nfunction attemptId() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {\n    const random = Math.floor(Math.random() * 16);\n    return (character === 'x' ? random : (random & 3) | 8).toString(16);\n  });\n}\n\nfunction pairKey(row) {\n  return `${row.event_record_id_a}|${row.event_record_id_b}`;\n}\n\nfunction preparePhase5DItems(eventRecords, timelineResults, latestRows, historyRows) {\n  if (![eventRecords, timelineResults, latestRows, historyRows].every(Array.isArray)) {\n    throw new TypeError('Phase 5D inputs must be arrays');\n  }\n\n  const timelines = new Map(timelineResults\n    .filter((row) => row?.phase5_event_record_id)\n    .map((row) => [row.phase5_event_record_id, row]));\n  const events = eventRecords.filter((row) => row?.id).map((row) => {\n    const timeline = timelines.get(row.id);\n    if (!timeline) throw new Error(`Missing Phase 5C result for event ${row.id}`);\n    if (timeline.phase5c_status !== 'PREPARED') {\n      throw new Error(`Phase 5C result is not prepared for event ${row.id}`);\n    }\n    return { id: row.id, title: row.candidate_title, facts: row.facts, timeline };\n  });\n\n  const { recommendations, summary } = evaluateDuplicates(events);\n  const latest = new Map(latestRows\n    .filter((row) => row?.event_record_id_a && row?.event_record_id_b)\n    .map((row) => [pairKey(row), row]));\n  const historyKeys = new Set(historyRows.map((row) => row?.submission_key).filter(Boolean));\n  const items = [];\n\n  for (const recommendation of recommendations) {\n    const existing = latest.get(pairKey(recommendation));\n    if (!existing) {\n      items.push({ ...recommendation, submission_key: attemptId(), action: 'create' });\n      continue;\n    }\n    if (existing.rule_version !== recommendation.rule_version) {\n      throw new Error(`Phase 5D rule version changed for pair ${pairKey(recommendation)}; reviewed re-evaluation required`);\n    }\n    if (!historyKeys.has(existing.submission_key)) {\n      items.push({ ...recommendation, submission_key: existing.submission_key, action: 'history_only' });\n    }\n  }\n\n  const completedSummary = {\n    ...summary,\n    new_recommendations: items.filter((item) => item.action === 'create').length,\n    history_recoveries: items.filter((item) => item.action === 'history_only').length,\n  };\n  if (items.length === 0) return [{ action: 'none', summary: completedSummary }];\n  return items.map((item) => ({ ...item, summary: completedSummary }));\n}\n\nreturn preparePhase5DItems(\n  $('Get Phase 5D Event Records').all().map(item => item.json),\n  $('Get Phase 5D Timeline Results').all().map(item => item.json),\n  $('Get Existing Phase 5D Recommendations').all().map(item => item.json),\n  $('Get Phase 5D Recommendation History').all().map(item => item.json),\n).map(json => ({ json }));"
+      },
+      "notes": "Strict deterministic comparison of actual exact dates, action-title overlap, and specific retained subjects. Emits a control item when no pair qualifies. No model or external call."
+    },
+    {
+      "id": "p5d_has_work",
+      "name": "Any Phase 5D Writes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        10320,
+        16
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "p5d_has_work-condition",
+              "leftValue": "={{ $json.action !== 'none' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p5d_is_create",
+      "name": "New Phase 5D Pair?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        10544,
+        16
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "p5d_is_create-condition",
+              "leftValue": "={{ $json.action === 'create' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p5d_create_latest",
+      "name": "Create Phase 5D Recommendation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        10768,
+        -64
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_duplicate_recommendations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_record_id_a",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.event_record_id_a }}"
+            },
+            {
+              "fieldId": "event_record_id_b",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.event_record_id_b }}"
+            },
+            {
+              "fieldId": "event_date",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.event_date }}"
+            },
+            {
+              "fieldId": "rule_version",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.rule_version }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.status }}"
+            },
+            {
+              "fieldId": "title_overlap_score",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.title_overlap_score }}"
+            },
+            {
+              "fieldId": "shared_title_tokens",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.shared_title_tokens }}"
+            },
+            {
+              "fieldId": "shared_actor_names",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.shared_actor_names }}"
+            },
+            {
+              "fieldId": "shared_geographic_reference_ids",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.shared_geographic_reference_ids }}"
+            },
+            {
+              "fieldId": "reason_codes",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.reason_codes }}"
+            },
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.submission_key }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Creates only a new latest possible-duplicate recommendation. Existing pairs are skipped or repaired without creating a second latest row."
+    },
+    {
+      "id": "p5d_append_run",
+      "name": "Append Phase 5D Recommendation Run",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        10992,
+        16
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_duplicate_recommendation_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "event_record_id_a",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.event_record_id_a }}"
+            },
+            {
+              "fieldId": "event_record_id_b",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.event_record_id_b }}"
+            },
+            {
+              "fieldId": "event_date",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.event_date }}"
+            },
+            {
+              "fieldId": "rule_version",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.rule_version }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.status }}"
+            },
+            {
+              "fieldId": "title_overlap_score",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.title_overlap_score }}"
+            },
+            {
+              "fieldId": "shared_title_tokens",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.shared_title_tokens }}"
+            },
+            {
+              "fieldId": "shared_actor_names",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.shared_actor_names }}"
+            },
+            {
+              "fieldId": "shared_geographic_reference_ids",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.shared_geographic_reference_ids }}"
+            },
+            {
+              "fieldId": "reason_codes",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.reason_codes }}"
+            },
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5D Recommendations').item.json.submission_key }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Appends immutable history for a new recommendation or repairs a missing history row with the saved submission key."
+    },
+    {
+      "id": "p5d_complete",
+      "name": "Phase 5D Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        11216,
+        16
+      ],
+      "parameters": {},
+      "notes": "Review stop. No merge, hiding, reclassification, publishing, or Phase 5E execution."
+    },
+    {
+      "id": "p5e_get_events",
+      "name": "Get Phase 5E Event Records",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        11440,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_event_records",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_after_events",
+      "name": "Continue After Phase 5E Event Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        11664,
+        480
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5e_control: true } }];"
+      },
+      "notes": "One control item prevents repeated downstream reads."
+    },
+    {
+      "id": "p5e_get_phase3",
+      "name": "Get Phase 5E Phase 3 Results",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        11888,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase3_event_candidates",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_after_phase3",
+      "name": "Continue After Phase 5E Phase 3 Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        12112,
+        480
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5e_control: true } }];"
+      },
+      "notes": "One control item prevents repeated downstream reads."
+    },
+    {
+      "id": "p5e_get_classifications",
+      "name": "Get Phase 5E Classifications",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        12336,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_event_type_classifications",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_after_classifications",
+      "name": "Continue After Phase 5E Classification Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        12560,
+        480
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5e_control: true } }];"
+      },
+      "notes": "One control item prevents repeated downstream reads."
+    },
+    {
+      "id": "p5e_get_types",
+      "name": "Get Phase 5E Event Types",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        12784,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_event_types",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_after_types",
+      "name": "Continue After Phase 5E Type Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13008,
+        480
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5e_control: true } }];"
+      },
+      "notes": "One control item prevents repeated downstream reads."
+    },
+    {
+      "id": "p5e_get_timelines",
+      "name": "Get Phase 5E Timeline Results",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        13232,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_timeline_geographies",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_after_timelines",
+      "name": "Continue After Phase 5E Timeline Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13456,
+        480
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5e_control: true } }];"
+      },
+      "notes": "One control item prevents repeated downstream reads."
+    },
+    {
+      "id": "p5e_get_latest",
+      "name": "Get Existing Phase 5E Qualifications",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        13680,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_event_qualifications",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_after_latest",
+      "name": "Continue After Phase 5E Latest Read",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13904,
+        480
+      ],
+      "parameters": {
+        "jsCode": "return [{ json: { phase5e_control: true } }];"
+      },
+      "notes": "One control item prevents repeated downstream reads."
+    },
+    {
+      "id": "p5e_get_history",
+      "name": "Get Phase 5E Qualification History",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14128,
+        480
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "=terra_space_phase5_event_qualification_runs",
+        "returnAll": true,
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Read-only Phase 5E qualification input. Empty reads emit one control item.",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "p5e_prepare",
+      "name": "Prepare Phase 5E Qualifications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        14000,
+        640
+      ],
+      "parameters": {
+        "jsCode": "function isPlainObject(value) {\n  return value !== null && typeof value === 'object' && !Array.isArray(value);\n}\n\nfunction nonblankString(value) {\n  return typeof value === 'string' && value.trim() ? value.trim() : null;\n}\n\nfunction result(source, status, reasonCodes) {\n  return {\n    ...JSON.parse(JSON.stringify(source)),\n    phase5e_status: status,\n    qualification_reason_codes: reasonCodes,\n  };\n}\n\nfunction activeAssignedType(classification) {\n  if (!isPlainObject(classification)) return false;\n  return nonblankString(classification.event_type_id) !== null\n    && classification.event_type_is_active === true;\n}\n\n/**\n * Applies Phase 5E's deterministic Final rule without changing any source data.\n * The caller supplies the preserved Phase 5A record plus its Phase 3, 5B, and 5C\n * snapshots. A malformed or incomplete snapshot is visible but never Final.\n */\nfunction qualifyEvent(input) {\n  const source = isPlainObject(input) ? input : {};\n  const phase5a = source.phase5a;\n  if (!isPlainObject(phase5a) || phase5a.phase5a_status !== 'PREPARED') {\n    return result(source, 'NOT_FINAL', ['PHASE5A_NOT_PREPARED']);\n  }\n\n  const candidateId = nonblankString(phase5a.candidate_id);\n  if (!candidateId) {\n    return result(source, 'NOT_FINAL', ['CANDIDATE_ID_MISSING']);\n  }\n\n  if (nonblankString(phase5a.phase3_event_candidate_result_id) === null\n    || nonblankString(source.phase3?.id) === null\n    || source.phase3.id !== phase5a.phase3_event_candidate_result_id) {\n    return result(source, 'NOT_FINAL', ['PHASE3_RESULT_ID_MISMATCH']);\n  }\n\n  const candidates = source.phase3?.candidates;\n  if (!Array.isArray(candidates)) {\n    return result(source, 'NOT_FINAL', ['PHASE3_CANDIDATES_MISSING']);\n  }\n  const matches = candidates.filter((candidate) => isPlainObject(candidate)\n    && candidate.candidate_id === candidateId);\n  if (matches.length !== 1) {\n    return result(source, 'NOT_FINAL', [matches.length === 0 ? 'CANDIDATE_ID_NOT_FOUND' : 'CANDIDATE_ID_NOT_UNIQUE']);\n  }\n\n  const candidate = matches[0];\n  if (candidate.status !== 'VALID') {\n    return result(source, 'NOT_FINAL', ['CANDIDATE_STATUS_NOT_VALID']);\n  }\n  if (candidate.quote_validation_status !== 'VERIFIED') {\n    return result(source, 'NOT_FINAL', ['CANDIDATE_QUOTE_NOT_VERIFIED']);\n  }\n  if (candidate.safeguard_status !== 'ACCEPT') {\n    return result(source, 'NOT_FINAL', ['CANDIDATE_SAFEGUARD_NOT_ACCEPTED']);\n  }\n\n  const phase5b = source.phase5b;\n  if (!isPlainObject(phase5b)) {\n    return result(source, 'NOT_FINAL', ['PHASE5B_RESULT_MISSING']);\n  }\n  if (phase5b.classification_status === 'FAILED') {\n    return result(source, 'NOT_FINAL', ['PHASE5B_TECHNICAL_FAILURE']);\n  }\n  if (!['CLASSIFIED', 'UNCLASSIFIED'].includes(phase5b.classification_status)) {\n    return result(source, 'NOT_FINAL', ['PHASE5B_STATUS_NOT_QUALIFYING']);\n  }\n  if (phase5b.safeguard_status !== 'ACCEPT') {\n    return result(source, 'NOT_FINAL', ['PHASE5B_SAFEGUARD_NOT_ACCEPTED']);\n  }\n  if (phase5b.classification_status === 'CLASSIFIED') {\n    if (nonblankString(phase5b.event_type_id) === null) {\n      return result(source, 'NOT_FINAL', ['CLASSIFIED_TYPE_ID_MISSING']);\n    }\n    if (!activeAssignedType(phase5b)) {\n      return result(source, 'NOT_FINAL', ['CLASSIFIED_TYPE_NOT_ACTIVE']);\n    }\n  }\n\n  const phase5c = source.phase5c;\n  if (!isPlainObject(phase5c) || phase5c.phase5c_status !== 'PREPARED') {\n    return result(source, 'NOT_FINAL', ['PHASE5C_NOT_PREPARED']);\n  }\n\n  return result(source, 'FINAL', ['FINAL_CANDIDATE_GROUNDED']);\n}\n\nfunction attemptId() { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r & 3) | 8).toString(16); }); }\nconst rows = name => $(name).all().map(item => item.json).filter(row => row && !row.phase5e_control);\nconst by = (items, key) => new Map(items.filter(item => item?.[key]).map(item => [item[key], item]));\nconst phase3 = by(rows('Get Phase 5E Phase 3 Results'), 'id');\nconst classifications = by(rows('Get Phase 5E Classifications'), 'phase5_event_record_id');\nconst types = by(rows('Get Phase 5E Event Types'), 'id');\nconst timelines = by(rows('Get Phase 5E Timeline Results'), 'phase5_event_record_id');\nconst latest = by(rows('Get Existing Phase 5E Qualifications'), 'phase5_event_record_id');\nreturn rows('Get Phase 5E Event Records').filter(event => event?.id).map(event => {\n  const classification = classifications.get(event.id);\n  const eventType = classification?.event_type_id ? types.get(classification.event_type_id) : null;\n  const qualified = qualifyEvent({\n    phase5a: event,\n    phase3: phase3.get(event.phase3_event_candidate_result_id) ?? null,\n    phase5b: classification ? { ...classification, event_type_is_active: eventType?.is_active === true } : null,\n    phase5c: timelines.get(event.id) ?? null,\n  });\n  return { json: {\n    phase5_event_record_id: event.id,\n    qualification_status: qualified.phase5e_status,\n    qualification_reason_codes: qualified.qualification_reason_codes,\n    submission_key: attemptId(),\n    existing_phase5e_id: latest.get(event.id)?.id ?? null,\n  } };\n});"
+      },
+      "notes": "Deterministic qualification only. No model call, merge, publication, or source-data mutation."
+    },
+    {
+      "id": "p5e_existing",
+      "name": "Has Existing Phase 5E Qualification?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        14224,
+        480
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 3,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "p5e-existing-condition",
+              "leftValue": "={{ Boolean($json.existing_phase5e_id) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p5e_update_latest",
+      "name": "Update Phase 5E Qualification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14448,
+        480
+      ],
+      "parameters": {
+        "operation": "update",
+        "filterType": "string",
+        "filterString": "={{ 'id=eq.' + $('Prepare Phase 5E Qualifications').item.json.existing_phase5e_id }}",
+        "tableId": "=terra_space_phase5_event_qualifications",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "qualification_status",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.qualification_status }}"
+            },
+            {
+              "fieldId": "qualification_reason_codes",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.qualification_reason_codes }}"
+            },
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.submission_key }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Writes only the Phase 5E qualification table."
+    },
+    {
+      "id": "p5e_create_latest",
+      "name": "Create Phase 5E Qualification",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14448,
+        480
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_qualifications",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "qualification_status",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.qualification_status }}"
+            },
+            {
+              "fieldId": "qualification_reason_codes",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.qualification_reason_codes }}"
+            },
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.submission_key }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Writes only the Phase 5E qualification table."
+    },
+    {
+      "id": "p5e_append_run",
+      "name": "Append Phase 5E Qualification Run",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14672,
+        480
+      ],
+      "parameters": {
+        "tableId": "=terra_space_phase5_event_qualification_runs",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "phase5_event_record_id",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.phase5_event_record_id }}"
+            },
+            {
+              "fieldId": "qualification_status",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.qualification_status }}"
+            },
+            {
+              "fieldId": "qualification_reason_codes",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.qualification_reason_codes }}"
+            },
+            {
+              "fieldId": "submission_key",
+              "fieldValue": "={{ $('Prepare Phase 5E Qualifications').item.json.submission_key }}"
+            }
+          ]
+        },
+        "useCustomSchema": true,
+        "schema": "terra_space"
+      },
+      "notes": "Writes only the Phase 5E qualification table."
+    },
+    {
+      "id": "p5e_complete",
+      "name": "Phase 5E Complete",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        14896,
+        480
+      ],
+      "parameters": {},
+      "notes": "Review stop. Do not execute without a separately approved pilot."
+    }
+  ],
+  "connections": {
+    "When I Click Execute Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Phase 5A Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Phase 5A Records": {
+      "main": [
+        [
+          {
+            "node": "Any Pending Phase 5A Records?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Pending Phase 5A Records?": {
+      "main": [
+        [
+          {
+            "node": "Process One Record at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phase 5A Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One Record at a Time": {
+      "main": [
+        [
+          {
+            "node": "Phase 5A Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Phase 5A Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 5A Complete": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Phase 5B Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Phase 5A Record": {
+      "main": [
+        [
+          {
+            "node": "Is Failed Retry?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Failed Retry?": {
+      "main": [
+        [
+          {
+            "node": "Update Failed Phase 5A Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Phase 5A Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Failed Phase 5A Record": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5A Processing Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Phase 5A Record": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5A Processing Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Phase 5A Processing Run": {
+      "main": [
+        [
+          {
+            "node": "Process One Record at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Phase 5B Events": {
+      "main": [
+        [
+          {
+            "node": "Any Pending Phase 5B Events?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Event Types": {
+      "main": [
+        [
+          {
+            "node": "Process One Phase 5B Event at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One Phase 5B Event at a Time": {
+      "main": [
+        [
+          {
+            "node": "Phase 5B Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Classification Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Classification Attempt": {
+      "main": [
+        [
+          {
+            "node": "Build Classifier Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Classifier Prompt": {
+      "main": [
+        [
+          {
+            "node": "Classify Event Type (LM Studio)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Event Type (LM Studio)": {
+      "main": [
+        [
+          {
+            "node": "Parse Classifier Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Classifier Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Classifier Output": {
+      "main": [
+        [
+          {
+            "node": "Classification Parsed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classification Parsed?": {
+      "main": [
+        [
+          {
+            "node": "Build Safeguard Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Existing Failed Classification?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Safeguard Prompt": {
+      "main": [
+        [
+          {
+            "node": "Safeguard Event Type (LM Studio)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Safeguard Event Type (LM Studio)": {
+      "main": [
+        [
+          {
+            "node": "Apply Safeguard Decision",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apply Safeguard Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Safeguard Decision": {
+      "main": [
+        [
+          {
+            "node": "Retry Classification?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Classification?": {
+      "main": [
+        [
+          {
+            "node": "Build Classifier Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Existing Failed Classification?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing Failed Classification?": {
+      "main": [
+        [
+          {
+            "node": "Update Failed Phase 5B Classification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Phase 5B Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Failed Phase 5B Classification": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5B Classification Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Phase 5B Classification": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5B Classification Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Phase 5B Classification Run": {
+      "main": [
+        [
+          {
+            "node": "Has Event Type Proposal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Event Type Proposal?": {
+      "main": [
+        [
+          {
+            "node": "Create Phase 5B Event Type Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process One Phase 5B Event at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Phase 5B Event Type Proposal": {
+      "main": [
+        [
+          {
+            "node": "Process One Phase 5B Event at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Pending Phase 5B Events?": {
+      "main": [
+        [
+          {
+            "node": "Get Active Event Types",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phase 5B Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 5B Complete": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Phase 5C Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Phase 5C Events": {
+      "main": [
+        [
+          {
+            "node": "Any Pending Phase 5C Events?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Phase 5C Timeline and Geography": {
+      "main": [
+        [
+          {
+            "node": "Has Existing Phase 5C Result?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Phase 5C Suggestions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Phase 5C Suggestions": {
+      "main": [
+        [
+          {
+            "node": "Create Phase 5C Reference Suggestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Existing Phase 5C Result?": {
+      "main": [
+        [
+          {
+            "node": "Update Failed Phase 5C Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Phase 5C Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Failed Phase 5C Result": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5C Timeline Geography Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Phase 5C Result": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5C Timeline Geography Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Phase 5C Timeline Geography Run": {
+      "main": [
+        [
+          {
+            "node": "Phase 5C Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Pending Phase 5C Events?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Phase 5C Timeline and Geography",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phase 5C Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 5C Complete": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5D Event Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5D Event Records": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5D Event Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5D Event Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5D Timeline Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5D Timeline Results": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5D Timeline Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5D Timeline Read": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Phase 5D Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Phase 5D Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5D Latest Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5D Latest Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5D Recommendation History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5D Recommendation History": {
+      "main": [
+        [
+          {
+            "node": "Prepare Phase 5D Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Phase 5D Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Any Phase 5D Writes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Phase 5D Writes?": {
+      "main": [
+        [
+          {
+            "node": "New Phase 5D Pair?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Phase 5D Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Phase 5D Pair?": {
+      "main": [
+        [
+          {
+            "node": "Create Phase 5D Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append Phase 5D Recommendation Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Phase 5D Recommendation": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5D Recommendation Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Phase 5D Recommendation Run": {
+      "main": [
+        [
+          {
+            "node": "Phase 5D Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phase 5D Complete": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5E Event Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5E Event Records": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5E Event Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5E Event Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5E Phase 3 Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5E Phase 3 Results": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5E Phase 3 Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5E Phase 3 Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5E Classifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5E Classifications": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5E Classification Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5E Classification Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5E Event Types",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5E Event Types": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5E Type Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5E Type Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5E Timeline Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5E Timeline Results": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5E Timeline Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5E Timeline Read": {
+      "main": [
+        [
+          {
+            "node": "Get Existing Phase 5E Qualifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Phase 5E Qualifications": {
+      "main": [
+        [
+          {
+            "node": "Continue After Phase 5E Latest Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Continue After Phase 5E Latest Read": {
+      "main": [
+        [
+          {
+            "node": "Get Phase 5E Qualification History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Phase 5E Qualification History": {
+      "main": [
+        [
+          {
+            "node": "Prepare Phase 5E Qualifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Phase 5E Qualifications": {
+      "main": [
+        [
+          {
+            "node": "Has Existing Phase 5E Qualification?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Existing Phase 5E Qualification?": {
+      "main": [
+        [
+          {
+            "node": "Update Phase 5E Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Phase 5E Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Phase 5E Qualification": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5E Qualification Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Phase 5E Qualification": {
+      "main": [
+        [
+          {
+            "node": "Append Phase 5E Qualification Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Phase 5E Qualification Run": {
+      "main": [
+        [
+          {
+            "node": "Phase 5E Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Run Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Phase 5A Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [
+    {
+      "id": "a0830617-b026-4c7f-83ba-3d87e5ca8169",
+      "name": "Phase 5A — Prepare Event Records",
+      "nodeIds": [
+        "p5a_get_pending",
+        "p5a_has_pending_gate",
+        "p5a_loop",
+        "p5a_prepare",
+        "p5a_is_retry",
+        "p5a_update_latest",
+        "p5a_create_latest",
+        "p5a_append_run",
+        "p5a_complete"
+      ],
+      "description": "Deterministic, no-inference preparation with a safe empty-queue handoff. Stop and review before Phase 5B."
+    },
+    {
+      "id": "d299c785-4658-4680-ae56-bcb35e82fd6c",
+      "name": "Phase 5B — Event Type Classification",
+      "nodeIds": [
+        "p5b_get_pending",
+        "p5b_has_pending_gate",
+        "p5b_get_types",
+        "p5b_loop",
+        "p5b_prepare_attempt",
+        "p5b_build_classifier",
+        "p5b_classify",
+        "p5b_parse_classifier",
+        "p5b_classification_parsed",
+        "p5b_build_safeguard",
+        "p5b_safeguard",
+        "p5b_apply_safeguard",
+        "p5b_retry",
+        "p5b_existing_failed",
+        "p5b_update_latest",
+        "p5b_create_latest",
+        "p5b_append_run",
+        "p5b_has_proposal",
+        "p5b_create_proposal",
+        "p5b_complete"
+      ],
+      "description": "Bounded local classification with a safe empty-queue handoff, conservative Unclassified fallback, and no publishing."
+    }
+  ]
+}

@@ -5,7 +5,8 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy.engine import Engine
 
 from app.schemas.event import ActorRead, DashboardSummaryRead, EventRead, EventTypeRead
-from app.schemas.supabase_bridge import BridgeCandidateReviewRead, BridgeModeRead, BridgeSourceRead
+from app.schemas.supabase_bridge import BridgeCandidateReviewRead, BridgeModeRead, BridgeSourceRead, Phase5EventRead
+from app.services.phase5_events import get_phase5_event, list_phase5_events
 from app.services.supabase_bridge import (
     bridge_dashboard_summary,
     filter_bridge_events,
@@ -145,6 +146,17 @@ def create_supabase_bridge_router(engine: Engine | None) -> APIRouter:
         event = get_bridge_event(require_engine(), event_id)
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found.")
+        return event
+
+    @router.get("/api/bridge/phase5-events", response_model=list[Phase5EventRead])
+    def list_phase5_events_route() -> list[Phase5EventRead]:
+        return list_phase5_events(require_engine())
+
+    @router.get("/api/bridge/phase5-events/{event_id}", response_model=Phase5EventRead)
+    def get_phase5_event_route(event_id: str) -> Phase5EventRead:
+        event = get_phase5_event(require_engine(), event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Phase 5 event not found.")
         return event
 
     return router

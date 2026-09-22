@@ -3,7 +3,7 @@ type: Decision
 title: Closed Event Type Taxonomy
 description: Local AI may select only active event types and leaves the type blank when none fits.
 tags: [project-knowledge, decision, event-types, extraction, lm-studio]
-status: active
+status: superseded
 okf_version: "0.1"
 ---
 
@@ -12,6 +12,11 @@ okf_version: "0.1"
 The previous event-type decision allowed local AI to propose a new inactive type when no active
 definition fitted. The owner now maintains a curated initial global IR taxonomy and does not want
 AI suggestions to expand it.
+
+This blanket no-suggestion rule was superseded for the new Phase 5 pipeline on 2026-09-10 by
+[Phase 5B Event Type Classification](Phase-5B-Event-Type-Classification.md). Phase 5B may store an
+optional, event-linked `PENDING_REVIEW` proposal, but it still cannot create or activate an
+official type automatically.
 
 # Decision
 

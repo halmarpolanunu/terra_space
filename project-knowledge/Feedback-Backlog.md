@@ -16,6 +16,87 @@ implementation plan or decision, link it from here and mark it resolved instead 
 
 ## Open items
 
+### Process All Saved Articles can mark blank cleaner results as completed (2026-08-26)
+
+- **Context:** the first owner-run manual execution (`1972`) of **Terra Space - Process All Saved
+  Articles** fetched 29 sources and finished as a successful n8n execution, but all 29 resulting
+  `cleaned_content_text` values are empty while their original raw article text remains intact.
+- **Cause confirmed:** the regular Supabase fetch returns `raw_content_text`, but the processor's
+  deterministic pre-cleaner reads `p1_raw_content_text` without the preparation node mapping that
+  field. LM Studio consequently received an empty article and requested text. The existing fidelity
+  guard selected its empty fallback, and the success branch saved that empty value as `completed`.
+- **Required correction:** map the source text under the expected field name (or use the fetched
+  field directly), block any empty cleaning input/output from entering the completed path, and only
+  then safely return the 29 affected sources to `queued` for a clean retry. Preserve their run
+  history as evidence; do not delete it.
+- **Status:** Resolved on 2026-08-26. The processor now maps the source field correctly and rejects
+  empty completed results; the 29 affected sources were returned to `queued` while preserving their
+  run history. See the [Deferred Phase 1 Queue Processing Implementation
+  Plan](plans/2026-08-25-deferred-phase1-queue-processing.md).
+
+### Input News Manual cleaning leaves minor junk and drops some real content on long articles (2026-08-25)
+
+- **Context:** a read-only audit of the live **Terra Space - Input News Manual** n8n workflow
+  (id `gABPryH3jTe2Ktz5`, active) and all 25 retained `terra_space_phase1_sources` rows, comparing
+  `raw_content_text` against `cleaned_content_text` row by row rather than judging by length alone.
+- **Result: mixed.** 15 of 25 rows (60%) are fully clean. 8 of 25 (32%) are `minor_junk`: mostly a
+  leftover photo caption/credit line at the start, middle, or end of the cleaned text (bracket-style
+  credits like `[File: AFP and Getty Images]`, no-parenthesis credits like `... AP Photo`, and plain
+  descriptive captions like "Access to the homes has been blocked by settlers since Sunday"), plus
+  one stray leftover `##` markdown heading marker and one trailing "contributed to this story"
+  credit line. 2 of 25 (8%) are `possible_overcleaning`: on two long, structurally-repetitive BBC
+  articles (a live blog and a story ending in BBC's standard support/helpline notice), the cleaning
+  step dropped a handful of genuine reporter-written sentences alongside legitimate boilerplate —
+  the dropped text was always present in `raw_content_text` verbatim; nothing was invented or
+  paraphrased. 0 rows are `material_junk` or `uncertain`.
+- **Root cause, mapped to nodes:**
+  1. The deterministic `Remove Obvious Non-Article Text` code node's photo-credit regex only
+     matches parenthetical credit formats (`(AP Photo|Getty|...)`); it does not match square-bracket
+     credits or plain descriptive captions.
+  2. The `Clean Article with LM Studio API` node (local model `google/gemma-4-12b-qat`) is the
+     second line of defense and is inconsistent on captions that don't look obviously credit-shaped,
+     and on long/repetitive documents (live blogs) it occasionally over-generalizes "boilerplate" to
+     include a few genuine narrative sentences.
+  3. `Prepare Clean Text for Supabase`'s safety net only checks output length
+     (`≥ max(500, 50% of pre-clean length)`); both `possible_overcleaning` rows cleared this floor
+     comfortably, so it cannot catch content-level fidelity problems.
+  4. `Normalize Phase 1 Input` performs no dedup check — two pairs of rows (seq 13/14, seq 32/33)
+     are exact duplicate submissions of the same article; row 33 additionally has a corrupted
+     `author` field ("Nick Robins" vs. the correct "Nick Robins-Early"), which looks like a manual
+     entry error rather than a pipeline bug.
+- **Not yet decided:** whether to (a) widen the deterministic caption regex to cover bracket/no-parens
+  formats, (b) give the LLM cleaning step a stricter per-sentence rule for long/live-blog documents so
+  it never drops narrative sentences, (c) add a dedup check on `source_url`/title before insert, and
+  (d) decide, as an explicit owner call, whether BBC's standard support/helpline notice (row seq 30)
+  should be kept verbatim (it contains a real phone number and links) or intentionally treated as
+  boilerplate.
+- **Resolution (2026-08-25):** the owner approved conservative new-submission cleaning. The live
+  workflow now removes the known bracket/no-parenthesis credit forms, contributor-credit lines, and
+  stray Markdown markers deterministically; keeps the LM Studio cleaning step; and rejects an LM
+  Studio response that removes a source paragraph or adds/rewrites a paragraph. On rejection, the
+  deterministically cleaned text is saved instead, while the original LM Studio response and the
+  guard reason remain in the append-only Phase 1 processing run. BBC support/helpline text is kept.
+  Historical sources were not changed. On 2026-08-26, the owner separately approved
+  duplicate-submission prevention: the intake workflow now trims and checks `source_url` before
+  insertion, returning `REJECTED_DUPLICATE` without a new source, queue item, or processing run
+  when that URL already exists. See [Separated Manual Intake and Deferred Queue
+  Processing](decisions/Separated-Manual-Intake-and-Deferred-Queue-Processing.md) and [Terra Space
+  n8n Workflow Folder Placement](decisions/Terra-Space-n8n-Workflow-Folder-Placement.md).
+- **Status:** resolved. The active workflow passed n8n runtime validation with 0 errors and 0
+  warnings. The next owner-submitted article is the first live observation; do not submit synthetic
+  articles merely to test this change.
+
+### Project operation has become hard to track (2026-08-22)
+
+- **Owner's words:** "Honestly. im starting to lose track on this projet...."
+- **Context:** several inactive n8n experiments were displayed beside the live article pipeline,
+  making it unclear which workflow should be used for normal work.
+- **Status:** resolved. The visual [Terra Space Operating Guide](Terra-Space-Operating-Guide.md)
+  explains the complete flow, validation outcomes, data scheme, one normal entry point, and five
+  live workflows. Six confirmed inactive experiments were preserved in the n8n folder `Terra Space
+  — Retired (do not run)` under the [Active Workflow Boundary](decisions/Active-Workflow-Boundary.md);
+  none was deleted.
+
 ### Issue-first coverage is limited by evidence grounding (2026-08-20)
 
 - **Context:** an owner-approved fresh rebuild reprocessed all 24 saved source articles. Eleven
@@ -25,12 +106,26 @@ implementation plan or decision, link it from here and mark it resolved instead 
 - **Observed causes:** 5 withheld runs lacked country/city wording in the actor endpoint evidence;
   4 used an event or relationship quote that was not an exact source substring; 2 named an actor
   not supported by its evidence; and 2 paired a textual country name with the wrong ISO code.
+- **Read-only review (2026-08-22):** every withheld run's main-Issue quote is valid. The present
+  all-or-nothing recording behavior lets one invalid optional Event or relationship suppress the
+  whole Issue. Under the existing rules, 48 of 54 proposed Events are independently valid and 3
+  of 18 proposed relationships are fully valid; invalid optional parts must be omitted, never
+  repaired or inferred. This is evidence for a narrow non-inferential normalization step, not for
+  loosening validation.
 - **Required direction:** improve the Issue-first pipeline prompt and, where appropriate, its
   non-inferential normalization so it copies quotes verbatim and supplies an endpoint only when
   all actor and location wording is explicitly present. Reprocess affected articles after a
   pipeline change. Do **not** add a manual Issue/Event review, approval, or correction path.
-- **Status:** Open, not yet scheduled. Revisit before expanding Analytics or retiring the current
-  Events fallback, so the owner can judge Issue coverage on a stronger pipeline.
+- **Implementation update (2026-08-22):** the owner approved and the active n8n workflow now uses
+  prompt version `issue-first-v3`, a read-only country-reference lookup, and a non-inferential
+  normalizer that drops invalid optional Events/relationships while retaining the guarded database
+  recorder. n8n runtime validation returned 0 errors and 0 warnings. After LM Studio was restored,
+  all 13 affected sources were reprocessed sequentially through Issue-first only. Every one now
+  has a latest successful run; all 24 sources yield 24 valid Issues, 114 valid Issue Events, and
+  5 complete evidence-backed relationships. See
+  [Issue-first Independent Evidence Retention](decisions/Issue-First-Independent-Evidence-Retention.md).
+- **Status:** resolved. Revisit only if later live articles show a new evidence-grounding failure;
+  do not retire the Events fallback without separate owner approval.
 
 ### Legacy `terra_space_*` Supabase tables have no RLS policies (2026-08-10)
 
@@ -53,7 +148,12 @@ implementation plan or decision, link it from here and mark it resolved instead 
   Plan](plans/2026-08-10-supabase-cutover-verification.md) completes and the legacy tables are no
   longer being written to by any active workflow. Fixing it earlier risks breaking the one proven
   working pipeline for no live security benefit.
-- **Status:** Open, not yet decided. Revisit at or after cutover.
+- **Resolution (2026-08-24):** with explicit owner approval, all seven legacy tables and the
+  remaining 24 non-retained `terra_space_*` tables were dropped during the pipeline reset. The
+  four workflows that used the legacy shape were also deleted. A verified full-database recovery
+  backup exists at `data/backups/supabase/20260824-173329/terra-space-before-pipeline-reset.dump`.
+- **Status:** resolved. The legacy tables no longer exist, so their missing RLS policies no longer
+  require action. Any newly designed tables must receive their own security review.
 
 ### Route backgrounds and ambient "animus" motion are not approved yet, despite shipping (2026-07-21)
 

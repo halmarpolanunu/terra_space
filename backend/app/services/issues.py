@@ -37,7 +37,7 @@ def list_issues(engine: Engine) -> list[IssueListItem]:
             text(
                 f"""
                 select {_ISSUE_COLUMNS}
-                from public.terra_space_issue_v2_valid_issue_list_items
+                from terra_space.terra_space_issue_v2_valid_issue_list_items
                 order by processed_at desc, created_at desc, id desc
                 """
             )
@@ -53,7 +53,7 @@ def get_issue(engine: Engine, issue_id: str) -> IssueDetail | None:
             text(
                 f"""
                 select {_ISSUE_COLUMNS}
-                from public.terra_space_issue_v2_valid_issue_list_items
+                from terra_space.terra_space_issue_v2_valid_issue_list_items
                 where id = :issue_id
                 """
             ),
@@ -65,7 +65,7 @@ def get_issue(engine: Engine, issue_id: str) -> IssueDetail | None:
             text(
                 f"""
                 select {_EVENT_COLUMNS}
-                from public.terra_space_issue_v2_valid_events
+                from terra_space.terra_space_issue_v2_valid_events
                 where issue_id = :issue_id
                 order by created_at asc, id asc
                 """
@@ -86,7 +86,7 @@ def get_issue_event(engine: Engine, issue_id: str, event_id: str) -> IssueEventD
             text(
                 f"""
                 select {_EVENT_COLUMNS}
-                from public.terra_space_issue_v2_valid_events
+                from terra_space.terra_space_issue_v2_valid_events
                 where issue_id = :issue_id and id = :event_id
                 """
             ),
@@ -105,7 +105,7 @@ def get_issue_event(engine: Engine, issue_id: str, event_id: str) -> IssueEventD
                     target_actor_name, target_evidence_quote,
                     target_location_id, target_location_label, target_latitude,
                     target_longitude, target_location_evidence_quote
-                from public.terra_space_issue_v2_valid_relationships
+                from terra_space.terra_space_issue_v2_valid_relationships
                 where issue_id = :issue_id and event_id = :event_id
                 order by created_at asc, id asc
                 """

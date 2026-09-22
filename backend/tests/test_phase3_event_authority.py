@@ -133,7 +133,7 @@ def test_deleting_an_event_leaves_unrelated_pipeline_run_history_untouched(
     with client.app.state.session_factory() as db:
         db.execute(
             text(
-                "insert into public.terra_space_phase3_event_runs "
+                "insert into terra_space.terra_space_phase3_event_runs "
                 "(candidate_key, phase1_source_id, attempt_number, candidate, processed_at, outcome_payload) "
                 "values (:candidate_key, :source_id, 1, '{}'::jsonb, now(), '{}'::jsonb)"
             ),
@@ -147,7 +147,7 @@ def test_deleting_an_event_leaves_unrelated_pipeline_run_history_untouched(
     with client.app.state.session_factory() as db:
         count = db.execute(
             text(
-                "select count(*) from public.terra_space_phase3_event_runs "
+                "select count(*) from terra_space.terra_space_phase3_event_runs "
                 "where candidate_key = 'unrelated-candidate-key'"
             )
         ).scalar_one()

@@ -17,11 +17,19 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Current Status](Current-Status.md) — current focus, recent progress, blockers, and next actions
 - [Feedback Backlog](Feedback-Backlog.md) — owner-reported gaps and future development requests not yet scheduled
 - [Project Knowledge Log](Project-Knowledge-Log.md) — meaningful changes to the knowledge bundle
+- [Phase 4 Review Audit — 2026-09-08](Phase-4-Review-Audit-2026-09-08.md) — candidate-by-candidate classification of the 21 review-flagged results in sequences 98–107
+- [Terra Space Operating Guide](Terra-Space-Operating-Guide.md) — superseded historical guide to the pre-reset pipeline
 
 ## Planning and decisions
 
+- [Phase 5 Event Generation and Qualification](decisions/Phase-5-Conservative-Event-Drafts.md) — approved lean one-workflow direction for visible events, classification, timeline/map enrichment, duplicate recommendation, and qualification
+- [Phase 5A Prepare Event Records Implementation Plan](plans/2026-09-10-phase-5a-prepare-event-records.md) — test-first plan for the deterministic first stage of the single Phase 5 workflow
+- [Phase 4 Event Fact Extraction](decisions/Phase-4-Event-Fact-Extraction.md) — approved minimal design for enriching retained Phase 3 candidates before taxonomy, normalization, deduplication, and final events
+- [Phase 4 Event Fact Extraction Implementation Plan](plans/2026-08-27-phase-4-event-fact-extraction.md) — test-first execution plan with separate approval gates for migration, five-candidate pilot, and full processing
+- [Phase 4 Narrow Event Fact Extraction Implementation Plan](plans/2026-08-31-phase-4-narrow-event-fact-extraction.md) — approved reliability amendment plan that separates date, actor, and location work before a new controlled pilot
 - [Roadmap](Roadmap.md) — long-term phases and measurable milestones
 - [Decisions Index](decisions/Decisions-Index.md) — important choices and their reasoning
+- [Phase 3 Event Candidate Detection Plan](plans/2026-08-27-phase-3-event-candidate-detection.md) — planned minimal, evidence-grounded candidate-detection stage after the verified Phase 2 Main Issue baseline
 - [Phase 2 Implementation Plan](plans/2026-07-14-phase-2-documents-processing.md) — Documents and batch processing build plan
 - [Phase 3 Implementation Plan](plans/2026-07-14-phase-3-event-review-deduplication.md) — current task-by-task build plan for Event Review and Deduplication
 
@@ -29,6 +37,11 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 - [Phase 5 Implementation Plan](plans/2026-07-14-phase-5-settings-verification.md) — task-by-task build plan for Settings and final MVP verification
 - [Issue-First Terra Insight Design](plans/2026-08-15-issue-first-terra-insight-design.md) — approved design direction for valid article-level Issues, issue-filtered globe exploration, and evidence-backed actor arcs
 - [Issue-First Terra Insight Implementation](plans/2026-08-15-issue-first-terra-insight-implementation.md) — completed validated Issue experience and local rollout; existing routes remain the fallback
+- [Issue-first Independent Evidence Retention](decisions/Issue-First-Independent-Evidence-Retention.md) — active no-inference rule that retains a grounded Issue/Event while omitting an unsupported optional relationship
+- [Active Workflow Boundary](decisions/Active-Workflow-Boundary.md) — superseded record of the former five-workflow n8n boundary
+- [Separated Manual Intake and Deferred Queue Processing](decisions/Separated-Manual-Intake-and-Deferred-Queue-Processing.md) — approved collection queue and owner-triggered Phase 1 processing direction.
+- [Deferred Phase 1 Queue Processing Implementation Plan](plans/2026-08-25-deferred-phase1-queue-processing.md) — completed implementation record for the separate intake and process-all workflows.
+- [Terra Space n8n Workflow Folder Placement](decisions/Terra-Space-n8n-Workflow-Folder-Placement.md) — every newly created Terra Space n8n workflow belongs in the `Terra_Space` folder.
 - [Local Attachment Storage Implementation Plan](plans/2026-07-14-local-attachment-storage.md) — build plan that closed Phase 1's remaining item
 - [Design Pass Audit](plans/2026-07-15-design-pass-audit.md) — screen-by-screen findings for the deferred aesthetic design pass
 - [Layered Command Deck and Motion Design](plans/2026-07-15-layered-command-deck-motion-design.md) — approved globe-dominant 3D Dashboard and controlled-cinematic motion specification

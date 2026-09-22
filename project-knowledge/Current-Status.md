@@ -10,6 +10,1370 @@ status: active
 
 ## Latest update
 
+**2026-09-22 Terra Space objects moved into their dedicated schema:** after owner approval,
+moved all 24 live `terra_space_*` tables, their eight identity sequences, and six supporting views
+from PostgreSQL `public` to the existing `terra_space` schema. No pipeline data was deleted or
+processed. The Phase 5 fingerprint counts remain 109 prepared, 109 classified, 109 timeline and
+geography, zero duplicate recommendations, and 99 `FINAL` plus 10 `NOT_FINAL` qualifications.
+The backend read-only queries and Phase 5 workflow now use `terra_space`; all 30 workflow Supabase
+nodes were changed together, then n8n validation passed with 73 nodes, 88 valid connections, zero
+errors, and zero warnings. The workflow remains inactive. Next: verify the live application after
+its services are started; do not execute the pipeline without owner approval.
+
+**Portable workflow setup:** the credential-free inactive Phase 5 workflow export is versioned at
+`tools/n8n/terra-space-phase5-workflow.json`, so it can be imported on another local device.
+That device must connect its own Supabase and LM Studio credentials before the workflow can run.
+
+**2026-09-22 Phase 5E full missing-only baseline completed; stopped for owner review:** after
+explicit approval, a final read-only check confirmed exactly 106 unqualified Phase 5 event records
+and unchanged protected Phase 1-5D content fingerprints. n8n execution `2198` then ran only the
+temporary MCP-to-Phase-5E branch, filtered to those 106 records. It created exactly 106 latest and
+106 append-only history rows, bringing Phase 5E to 109 latest and 109 history rows: 99 `FINAL`
+and 10 `NOT_FINAL`. The three earlier pilot rows remain unchanged. Execution evidence shows only
+the MCP trigger and 18 Phase 5E nodes ran: no Phase 5A-5D, LM Studio, merge, or publish node ran.
+The workflow was immediately deactivated, normal MCP-to-Phase-5A wiring restored, and the
+temporary filter removed. It validates with 73 nodes, 88 valid connections, zero errors, and zero
+warnings. The live API/UI remains unchecked because the application was not running. Next: owner
+review before any further pipeline work; UI/UX changes remain deferred.
+
+**2026-09-22 Phase 5E three-event pilot passed; stopped for owner review:** the owner approved
+the lean qualification design, implementation plan, and separate Task 1–5 checkpoints. GPT-5.6
+Terra implemented the deterministic qualifier, additive latest/history storage, the 5E branch in
+the existing single n8n workflow, and a separate read-only Phase 5 Events/Dashboard display.
+The owner-approved pilot ran only Phase 5E for three exact IDs in execution `2197`: two `FINAL`
+and one `NOT_FINAL`, matching the read-only forecast. Each has one latest and one history row.
+Phase 1–5D counts stayed unchanged, but no pre-run content fingerprint was captured, so row-level
+identity was not verified by hash. No model, upstream, merge, or publish nodes ran. The workflow
+is inactive, normal wiring restored, temporary pilot filter removed, and validates with 73 nodes,
+88 valid connections, zero errors/warnings. Frontend tests (227/227), lint, build, and a focused
+containerized backend projection test passed. The live Terra Space API/UI was not checked because
+the application was not running. Next: review the pilot and live app display before deciding on a
+full 109-event 5E run; no full run or workflow activation is authorized yet.
+
+**2026-09-21 Phase 5D pilot filter removed; accepted for the current baseline:** after the owner
+approved the lean next step, removed only the temporary eight-ID pilot filter from the existing
+Phase 5 workflow and its local backup. No execution was started. The workflow remains inactive and
+validates with 54 nodes, 68 valid connections, zero errors/warnings. All 169 JavaScript tests pass;
+Phase 5A-5C still have 109 rows each and Phase 5D latest/history remain empty. The full 109-event
+baseline was already evaluated read-only under the strict rule: 31 same-date pairs, zero qualifying
+recommendations. No full data run is needed for this unchanged baseline. The live positive-write
+path has not been exercised because no real pair qualifies. Next: stop before Phase 5E and review
+its lean qualification rules with the owner.
+
+**2026-09-21 Phase 5D eight-event pilot completed; stopped for owner review:** after explicit
+approval, added an exact eight-ID temporary filter to the Phase 5D comparison Code node, verified
+all Phase 5A-5C pending queues were empty, then ran the existing Phase 5 workflow once through
+its MCP webhook as execution `2195`. The run finished successfully and considered eight events:
+28 unordered pairs, 23 excluded by the actual-date gate, five excluded by the strict title gate,
+zero recommendations, and zero Phase 5D writes. Execution details show no Phase 5A-5C write node,
+no LM Studio call, and no Phase 5D write node ran. Phase 5A-5C each remain at 109 rows with
+identical before/after fingerprints; Phase 5D latest/history remain empty. The workflow was
+deactivated immediately and validates with 54 nodes, 68 valid connections, zero errors/warnings.
+The temporary eight-ID pilot filter remains in place. Next: owner reviews the pilot. The live
+positive-write path remains untested because no current pair meets the approved strict rule;
+do not remove the filter or run the full baseline without separate approval.
+
+**2026-09-21 Phase 5D workflow edit saved; stopped before pilot:** after the owner's go-ahead,
+added Phase 5D to the existing inactive Phase 5 n8n workflow through its MCP. The Phase 5C
+empty-queue/completed-batch handoff now emits one control item, and Phase 5D reads the saved
+5A/5C records, recommends only strict exact-date duplicates, and writes only its own latest and
+history tables when a pair qualifies. n8n runtime validation reports 54 nodes, 68 valid
+connections, zero errors, and zero warnings; all 168 JavaScript tests pass. A read-only run of the
+matcher on the current 109-event baseline found 31 same-date pairs, all excluded by the strict
+title gate, so the current expected recommendation count is zero. Phase 5D latest/history tables
+still contain zero rows and the workflow remains inactive. n8n ungrouped the Phase 5C canvas
+group label while saving; its nodes and connections remain intact. Next: owner review and separate
+approval before any pilot execution.
+
+**2026-09-21 Phase 5D storage migration applied; stopped before workflow edit:** after explicit
+owner approval, applied the additive Phase 5D migration to local Supabase. Both new recommendation
+tables have RLS enabled and contain zero rows. The rollback-only SQL contract passes. Phase 5A,
+5B, and 5C each still contain 109 rows, with exactly the same before/after fingerprints. No
+existing events were changed, and no n8n workflow was edited or run. Next: prepare and review the
+Phase 5D workflow change before separately approved application.
+
+**2026-09-21 Phase 5D matcher and migration artifacts prepared; stopped before application:**
+the strict deterministic matcher and seven focused tests are in place. The complete JavaScript
+suite passes 155/155. A Phase 5D additive migration and rollback-only SQL contract were created;
+the contract first failed as expected without the tables, then passed when the migration was staged
+inside a transaction that rolled back. Read-only confirmation found both Phase 5D tables still
+absent and all 109 Phase 5A event records unchanged. The workflow has not been edited or run.
+Next: owner approval is required before applying the migration; workflow editing and pilot execution
+each remain separate later gates.
+
+**2026-09-21 Phase 5D design and implementation plan ready for owner review:** the owner chose deterministic-only,
+strict possible-duplicate recommendations for pairs that describe the same action on the same
+actual exact date, comparing both same-article and cross-article records. Different actions in one
+story stay separate. The draft [Phase 5D Deterministic Duplicate Recommendations](decisions/Phase-5D-Deterministic-Duplicate-Recommendations.md)
+defines conservative lexical and specific-subject gates, explainable outputs, and no automatic
+merge or publication. The [Phase 5D implementation plan](plans/2026-09-21-phase-5d-deterministic-duplicates.md)
+breaks work into matcher, storage, workflow, and pilot checkpoints. No Phase 5D table, workflow
+node, pilot, or data run exists. The single Phase 5 workflow remains inactive. Next: owner reviews
+the plan before implementation.
+
+**2026-09-21 Phase 5C full baseline completed; stopped before Phase 5D:** after the owner accepted
+the pilot and authorized continuation, removed only the temporary 12-ID filter, confirmed exactly
+97 pending inputs, and ran them once through the permanent MCP webhook. The complete baseline now
+has 109 latest rows, 109 unique history rows, zero pending inputs, zero failed results, and 110
+deduplicated `SYSTEM_UNRESOLVED` suggestions covering all 110 unique unresolved subjects. Read-only
+audit found zero invalid event-coordinate mappings, zero invalid actor-coordinate mappings, zero
+timeline-basis mismatches, and zero duplicate latest/history identities. The suggestion path now
+batch-deduplicates before direct insertion, avoiding the n8n lookup node that collapsed empty
+results. Focused tests pass 35/35; n8n validates with 39 nodes, 50 valid connections, zero errors,
+and zero warnings. The workflow is inactive. The legacy rollback contract is not reusable against
+populated Phase 5C tables because its synthetic identity now collides with a real row; its failed
+transaction changed nothing. Phase 5C-specific advisors show only expected RLS/no-policy and
+unused-index informational notices. Next: stop for owner review before designing Phase 5D.
+
+**2026-09-21 Phase 5C 12-event pilot audited; stopped for owner acceptance:** the pilot has exactly
+12 latest rows, 12 history rows, and zero selected inputs pending. A rollback-tested additive
+backfill derived only from the saved unresolved event/actor fields inserted the 13 suggestions
+missed by execution `2193`; together with the two earlier rows, all 15 unique unresolved subjects
+now have one `SYSTEM_UNRESOLVED` suggestion. The audit found zero missing suggestion links, zero
+invalid event-coordinate mappings, zero invalid actor-coordinate mappings, zero failed results,
+and zero timeline-basis mismatches. The corrected batch workflow validates with 42 nodes, 53 valid
+connections, zero errors, and zero warnings, and remains inactive. Next: owner accepts or rejects
+the pilot. Do not remove the 12-ID filter or process the remaining 97 baseline events yet.
+
+**2026-09-19 Phase 5C pilot indexes applied; stopped before Task 6:** after explicit owner approval,
+added exactly two covering indexes for `phase5b_classification_id` on the Phase 5C latest and
+history tables. The two Phase 5C unindexed-foreign-key notices are gone. This changed no event
+data: suggestions/results remain 0/0 and all 109 inputs remain pending. The Phase 5 workflow is
+still inactive. Next: request separate approval for the controlled 12-event Task 6 pilot.
+
+**2026-09-19 Phase 5C Task 5 workflow edit completed; stopped before Task 6 pilot:** after explicit
+owner approval, added 13 Phase 5C nodes to the same Phase 5 n8n workflow through the n8n MCP. The
+new group starts only after Phase 5B completes, processes one event at a time, uses only approved
+references, keeps unmatched locations/actors visible as deduplicated `SYSTEM_UNRESOLVED`
+suggestions, and writes one latest plus one history result. It makes no model call and adds no
+Phase 5D/5E placeholder. A live lookup prevents repeated unresolved names across events from
+causing duplicate-insert failures. n8n runtime validation reports 42 nodes, 56 valid connections,
+zero invalid connections, zero errors, and zero warnings. The focused workflow contract passes
+7/7, all 147 JavaScript tests pass, and the rollback-only database contract passes with protected
+fingerprints unchanged. The workflow remains inactive; suggestions/results remain 0/0, and all
+109 inputs remain pending because nothing was executed. Next: stop for owner review before the
+controlled 12-event Task 6 pilot. The two required foreign-key indexes were subsequently applied.
+
+**2026-09-19 Phase 5C Task 4 pure transformer completed; stopped before Task 5:** added the
+standalone timeline, event-geography, actor-geography, suggestion, and result-building functions
+plus 17 focused tests. The complete JavaScript suite passes all 140 tests. Test-first review caught
+and fixed two edge cases: multiple aliases for the same approved place no longer cause a false
+partial status, and invalid out-of-range coordinates are rejected. The code makes no network or
+filesystem calls, no n8n workflow was edited or run, and no Phase 5C event was processed. The
+single Phase 5 workflow remains inactive. Next: stop for owner review before Task 5 workflow edit.
+The two known non-blocking foreign-key indexes still require separate approval before the pilot.
+
+**2026-09-19 Phase 5C Task 3 safe reference seed applied and verified; stopped before Task 4:**
+after explicit owner approval, inserted exactly 38 geographic references and 24 actor references.
+No suggestion, latest-result, or history row was created; all 109 inputs remain pending. Verified
+projected coverage is 32/48 location occurrences across 21 events and 55/164 actor occurrences
+across 30 events. The full rollback-only database contract passes after replacing its former real
+`United States`/`US` fixture aliases with isolated fictional `Contractland` aliases; this changed
+test fixtures only, not production data or behavior. The Phase 5 workflow is present and inactive
+according to the n8n MCP inventory. No Phase 5C security warning was reported. Two known
+non-blocking missing foreign-key indexes still require a small separately approved migration before
+the pilot. Next: stop for owner review before Task 4 transformer implementation.
+
+**2026-09-18 Phase 5C Task 3 safe reference seed ready but not applied:** trimmed the draft to
+remove mixed-context Iran, Syria, and Ukraine country references plus their dependent actor
+mappings. The safe seed now contains 38 geographic references and 24 actor references. A
+rollback-only double-run remained exactly 38/24, and the full Phase 5C database contract passed.
+Projected initial coverage is 32 of 48 location occurrences across 21 events and 55 of 164 actor
+occurrences across 30 events. Thirteen unique location labels and 97 unique actor labels remain
+unresolved without guessed pins. The live Phase 5C tables remain empty, 109 inputs remain pending,
+and the n8n workflow remains inactive. Next: obtain explicit approval before applying the safe
+reference seed.
+
+**2026-09-18 Phase 5C Task 3 draft seed blocked by a contextual-location design gap:** coding-agent
+review created and rollback-tested a 41-geography/30-actor draft, but correctly stopped it from
+application. The current global alias design cannot distinguish the same label used as a true event
+location in one record and only as the subject of another; for example, `Iran` is valid for an
+Iranian government appointment but not as the physical location of a warning about Iran. Applying
+the draft could therefore create misleading pins. The seed is marked `DRAFT ONLY - DO NOT APPLY`.
+All live Phase 5C tables still contain zero rows, the pending queue remains 109, the database
+contract passes, and the n8n workflow is inactive. Next: agree on the smallest contextual
+include/exclude mechanism before finalizing Task 3.
+
+**2026-09-18 contextual reference review deferred by owner:** do not add a sixth Phase 5C review
+table now and do not make review a prerequisite for processing. Context-sensitive or unmatched
+locations and actors remain visible without map points. Codex or Claude may investigate them only
+when the owner explicitly requests a later pipeline review. Next: trim the draft seed to universally
+safe references, accept lower initial map coverage, and return to the normal Task 3 approval gate.
+
+**2026-09-18 Phase 5C reference-review responsibility simplified:** the owner does not want to
+manually review individual gazetteer matches, coordinates, actor links, or unresolved database
+rows. During an owner-requested pipeline review, a coding agent such as Codex or Claude will verify
+unmatched references, record sources and rationale, and leave uncertain items unresolved without a
+map point. Runtime AI suggestions remain non-authoritative and cannot approve themselves. Owner
+checkpoints will use aggregate results and material exceptions, with explicit approval still
+required before reference rows are inserted or targeted processing is run.
+
+**2026-09-18 Phase 5C Task 2 applied and verified; stopped before Task 3:** after explicit owner
+approval, applied the additive Phase 5C foundation through the local Supabase MCP. Supabase
+registered authoritative migration version `20260918110834`, and the local migration file is
+aligned to that version. It defines
+exactly five empty Phase 5C tables, one targeted pending view, normalized collision-safe aliases,
+approved-reference-only coordinates and actor relationships, honest date-basis validation,
+deduplicated direct-review suggestions, reusable aliases after a human mapping decision,
+latest-plus-append-only history, indexes, RLS, API privilege restrictions, and plain-language
+comments. A reviewed cross-border `special_area` may omit a single country code; ordinary country,
+admin1, and city references may not. Static scope checks found one transaction, five tables, one
+view, five RLS statements, six table/view privilege revocations, and no Phase 1-5B alteration,
+delete, or truncate statement. The rollback-only contract now passes, all 15 protected Phase 1-5B
+counts and fingerprints are unchanged, all five Phase 5C tables are empty, and the pending view
+contains 109 inputs. Direct `anon` and `authenticated` grants are absent. Advisor review found only
+expected empty-table notices and two non-blocking missing foreign-key indexes; add those through a
+separately approved follow-up migration before the pilot. The workflow remains inactive. Next:
+obtain explicit approval before Task 3 prepares any baseline reference rows.
+
+**2026-09-11 Phase 5C Task 1 completed at the intended red-test checkpoint:** after the owner
+approved working in the current dirty `main` checkout, added only the rollback-contained Phase 5C
+database contract. The frozen baseline contains 109 Phase 5A latest/history records, 109 Phase 5B
+latest results (56 `CLASSIFIED`, 53 `UNCLASSIFIED`, zero `FAILED`), 196 classification history
+rows, 40 pending proposals, and zero Phase 5A/5B pending inputs. The contract specifies the five
+approved tables, pending view, authority/status/date rules, alias-collision protection, targeted
+reprocessing, immutable history, and all 15 protected Phase 1-5B fingerprints. Its first run failed
+for the intended reason: `terra_space_phase5_geographic_references` does not exist. All protected
+counts and fingerprints were identical afterward. No migration, reference row, workflow edit,
+model call, or pipeline execution occurred; the workflow remains inactive. Next: stop for owner
+review and require explicit approval before Task 2 creates or applies the additive schema.
+
+**2026-09-11 Phase 5C design and implementation plan approved and documented; stopped before
+implementation:** the owner approved a hybrid local reference design for timeline, Event Geography,
+and Actor Network preparation. Authoritative coordinates and actor relationships come only from
+approved local reference data; optional local AI may create a pending review suggestion but cannot
+apply facts. Missing geography remains visible and does not fail an event. The initial design uses
+five additive tables, one primary typed actor relationship, deduplicated direct-database review,
+and targeted reruns. The approved design and test-first seven-task implementation plan are linked
+below. Project Knowledge validation must pass before handoff. The Phase 5 workflow remains inactive;
+no migration, reference row, workflow edit, model call, or data execution occurred. Next: begin
+Task 1 only when the owner explicitly asks, then stop at every durable-data/workflow checkpoint.
+
+**2026-09-11 Phase 5B accepted for progression; Phase 5C design checkpoint started:** the owner
+accepted moving forward without first consolidating the 40 isolated Event Type proposals. Phase 5B
+therefore remains accepted with a provisional 12-type taxonomy that may be refined later; proposal
+review is still required before Phase 5E qualification or production release. No proposal was
+approved, mapped, activated, or deleted. The Phase 5 workflow remains inactive. Read-only Phase 5C
+baseline inspection found 34 of 109 prepared events with an actual event date, all 109 with a source
+publication date, 44 with at least one event location (48 references total), and 90 with at least one
+actor (164 references total). The active Supabase database currently has no canonical location,
+actor, affiliation, or coordinate reference tables, so these must be designed and owner-approved
+before Phase 5C implementation. Next: complete the Phase 5C timeline and geography design one
+decision at a time; do not edit or run the workflow yet.
+
+**2026-09-11 Phase 5B 37-record repair run passed technically; initially stopped for taxonomy review:**
+owner-approved n8n execution `2148` processed exactly the prepared 37-record queue and finished
+successfully. The complete baseline now has 109 latest classifications: 56 `CLASSIFIED`, 53 visible
+`UNCLASSIFIED`, zero `FAILED`, and zero pending. All 109 latest results have safeguard `ACCEPT`; the
+37 repaired results use classifier/safeguard prompt version `v2`, while the 72 unaffected accepted
+results retain their truthful `v1` versions. There are 196 unique append-only history rows, zero
+duplicate latest identities or submission keys, zero invalid active-type references, and zero
+Phase 1-5A fingerprint changes. Forty proposals now exist, all isolated in `PENDING_REVIEW`, with
+exact bounded evidence and no automatic mapping or activation; 13 Unclassified results have no
+proposal. The proposal set contains clear overlapping families (especially legal/judicial,
+legislative, cyber, defense spending, military exercises, and civilian harassment). The workflow
+is inactive. This was the technical stop before the owner subsequently accepted progression to
+Phase 5C with taxonomy consolidation deferred.
+
+**2026-09-11 Phase 5B affected-record queue prepared; stopped before execution:** after explicit
+owner approval and a guarded pre-delete check, removed exactly 32 latest classifications whose
+status was `UNCLASSIFIED` with safeguard `REJECT`. All 32 had preserved append-only history and none
+had a proposal. Verification now shows 77 latest rows (53 `CLASSIFIED`, 19 `UNCLASSIFIED`, 5
+`FAILED`), all 159 history rows preserved, all 10 proposals preserved, and exactly 37 pending inputs:
+32 without a latest row plus 5 retryable failures. The workflow remains inactive and execution
+`2147` is still the latest run. Next: obtain separate execution approval for this exact 37-record
+queue, disclose the write/model-call bounds, execute once, audit every changed result, and stop
+again before Phase 5C.
+
+**2026-09-11 Phase 5B systemic repair installed; stopped before reprocessing:** after explicit owner
+approval, added two failing regression tests and then repaired only four Phase 5B Code nodes in the
+existing single workflow. Classifier and safeguard prompts are now version `v2`. The classifier no
+longer recopies proposal evidence; the parser deterministically attaches the complete bounded
+prepared-event evidence. The safeguard now explicitly recognizes both an approved-type match and
+an Unclassified result with an optional proposal as valid review modes. The live workflow remains
+inactive with 29 nodes, 38 valid connections, zero validation errors, and zero validation warnings.
+All 123 JavaScript tests pass, the credential-free backup is synchronized, execution `2147` remains
+the latest execution, and database counts remain unchanged at 53 `CLASSIFIED`, 51 `UNCLASSIFIED`,
+5 `FAILED`, 159 history rows, and 10 proposals. The existing pending view can directly retry only
+the 5 FAILED rows; it intentionally excludes the 32 finalized safeguard rejections. Next: obtain
+separate destructive-data approval to remove exactly those 32 latest rows while retaining their
+append-only history, then obtain execution approval to reprocess the resulting exact 37-record
+queue, audit every changed result, and stop again before Phase 5C.
+
+**2026-09-11 Phase 5B failure diagnosis completed read-only:** the five retryable failures share
+one chain. Four initially produced proposals with exact supporting evidence, but the safeguard
+incorrectly rejected them because its prompt does not explicitly explain that an Unclassified
+result may carry a valid new-type proposal. Later corrective attempts then paraphrased evidence and
+failed the exact-substring parser; the fifth record paraphrased on its first attempt. Across the
+full baseline, all 32 safeguard-rejected Unclassified records exhausted three attempts, and 19
+final rejection reasons explicitly treated proposals as forbidden or invalid merely because no
+active type was selected. In execution `2147` alone, 68 of 85 proposal-rejection attempts used that
+same mistaken rationale. Recommended narrow repair: clarify the safeguard's two valid review modes
+and make proposal evidence canonical from the already-bounded prepared event instead of relying on
+the model to reproduce punctuation invisibly and perfectly. No workflow or data was changed or
+rerun; the workflow remains inactive. Next: owner reviews and explicitly approves or rejects the
+narrow repair before test-first implementation and selective reprocessing.
+
+**2026-09-11 Phase 5B full-baseline run finished; stopped for repair review:** owner-approved n8n
+execution `2147` processed all 97 records remaining after the accepted pilot. The complete 109-record
+latest baseline now contains 53 `CLASSIFIED`, 51 visible `UNCLASSIFIED`, and 5 retryable `FAILED`
+records. All five failures conservatively retained no assignment because proposal evidence was not
+an exact excerpt of the prepared event evidence. The run produced 159 append-only history rows and
+10 isolated Event Type proposals, all still `PENDING_REVIEW`; there are zero duplicate latest event
+identities, zero duplicate submission keys, and zero reviewed or automatically mapped proposals.
+The workflow is inactive. Phase 5B is not production-ready or accepted yet. Next: diagnose the
+common exact-evidence failure and the safeguard's treatment of new-type proposals, propose a narrow
+repair for owner approval, rerun only affected identities if approved, then complete verification
+and stop again before Phase 5C.
+
+**2026-09-11 Phase 5B controlled pilot accepted by the owner:** the owner accepted the verified
+12-record pilot with 10 `CLASSIFIED`, 2 visible `UNCLASSIFIED`, zero `FAILED`, and one isolated
+`PENDING_REVIEW` Event Type proposal. Task 6 is complete. This acceptance does not authorize the
+full Phase 5B run: the exact pilot filter remains installed, the workflow remains inactive, and 97
+records remain untouched. Next: obtain separate explicit approval for Task 7 before removing only
+the Phase 5B pilot filter and processing those 97 records. After the full-run audit, stop again
+before Phase 5C.
+
+**2026-09-11 Phase 5B Task 6 repair passed; stopped for owner acceptance:** after the owner accepted
+the narrow recommendation, the classifier prompt was changed to require proposal
+`supporting_evidence` as a verbatim exact excerpt and to return no proposal when no such excerpt
+exists. Regression coverage increased to 120/120 passing JavaScript tests, and live n8n validation
+remained at 29 nodes, 38 valid connections, zero errors, and zero warnings. Execution `2146`
+reprocessed only the two retryable pilot failures. Both are now safely `UNCLASSIFIED`: **Economic
+cost of extreme heat and wildfires** passed safeguard with one exact-evidence **Climate Change
+Economic Impact** proposal in `PENDING_REVIEW`; **South Korea shortens Ulchi Freedom Shield
+drills** exhausted two corrective retries and was rejected by the safeguard as not matching an
+approved type, with no proposal retained. The complete 12-record pilot now contains 10
+`CLASSIFIED` and 2 visible `UNCLASSIFIED` results, zero `FAILED`, one proposal, 62 append-only
+history rows across all preserved technical attempts, and 97 untouched pending records. The exact
+pilot filter remains installed and the workflow is inactive. Next: owner accepts or rejects the
+pilot. Do not remove the filter, run the remaining 97 records, or begin Phase 5C without separate
+approval.
+
+**2026-09-11 Phase 5B Task 6 pilot executed; stopped for production-readiness review:** after
+owner-approved technical repairs, n8n execution `2145` processed the exact 12-record pilot through
+the permanent MCP webhook. Ten records finished as `CLASSIFIED` with safeguard `ACCEPT`, zero
+corrective retries, exact active Event Type references, and no technical error. Two records remain
+retryable `FAILED` before safeguard because the model proposed a new Event Type but its supporting
+evidence was not an exact excerpt of the prepared event evidence: **Economic cost of extreme heat
+and wildfires** and **South Korea shortens Ulchi Freedom Shield drills**. The conservative boundary
+worked correctly: neither failure retained a selected type, assignment, proposal, or guessed data.
+The pilot has 12 unique latest identities, 60 append-only history rows across five technical pilot
+attempts, zero duplicate submission keys, zero proposals, and 99 pending records. Live runtime
+validation reports 29 nodes, 38 valid connections, zero errors, and zero warnings; the focused
+workflow contract passes 9/9 and the full JavaScript suite passes 119/119. The exact pilot filter
+remains installed and the workflow is inactive. Next: owner reviews the 10 classifications and
+decides whether to approve a narrow fix for the two evidence-boundary failures. Do not run the
+remaining baseline or begin Phase 5C.
+
+**2026-09-10 Phase 5B Task 5 controlled pilot prepared; stopped before execution:** selected 12
+pending Phase 5A records through read-only review and installed only their exact IDs in the Phase 5B
+pending-read filter. The set contains 8 NORMAL and 4 LIMITED records; 7 lack an exact event date, 3
+have no extracted actors, and 6 have no extracted locations. It spans security, diplomacy, and
+economy/energy review hypotheses, including clear candidates, plausible overlaps, inherited review
+status, and likely no-approved-match/proposal cases. The exact IDs and review purposes are recorded
+in the Phase 5B implementation plan. The workflow contract passes all 6 tests and live runtime
+validation remains at 26 nodes, 34 valid connections, zero errors, and zero warnings. The workflow
+is inactive and no model call or execution occurred; database state remains 109 pending inputs and
+zero Phase 5B latest, history, or proposal rows. Next: require explicit owner approval before Task 6
+runs the 12-event pilot, which may make 24-72 local model calls.
+
+**2026-09-10 Phase 5A completed and stopped before 5B:** after the owner delegated the full-run
+decision, accepted the clean six-record pilot, removed only its temporary input filter, revalidated
+the still-inactive workflow, and manually ran the remaining 103 records as n8n execution `2138`.
+The complete Phase 5A baseline now contains 109 unique latest records and 109 unique append-only
+history snapshots: 43 `VALID -> NORMAL`, 56 `INCOMPLETE -> LIMITED`, and 10 `NEEDS_REVIEW ->
+LIMITED`, all `PREPARED`. There are zero pending records, failures, duplicate Phase 4 identities,
+or limited records without reasons. All 109 latest records exactly match their Phase 1/3/4 source
+fields and all 109 history snapshots exactly match their latest records. All eight protected
+Phase 1-4 counts and fingerprints remain unchanged. The database contract and all 88 JavaScript
+tests pass; n8n runtime validation and Project Knowledge validation report zero errors and zero
+warnings. The credential-free backup now reflects the unrestricted pending input. The workflow
+remains inactive. Next: stop for owner review and begin the separate Phase 5B Event Type design
+only when the owner asks to continue.
+
+**2026-09-10 Phase 5A six-record pilot passed and is stopped for review:** after explicit owner
+approval, manually ran the inactive Phase 5 workflow once as n8n execution `2137`. It completed
+successfully in about 1.4 seconds and produced exactly six latest records plus six append-only
+history records: two `VALID -> NORMAL`, two `INCOMPLETE -> LIMITED`, and two `NEEDS_REVIEW ->
+LIMITED`, all `PREPARED`, with zero failures. Every copied field in all six records exactly matches
+its Phase 1/3/4 source, including title, description, evidence, facts, statuses, reasons, unknown
+dates, and empty arrays; every history snapshot also exactly matches its latest record. The general
+pending count is now 103. All eight protected Phase 1-4 counts and full-row fingerprints are
+unchanged. The database contract passes with rollback, the focused transformer tests pass 8/8,
+the complete local JavaScript suite passes 88/88, and n8n runtime validation reports zero errors
+and zero warnings. The six-ID pilot filter remains installed and the workflow remains inactive.
+Next: owner reviews the pilot. Do not remove the filter, process the remaining 103 records, or begin
+5B without separate explicit approval.
+
+**2026-09-10 Phase 5A workflow restricted to the six-record pilot:** after owner approval, added
+one temporary PostgREST filter to `Get Pending Phase 5A Records` containing only the six reviewed
+Phase 4 UUIDs. No eligibility rule or other node changed. Runtime validation still reports zero
+errors and zero warnings; the workflow remains inactive with zero executions. The credential-free
+backup now records the same pilot filter. Both Phase 5A tables remain empty and the general pending
+view still contains 109 inputs. Next: obtain separate owner approval to execute the pilot once,
+creating at most six latest rows and six history rows, then inspect every result and stop.
+
+**2026-09-10 six-record Phase 5A pilot set selected read-only:** selected two exact Phase 4 IDs for
+each eligible status. VALID uses sequence/candidate `46/c1` (exact date, actors and location) and
+`115/c1` (unknown date, empty actors/locations); INCOMPLETE uses `73/c1` (exact date, actors and
+location) and `47/c3` (unknown date, empty actors/locations); NEEDS_REVIEW uses `98/c2` (exact date,
+actor and location) and `63/c1` (unknown date, actors, empty locations). Both review inputs carry
+Phase 3 result-level and candidate-level review context plus a Phase 4 reason. All six are present
+in the pending view. No workflow filter was changed and no execution occurred. Next: obtain owner
+approval to restrict the existing Phase 5 workflow to these six exact Phase 4 IDs, revalidate, then
+request separate approval before executing the pilot.
+
+**2026-09-10 single inactive Phase 5 workflow created with 5A only:** after separate owner approval,
+created n8n workflow `FAxBx6a9fnXjLfVO`, **Terra Space - Phase 5 - Generate and Qualify Events**, in
+the `Terra_Space` folder. Its eight-node Phase 5A group reads the pending view in sequence/candidate
+order, processes one item at a time, deterministically prepares a record, creates or retries only
+the exact FAILED latest identity, and appends history. Runtime validation reports zero errors and
+zero warnings. Strict validation adds two generic error-handling advisories; eligible record-level
+transform errors are already converted to retryable FAILED rows, while contract/infrastructure
+errors intentionally stop instead of allowing unverified writes. The workflow is inactive and has
+zero executions. Its credential-free recovery export contains no credential, model call, Phase 1-4
+write, 5B-5E, final-event, merge, or publication node. Phase 5A tables remain empty with 109 pending
+inputs. Next: select six exact pilot candidates read-only and request separate execution approval.
+
+**2026-09-10 Phase 5A deterministic transformer implemented and tested:** followed a red-green TDD
+cycle for the pure local `preparePhase5ARecord` transformer. Eight focused tests cover exact field
+copying, VALID-to-NORMAL and INCOMPLETE/NEEDS_REVIEW-to-LIMITED routing, facts deep-copying,
+unknown dates and empty arrays, unsupported-status rejection, required limited reasons, unique
+attempt UUIDs, and the absence of later-stage fields. The focused suite passes 8/8 and the complete
+local JavaScript suite passes 88/88. No n8n workflow was created or run, and Phase 5A storage
+remains empty with 109 pending inputs. Next: obtain separate owner approval to create one inactive
+5A-only workflow in n8n's `Terra_Space` folder.
+
+**2026-09-10 Phase 5A database contract applied and verified:** after separate owner approval,
+applied only migration `202609100001` and recorded it in local migration history. It created two
+empty RLS-protected Phase 5A tables and the retry-aware pending view. The rollback-only contract
+passes, including routing, exact upstream copying, retry behavior, history retention, and upstream
+immutability checks. After rollback, latest/history counts are both zero, the pending view exposes
+all 109 eligible Phase 4 results, and every Phase 1-4 count and fingerprint matches Task 1 exactly.
+No workflow exists and no Phase 5 event has been prepared. Next: implement and locally test the
+pure deterministic Phase 5A transformer, then stop before workflow creation.
+
+**2026-09-10 Phase 5A additive migration file prepared but not applied:** created the reviewed
+`202609100001_phase5a_event_records.sql` migration file for two empty Phase 5A tables and one
+retry-aware pending view. It includes deterministic NORMAL/LIMITED route constraints, exact
+upstream snapshot fields, retryable technical failure support, indexes, an updated-at trigger, RLS,
+and plain-language comments for all columns. Static checks found no Phase 1-4 mutation or
+destructive SQL. The migration has not been run; the database still contains no Phase 5 object or
+row. Next: obtain separate owner approval to apply this exact additive database change, then run
+the rollback-only contract and compare all Phase 1-4 fingerprints.
+
+**2026-09-10 Phase 5A Task 1 completed; stopped before migration:** recorded read-only counts and
+stable full-row fingerprints for all eight Phase 1-4 latest/history tables, then added the
+rollback-only Phase 5A database contract test. The verified Phase 4 baseline remains 109 results:
+43 `VALID`, 56 `INCOMPLETE`, 10 `NEEDS_REVIEW`, zero `FAILED`, and zero pending. The first test run
+failed at the intended boundary because `terra_space_phase5_pending_event_records` does not yet
+exist. A second read-only fingerprint check exactly matched the starting baseline. No Phase 5
+database object or row exists, and no workflow was created or run. Next: obtain explicit owner
+approval before creating the additive Phase 5A migration file and later applying it.
+
+**2026-09-10 lean Phase 5 design and 5A implementation plan prepared for owner review:** Phase 5 is
+one inactive, manually started n8n workflow in the `Terra_Space` folder. Its checkpointed stages
+prepare normal/limited event records, classify approved Event Types while retaining Unclassified
+events, prepare honest timeline and map data, recommend possible duplicates without merging, and
+make all retained events visible while qualifying safe events under rules deferred to 5E. Event
+Geography and Actor Network remain distinct; publication dates are labelled timeline references,
+not invented event dates. The test-first 5A plan preserves the verified 109-result Phase 4 baseline
+without a model call and stops separately before migration, workflow creation, pilot, full run, and
+5B. No Phase 5 migration, workflow, pilot, or data run has occurred.
+
+**2026-09-09 clean Phase 4 baseline repaired and ready for Phase 5 design:** all 109 Phase 3
+candidates have exactly one Phase 4 result and processing run, with an empty Phase 4 queue. The
+final status distribution is 43 `VALID`, 56 `INCOMPLETE`, and 10 `NEEDS_REVIEW`; all ten review
+results correctly inherit genuine Phase 3 review status, while incomplete results retain explicit
+omission reasons. The audit found one unsafe retained location on sequence 59 candidate c1: `EU`
+used evidence extending beyond the candidate boundary. After owner-approved selective deletion,
+the same inactive workflow was repaired to require location evidence to stay wholly inside the
+candidate boundary and the result was regenerated without that location. Final verification covers
+341 retained fact-evidence fields: all are exact cleaned-source substrings and all stay inside their
+candidate boundaries. There are zero failed latest results, zero failed Phase 4 history rows, zero
+malformed fact payloads, and no non-valid result without a reason. Phase 5 has not been run. The
+complete local suite passes 80/80 tests.
+
+**2026-09-09 clean Phase 3 baseline repaired and ready for Phase 4:** audited all 16 originally
+review-flagged candidates and repaired the existing Phase 3 workflow's detector and safeguard
+prompts, evidence parser, and prompt-version tracking. Selective regeneration reduced false review
+flags and eliminated non-contiguous evidence. The final latest-result baseline contains 50 results
+and 109 complete candidates: 99 `VALID` and 10 genuine `NEEDS_REVIEW`; every evidence quote is an
+exact cleaned-source substring, no latest result is `FAILED`, and the Phase 3 pending queue is empty.
+All 109 candidates are exposed by the Phase 4 pending view. Two failed attempts for sequence 53 are
+preserved only in the append-only processing history; the latest result is `VALID` and those audit
+rows are not Phase 4 inputs. Phase 4 result/run tables remain empty, the workflow remains inactive,
+and Phase 5 remains paused. The complete local suite passes 79/79 tests.
+
+**2026-09-09 stale Phase 1 failure history removed:** after explicit owner confirmation, deleted
+exactly 50 Phase 1 processing-run rows with outcome `FAILED` from the LM Studio-offline attempt.
+Verification now shows 50 retained source articles all `completed`, exactly 50 Phase 1 runs all
+`SUCCESS`, 50 Phase 2 results all `VALID`, and 50 Phase 2 runs all `VALID`. Phase 3 and Phase 4
+results/runs remain empty. Twenty successful Phase 1 runs retain their truthful deterministic-
+fallback warning; these are successful audited outcomes, not stale failures. Phase 5 remains paused.
+
+**2026-09-09 clean Phase 2 baseline repaired and verified:** the deterministic named-detail
+validator now checks meaningful tokens rather than requiring every detected capitalized phrase to
+appear contiguously with identical punctuation. Regression coverage preserves rejection of a truly
+absent multi-word person name while accepting the four audited variations. The first browser-editor
+replay halted before saving because browser text entry stripped regex backslashes; the workflow was
+then restored through n8n's export/import path, with the node code verified byte-for-byte against
+the tested local source. With owner confirmation, the four old results and four old run rows for
+sequences 98, 101, 105, and 114 were removed and selectively regenerated. Final Phase 2 state is
+50 `VALID + ACCEPT + VERIFIED`, 50 distinct sources, 50 processing runs, zero errors, zero non-exact
+quotes, zero Phase 2 pending, and 50 Phase 3 pending. The existing workflow remains inactive and
+Phase 3–5 were not run.
+
+**2026-09-09 clean Phase 2 review flags audited as validator false positives:** the four
+`NEEDS_REVIEW` results at sequences 98, 101, 105, and 114 were grounded and accepted by the
+model safeguard, but a deterministic named-phrase check rejected them incorrectly. It requires
+contiguous wording even when an acronym/full-name variation is clearly supported (98), treats
+separately supported possessive/name wording as unsupported (101), constructs the nonsensical
+phrase `Americans of` (105), and retains terminal punctuation so `Strait of Hormuz.` fails against
+the quote (114). The audit itself made no data or workflow changes; the repair and selective replay
+described above subsequently resolved all four flags.
+
+**2026-09-09 clean Phase 2 replay completed:** all 50 completed
+Phase 1 sources produced exactly one Phase 2 result. The latest state is 46 `VALID + ACCEPT` and
+4 `NEEDS_REVIEW + REJECT`, with no missing payloads and all 50 evidence quotes verified as exact
+substrings of cleaned source text. The review-flagged sources are sequences 98, 101, 105, and 114;
+their named-detail safeguard reasons were queued for focused audit before Phase 2 acceptance.
+All 50 results are exposed to the Phase 3 pending view, but Phase 3 has not
+been run in this clean replay. Phase 5 remains paused.
+
+**2026-09-09 clean Phase 1 replay completed:** the first replay attempt returned all 50 sources
+as `failed` because the n8n container could not reach LM Studio on port 1234. After LM Studio was
+started and connectivity was confirmed from both Windows and the n8n container, the workflow was
+retried successfully. Database verification now shows 50 `completed` sources, 50 non-empty cleaned
+texts, and zero processing errors. Phase 2–4 result tables remain empty and Phase 5 remains paused.
+
+**2026-09-09 clean full-pipeline replay baseline prepared:** with explicit owner confirmation,
+all 826 derived result and processing-history rows were removed while all 50 original Phase 1
+source articles and their metadata were retained. The removed rows were 113 Phase 1 runs, 50
+Phase 2 results and 57 runs, 50 Phase 3 results and 73 runs, plus 166 Phase 4 results and 317
+runs. The sources were initially reset to `draft`, which the Phase 1 queue query does not select;
+after a zero-item owner run exposed this mismatch, all 50 were corrected to `queued`. Old cleaned
+text and processing errors remain cleared.
+Post-change verification confirmed every Phase 1–4 result/run table is empty and exactly 50
+original sources remain ready for a clean replay. Phase 5 remains paused and unimplemented.
+
+**2026-09-08 Phase 4 second ten-article batch repaired and verified:** the v10 workflow now
+classifies a result as `INCOMPLETE` when an optional actor or location is rejected and safely
+omitted, while technical failures and inherited Phase 3 uncertainty remain `NEEDS_REVIEW`.
+The database contract was aligned to permit reason-bearing `INCOMPLETE + REJECT` results without
+weakening the `VALID + ACCEPT` rule. Location levels are deterministically normalized to
+`unknown` for Gaza/Gaza Strip, the Falklands, and directional regions such as southern Iran;
+unresolved actor references are omitted; and source roles now require a reporting verb tied to
+that actor. Eight approved results were regenerated, and the final China role correction was
+applied deterministically without another model call. Final sequences 108–117 state is 8
+`VALID`, 10 `INCOMPLETE`, 2 inherited `NEEDS_REVIEW`, 0 `FAILED`, 28 preserved processing
+attempts, and no pending candidate. The 28-node workflow remains inactive. Phase 5 remains paused.
+
+**2026-09-08 Phase 4 second ten-article batch run audited:** all 20 candidates exposed by the
+Phase 4 pending view for sequences 108–117 were processed, with 20 history attempts and no pending
+candidate. Latest status is 8 `VALID`, 8 `INCOMPLETE`, 4 `NEEDS_REVIEW`, and 0 `FAILED`.
+All retained fact evidence is an exact source substring and every non-valid result has a reason.
+However, 108 c2 and 113 c1 are false review tags: rejected optional actors were already omitted,
+leaving usable partial results that should be `INCOMPLETE`. The audit also found location-level
+errors for Gaza/Gaza Strip, southern Iran, and the Falklands, plus unresolved actor label
+`the official` in 114 c3. Phase 4 is therefore technically complete but not accepted for
+production quality. Repair the existing workflow and selectively regenerate only affected rows;
+Phase 5 remains paused and untouched.
+
+**2026-09-08 Phase 3 second ten-article batch repaired and selectively regenerated:** the
+detector now requires complete supporting excerpts, preserves speaker attribution, and avoids
+splitting one occurrence into duplicate candidates. The safeguard accepts equivalent neutral
+reporting verbs, and the evidence validator now restores literal escaped paragraph breaks before
+matching the exact source. Six affected sources (111, 113–117) were regenerated, followed by one
+final selective retry of 113 after the newline validator repair. Final sequences 108–117 contain
+21 candidates: 18 `VALID` and 3 genuine `NEEDS_REVIEW`, with 17 processing attempts preserved.
+All valid evidence quotes are exact source substrings and every review has a reason. The inactive
+18-node workflow validates with 0 errors and 0 warnings, and all 12 focused tests pass. Phase 4
+has not run for this batch; its pending view contains 18 valid candidates and 2 review candidates
+(the remaining non-exact review candidate is safely excluded). Phase 5 remains paused.
+
+**2026-09-08 Phase 3 second ten-article batch run audited:** sequences 108–117 produced 10
+latest results and 25 candidates with no failed source or pending input. Four source-level results
+are `VALID`; six are `NEEDS_REVIEW`. Candidate-level status is 16 `VALID` and 9
+`NEEDS_REVIEW`; every review has a reason, while one sequence 114 quote is not an exact source
+substring. The review set exposes overly narrow evidence selection, unsupported wording added to
+descriptions, and at least one overly literal safeguard rejection (sequence 116 candidate c3).
+Phase 3 is therefore complete technically but not yet accepted for production quality. Do not run
+Phase 4 for sequences 108–117 until the Phase 3 workflow is repaired and the affected sources are
+selectively regenerated. Phase 5 remains paused and untouched.
+
+**2026-09-08 Phase 2 second ten-article batch repaired and verified:** sequences 108–117 now
+have 10 `VALID` latest Main Issues, no errors, and 14 preserved processing attempts. Review found
+two accepted descriptions containing unsupported named people (sequences 111 and 115). The
+existing Phase 2 workflow was strengthened with prompt guidance plus a deterministic named-detail
+check. A regression in that check, which joined the end of a title to the start of a description,
+was fixed test-first. Sequence 115 regenerated correctly, and sequence 111's already-correct
+result was reclassified from the false `NEEDS_REVIEW` tag without another model call. All ten
+evidence quotes occur verbatim in their source articles, all 10 focused tests pass, and the
+21-node workflow validates with 0 errors and 0 warnings. It remains inactive. The ten articles
+are pending Phase 3, but Phase 3 was not run; Phase 5 remains paused and untouched.
+
+**2026-09-08 Phase 1 second ten-article batch cleaned and verified:** sequences 108–117 all
+completed without processing errors. Manual inspection found leftover publisher noise in 108,
+109, 113, 114, and 116: advertisement/promo text, a Reuters image caption and credit, a video
+heading, and an escaped Anadolu sharing footer. The deterministic cleaner was repaired test-first
+for all five formats, installed in the existing inactive 16-node Phase 1 workflow, and only those
+five sources were reprocessed. Final inspection finds none of the targeted artifacts, all raw
+source text remains preserved, and the batch has 15 append-only Phase 1 attempts. No Phase 2,
+Phase 3, or Phase 4 result exists for sequences 108–117. Phase 2 is the next controlled step;
+Phase 5 remains paused and untouched.
+
+**2026-09-08 Phase 4 audited cleanup and final selective retry completed:** the owner-confirmed
+retry regenerated only sequence 107 candidate c1 through the v9 workflow. It is now `VALID`, with
+the current statement date `2026-09-01`, `reported` epistemic status, Masoud Pezeshkian and the US
+as grounded actors, and no invented location. The ten-article batch now contains 17 `VALID`, 8
+`INCOMPLETE`, 5 genuine `NEEDS_REVIEW`, and 0 `FAILED` latest results, with 37 append-only history
+attempts and no pending candidate. Every retained evidence quote is an exact cleaned-source
+substring and every incomplete/review result has a reason. All 37 focused Phase 4 tests pass. The
+28-node workflow is restored to `terra_space_phase4_pending_event_candidates`, remains inactive,
+and uses `phase4-narrow-extraction-v9-statement-date`; the temporary one-candidate view was removed.
+The three older sequence 97 candidates remain pending and untouched. Phase 5 remains paused and
+untouched.
+
+**2026-09-08 Phase 4 incomplete-status contract and workflow repair installed:** the owner-approved
+database contract now accepts `INCOMPLETE` as a safe, reason-bearing partial result distinct from
+`NEEDS_REVIEW`. The same existing Phase 4 workflow now uses
+`phase4-narrow-extraction-v8-incomplete-status`, normalizes grounded month names and the model
+precision synonym `day`, rejects actors found only in neighboring temporal clauses, and tells the
+date extractor to focus on the candidate action rather than an older referenced agreement. The
+workflow remains inactive, has 28 nodes, and reads the normal pending view. All 36 focused Phase 4
+JavaScript tests and the rollback-only database contract test pass. No latest result or processing
+history row changed: sequences 98–107 remain 9 `VALID`, 21 `NEEDS_REVIEW`, 0 `FAILED`. The next
+separate action is to obtain approval to reclassify/regenerate the audited rows; Phase 5 remains
+paused and untouched.
+
+**2026-09-08 Phase 4 review audit completed:** all 21 `NEEDS_REVIEW` results from sequences
+98–107 were manually checked against their candidates, full cleaned articles, retained facts, raw
+model responses, and review reasons. Five (23.8%) are false review tags where the workflow correctly
+discarded an unnecessary or unsupported proposal and the remaining result is usable; seven (33.3%)
+are incomplete because an optional detail is not safely stated in the candidate evidence; and nine
+(42.9%) truly need review. Five true reviews inherit unsupported Phase 3 descriptions, while four
+(101 c4, 105 c3, 105 c4, and 107 c1) expose Phase 4 date/focus defects. No data or workflow was
+changed. The exact findings and recommended repair are in
+[Phase 4 Review Audit — 2026-09-08](Phase-4-Review-Audit-2026-09-08.md). The current Phase 4
+contract has no explicit incomplete status, so implementing the classification requires an approved
+decision change before migration, workflow edits, and selective regeneration. Phase 5 remains
+paused.
+
+**2026-09-08 Phase 4 weekday repair regenerated and verified:** after the configured LM Studio
+model was loaded, the selective retry for sequence 98 candidate c1 completed successfully. The
+stored event date is now `2026-09-02` (the Wednesday after the Tuesday `2026-09-01` publication),
+with `VALID`, `FACTS_FOUND`, and safeguard `ACCEPT` statuses under
+`phase4-narrow-extraction-v7-weekday-direction`. The ten-article batch remains 30 latest rows: 9
+`VALID`, 21 `NEEDS_REVIEW`, 0 `FAILED`; there are 32 append-only processing attempts and no pending
+candidate in sequences 98–107. All retained evidence quotes are exact cleaned-source substrings,
+every review row has a reason, and both Phase 4 policy dry-runs report no proposed changes across
+143 stored rows. The date dry-run was corrected to include candidate title and description, making
+its inputs match the live validator. The temporary one-candidate view was removed, the normal
+pending view was restored, and the 28-node workflow remains inactive. The three older sequence 97
+candidates remain pending and untouched. Phase 5 remains paused and untouched.
+
+**2026-09-07 Phase 4 weekday workflow repair installed; regeneration blocked by loaded model:**
+the date validator now preserves a proposed ISO date only when it matches the named weekday and is
+within six days of publication. This fixes the sequence 98 c1 case (`2026-09-01` Tuesday
+publication, planned Wednesday talks → `2026-09-02`) while retaining the prior deterministic
+fallback for mismatched proposals. The new regression failed with the old `2026-08-26` behavior
+and then passed; all 26 focused Phase 4 policy tests pass. The inactive workflow now uses
+`phase4-narrow-extraction-v7-weekday-direction`. The selective live retry could not complete
+because LM Studio no longer has the workflow's configured `google/gemma-4-12b-qat` model loaded;
+only other models are currently listed. Its empty `NEEDS_REVIEW` placeholder was removed, leaving
+sequence 98 c1 pending and all history preserved. Load the configured model, then rerun only this
+candidate. Phase 5 remains paused and untouched.
+
+**2026-09-07 Phase 4 new-batch run completed but date audit found one blocker:** an
+owner-approved, batch-scoped manual run processed all 30 Phase 3 candidates from sequences 98–107
+without touching the three older pending candidates from sequence 97. The batch now has 30 latest
+Phase 4 rows: 9 `VALID`, 21 `NEEDS_REVIEW`, 0 `FAILED`; 30 append-only history rows; and no pending
+candidate in sequences 98–107. All retained evidence quotes are exact cleaned-article substrings
+and every review row has a reason. The normal workflow was restored after the scoped run and
+remains inactive. Post-run date-policy validation found one new-batch error: sequence 98 candidate
+c1 was assigned `2026-08-26` for talks planned on “Wednesday” even though its source was published
+Tuesday `2026-09-01`; the detector's raw proposal was correctly `2026-09-02`. Phase 4 is therefore
+not yet accepted for this batch. Next, repair the relative-weekday normalization and selectively
+regenerate only sequence 98 candidate c1 after explicit owner approval. Phase 5 remains paused and
+untouched.
+
+**2026-09-07 Phase 3 false-positive safeguard repaired and verified:** the safeguard now
+explicitly accepts meaning-preserving grammatical paraphrases, including active/passive wording,
+when every factual detail is supported by the candidate's exact evidence quote. A rejection must
+identify a concrete absent or contradicted fact. Only the owner-approved latest result for sequence
+102 was deleted and regenerated; append-only history was preserved. Sequence 102 candidate c2 is
+now correctly `VALID` with safeguard `ACCEPT`. Final ten-article state is 10 latest rows: 6
+`VALID`, 4 `NEEDS_REVIEW`, 0 `FAILED`; 30 candidates (25 `VALID`, 5 `NEEDS_REVIEW`); 14 history
+runs; and an empty pending view. There are no invalid exact quotes, review candidates without a
+reason, or Kevin Warsh candidates. Nine focused Phase 3 regression tests pass. The workflow remains
+inactive. Phase 4 was not run for this batch, and Phase 5 remains paused and untouched.
+
+**2026-09-07 Phase 3 ten-article repair verified:** the owner-approved run of sequences 98–107
+initially exposed two blockers: sequence 98 failed twice on an unescaped quotation mark inside an
+otherwise usable `evidence_quote`, and sequence 106 retained two false-valid Kevin Warsh candidates
+unrelated to its Bessent/Iran Main Issue. Test-first repairs now recover only the tightly bounded
+malformed `evidence_quote` JSON shape and require every detected candidate to be directly relevant
+to the supplied Phase 2 Main Issue. The failed sequence 98 row was retried through the normal update
+path; only sequence 106's approved latest row was deleted and regenerated, with all processing
+history preserved. Final batch state is 10 latest rows: 5 `VALID`, 5 `NEEDS_REVIEW`, 0 `FAILED`,
+30 candidates (24 `VALID`, 6 `NEEDS_REVIEW`), 13 append-only history rows, and an empty pending
+view. All candidates have complete fields; every `VALID` quote is an exact substring of its cleaned
+article; every review candidate has a reason; and no Kevin Warsh candidate remains. Eight focused
+Phase 3 regression tests pass. The workflow remains inactive. Phase 4 was not run for this batch,
+and Phase 5 remains paused and untouched.
+
+**2026-09-07 Phase 3 review-flag audit found one false positive:** all six `NEEDS_REVIEW`
+candidates were checked against their full cleaned articles and Phase 2 Main Issues. Five flags are
+correct because the saved description adds a fact not established by its selected quote: sequence
+100 candidates c1 and c3, sequence 103 c5, sequence 104 c1, and sequence 107 c3. In several cases
+nearby article text could support a narrower rewritten candidate or a better evidence excerpt, but
+the currently saved candidate is correctly prevented from being `VALID`. Sequence 102 candidate c2
+(`European Defence conference`) is incorrectly flagged: its quote explicitly says the initiative
+will be formally launched at an EEAS-organized conference, which supports the description. The
+safeguard rejection reason contradicts that evidence. Phase 3 therefore needs one narrow safeguard
+repair and selective regeneration of sequence 102 before Phase 4 begins.
+
+**2026-09-04 Phase 2 new-batch semantic repair verified:** the ten-article batch (`sequence_id`
+98–107) now has 10 `VALID` latest results, all with `VERIFIED` evidence and safeguard `ACCEPT`,
+and no failed or review result. Manual semantic review found two initially false-valid secondary
+issues: sequence 103 selected Canada's retaliatory tariffs instead of Mark Carney's central rebuke,
+and sequence 106 selected Iran's response to sanctions instead of Bessent's warning that Iran's
+economy could collapse. The inactive Phase 2 workflow now gives the detector, safeguard, and repair
+path the article headline and opening context and explicitly rejects secondary-topic switching. A
+second safeguard tightening rejects causal wording that is not explicit in the selected quote.
+Only these two latest rows were regenerated for centrality, then sequence 106 once more for causal
+grounding; all 13 Phase 2 processing-history rows were preserved. Final inspection confirms both
+issues match their article headlines and their descriptions are supported by their exact quotes.
+Phase 3 has 0 candidates for this batch, the Phase 2 workflow remains inactive, and Phase 5 remains
+paused and untouched.
+
+**2026-09-04 Phase 1 new-batch cleaning repair verified:** ten newly submitted articles
+(`sequence_id` 98–107) completed Phase 1. Manual inspection found opening image captions in 100
+and 106, a standalone live-updates link in 103, and an Anadolu subscription footer in 105. The
+deterministic cleaner now removes a caption only when it substantially repeats the preceding image
+alt text, removes standalone live-update navigation, and removes the identified subscription
+footer while preserving unrelated opening paragraphs. Four test-first regression cases pass. Only
+the four affected sources were reprocessed through **Terra Space - Phase 1 - Process New
+Articles**; the other six remained unchanged and all original run history was preserved. Final
+batch state is 10 `completed`, 0 queued/failed, 14 Phase 1 history runs, and 0 Phase 2 results. The
+workflow remains inactive; Phase 2–5 were not run.
+
+**2026-09-04 Phase 1 workflow names clarified:** the existing n8n workflows
+`gABPryH3jTe2Ktz5` and `aAVDCkvD02JWkbvJ` were renamed to **Terra Space - Phase 1 - Input New
+Article** and **Terra Space - Phase 1 - Process New Articles**. Their IDs, nodes, connections,
+behavior, and inactive publication state are unchanged.
+
+**2026-09-04 Phase 4 production-readiness repair completed:** the previously failing deterministic
+20-row manual audit was repaired and rechecked. Candidate-boundary rules now cover dates,
+epistemic evidence, actors, physical locations, actor/metonym locations, actor-affiliation
+countries, neighboring visit clauses, Markdown-grounded evidence, actor-role correction, and
+grounded month-day normalization. With explicit owner approval, only affected latest-result rows
+were selectively regenerated; all append-only history was preserved. Final Phase 4 state is 113
+latest rows: 16 `VALID`, 97 `NEEDS_REVIEW`, 0 `FAILED`, an empty queue, and 249 processing-history
+rows. All 31 focused Phase 3/4 regression tests pass and the whole-table 113-row dry run reports
+zero affected rows. The protected replay webhook is unpublished. A verified clean local Supabase
+backup was created at `data/backups/supabase/20260904-165741/local-supabase.dump` on the D: drive
+(24,024,890 bytes; SHA-256 `3b2b34370ebb828faf3d145db3b5b787978d3a9099c661288cf85092bd1cf044`).
+Phase 4 is completed; Phase 5 remains paused and untouched.
+
+**2026-09-04 Phase 4 post-repair manual audit reopened production readiness:** a deterministic
+sample of ten `VALID` and ten `NEEDS_REVIEW` rows found only 6/10 valid rows and 4/10 review rows
+fully clean. Four sampled `VALID` rows still contained false-valid actor/location interpretations,
+including `White House` and metonymic `Kyiv` stored as physical event locations. Six sampled
+`NEEDS_REVIEW` rows had an appropriate overall review status but still retained at least one unsafe
+fact, including unrelated epistemic evidence, an unsupported `Orsk` location, and a statement date
+used as the event date. A read-only whole-table check found 15/113 rows whose epistemic evidence is
+outside the Phase 3 candidate boundary and 4/89 retained locations whose name is absent from its
+own evidence (some are legitimate aliases and require semantic review). The database was not
+changed and no clean-baseline backup was created. Phase 4 is again `in-progress`; next repair the
+epistemic boundary, location entity/type validation, actor/location metonym handling, and date-event
+alignment, then selectively regenerate affected rows and repeat the manual audit. Phase 5 remains
+paused.
+
+**2026-09-04 Phase 4 candidate-boundary repair verified:** deterministic date and location gates
+now require proposed evidence to belong to the Phase 3 candidate boundary, not merely appear
+somewhere in the same article. Relative weekdays are resolved from the publication date, future
+programme dates outside the candidate are omitted, neighboring-event locations are rejected, and
+unsupported political labels such as `Turkish state` are not stored as countries. With explicit
+owner approval, only the 42 affected latest Phase 4 rows were deleted and regenerated; 71
+unaffected rows and all prior history were preserved. The final latest state is 113 rows: 39
+`VALID`, 74 `NEEDS_REVIEW`, 0 `FAILED`, and an empty queue. All 13 focused Phase 3/4 regression
+tests pass, a full 113-row boundary dry run finds 0 remaining violations, and n8n validates with
+0 errors and 0 warnings. The replay webhook was repaired, used for this run, and unpublished
+afterward. These automated contracts passed, but the later manual audit above found additional
+semantic gaps. Phase 5 remains paused and was not touched.
+
+**2026-09-03 Phase 4 manual quality audit found production blockers:** a read-only trace of five
+`VALID` and five representative `NEEDS_REVIEW` rows against their source articles found all five
+review rows conservatively handled, but only one of five sampled valid rows was clean. Material
+false-valid examples include using the IRIS² programme's expected 2029 launch year as the date of
+an already-signed implementation agreement, storing `Turkish state` as the event's geographic
+location, and attaching Damascus evidence from Bashar al-Assad's sentencing to Maher al-Assad's
+separate candidate. Relative weekday resolution also produced at least one one-day error: a source
+published Monday 2026-08-10 was assigned Sunday 2026-08-09 for text stating `on Monday`. Root-cause
+inspection shows the deterministic checks prove only that evidence quotes are exact substrings and
+values have valid shapes; they do not deterministically prove that a quoted date or location belongs
+to the candidate event. Phase 4 therefore remains technically complete but is not production-ready.
+Do not start Phase 5. Next, repair candidate-boundary validation for dates and locations, add
+regression tests for these observed cases, then selectively regenerate and re-audit Phase 4.
+
+**2026-09-03 Phase 4 controlled replay completed:** the Phase 4 input view now requires
+`quote_validation_status = VERIFIED`, preventing rejected Phase 3 evidence from entering downstream
+fact extraction. Its database contract test passes with 113 eligible candidates and zero rejected
+candidates in the queue. Controlled execution `2030` processed all 113. One actor safeguard
+repeatedly omitted its final indexed decision; the prompt now states the exact decision count and
+complete index range, covered by a focused regression test. Execution `2032` successfully repaired
+that single row. Final Phase 4 state is 113 latest rows: 50 `VALID`, 63 `NEEDS_REVIEW`, 0 technical
+failures, an empty queue, and 454/454 retained evidence quotes found exactly in their cleaned source
+articles. There are 115 append-only processing-history rows. Phase 4 validates with 0 errors and
+0 warnings and is unpublished. Phase 5 remains paused and was not touched.
+
+**2026-09-03 Phase 3 clean replay and review retouch completed:** Phase 3 now contains all 29
+source results with 18 `VALID`, 11 `NEEDS_REVIEW`, and 0 `FAILED`. A focused retouch taught the
+validator to restore exact source excerpts across harmless Markdown emphasis, capitalization, and
+spacing inside quotation marks. Controlled execution `2029` regenerated only the 11 review rows.
+The final 114 candidates contain 113 exact cleaned-article evidence quotes and one rejected
+non-contiguous quote. The remaining review tags are genuine: 17 candidates have descriptions with
+details their own quote does not fully support, and one candidate stitched separated source
+paragraphs into a single proposed quote. During the earlier replay, LM Studio produced one response
+with a stray quote that broke JSON parsing. A narrowly scoped parser repair was added with a
+regression test; all 6 Phase 3 validator tests pass and n8n runtime validation reports 0 errors and
+0 warnings. The Phase 3 workflow and all other phase workflows are unpublished; Phase 4 remains
+empty and Phase 5 remains paused. Next, Phase 4 can be prepared for a controlled run that consumes
+only Phase 3 candidates allowed by its input contract.
+
+**2026-09-02 controlled webhook repaired and verified:** the Phase 2 webhook was returning 403
+because its **Ignore Bots** option classified n8n MCP's automated caller as a bot. Removing that
+option allowed the authenticated MCP call to return HTTP 200. The local n8n 2.32.5 process also
+requires a restart after MCP publication before a newly published webhook is registered; this is
+an operational limitation to retain for future Phase 3/4 replay. Phase 2 was tested only with its
+empty pending queue, so its verified 29 latest and 29 history rows did not change. The same bot
+filter was removed from the Phase 3 and Phase 4 webhook triggers. All three workflows validate with
+0 errors and 0 warnings and are unpublished. The previously considered scheduled continuation was
+not created. Phase 5 remains paused.
+
+**2026-09-02 clean test reset and Phase 2 replay verified:** with explicit owner approval, all
+generated Phase 2–4 latest and processing-history rows were deleted in one guarded transaction
+while preserving the 29 Phase 1 source articles. Owner-started Phase 2 execution `2021` then
+completed successfully with 29 latest rows and 29 history rows. All 29 results are `VALID`, all 29
+evidence quotes are exact cleaned-article substrings, no required Issue field is empty, and all 29
+sources are represented once. The Phase 1 fingerprint remains
+`a6e63e1b6880794834ed7509ca61fe38`; Phase 3 and Phase 4 remain empty and were not started. Protected
+replay webhook triggers were added to the same three workflows, but n8n's webhook registry rejected
+the automated calls before execution; all three workflows are unpublished. Stop here as requested.
+The next action, only when the owner returns, is to resolve the webhook-registration problem or
+manually run Phase 3; do not start Phase 3 or Phase 4 without a new request.
+
+**2026-09-02 Phase 2 evidence repair prepared and dry-tested:** the inactive **Terra Space -
+Phase 2 - Detect Main Issues** workflow now restores accepted evidence to the exact text found in
+the cleaned Phase 1 article and can make at most two automatic correction attempts when a detector
+or safeguard proposal adds unsupported wording. A read-only dry run against the same 29 saved
+articles passed 29/29. Runtime validation reports 0 errors and 0 warnings across 20 nodes and 24
+valid connections. No workflow execution was started, no Supabase row was changed, Phase 5 remains
+paused, and no HTML report was created. The next optional action is a separately approved controlled
+Phase 2 replay if the owner wants these corrected results written to Supabase.
+
+**2026-08-31 Phase 5 conservative draft direction approved:** the owner does not want to manually
+review the 60 Phase 4 `NEEDS_REVIEW` results. The next planned stage will automatically continue
+all 109 results through two paths: 49 `VALID` results become normal event drafts, while 60
+`NEEDS_REVIEW` results become limited drafts using only facts retained by Phase 4. Rejected or
+unsupported details stay omitted; unknown values stay unknown; exact evidence and review reasons
+remain traceable. No draft becomes a final event automatically, and duplicate merging remains
+prohibited. This is direction only: no workflow, migration, table, or data change is approved yet.
+Next, hold a Phase 5 design discussion and prepare a minimal input/output contract. See
+[Phase 5 Conservative Event Drafts](decisions/Phase-5-Conservative-Event-Drafts.md).
+
+**2026-08-31 Phase 4 narrow reliability correction and full replay verified:** the inactive
+workflow now uses the Phase 3 candidate evidence quote as the event boundary while retaining the
+complete cleaned article as supporting context. It excludes reporters, commenters, background
+people and places, and related events; an existing grounded date is retained as `NEEDS_REVIEW`
+when a rerun returns an unknown or conflicting date. Two identical five-candidate executions
+(`2017` and `2018`) matched on status and complete facts for all 5 candidates. Controlled full
+execution `2019` then processed all 109 candidates successfully with 0 failures. A final audit
+found three near-match quotes caused by permissive whitespace/quotation-mark normalization; the
+validator was tightened to require an exact cleaned-article substring and execution `2020`
+repaired only those three candidates. Latest Phase 4 state is 109 rows (49 `VALID`, 60
+`NEEDS_REVIEW`, 0 `FAILED`), 392 append-only history rows, and 411 retained evidence quotes, all
+found exactly in their cleaned articles with none truncated. The workflow is inactive, validates
+with 0 errors and 0 warnings across 27 nodes and 35 valid connections, reads the normal empty
+queue directly with no obsolete pilot-limit node, and its exact recovery copy remains in
+`Terra_Space`. With explicit owner approval, the three temporary pilot, replay, and exact-quote
+repair views were deleted; they stored no rows, and post-cleanup verification confirms all latest
+results and history remain intact. Phase 4 reliability work is complete. The next phase should be
+discussed and approved before any new workflow or data contract is created. See [Phase 4 Narrow
+Event Fact Extraction Implementation Plan](plans/2026-08-31-phase-4-narrow-event-fact-extraction.md).
+
+**2026-08-31 Phase 4 narrow workflow prepared and validated:** an inactive exact backup of the
+original workflow was created as **Terra Space - Phase 4 - Extract Event Facts - Backup
+2026-08-31** (`Ixbz3rFqr2sbuFOs`) in `Terra_Space`. The original inactive workflow
+(`EqBqTU8NoWmGuCsp`) now uses narrow date/epistemic, actor-only, and location-only extraction plus
+separate indexed actor and location safeguards. Unsupported individual facts are omitted while
+other usable fields continue as `NEEDS_REVIEW`; raw responses are grouped for audit. Runtime
+validation passes with 0 errors and 0 warnings across 28 nodes and 36 connections. No candidate
+ran and the database remains 109 latest Phase 4 results, 245 history rows, and an empty queue. Next,
+select five candidates read-only and request separate approval before preparing or running a pilot.
+See [Phase 4 Narrow Event Fact Extraction Implementation Plan](plans/2026-08-31-phase-4-narrow-event-fact-extraction.md).
+
+**2026-08-31 Phase 4 narrow-extraction implementation plan ready:** read-only inspection confirmed
+that the existing Phase 4 facts, raw-output, prompt-version, and status columns can represent the
+approved narrow date/epistemic, actor, and location steps. No migration is needed. The plan keeps
+the existing inactive workflow and Supabase persistence, adds separate item-level actor and
+location safeguards, retains partial usable output, and requires non-writing behavior tests before
+a separately approved five-candidate pilot. No workflow or data was changed. See
+[Phase 4 Narrow Event Fact Extraction Implementation Plan](plans/2026-08-31-phase-4-narrow-event-fact-extraction.md).
+
+**2026-08-31 Phase 4 reliability adjustment approved for design:** the owner chose to improve a
+single Phase 4 run before considering repeated-run stabilization. The existing inactive Phase 4
+workflow will keep the complete cleaned article but split its combined factual work into narrow
+date/epistemic, actor-only, and location-only extraction steps. Actors and locations will each have
+their own deterministic evidence check and narrow safeguard. Unsupported individual facts will be
+omitted with a concrete `NEEDS_REVIEW` reason without erasing other usable fields; `FAILED` remains
+reserved for a technical problem that prevents any usable result. No workflow, migration, table,
+or data has been changed. Next, inspect the existing Phase 4 storage and workflow in read-only mode
+and prepare an implementation plan; obtain separate approval before any workflow edit or pilot.
+See [Phase 4 Event Fact Extraction](decisions/Phase-4-Event-Fact-Extraction.md).
+
+**2026-08-28 Phase 4 controlled reliability comparison verified:** owner-started execution `2010`
+ran the latest workflow against the same 109 Phase 3 candidate inputs as the first Phase 4 attempt.
+All 109 results were saved, adding 109 append-only history rows (245 total), with no `FAILED`
+latest result and an empty normal queue. Compared to the first attempt per candidate, 104/109
+(95.4%) retained the same overall status and 72/109 (66.1%) retained an exactly identical full
+facts payload. Dates stayed identical in all 109; epistemic status changed in 5, actor arrays in
+29, and location arrays in 25. The new results are 16 `VALID` and 93 `NEEDS_REVIEW`; every review
+has a reason, all 523 retained actor/location quotes are grounded and non-truncated, and Phase 1-3
+fingerprints remain unchanged. The workflow was restored to the normal pending view and remains
+inactive in `Terra_Space`. Owner-approved cleanup then removed the unused pilot and reliability
+temporary views; neither stored data nor history was removed.
+
+**2026-08-27 Phase 4 five-candidate retry verified:** the owner manually ran the bounded retry
+after the routing correction. Execution `2002` completed successfully: it updated exactly the five
+pilot latest rows and appended five new processing-run rows (10 runs total), leaving the normal
+pending queue at 104 candidates. Results remain 1 `VALID` and 4 `NEEDS_REVIEW`; all stored payloads
+are complete and review rows have a reason. Phase 1-3 counts remain 29/29/29 with 109 candidates.
+The retry confirms that the revised safeguard instructions reached the model, but it still sometimes
+uses the Phase 3 candidate quote despite being told to judge each fact against its own quote. One
+`NEEDS_REVIEW` location quote is visibly truncated with `...` and is not found verbatim in its
+cleaned article. Do not process the remaining candidates. Next, decide whether to make the evidence
+validator reject truncated quotes and simplify the safeguard input further, then validate another
+bounded retry before any full run.
+
+**2026-08-27 Phase 4 paused after safe structure preparation:** additive migrations
+`202608270003` and `202608270004` created the Phase 4 factual-result contract and corrected only
+its unknown-date JSON-null validation. The inactive **Terra Space - Phase 4 - Extract Event Facts**
+workflow (`EqBqTU8NoWmGuCsp`) is in `Terra_Space`; it has not been executed. The Phase 4 pending
+view contains 109 candidates and the latest/history tables are empty. Read-only counts and
+fingerprints prove Phase 1-3 remain unchanged. Resume by validating the inactive workflow and its
+stored Code-node behavior, then select a five-candidate pilot; no live execution is approved yet.
+See [Phase 4 Event Fact Extraction Implementation Plan](plans/2026-08-27-phase-4-event-fact-extraction.md).
+
+**2026-08-27 Phase 4 implementation plan ready:** the owner approved the minimal Event Fact
+Extraction design. The implementation plan defines an additive Supabase contract, one-candidate
+n8n processing, deterministic evidence checks, a separate safeguard, complete review retention,
+failed-result retry, and a five-candidate pilot before any full run. Recommended execution setting
+is `gpt-5.6-terra` with medium reasoning effort. No migration, workflow, or live data has been
+changed. See [Phase 4 Event Fact Extraction Implementation Plan](plans/2026-08-27-phase-4-event-fact-extraction.md).
+
+**2026-08-27 Phase 4 direction approved for design:** the owner selected the minimal **Extract Event
+Facts** scope after the verified Phase 3 baseline. The draft design processes every retained Phase 3
+candidate independently and adds only an evidence-grounded date, epistemic status, actors, and
+locations. Taxonomy, normalization, deduplication, final events, Dashboard writes, and Phase 1-3
+changes remain outside scope. No workflow, table, migration, or live data has been changed. See
+[Phase 4 Event Fact Extraction](decisions/Phase-4-Event-Fact-Extraction.md).
+
+**2026-08-27 Phase 1–3 video redesigned and delivered:** after owner feedback, the static
+three-lane presentation was replaced with a continuous “Living Data Flow.” A moving camera now
+follows one glowing trace as an article is cleaned, distilled into a grounded Main Issue, branched
+into Event Candidates, and connected to retry and verified totals. The silent 15-second,
+1920×1080 H.264 MP4 remains at `terra-weekly-brief/out/terra-space-phase-pipeline.mp4`; the weekly
+brief is unchanged. Motion-contract tests, lint/TypeScript, and six-frame visual review passed. See
+[Phase 1 to Phase 3 Pipeline Video Implementation Plan](plans/2026-08-27-phase1-to-phase3-pipeline-video.md).
+
+**2026-08-27 Phase 3 failed-result retry verified:** the owner manually ran the retry workflow.
+Both previously failed articles (sequences 63 and 64) now retain complete Event Candidate arrays
+as `NEEDS_REVIEW`, rather than `FAILED`; neither was blanked or dropped. The pending queue is now
+empty. Phase 3 has exactly 29 latest results: 12 `VALID` and 17 `NEEDS_REVIEW`, containing 109
+candidates (81 `VALID`, 28 `NEEDS_REVIEW`). Read-only checks found no incomplete candidate, no
+review candidate without a reason, and no `VALID` evidence quote absent from its cleaned article.
+The retry updated only the two failed latest rows and appended run history: sequence 63 has
+`FAILED -> FAILED -> NEEDS_REVIEW`, and sequence 64 has `FAILED -> NEEDS_REVIEW`.
+
+**2026-08-27 Phase 3 first pilot evaluated:** owner-started manual execution `1994` completed and
+created exactly 29 latest results plus 29 append-only run records for the 29 eligible articles.
+Phase 1 and Phase 2 remain at 29 rows each, the pending view is empty, and no duplicate latest
+source exists. The outcomes are 12 `VALID`, 15 `NEEDS_REVIEW`, and 2 `FAILED`; retained candidates
+total 96 (71 `VALID`, 25 `NEEDS_REVIEW`). Every retained candidate has a non-empty title,
+description, and evidence quote; all 71 valid quotes were found in their cleaned article; every
+review candidate has a review reason. The two failures are local-model non-JSON detector responses
+for source sequences 63 and 64, not a storage or data-link failure. The next action is a
+read-only review of candidate quality and a small, separately approved parser/retry decision for
+the two failures before reprocessing any record.
+
+**2026-08-27 Phase 3 Event Candidate Detection structure ready:** additive migration
+`202608270001_phase3_event_candidate_detection` created the Phase 3 latest-result table,
+append-only run table, and pending-source view without changing Phase 1 or Phase 2 records. The
+inactive **Terra Space - Phase 3 - Detect Event Candidates** workflow (`S5HKb5Sfag80cvkd`) is in
+`Terra_Space`; it uses Supabase nodes for normal data reads/writes and processes one source at a
+time. Database contract testing passed in rollback, and n8n runtime validation passed with 0 errors
+and 0 warnings. Current counts are 29 Phase 1 sources, 29 Phase 2 Issues, 29 Phase 3 pending
+sources, and 0 Phase 3 latest/history rows. Do not start the manual workflow until the owner
+explicitly approves processing the 29 articles.
+
+**2026-08-27 Phase 3 Event Candidate Detection planned:** the owner approved the minimal next-stage
+design and implementation plan. Phase 3 will accept every complete Phase 2 Main Issue, including
+`NEEDS_REVIEW`, and retain zero or more candidates with title, neutral description, evidence quote,
+and candidate-level `VALID`/`NEEDS_REVIEW` status. It deliberately excludes actors, countries,
+relationships, taxonomy detail, and final events. No table or workflow has been created; wait for
+the owner's explicit execution approval before applying the planned migration or creating the
+inactive manual n8n workflow. See [Phase 3 Event Candidate Detection](decisions/Phase-3-Event-Candidate-Detection.md)
+and its [implementation plan](plans/2026-08-27-phase-3-event-candidate-detection.md).
+
+**2026-08-27 Phase 2 evidence-alignment reprocess verified:** manual execution `1992` completed
+successfully with 29 complete latest results and no pending source, null source ID, empty Issue
+field, or invalid accepted quote. The evidence-alignment correction increased `VALID` results from
+13 to 21 and reduced `NEEDS_REVIEW` from 16 to 8. Seven remaining review rows have a proposed
+title or description that still adds a detail outside its quote; one has a non-verbatim proposed
+quote. All eight retain complete fields and a review reason. This is a material improvement while
+preserving the requested full-output behavior.
+
+**2026-08-27 owner-approved Phase 2 evidence-alignment reprocess prepared:** deleted exactly 29
+latest Phase 2 rows with an atomic count guard after the detector and quote-validation correction.
+All 29 completed Phase 1 articles are pending again, while all 157 append-only Phase 2 processing
+history rows remain preserved. The workflow was not run during deletion and is ready for one
+owner-started reprocess.
+
+**2026-08-26 Phase 2 evidence alignment correction ready:** detector instructions now require its
+title and description to be supported by one selected quote, rather than adding context beyond that
+quote. Quote validation now normalizes only whitespace, curly/straight quote marks, and terminal
+punctuation. A stored-node test reproduced the prior punctuation-only rejection and now correctly
+routes it to the safeguard with `VERIFIED` quote status. n8n runtime validation reports 0 errors
+and 0 warnings. Reprocess current latest rows only after owner-approved deletion to measure the
+reduced `NEEDS_REVIEW` rate.
+
+**2026-08-26 NEEDS_REVIEW quality analysis:** all 16 review-flagged results retain complete Issue
+fields. Thirteen have a scope gap: the selected quote is narrower than a detail in the proposed
+title or description. Two have a wording/relationship discrepancy between description and quote,
+and one has a semantic match blocked only by terminal punctuation. The smallest safe improvement is
+to instruct the detector to write its title and description from one selected quote only, removing
+any unsupported qualifier, and to normalize only whitespace plus terminal punctuation before the
+verbatim quote check. This keeps the one-pass workflow and `NEEDS_REVIEW` flag; it does not add a
+repair loop or stop later articles.
+
+**2026-08-26 Phase 2 always-retain reprocess verified:** manual execution `1985` completed
+successfully and created 29 latest results for 29 distinct Phase 1 sources, with no pending source,
+null source ID, or empty Issue field. The outcomes are 13 `VALID` and 16 `NEEDS_REVIEW`. All valid
+rows have a verified quote and safeguard acceptance; direct comparison found 0 valid quotes absent
+from their cleaned article. Fifteen review rows retain a verified quote plus a specific safeguard
+reason; one retains its proposal with a quote-rejection flag. This is the requested full-output,
+review-by-exception behavior.
+
+**2026-08-26 owner-approved Phase 2 reprocess prepared after always-retain correction:** deleted
+exactly 29 latest Phase 2 rows with an atomic count guard. All 29 completed Phase 1 articles are
+pending again, while all 128 append-only Phase 2 history rows remain preserved. The workflow was
+not run during deletion and is ready for one owner-started reprocess using the always-retain
+`NEEDS_REVIEW` behavior.
+
+**2026-08-26 Phase 2 Issue-output rule corrected:** `NEEDS_REVIEW` no longer permits empty Issue
+fields in the latest-result table. The two earlier empty rows were restored from their saved model
+outputs: one had a safeguard model failure and one had a non-verbatim proposed quote. The workflow
+now preserves a detected proposal even when its quote is rejected, retains proposals on safeguard
+errors, and uses the article headline plus opening article text as a clearly flagged fallback if
+the detector itself is unavailable. Non-writing behavioral tests confirmed both paths keep a title,
+description, and quote. n8n runtime validation reports 0 errors and 0 warnings.
+
+**2026-08-26 Phase 2 NEEDS_REVIEW reprocess evaluated:** manual execution `1983` completed
+successfully and saved a latest result for every one of the 29 completed Phase 1 articles; no
+source is pending and no source ID is missing. The results are 13 `VALID`, 14 evidence-grounded
+`NEEDS_REVIEW` rows retaining their proposal fields and safeguard reason, one `NEEDS_REVIEW` row
+without a proposal because its quote was not verbatim, and one `FAILED` row because LM Studio
+reported no model loaded. The batch continued despite that failure, as intended. All 13 valid
+quotes were found verbatim in their cleaned articles. This demonstrates the review-flag baseline;
+the lone `FAILED` result can be retried later after confirming the model remains loaded.
+
+**2026-08-26 owner-approved Phase 2 reprocess prepared after review-flag update:** deleted exactly
+12 partial latest Phase 2 rows (4 `VALID`, 8 `NEEDS_REVIEW`) with an atomic count guard. The latest
+table now has 0 rows and all 29 completed Phase 1 articles are pending for reprocessing under the
+new `NEEDS_REVIEW` behavior. All 99 append-only Phase 2 history rows remain preserved; the workflow
+was not run as part of the deletion.
+
+**2026-08-26 Phase 2 review flag renamed for clarity:** migration
+`202608260004_phase2_needs_review_status` renamed every stored `WITHHELD` value to
+`NEEDS_REVIEW` in both latest results and append-only history, preserving all rows and fields.
+The workflow now emits `NEEDS_REVIEW` for every review outcome; `VALID` and `FAILED` are unchanged.
+Current partial latest results are 4 `VALID` and 8 `NEEDS_REVIEW`, with 17 sources still pending
+after the interrupted run. Runtime workflow validation reports 0 errors and 0 warnings.
+
+**2026-08-26 Phase 2 now keeps review-flagged proposals and continues after errors:** approved
+minimal design changes retain an evidence-grounded title, description, and quote when the safeguard
+returns `REJECT`; `WITHHELD` is the sole review flag and its existing recorded reason explains why.
+No table, queue, or extra status was added. Migration `202608260003_phase2_review_flagged_results`
+allows that shape in both the latest-result and append-only-history tables. Both detector and
+safeguard technical-error paths now carry the source ID, so they can save a `FAILED` result rather
+than stopping the batch. Database transaction testing and stored-node behavioral tests passed;
+n8n runtime validation reports 0 errors and 0 warnings. A prior interrupted run has 12 old-format
+latest results and 17 pending sources; reprocess all 29 after owner-approved deletion to make every
+row consistent with this new baseline.
+
+**2026-08-26 owner-approved all-result Phase 2 reprocessing prepared:** deleted exactly all 29
+current latest Phase 2 result rows (12 `VALID`, 17 `WITHHELD`) from
+`terra_space_phase2_main_issues`, using an atomic count guard. The latest table now has 0 rows and
+all 29 completed Phase 1 articles are again pending. All 87 append-only Phase 2 processing-history
+rows and all Phase 1 source data remain unchanged. The corrected inactive workflow is ready for
+one owner-started manual reprocessing run; inspect the result read-only before replacing the
+baseline decision.
+
+**2026-08-26 Phase 2 result reprocessing evaluated: ready for baseline approval:** the latest
+results now cover all 29 completed Phase 1 articles with no pending source, no null source ID, and
+no orphaned link. Twelve results are `VALID`, each with `VERIFIED` evidence and safeguard `ACCEPT`;
+a direct database comparison found every one of their evidence quotes verbatim in its cleaned
+article. The remaining 17 are safely `WITHHELD` after safeguard rejection, with clear recorded
+reasons that the proposed description went beyond its quote. Manual sample review of all 12 valid
+results found titles, neutral descriptions, and evidence aligned with their articles. Execution
+`1981` completed successfully; earlier interrupted execution `1979` and cancelled execution `1980`
+had already saved some individually complete rows, then `1981` completed the remaining pending
+sources. This is suitable to lock as the Phase 2 Main-Issue baseline if the owner approves.
+
+**2026-08-26 Phase 2 safeguard-result mapping corrected after execution `1978`:** execution `1978`
+stopped before saving any row because **Prepare Phase 2 Result** mistakenly inspected the LM Studio
+safeguard response for `p2_needs_safeguard`; that response does not carry the prepared proposal or
+its `p2_status`. The node now reads the proposal from **Validate Main Issue Evidence**, preserves
+its fields, and also unwraps complete Markdown JSON fences from the safeguard response. The exact
+previous failure case now produces `VALID`, `VERIFIED`, and `ACCEPT` in a non-writing behavioral
+test. Workflow runtime validation reports 0 errors and 0 warnings. No latest result was created;
+all 29 sources remain pending for an owner-started run.
+
+**2026-08-26 Phase 2 latest withheld results deleted with owner approval:** deleted exactly 29
+`WITHHELD` latest-result rows from `terra_space_phase2_main_issues` using an atomic count guard.
+The latest-result table now has 0 rows and the pending-source view again exposes all 29 completed
+Phase 1 articles. The 58 append-only Phase 2 processing-history rows and all 29 Phase 1 articles
+remain unchanged. The corrected inactive **Terra Space - Phase 2 - Detect Main Issues** workflow
+is ready for one owner-started reprocessing run; request a read-only evaluation afterwards before
+locking a Phase 2 baseline.
+
+**2026-08-26 Phase 2 reprocessing review: not ready as a baseline:** owner-started manual execution
+`1977` completed successfully and saved a latest Phase 2 row for every one of the 29 completed
+Phase 1 articles; no source is pending, no source ID is missing, and Phase 1 data is unchanged.
+However, all 29 latest rows are `WITHHELD`, with zero verified quotes, zero safeguard calls, and
+zero valid Main Issues. The model returned usable-looking nested `MAIN_ISSUE_FOUND` JSON (17 rows)
+or Markdown-fenced JSON (12 rows), while the currently installed **Validate Main Issue Evidence**
+node still accepts only one bare, top-level JSON shape. This means the earlier intended parser
+correction was not present in that live validator. Do not treat this result as the Phase 2 baseline.
+The safe next step is to correct and validate that validator, then obtain separate owner approval
+before deleting and reprocessing the 29 current `WITHHELD` latest rows.
+
+**2026-08-26 Phase 2 validator corrected and validated:** the inactive **Terra Space - Phase 2 -
+Detect Main Issues** workflow (`AkdHAcebfzmnOSST`) now strips complete Markdown JSON fences and
+accepts the observed nested `MAIN_ISSUE_FOUND` response (including optional `decision: YES`) while
+still rejecting unexpected fields, non-JSON responses, and evidence quotes that do not appear
+verbatim in the cleaned article. A validate-only workflow update passed; runtime validation reports
+0 errors and 0 warnings. A non-writing behavioral check of the stored validator confirmed both
+nested and fenced accepted examples proceed to the safeguard, while a non-verbatim quote remains
+`WITHHELD`. The workflow was not run. The 29 current `WITHHELD` latest rows remain until the owner
+confirms their exact deletion.
+
+**2026-08-26 Phase 2 save mapping corrected after execution errors:** owner-started executions
+`1975` and `1976` stopped when the Supabase latest-result node attempted to save a null
+`phase1_source_id`, despite that ID being available in the preparation node. The inactive
+**Terra Space - Phase 2 - Detect Main Issues** workflow (`AkdHAcebfzmnOSST`) now explicitly carries
+the ID as `p2_phase1_source_id` and maps the Supabase field from that same value. A validate-only
+check and n8n runtime validation passed with 0 errors and 0 warnings; the workflow was not rerun.
+Six `WITHHELD` latest rows from the interrupted attempt remain, while 23 sources are pending. Do
+not delete or reprocess those six without the owner's separate approval. The owner may now run the
+workflow to process the 23 pending sources, then request a read-only review.
+
+**2026-08-26 Phase 2 parser corrected and reprocessing prepared:** the owner approved the deletion
+of exactly the 29 `WITHHELD` *latest-result* rows created by manual execution `1974`. The deletion
+removed 29 rows from `terra_space_phase2_main_issues`, preserved all 29 append-only rows in
+`terra_space_phase2_main_issue_processing_runs`, and left all 29 Phase 1 sources unchanged. The
+pending-source view now again exposes all 29 sources. The inactive **Terra Space - Phase 2 - Detect
+Main Issues** workflow (`AkdHAcebfzmnOSST`) now accepts a leading/trailing Markdown `json` fence,
+the observed `{"MAIN_ISSUE_FOUND": {...}}` detector shape (with either title/description field
+names), and its original expected shapes. It still requires an exact evidence quote and the
+independent local-AI safeguard. Static parser validation and n8n runtime validation both passed;
+runtime reported 0 errors and 0 warnings. The owner should now open the workflow in n8n and click
+**Execute Workflow** once, then request a read-only review of the saved results before treating
+them as a Phase 2 baseline. See [Phase 2 Main-Issue Detection Implementation Plan](plans/2026-08-26-phase-2-main-issue-detection.md).
+
+**2026-08-26 Terra Space field descriptions completed:** additive migration
+`202608260002_terra_space_field_descriptions` added plain-language database descriptions to every
+field in all four current Terra Space tables. Verification found 0 missing field descriptions. This
+metadata-only change did not alter sources, Phase 2 results, or n8n workflow behavior.
+
+**2026-08-26 Phase 2 Main-Issue workflow ready for its first owner run:** local migration
+`202608260001_phase2_main_issue_foundation` added the Phase 2 latest-result table, append-only run
+table, and pending-source view without changing the 29 Phase 1 articles. Inactive workflow **Terra
+Space - Phase 2 - Detect Main Issues** (`AkdHAcebfzmnOSST`) is now in `Terra_Space`; it uses a
+manual trigger, processes one pending source at a time, calls LM Studio twice (detector and
+safeguard), and writes through Supabase nodes. Runtime validation passed with 0 errors and 0
+warnings. The owner should open it in n8n and click **Execute Workflow** when ready; afterwards,
+review the saved Main Issues against the articles before treating this as a verified Phase 2
+baseline. See [Phase 2 Main-Issue Detection Implementation Plan](plans/2026-08-26-phase-2-main-issue-detection.md).
+
+**2026-08-26 Phase 2 Main-Issue direction approved:** the next post-reset build is one inactive
+manual n8n workflow, **Terra Space - Phase 2 - Detect Main Issues**, in the `Terra_Space` folder.
+It will process every unprocessed completed Phase 1 source one at a time, storing at most one
+grounded Main Issue. The issue has only title, neutral description, and an exact evidence quote;
+countries, actors, event candidates, and final events remain out of scope. A verbatim quote check
+and an independent local-AI safeguard must both accept it; otherwise it is saved as `WITHHELD`.
+Supabase nodes must be used for the normal database reads and writes. See [Phase 2 Main-Issue
+Detection](decisions/Phase-2-Main-Issue-Detection.md).
+
+**2026-08-26 verified Phase 1 cleaning baseline locked:** the owner ran the corrected manual
+processor against all 29 requeued sources (sequences 46–74). All 29 finished `completed` with
+non-empty cleaned text. A read-only raw-versus-cleaned comparison found no accidental LM Studio
+reply, no lost main article section, and at most one removed non-article section per source
+(photo caption, image credit, or live-coverage notice). The four most shortened results were
+checked individually and passed. The manual one-at-a-time processor, raw-field mapping, non-empty
+gate, conservative deterministic cleaner, fidelity guard, and append-only processing history are
+now the approved Phase 1 baseline. Do not change it without owner approval and an equivalent
+read-only comparison. See [Verified Phase 1 Cleaning Baseline](decisions/Verified-Phase-1-Cleaning-Baseline.md).
+
+**2026-08-26 blank-output processor bug fixed and recovered:** manual execution `1972` had marked
+29 sources `completed` with empty `cleaned_content_text`, even though their original raw article
+text remained intact. The cause was a field-name mismatch: the pre-cleaner read
+`p1_raw_content_text`, but the Supabase fetch supplied `raw_content_text` without a mapping. The
+processor now maps that field and has a **Has Nonempty Cleaned Text** gate: an empty result enters
+the failed/retry path instead of being marked completed. Runtime validation passed with 0 errors and
+0 warnings. With owner approval, exactly the 29 affected sources (sequences 46–74) were returned to
+`queued` with null cleaned text and no processing error. The 29 original bad `SUCCESS` run records
+remain preserved as evidence; the owner can now run the corrected processor when ready.
+
+**2026-08-26 processor now starts from n8n's Manual Trigger:** **Terra Space - Process All Saved
+Articles** (`aAVDCkvD02JWkbvJ`) is intentionally inactive and starts only when the owner opens it in
+n8n and clicks **Execute Workflow**. It has no form page or public URL. A regular Supabase **Get
+Queued or Failed Sources** node fetches waiting work, then an explicit batch-size-one loop sends one
+article at a time to LM Studio and returns for the next article. Successes become `completed`;
+failures remain `failed` for the next owner-started run. This design assumes the owner starts only
+one processor run at a time. The existing database claim function remains unused; no article was
+processed during this change. n8n validation reports 0 errors and 0 warnings.
+
+**2026-08-26 backup re-entry completed:** after the owner requested re-entry, the 25-row Excel
+backup was checked for repeated URLs. It contained 23 unique articles: the owner had already entered
+the first one, so the other 22 unique articles were submitted through the active Input News Manual
+form one at a time. All 23 sources are now `queued`, have no cleaned text, and have no duplicate
+URL. The two repeated backup rows (original sequences 14 and 33) were intentionally skipped under
+the approved duplicate rule. The 25 detached historical processing-run rows remain unchanged; do
+not run the processor until the owner is ready for cleaning.
+
+**2026-08-26 owner-approved Phase 1 source reset:** exported all 25 rows from
+`public.terra_space_phase1_sources` to
+`outputs/2026-08-26-phase1-sources-export/terra-space-phase1-sources-before-reset.xlsx`, then
+deleted those 25 source rows at the owner's explicit request so they can be re-entered. The source
+table now contains 0 rows. The 25 append-only Phase 1 processing-run rows remain as history, with
+their former source links set to null by the existing foreign-key rule. The active intake workflow
+is ready for the owner to submit articles again as new queued sources.
+
+**2026-08-26 duplicate-submission rejection verified:** active **Terra Space - Input News Manual**
+(`gABPryH3jTe2Ktz5`) now trims the submitted article values, checks the trimmed `source_url` against
+saved Phase 1 sources before insertion, and returns `REJECTED_DUPLICATE` when it finds a match. A
+duplicate does not create a source row, queue item, or processing run; only a new URL continues to
+the existing `queued` intake path. Live execution `1938` submitted an already-saved URL, returned
+the rejection result, skipped the save node, and left the source total at 25. The workflow remains
+active and n8n validation reports 0 errors and 0 warnings. See [Separated Manual Intake and Deferred
+Queue Processing](decisions/Separated-Manual-Intake-and-Deferred-Queue-Processing.md).
+
+**2026-08-25 deferred Phase 1 queue processing completed:** active **Terra Space - Input News
+Manual** (`gABPryH3jTe2Ktz5`) now only saves one valid article as `queued`; it does not call LM
+Studio, does not create a processing-run row, and accepts a blank author. Active **Terra Space -
+Process All Saved Articles** (`aAVDCkvD02JWkbvJ`) is in the `Terra_Space` folder. Its one-button
+form atomically claims and cleans each queued or failed source, records each success/failure, and
+continues after individual LM Studio errors; a stale interrupted claim becomes eligible again after
+15 minutes. An empty-queue live form submission passed without changing any of the 25 retained
+completed sources. Both workflows passed n8n validation with 0 errors and 0 warnings. See the
+[Deferred Phase 1 Queue Processing Implementation
+Plan](plans/2026-08-25-deferred-phase1-queue-processing.md).
+
+**2026-08-25 owner-approved Input News Manual cleaning safeguard:** the live **Terra Space - Input
+News Manual** workflow now uses an expanded deterministic cleaner for known standalone photo-credit
+and contributor-credit forms, while retaining the LM Studio cleaning call. A new fidelity guard
+accepts an LM Studio response only when every pre-cleaned source paragraph remains and every output
+paragraph is grounded in that source; otherwise it saves the deterministic text, preserves the raw
+model response, and records why it was rejected in the append-only Phase 1 run. The prompt now
+explicitly preserves reporter-written long/live-blog/BBC text and keeps support/helpline information.
+No historical source was changed, no duplicate check was added, and no article was submitted for
+testing. Runtime validation reports 0 errors and 0 warnings. During publication, a stale n8n draft
+omitted the six `Phase 1 Internal Input` field types; all six were immediately restored to `string`
+and the corrected active workflow was revalidated. The owner also set the durable operational rule
+that any new Terra Space n8n workflow belongs in the `Terra_Space` folder. See [Terra Space n8n
+Workflow Folder Placement](decisions/Terra-Space-n8n-Workflow-Folder-Placement.md).
+
+**2026-08-25 read-only Input News Manual cleaning audit:** at the owner's request, audited the live
+**Terra Space - Input News Manual** workflow (still the only active workflow since the 2026-08-24
+reset) and all 25 retained `terra_space_phase1_sources` rows by comparing `raw_content_text` against
+`cleaned_content_text` row by row. Result is mixed: 15 of 25 rows are fully clean, 8 have minor
+leftover photo-caption/credit junk, and 2 (`possible_overcleaning`) show a few genuine
+reporter-written sentences dropped on long BBC articles alongside legitimate boilerplate; no row has
+material junk. The root cause is the workflow's own current cleaning logic (a deterministic regex
+with a too-narrow caption pattern, a small local LM Studio model that is inconsistent on ambiguous
+captions and long documents, and a length-only safety net that cannot detect content-level fidelity
+loss) — not a pending decision or a data-loss defect. Nothing was changed; this was a strictly
+read-only audit. See [Feedback
+Backlog](Feedback-Backlog.md#input-news-manual-cleaning-leaves-minor-junk-and-drops-some-real-content-on-long-articles-2026-08-25).
+
+**2026-08-24 owner-approved pipeline reset:** a verified full Supabase backup was created at
+`data/backups/supabase/20260824-173329/terra-space-before-pipeline-reset.dump`, and current copies
+of the four deleted n8n workflows were saved in `.n8n-backups/20260824/`. The owner then approved
+the permanent deletion of all Terra Space tables except `terra_space_phase1_sources` and
+`terra_space_phase1_processing_runs`. The other 31 `terra_space_*` tables and four dependent
+Issue-first views were dropped in one successful database transaction. The original submitted
+articles and their Phase 1 processing history remain. The four former live workflows—**Full News
+Processing**, **Event Candidates**, **Event Records**, and **Issue-first Analysis**—were
+deactivated and permanently deleted. **Input News Manual** remains active and all retired
+experiments remain untouched. The former five-workflow operating guide and active-workflow
+boundary are now superseded; do not run the old pipeline. A new workflow and database design is
+required before resuming normal end-to-end processing.
+
+**2026-08-22 operational clarity cleanup:** the supported n8n pipeline is now explicitly limited
+to five live workflows: **Full News Processing**, **Input News Manual**, **Event Candidates**,
+**Event Records**, and **Issue-first Analysis**. Six confirmed inactive Terra Space experiments
+were moved—without deletion or reactivation—to the n8n folder `Terra Space — Retired (do not
+run)`. The visual [Complete Current Pipeline Guide](Terra-Space-Operating-Guide.md) now explains
+the normal article path, all validation stages, data scheme, optional relationship rule, and what
+not to run. See [Active Workflow
+Boundary](decisions/Active-Workflow-Boundary.md).
+
+**2026-08-22 first new-article check after Issue-first v3:** an owner-submitted AP News article,
+*Taiwan proposes a record $35B defense budget for 2027 as China’s military pressure grows*,
+completed the normal **Full News Processing** workflow successfully (execution `1920`). Phase 2
+found six candidates; Phase 3 produced four `FINAL` Events and retained two `EXCEPTION` records.
+Issue-first v3 independently completed and published one evidence-backed Issue with five valid
+Issue Events. It published no relationship, which is the expected optional outcome because the
+article did not provide complete explicit relationship evidence. The read API now returns 25
+valid Issues. No manual Issue/Event correction or inferred relationship was made.
+
+**2026-08-22 local application configuration repaired and verified:** with owner approval, the
+saved local `.env` now supplies both required backend connection URLs for this machine's local
+Supabase database on port `55422`, replacing the retired `54322` read-only URL and adding the
+previously missing primary URL. Terra Space was fully recreated from that saved configuration—no
+session override—and the backend became healthy. The `/issues` API returned HTTP 200 and 24 Issue
+records; the browser screen shows `24 VALID` with no unavailable-data message. No application,
+Issue, Event, or database data was changed.
+
+**2026-08-22 owner-approved Issue-first v3 workflow change and full reprocess completed:**
+the active **Terra Space - Issue-first Analysis** n8n workflow now has an `issue-first-v3` prompt
+that makes relationships explicitly optional, plus a read-only country-reference lookup and a
+non-inferential normalizer before the existing guarded recorder. It removes an Event only when its
+own evidence fails, and removes a relationship when any actor, country, ISO, location, or quote
+test fails; it never substitutes, maps, or invents a value. The workflow has 11 nodes and passed
+n8n runtime validation with 0 errors and 0 warnings. After LM Studio returned to port 1234, all 13
+affected sources were reprocessed sequentially through Issue-first only. Every latest source run
+is now `succeeded`: the local read projections report 24 valid Issues, 114 valid Issue Events, and
+5 complete evidence-backed relationships. The earlier `ECONNREFUSED` run remains as technical
+history; no output was reset or manually repaired. The web application group was stopped during
+verification, so port 3000 could not provide an API read; the database projections are the
+verified result. See [Issue-first Independent Evidence Retention](decisions/Issue-First-Independent-Evidence-Retention.md).
+
+**2026-08-22 read-only Issue-first failure review:** all 13 latest withheld runs have a valid
+main-Issue evidence quote. The blocker is therefore not the article-level Issue itself: it is an
+all-or-nothing recorder outcome when one optional Event or relationship fails grounding. A
+read-only replay of the existing validation rules found 48 of the 54 proposed Events independently
+have an exact evidence quote; the six remaining Events should stay withheld. Of 18 proposed
+relationships, only 3 meet every existing explicit actor, country, ISO, location, and quote rule;
+the other 15 should simply be omitted. This supplied the evidence for the owner-approved
+non-inferential normalization now active above; the guarded database recorder remains the final
+authority.
+
 **Open Issue-first pipeline-quality follow-up:** after the fresh 24-source rebuild, 13 sources
 were withheld from Issues because the extracted evidence was not sufficiently grounded: 5 lacked
 location wording in the endpoint evidence, 4 altered an event/relationship quote, 2 lacked actor
@@ -1694,7 +3058,9 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
 
 ## Blockers
 
-- None at this checkpoint.
+- The normal end-to-end pipeline has been intentionally reset. Rebuilding the four deleted
+  workflows and the 31 deleted tables requires a new owner-approved design; the old pipeline
+  documents are historical only.
 
 ## Previous next action
 
@@ -1705,6 +3071,10 @@ confirmation is still the owner's to make as they continue reviewing. No Roadmap
   geocoding mechanism has been chosen yet.
 
 ## Next actions
+
+- **Immediate next action:** agree on the new pipeline's purpose, stages, data model, and outputs
+  before recreating any workflow or database table. The remaining bullets below describe the
+  pre-reset system and are not an active implementation queue.
 
 - **Top priority for the next session:** resume the local-model location-extraction reliability
   investigation. Paused at the owner's request on 2026-07-20 after a controlled A/B test disproved

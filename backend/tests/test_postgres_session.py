@@ -65,7 +65,7 @@ def test_postgres_session_factory_never_auto_creates_schema(postgres_session_fac
             text("select to_regclass('public.documents') is not null")
         ).scalar_one()
         real_table_exists = session.execute(
-            text("select to_regclass('public.terra_space_phase1_sources') is not null")
+            text("select to_regclass('terra_space.terra_space_phase1_sources') is not null")
         ).scalar_one()
 
     assert exists is False

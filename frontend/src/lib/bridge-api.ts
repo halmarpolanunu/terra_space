@@ -67,6 +67,22 @@ export type BridgeCandidateReview = {
   processed_at: string;
 };
 
+export type Phase5Event = {
+  id: string; phase1_source_id: string; title: string; description: string; evidence_quote: string;
+  source_publication_date: string | null; event_path: string; phase5a_status: string;
+  phase3_result_status: string; phase3_result_reason: string | null;
+  phase3_candidate_status: string; phase3_candidate_reason: string | null;
+  phase4_status: string; phase4_extraction_status: string; phase4_safeguard_status: string; phase4_review_reason: string | null; phase4_error_message: string | null;
+  facts: Record<string, unknown>;
+  classification: { status: string | null; event_type_id: string | null; event_type_name: string | null; reason: string | null; safeguard_status: string | null; safeguard_reason: string | null };
+  timeline: { status: string | null; event_date: string | null; event_date_precision: string | null; reference_date: string | null; reference_basis: string | null; limitations: string[]; error_message: string | null };
+  event_geographies: Record<string, unknown>[]; event_geography_status: string | null;
+  actor_geographies: Record<string, unknown>[]; actor_geography_status: string | null;
+  qualification: { status: "FINAL" | "NOT_FINAL" | null; reason_codes: string[] };
+  duplicate_recommendations: Record<string, unknown>[];
+  created_at: string; updated_at: string;
+};
+
 const API_ROOT = "/api/backend/api/bridge";
 
 async function parseOrThrow<T>(response: Response): Promise<T> {
@@ -95,6 +111,11 @@ export async function getBridgeSource(sourceId: string): Promise<BridgeSource> {
 export async function listBridgeCandidateReviews(): Promise<BridgeCandidateReview[]> {
   const response = await fetch(`${API_ROOT}/event-candidates`);
   return parseOrThrow<BridgeCandidateReview[]>(response);
+}
+
+export async function listPhase5Events(): Promise<Phase5Event[]> {
+  const response = await fetch(`${API_ROOT}/phase5-events`);
+  return parseOrThrow<Phase5Event[]>(response);
 }
 
 export async function listBridgeEvents(filters: EventFilters): Promise<EventRead[]> {

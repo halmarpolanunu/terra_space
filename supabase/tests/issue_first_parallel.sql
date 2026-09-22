@@ -62,7 +62,7 @@ declare
   target_location_id uuid := gen_random_uuid();
   visible_count integer;
 begin
-  insert into public.terra_space_phase1_sources (
+  insert into terra_space.terra_space_phase1_sources (
     id, title, publication_date, raw_content_text, cleaned_content_text,
     source_domain, source_url, author, collection_source, processing_status
   ) values (
@@ -71,13 +71,13 @@ begin
     'example.test', 'https://example.test/issue-first-schema', 'Test author', 'test', 'completed'
   );
 
-  insert into public.terra_space_issue_v2_runs (id, source_id, status, stage, processed_at)
+  insert into terra_space.terra_space_issue_v2_runs (id, source_id, status, stage, processed_at)
   values (valid_run_id, source_id, 'succeeded', 'complete', now());
-  insert into public.terra_space_issue_v2_runs (id, source_id, status, stage, reason, processed_at)
+  insert into terra_space.terra_space_issue_v2_runs (id, source_id, status, stage, reason, processed_at)
   values (failed_run_id, source_id, 'failed', 'validation', 'Evidence quote was not grounded.',
           now() - interval '1 minute');
 
-  insert into public.terra_space_issue_v2_issues
+  insert into terra_space.terra_space_issue_v2_issues
     (id, run_id, source_id, label, summary, evidence_quote, validated_at)
   values
     (valid_issue_id, valid_run_id, source_id, 'Valid issue', 'A valid Issue.',
@@ -85,7 +85,7 @@ begin
     (failed_issue_id, failed_run_id, source_id, 'Failed issue', 'A withheld Issue.',
      'Source actor acted on target actor in the stated places.', now());
 
-  insert into public.terra_space_issue_v2_events
+  insert into terra_space.terra_space_issue_v2_events
     (id, issue_id, run_id, title, evidence_quote, validated_at)
   values
     (valid_event_id, valid_issue_id, valid_run_id, 'Valid event',
@@ -93,44 +93,44 @@ begin
     (unvalidated_event_id, valid_issue_id, valid_run_id, 'Unvalidated event',
      'Source actor acted on target actor in the stated places.', null);
 
-  insert into public.terra_space_issue_v2_relationships (id, event_id, evidence_quote)
+  insert into terra_space.terra_space_issue_v2_relationships (id, event_id, evidence_quote)
   values (relationship_id, valid_event_id,
           'Source actor acted on target actor in the stated places.');
-  insert into public.terra_space_issue_v2_locations (id, label, latitude, longitude, evidence_quote)
+  insert into terra_space.terra_space_issue_v2_locations (id, label, latitude, longitude, evidence_quote)
   values
     (source_location_id, 'Jakarta', -6.2, 106.8, 'Source actor acted on target actor in the stated places.'),
     (target_location_id, 'Bandung', -6.9, 107.6, 'Source actor acted on target actor in the stated places.');
-  insert into public.terra_space_issue_v2_relationship_endpoints
+  insert into terra_space.terra_space_issue_v2_relationship_endpoints
     (relationship_id, role, actor_name, location_id, evidence_quote)
   values
     (relationship_id, 'source', 'Source actor', source_location_id,
      'Source actor acted on target actor in the stated places.'),
     (relationship_id, 'target', 'Target actor', target_location_id,
      'Source actor acted on target actor in the stated places.');
-  update public.terra_space_issue_v2_relationships
+  update terra_space.terra_space_issue_v2_relationships
      set validated_at = now()
    where id = relationship_id;
 
   select count(*) into visible_count
-    from public.terra_space_issue_v2_valid_issues
+    from terra_space.terra_space_issue_v2_valid_issues
    where id = valid_issue_id;
   if visible_count <> 1 then
     raise exception 'FAIL: validated Issue from succeeded run was not visible';
   end if;
   select count(*) into visible_count
-    from public.terra_space_issue_v2_valid_issues
+    from terra_space.terra_space_issue_v2_valid_issues
    where id = failed_issue_id;
   if visible_count <> 0 then
     raise exception 'FAIL: failed-run Issue appeared in the analytical view';
   end if;
   select count(*) into visible_count
-    from public.terra_space_issue_v2_valid_events
+    from terra_space.terra_space_issue_v2_valid_events
    where id = valid_event_id;
   if visible_count <> 1 then
     raise exception 'FAIL: validated event from valid Issue was not visible';
   end if;
   select count(*) into visible_count
-    from public.terra_space_issue_v2_valid_events
+    from terra_space.terra_space_issue_v2_valid_events
    where id = unvalidated_event_id;
   if visible_count <> 0 then
     raise exception 'FAIL: unvalidated event appeared in the analytical view';
@@ -147,12 +147,12 @@ declare
 begin
   select endpoint.relationship_id, endpoint.location_id
     into v_relationship_id, v_location_id
-    from public.terra_space_issue_v2_relationship_endpoints endpoint
+    from terra_space.terra_space_issue_v2_relationship_endpoints endpoint
    where endpoint.role = 'source'
    order by endpoint.created_at desc
    limit 1;
   begin
-    insert into public.terra_space_issue_v2_relationship_endpoints
+    insert into terra_space.terra_space_issue_v2_relationship_endpoints
       (relationship_id, role, actor_name, location_id, evidence_quote)
     values (v_relationship_id, 'source', 'Second source actor', v_location_id,
             'Source actor acted on target actor in the stated places.');

@@ -29,7 +29,7 @@ def _seed_issue(
     issue_id = str(uuid.uuid4())
     conn.execute(
         """
-        insert into public.terra_space_issue_v2_runs
+        insert into terra_space.terra_space_issue_v2_runs
             (id, source_id, status, stage, processed_at)
         values (%s, %s, 'succeeded', 'complete', %s)
         """,
@@ -37,7 +37,7 @@ def _seed_issue(
     )
     conn.execute(
         """
-        insert into public.terra_space_issue_v2_issues
+        insert into terra_space.terra_space_issue_v2_issues
             (id, run_id, source_id, label, summary, evidence_quote, validated_at, created_at)
         values (%s, %s, %s, %s, %s, %s, %s, %s)
         """,
@@ -59,7 +59,7 @@ def _seed_issue(
         created_at = processed_at + timedelta(seconds=index)
         conn.execute(
             """
-            insert into public.terra_space_issue_v2_events
+            insert into terra_space.terra_space_issue_v2_events
                 (id, issue_id, run_id, title, evidence_quote, validated_at, created_at)
             values (%s, %s, %s, %s, %s, %s, %s)
             """,
@@ -74,7 +74,7 @@ def _seed_relationship(conn, *, event_id: str, label: str, created_at: datetime)
     target_location_id = str(uuid.uuid4())
     conn.execute(
         """
-        insert into public.terra_space_issue_v2_locations
+        insert into terra_space.terra_space_issue_v2_locations
             (id, label, latitude, longitude, evidence_quote, created_at)
         values
             (%s, %s, 1.0, 2.0, %s, %s),
@@ -93,7 +93,7 @@ def _seed_relationship(conn, *, event_id: str, label: str, created_at: datetime)
     )
     conn.execute(
         """
-        insert into public.terra_space_issue_v2_relationships
+        insert into terra_space.terra_space_issue_v2_relationships
             (id, event_id, evidence_quote, created_at)
         values (%s, %s, %s, %s)
         """,
@@ -101,7 +101,7 @@ def _seed_relationship(conn, *, event_id: str, label: str, created_at: datetime)
     )
     conn.execute(
         """
-        insert into public.terra_space_issue_v2_relationship_endpoints
+        insert into terra_space.terra_space_issue_v2_relationship_endpoints
             (relationship_id, role, actor_name, location_id, evidence_quote, created_at)
         values
             (%s, 'source', %s, %s, %s, %s),
@@ -121,7 +121,7 @@ def _seed_relationship(conn, *, event_id: str, label: str, created_at: datetime)
         ),
     )
     conn.execute(
-        "update public.terra_space_issue_v2_relationships set validated_at = %s where id = %s",
+        "update terra_space.terra_space_issue_v2_relationships set validated_at = %s where id = %s",
         (created_at, relationship_id),
     )
     return relationship_id
@@ -190,7 +190,7 @@ def test_event_detail_omits_an_incomplete_relationship(bridge_db, bridge_read_on
     )
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_relationships
+        insert into terra_space.terra_space_issue_v2_relationships
             (id, event_id, evidence_quote, created_at)
         values (%s, %s, 'Incomplete relationship evidence', %s)
         """,
@@ -250,7 +250,7 @@ def test_read_projections_only_expose_complete_current_relationships(
     _seed_relationship(bridge_db, event_id=event_id, label="Complete", created_at=now)
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_relationships
+        insert into terra_space.terra_space_issue_v2_relationships
             (id, event_id, evidence_quote, created_at)
         values (%s, %s, 'Incomplete relationship evidence', %s)
         """,
@@ -259,7 +259,7 @@ def test_read_projections_only_expose_complete_current_relationships(
 
     with bridge_read_only_engine.connect() as conn:
         rows = conn.execute(
-            text("select id from public.terra_space_issue_v2_valid_relationships where event_id = :event_id"),
+            text("select id from terra_space.terra_space_issue_v2_valid_relationships where event_id = :event_id"),
             {"event_id": event_id},
         ).all()
 
@@ -281,7 +281,7 @@ def test_later_failed_run_hides_prior_issue_events_and_relationships(
     _seed_relationship(bridge_db, event_id=event_id, label="Prior", created_at=now)
     bridge_db.execute(
         """
-        insert into public.terra_space_issue_v2_runs
+        insert into terra_space.terra_space_issue_v2_runs
             (id, source_id, status, stage, reason, processed_at)
         values (%s, %s, 'failed', 'persistence', 'Database write failed.', %s)
         """,

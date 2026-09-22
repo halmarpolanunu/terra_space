@@ -26,7 +26,7 @@ database will be preserved as a dated, read-only rollback archive but its rows w
 into Supabase.
 
 All pipeline-owned tables will use literal `phase1_`, `phase2_`, or `phase3_` prefixes in the
-Supabase `public` schema. Every table and important column will have a PostgreSQL `COMMENT`
+Supabase `terra_space` schema. Every table and important column will have a PostgreSQL `COMMENT`
 explaining its role in plain language. Application-wide configuration may use a non-phase name
 when it genuinely serves every phase.
 
@@ -41,14 +41,17 @@ when it genuinely serves every phase.
 - `phase1_processing_runs` — append-only history of Phase 1 cleaning attempts, outcomes, errors,
   and relevant raw model output.
 
-## Phase 2 — detect event candidates
+## Phase 2 — detect Main Issues
 
-- `phase2_event_candidates` — the latest grounded candidate-detection result for each Phase 1
-  source.
-- `phase2_candidate_runs` — append-only history of every Phase 2 main-issue and candidate-detection
-  execution.
+- `phase2_main_issues` — the latest grounded Main Issue result for each Phase 1 source.
+- `phase2_main_issue_processing_runs` — append-only history of every Phase 2 Main-Issue execution.
 
-## Phase 3 — extract and govern events
+## Phase 3 — detect Event Candidates and later govern events
+
+- `phase3_event_candidates` — the latest grounded candidate-detection result for each Phase 1
+  source, using its Phase 2 Main Issue as context.
+- `phase3_event_candidate_processing_runs` — append-only history of every Phase 3
+  candidate-detection execution.
 
 - `phase3_events` — the current authoritative event records used by Terra Insight and the
   Dashboard.
@@ -141,8 +144,8 @@ The work will be decomposed into controlled implementation plans:
   and authority would become ambiguous.
 - **Migrate all existing SQLite rows.** Rejected by owner choice; a fresh Supabase start is simpler,
   while the old SQLite database remains available as an archive.
-- **Separate PostgreSQL schemas named after each phase.** Rejected because public-schema tables with
-  literal phase prefixes are easier to understand in Supabase and simpler for n8n nodes.
+- **Separate PostgreSQL schemas named after each phase.** Rejected because one dedicated
+  `terra_space` schema with literal phase prefixes is easier to understand than a schema per phase.
 
 # Consequences
 

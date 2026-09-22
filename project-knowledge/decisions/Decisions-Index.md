@@ -8,6 +8,19 @@ status: active
 
 # Decisions
 
+- [Phase 5D Deterministic Duplicate Recommendations](Phase-5D-Deterministic-Duplicate-Recommendations.md) - Strict, model-free pair comparison for explainable possible-duplicate recommendations without merging.
+- [Phase 5C Timeline and Geography](Phase-5C-Timeline-and-Geography.md) - Uses honest timeline references, approved offline coordinates, separate Event Geography and Actor Network outputs, and database-reviewed suggestions without turning AI proposals into facts.
+- [Phase 5B Event Type Classification](Phase-5B-Event-Type-Classification.md) - Uses a bounded local classifier plus independent safeguard, up to two corrective retries, visible Unclassified results, and optional database-reviewed proposals without automatic taxonomy expansion.
+- [Phase 5 Event Generation and Qualification](Phase-5-Conservative-Event-Drafts.md) - Uses one checkpointed n8n workflow to make all retained events visible, prepare timeline and map data, recommend duplicates, and qualify safe final events without automatic merging.
+- [Phase 4 Event Fact Extraction](Phase-4-Event-Fact-Extraction.md) - Approved extraction boundary, amended to use narrow date/epistemic, actor-only, and location-only model steps and safeguards.
+- [Phase 3 Event Candidate Detection](Phase-3-Event-Candidate-Detection.md) - Detects complete, evidence-grounded Event Candidates while carrying review flags forward instead of stopping the pipeline.
+- [Phase 2 Review-Flagged Results](Phase-2-Review-Flagged-Results.md) - Keeps evidence-grounded proposed Main Issues as simple review flags while processing continues.
+- [Phase 2 Main-Issue Detection](Phase-2-Main-Issue-Detection.md) - Establishes a Main-Issue-only, evidence-grounded Phase 2 workflow before event-candidate work.
+- [Verified Phase 1 Cleaning Baseline](Verified-Phase-1-Cleaning-Baseline.md) - Locks the owner-verified local article cleaner and its safety checks as the baseline for future changes.
+- [Separated Manual Intake and Deferred Queue Processing](Separated-Manual-Intake-and-Deferred-Queue-Processing.md) - Separates one-at-a-time article collection from owner-triggered batch Phase 1 processing.
+- [Terra Space n8n Workflow Folder Placement](Terra-Space-n8n-Workflow-Folder-Placement.md) - Every newly created Terra Space n8n workflow belongs in the `Terra_Space` folder.
+- [Active Workflow Boundary](Active-Workflow-Boundary.md) - Superseded record of the former five-workflow boundary; the owner reset the pipeline on 2026-08-24.
+- [Issue-first Independent Evidence Retention](Issue-First-Independent-Evidence-Retention.md) - Keeps grounded Issues and Events while omitting only optional relationships that lack complete explicit evidence.
 - [Pipeline-Only Data Correction](Pipeline-Only-Data-Correction.md) - Terra Insight and Terra Sense do not provide event or issue review; data defects are corrected in the pipeline and corrected sources are reprocessed.
 - [Fresh Phase-Prefixed Supabase Architecture](Fresh-Phase-Prefixed-Supabase-Architecture.md) - replaces SQLite with a fresh local Supabase source of truth organized by explicit Phase 1, Phase 2, and Phase 3 table roles, with immediate Dashboard visibility and human authority.
 - [One-Click Full News Processing](One-Click-Full-News-Processing.md) - Adds a master n8n workflow that runs the three established local processing stages from one article submission while retaining reusable individual stages.
@@ -26,7 +39,7 @@ status: active
 - [Local Supabase Storage Direction](Local-Supabase-Storage-Direction.md) - superseded plan to copy SQLite data into local Supabase; replaced by the fresh phase-prefixed architecture.
 - [Terra Insight and Terra Sense Product Organization](Terra-Insight-and-Terra-Sense-Product-Organization.md) - Organizes the product into an analysis workspace and a separate local data-processing workflow.
 - [Initial Global International Relations Event Taxonomy](Initial-Global-IR-Event-Taxonomy.md) - Defines the initial concise domain-first event types for global international-relations monitoring.
-- [Closed Event Type Taxonomy](Closed-Event-Type-Taxonomy.md) - Prevents local AI from suggesting types; unmatched extracted events keep a blank type for human review.
+- [Closed Event Type Taxonomy](Closed-Event-Type-Taxonomy.md) - Superseded blanket no-suggestion policy; Phase 5B now permits optional pending proposals while preserving human approval authority.
 - [Single Source Date and Event Date](Single-Source-Date-and-Event-Date.md) - Proposed simplification to one Publication Date for documents and one Event Date for extracted events.
 - [Event Taxonomy Tree and Management](Event-Taxonomy-Tree-and-Management.md) - Replaces flat Event Type management with a four-level owner-managed tree and a calmer Terra Sense taxonomy workspace.
 - [Staged Event Detection Pipeline](Staged-Event-Detection-Pipeline.md) - superseded: replaced the single extraction call with a Signal Parser plus four narrow per-candidate classifiers; retired in favor of n8n-only event detection.

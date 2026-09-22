@@ -1,0 +1,35 @@
+# Local Supabase project configuration for the preserved Terra Space database.
+project_id = "local-supabase"
+
+[api]
+enabled = true
+port = 55421
+schemas = ["public", "terra_space", "graphql_public"]
+extra_search_path = ["public", "terra_space", "extensions"]
+max_rows = 1000
+
+[db]
+port = 55422
+shadow_port = 55420
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+sql_paths = []
+
+[studio]
+enabled = true
+port = 55423
+api_url = "http://127.0.0.1"
+
+[local_smtp]
+enabled = true
+port = 55424
+
+[analytics]
+enabled = true
+port = 55427

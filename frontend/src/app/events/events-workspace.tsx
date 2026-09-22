@@ -10,6 +10,7 @@ import { EventFilterBar, type DocumentOption } from "@/components/event-filter-b
 import { EventList } from "@/components/event-list";
 import { FramedPanel } from "@/components/framed-panel";
 import { PageHeader } from "@/components/page-header";
+import { Phase5EventSection } from "@/components/phase5-event-section";
 import { clearEventFilters, hasActiveEventFilters, parseEventFilters, toEventFilterSearch, type EventFilters, type EventSort } from "@/lib/event-filters";
 import {
   archiveEvent,
@@ -29,6 +30,7 @@ import {
 } from "@/lib/events-api";
 import { listDocuments } from "@/lib/documents-api";
 import { hideEvent, unhideEvent, useHiddenEventIds } from "@/lib/hidden-events";
+import { listPhase5Events, type Phase5Event } from "@/lib/bridge-api";
 
 // Full read/write authority now lives here -- Supabase's phase3_events is the source of truth
 // (see project-knowledge/decisions/Fresh-Phase-Prefixed-Supabase-Architecture.md). This replaced
@@ -44,6 +46,7 @@ export function EventsWorkspace() {
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
   const [error, setError] = useState<string>();
   const [selectedEvent, setSelectedEvent] = useState<EventRead | null>(null);
+  const [phase5Events, setPhase5Events] = useState<Phase5Event[]>([]);
   const [editing, setEditing] = useState(false);
   const hiddenEventIds = useHiddenEventIds();
 
@@ -68,12 +71,14 @@ export function EventsWorkspace() {
       listEventTypes(),
       listActors(),
       listDocuments(),
-    ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments]) => {
+      listPhase5Events().catch(() => []),
+    ]).then(([nextEvents, nextEventTypes, nextActors, nextDocuments, nextPhase5Events]) => {
       if (!active) return;
       setAllEvents(nextEvents);
       setEventTypes(nextEventTypes);
       setActors(nextActors);
       setDocuments(nextDocuments.map(({ id, title }) => ({ id, title })));
+      setPhase5Events(nextPhase5Events);
       setError(undefined);
     }).catch(() => { if (active) setError("Terra Space backend is unavailable. Try again after it starts."); });
     return () => { active = false; };
@@ -168,5 +173,6 @@ export function EventsWorkspace() {
         />
       ) : <FramedPanel className="events-list-panel" title="Event register"><EventList events={events} hasActiveFilters={hasActiveEventFilters(filters)} onClearFilters={() => changeFilters(clearEventFilters(filters))} onDelete={removeEvent} onSelect={setSelectedEvent} onSortChange={changeSort} sort={filters.sort} /></FramedPanel>}
     </div>
+    <Phase5EventSection events={phase5Events} showMap={false} />
   </section></AppShell>;
 }
