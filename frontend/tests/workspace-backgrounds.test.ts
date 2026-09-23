@@ -4,6 +4,9 @@ import { getWorkspaceBackground } from "@/lib/workspace-backgrounds";
 
 describe("getWorkspaceBackground", () => {
   it.each([
+    ["/home", "/backgrounds/dashboard.webp"],
+    ["/explore", "/backgrounds/events.webp"],
+    ["/prepare", "/backgrounds/sense.webp"],
     ["/dashboard", "/backgrounds/dashboard.webp"],
     ["/documents", "/backgrounds/documents.webp"],
     ["/event-review", "/backgrounds/event-review.webp"],

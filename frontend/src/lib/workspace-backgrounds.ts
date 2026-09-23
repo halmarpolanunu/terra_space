@@ -1,4 +1,7 @@
 const WORKSPACE_BACKGROUNDS = {
+  "/home": "/backgrounds/dashboard.webp",
+  "/explore": "/backgrounds/events.webp",
+  "/prepare": "/backgrounds/sense.webp",
   "/dashboard": "/backgrounds/dashboard.webp",
   "/documents": "/backgrounds/documents.webp",
   "/event-review": "/backgrounds/event-review.webp",

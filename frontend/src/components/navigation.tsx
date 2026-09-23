@@ -1,63 +1,28 @@
 import Link from "next/link";
 
-export const NAV_GROUPS = [
-  {
-    label: "Terra Insight",
-    items: [
-      { href: "/dashboard", label: "Dashboard" },
-      { href: "/issues", label: "Issues" },
-      { href: "/events", label: "Events" },
-    ],
-  },
-  {
-    label: "Terra Sense",
-    items: [
-      { href: "/sense", label: "Overview" },
-      { href: "/documents", label: "Sources" },
-      { href: "/event-review", label: "Event Review" },
-      { href: "/sense/event-types", label: "Event Taxonomy" },
-      { href: "/sense/actors", label: "Actors" },
-    ],
-  },
-  {
-    label: "Settings",
-    items: [{ href: "/settings", label: "Local AI" }],
-  },
+const NAV = [
+  { href: "/home", label: "Home", children: [] },
+  { href: "/explore", label: "Explore", children: [
+    { href: "/issues", label: "Issues" }, { href: "/events", label: "Earlier events" }, { href: "/dashboard", label: "Earlier dashboard" },
+  ] },
+  { href: "/prepare", label: "Prepare", children: [
+    { href: "/documents", label: "Sources" }, { href: "/sense", label: "Pipeline overview" },
+    { href: "/event-review", label: "Earlier Event Review" }, { href: "/sense/event-types", label: "Event taxonomy" },
+    { href: "/sense/actors", label: "Actors" },
+  ] },
+  { href: "/settings", label: "Settings", children: [] },
 ] as const;
 
-type NavigationProps = { currentPath: string };
-
-export function Navigation({ currentPath }: NavigationProps) {
-  return (
-    <nav aria-label="Primary navigation">
-      {NAV_GROUPS.map((group, groupIndex) => (
-        <section aria-labelledby={`navigation-group-${groupIndex}`} key={group.label}>
-          <h2 id={`navigation-group-${groupIndex}`}>{group.label}</h2>
-          <ul className="nav-list">
-            {group.items.map((item, itemIndex) => {
-              const index = NAV_GROUPS.slice(0, groupIndex).reduce(
-                (total, previousGroup) => total + previousGroup.items.length,
-                itemIndex,
-              );
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    aria-current={currentPath === item.href ? "page" : undefined}
-                    className="nav-link"
-                    href={item.href}
-                  >
-                    <span aria-hidden="true" className="nav-index">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span>{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
-    </nav>
-  );
+export function Navigation({ currentPath }: { currentPath: string }) {
+  return <nav aria-label="Primary navigation"><ul className="nav-list">
+    {NAV.map((item, index) => <li key={item.href}>
+      <Link href={item.href} className="nav-link nav-primary" aria-current={currentPath === item.href ? "page" : undefined}
+        data-active-parent={item.children.some((child) => child.href === currentPath) ? "true" : undefined}>
+        <span aria-hidden="true" className="nav-index">{String(index + 1).padStart(2, "0")}</span><span>{item.label}</span>
+      </Link>
+      {item.children.length > 0 && <ul className="nav-sublist">
+        {item.children.map((child) => <li key={child.href}><Link href={child.href} className="nav-link nav-secondary" aria-current={currentPath === child.href ? "page" : undefined}>{child.label}</Link></li>)}
+      </ul>}
+    </li>)}
+  </ul></nav>;
 }

@@ -23,7 +23,7 @@ export function AppShell({ currentPath, children }: AppShellProps) {
         Skip to content
       </a>
       <header className="top-status-bar">
-        <Link aria-label="Terra Space home" className="brand" href="/dashboard">
+        <Link aria-label="Terra Space home" className="brand" href="/home">
           <Image
             src="/brand/terraspace-micro-dark.svg"
             alt=""

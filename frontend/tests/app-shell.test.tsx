@@ -24,8 +24,8 @@ describe("AppShell", () => {
       </AppShell>,
     );
 
-    expect(screen.getByText("Terra Insight")).toBeVisible();
-    expect(screen.getByText("Terra Sense")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Explore" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Prepare" })).toBeVisible();
     expect(screen.getByText("Settings")).toBeVisible();
     expect(screen.getByRole("link", { current: "page" })).toHaveAttribute(
       "href",
@@ -47,7 +47,7 @@ describe("AppShell", () => {
     expect(within(statusBar).queryByText("Offline", { exact: true })).not.toBeInTheDocument();
     expect(within(statusBar).getByRole("link", { name: "Terra Space home" })).toHaveAttribute(
       "href",
-      "/dashboard",
+      "/home",
     );
     expect(screen.getByRole("main")).toHaveAttribute("data-route", "/dashboard");
     const shell = document.querySelector(".app-shell");

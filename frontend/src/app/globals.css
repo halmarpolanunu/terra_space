@@ -91,6 +91,9 @@ body {
   border-left-color: var(--accent);
 }
 .nav-link:hover { color: var(--text); }
+.nav-link[data-active-parent="true"] { color: var(--text); background: var(--accent-wash); border-left-color: var(--accent); }
+.nav-sublist { list-style: none; padding: 0 0 0.45rem 1.4rem; margin: 0; }
+.nav-secondary { font-size: 0.72rem; padding-block: 0.4rem; text-transform: none; letter-spacing: 0.01em; }
 .nav-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .main-content { padding: clamp(1.5rem, 4vw, 3rem); }
 
