@@ -1,0 +1,27 @@
+import { describe, expect, it } from "vitest";
+import type { Phase5Event } from "@/lib/bridge-api";
+import { filterPhase5Events, phase5MapEvents, summarizePhase5Events } from "@/lib/phase5-view-model";
+
+const base: Phase5Event = {
+  id: "one", phase1_source_id: "source", title: "One", description: "Evidence based event", evidence_quote: "Evidence",
+  source_publication_date: null, event_path: "NORMAL", phase5a_status: "PREPARED",
+  phase3_result_status: "READY", phase3_result_reason: null, phase3_candidate_status: "VALID", phase3_candidate_reason: null,
+  phase4_status: "PREPARED", phase4_extraction_status: "FACTS_FOUND", phase4_safeguard_status: "ACCEPT", phase4_review_reason: null, phase4_error_message: null,
+  facts: {}, classification: { status: "CLASSIFIED", event_type_id: "type", event_type_name: "Conflict", reason: null, safeguard_status: "ACCEPT", safeguard_reason: null },
+  timeline: { status: "PREPARED", event_date: "2026-09-01", event_date_precision: "exact", reference_date: null, reference_basis: null, limitations: [], error_message: null },
+  event_geographies: [{ resolution_status: "RESOLVED", latitude: 1, longitude: 2, canonical_name: "Place" }], event_geography_status: "RESOLVED",
+  actor_geographies: [], actor_geography_status: null, qualification: { status: "FINAL", reason_codes: [] }, duplicate_recommendations: [],
+  created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z",
+};
+const notFinal: Phase5Event = { ...base, id: "two", title: "Two", event_geographies: [], actor_geographies: [{ resolution_status: "RESOLVED", latitude: 4, longitude: 5 }], qualification: { status: "NOT_FINAL", reason_codes: ["REVIEW"] } };
+const pending: Phase5Event = { ...base, id: "three", title: "Three", timeline: { ...base.timeline, event_date: null, reference_date: "2026-09-03" }, event_geographies: [{ resolution_status: "UNRESOLVED", latitude: 4, longitude: 5 }], qualification: { status: null, reason_codes: [] } };
+
+describe("Phase 5 view model", () => {
+  it("separates qualification, unknown dates, and resolved event locations", () => {
+    const events = [base, notFinal, pending];
+    expect(summarizePhase5Events(events)).toMatchObject({ total: 3, final: 1, notFinal: 1, unqualified: 1, mapped: 1, undated: 1, byMonth: [{ month: "2026-09", count: 2 }] });
+    expect(phase5MapEvents(events).flatMap((event) => event.locations)).toHaveLength(1);
+    expect(filterPhase5Events(events, { q: "", status: "NOT_FINAL", type: "" })).toEqual([notFinal]);
+    expect(events).toHaveLength(3);
+  });
+});
