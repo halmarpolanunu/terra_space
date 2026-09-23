@@ -10,22 +10,30 @@ status: active
 
 ## Latest update
 
-**2026-09-23 guided command center implemented locally; real-data verification pending:** the
+**2026-09-23 guided command center live-data review:** the
 owner chose native execution. The `codex/guided-command-center` branch now has four primary
 destinations (Home, Explore, Prepare, Settings), a shared Phase 5 view model, a globe-led Home
 with linked charts, filtered map/timeline/list and evidence detail in Explore, a read-only six-stage
 Prepare view, and a presentation URL state. Existing routes remain reachable with clear earlier
 labels. A final review fixed shared map markers, rapid search input, pending qualification links,
-date and geography interpretation, and explicit Prepare count scopes. Frontend verification
-passed: 243 tests, lint, and production build. Browser checks with
-a temporary fixture covered populated and failure states; no fixture data was added to the app.
-Docker was unavailable and `data/maps/world-low-detail.pmtiles` is absent in this worktree, so
-the real local Supabase records and rendered globe could not be reviewed. Prepare Phase 5 counts
-cover only records returned by the current read API; failures before a prepared record exists
-are outside those counts. Next: start the normal
-local services, build or provide the offline map package, then review the new screens with actual
-Phase 5 data and the planned 90–150% browser zoom checks. No n8n workflow or database content was
-changed by this redesign.
+date and geography interpretation, and explicit Prepare count scopes. With Docker running, the
+local app and Supabase were started; the generated offline map and local `.env` were copied from
+the owner's main checkout into this worktree for review. No data was written. The real API returned
+109 Phase 5 records, including 99 Final, 10 Not Final, and 31 with resolved Event Geography. The
+globe rendered with real pins, a shared marker opened each event, Explore showed source evidence,
+and presentation mode retained the data labels. Live review also found a narrow-screen evidence
+panel overlap and a Prepare API tied to an old table. Both were fixed. Prepare now reads 50 current
+source reviews and 109 candidates; 10 candidates need review. Among 109 retained Phase 5 records,
+10 Phase 4 results need review and 56 are safely incomplete. Prepare's Phase 5 counts still exclude
+failures before a prepared record exists. The older Event Review route still uses its retired
+candidate table and can fail; it needs a separate current-schema migration. Frontend verification:
+243 tests, lint, and production build passed; the backend compiled and the new read endpoint
+returned 50 reviews. An isolated Chrome renderer checked effective 90%, 100%, 110%, 125%, and
+150% layout widths without horizontal clipping. A 16:9 capture prompted a smaller Home header so
+the globe is visible sooner; a follow-up 16:9 capture confirmed the layout and map render. Direct
+page-zoom controls in the in-app browser did not respond, so exact Chrome/Edge page-zoom behavior
+remains an optional manual check. No n8n workflow or database content was changed by this redesign.
+Next: review the branch for integration and push; repair the older Event Review route separately.
 
 **2026-09-23 redesign plan ready for owner review:** the owner approved the written guided command
 center design. A six-task [implementation plan](plans/2026-09-23-guided-command-center-redesign.md)

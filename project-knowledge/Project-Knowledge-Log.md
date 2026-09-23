@@ -8,6 +8,23 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-23 — Guided command center live-data check
+
+- Started the owner's local Supabase and Terra Space containers, reusing copies of the existing
+  local connection file and offline map package in this worktree. The read-only UI showed 109
+  Phase 5 records, including 31 mapped records; the globe, clustered marker selection, evidence
+  detail, and presentation state rendered with live data.
+- Fixed a narrow-screen evidence-panel stacking issue. Added a current Phase 2/3 read endpoint
+  for Prepare because its former candidate-review API queried a retired table. Live Prepare now
+  shows 50 source reviews, 109 candidates, 10 candidates needing review, and 109 Phase 5 records.
+  Phase 4 distinguishes 10 requiring review from 56 safe but incomplete results.
+- Frontend tests passed 243/243, lint and production build passed, backend compiled, and the new
+  read endpoint returned 50 reviews. Isolated Chrome captures at effective 90–150% widths showed
+  no horizontal clipping. The first 16:9 capture showed too little of the globe above the fold;
+  a tighter Home header improved its placement, and a final 16:9 capture showed the map. Direct
+  browser page zoom remains untested because the in-app browser ignored its zoom shortcuts. The
+  older Event Review route still uses the retired candidate table and remains a separate repair.
+
 ## 2026-09-23 — Guided command center implementation checkpoint
 
 - Final review repairs: shared map markers now reveal their events; Explore search keeps rapid

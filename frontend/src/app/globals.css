@@ -1298,6 +1298,8 @@ body {
     padding: 1.25rem;
   }
 
+  .main-content:has([aria-label="Event evidence detail"]) { z-index: 4; }
+
   .sense-flow-stages { gap: 0.75rem; }
   .sense-flow-stages > li > article { padding: 1rem; }
 }

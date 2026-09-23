@@ -24,7 +24,7 @@ from app.schemas.event import (
     EventTypeRead,
     LocationRead,
 )
-from app.schemas.supabase_bridge import BridgeCandidateReviewRead, BridgeSourceRead
+from app.schemas.supabase_bridge import BridgeCandidateReviewRead, BridgeSourceRead, PipelineReviewRead
 
 _SOURCE_COLUMNS = """
     id, title, publication_date, source_domain, source_url, author, collection_source,
@@ -71,6 +71,32 @@ def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewR
             )
         ).mappings()
         return [BridgeCandidateReviewRead.model_validate(dict(row)) for row in rows]
+
+
+def list_pipeline_reviews(engine: Engine) -> list[PipelineReviewRead]:
+    """Current read-only Phase 2 and Phase 3 records, one row per source."""
+
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            select m.phase1_source_id, s.title as source_title,
+                   m.status as main_issue_status,
+                   coalesce(c.detection_status, 'NOT_RUN') as event_detection_status,
+                   coalesce(c.candidates, '[]'::jsonb) as candidates
+            from terra_space.terra_space_phase2_main_issues m
+            join terra_space.terra_space_phase1_sources s on s.id = m.phase1_source_id
+            left join terra_space.terra_space_phase3_event_candidates c
+              on c.phase1_source_id = m.phase1_source_id
+            order by m.processed_at desc
+        """)).mappings()
+        return [PipelineReviewRead(
+            phase1_source_id=str(row["phase1_source_id"]),
+            source_title=row["source_title"],
+            main_issue_status=row["main_issue_status"],
+            event_detection_status=row["event_detection_status"],
+            event_candidates=[{"title": candidate.get("title") or "Untitled candidate",
+                               "status": candidate.get("status") or "UNKNOWN"}
+                              for candidate in row["candidates"]],
+        ) for row in rows]
 
 
 _EVENT_QUERY = """
