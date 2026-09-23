@@ -12,12 +12,13 @@ type WorkspaceShellStyle = CSSProperties & {
 };
 
 export function AppShell({ currentPath, children, presentation = false }: AppShellProps) {
+  const cinematic = currentPath === "/home" || currentPath === "/explore" || currentPath === "/prepare";
   const style: WorkspaceShellStyle = {
     "--workspace-background-image": `url("${getWorkspaceBackground(currentPath)}")`,
   };
 
   return (
-    <div className="app-shell" data-route={currentPath} data-presentation={presentation || undefined} style={style}>
+    <div className="app-shell" data-route={currentPath} data-cinematic={cinematic || undefined} data-presentation={presentation || undefined} style={style}>
       <WorkspaceAmbiance />
       <a className="skip-link" href="#main-content">
         Skip to content
@@ -36,15 +37,16 @@ export function AppShell({ currentPath, children, presentation = false }: AppShe
             Terra<span className="brand-accent">Space</span>
           </span>
         </Link>
+        {cinematic && !presentation && <div className="header-navigation"><Navigation currentPath={currentPath} /></div>}
         <div className="system-readouts">
           <span className="system-local-readout">Local // offline-safe</span>
         </div>
       </header>
-      <aside className="sidebar">
+      {!cinematic && <aside className="sidebar">
         <p className="sidebar-label">Workspace</p>
         <Navigation currentPath={currentPath} />
         <p className="sidebar-note">Local intelligence workspace</p>
-      </aside>
+      </aside>}
       <main className="main-content" data-route={currentPath} id="main-content">
         {children}
       </main>

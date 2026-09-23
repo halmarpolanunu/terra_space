@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Owner-approved cinematic visual refinement
+
+- The owner preferred the cinematic Atlas-first example after finding the first implementation's
+  buttons, typography, and repeated square panels too rigid. The guided command center decision
+  now records that visual amendment.
+- Home now puts the existing globe and live Phase 5 totals in the first-screen composition.
+  Explore has a full-width map canvas, and Prepare's stages read as a connected sequence.
+  A compact top navigation joins the three new destinations while earlier screens keep their
+  previous shell. Browser review with the live local API showed 109 events and 31 mapped records.
+- The focused Home, Explore, and Prepare tests passed 10/10. The changed components passed
+  ESLint and the final production build passed. A live browser check confirmed the globe, linked
+  totals, and pipeline counts; a narrow viewport showed Home stacking without horizontal
+  clipping. Project Knowledge validation passed with 0 errors and 0 warnings.
+
 ## 2026-09-23 — Guided command center live-data check
 
 - Started the owner's local Supabase and Terra Space containers, reusing copies of the existing

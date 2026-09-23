@@ -44,3 +44,62 @@
 .cluster a { color: var(--text); }
 @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); } .metrics { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 650px) { .intro { display: block; } .action { display: inline-block; margin-top: 1rem; } .rail, .metrics { grid-template-columns: 1fr; } }
+
+/* Cinematic Home: the real globe leads, while context floats above it. */
+.home { color: #f3f1e9; }
+.intro { margin-bottom: 1.9rem; }
+.intro h1 { max-width: none; margin: .6rem 0; font-size: clamp(2.7rem, 4.2vw, 4.4rem); line-height: 1.04; letter-spacing: -.065em; text-wrap: balance; }
+.intro p:last-child { color: #bdc9bd; font-size: .98rem; }
+.scope { border: 0; padding: 0; margin: 0; color: #aab8ae; font-size: .69rem; }
+.scope span { color: #edbf77; }
+.actions { gap: 1.2rem; }
+.actions > a:first-child { color: #e2e8dc; text-decoration: none; font-weight: 600; }
+.actions > a:first-child:hover { color: #f4c87e; }
+.action { display: inline-flex; gap: .7rem; align-items: center; border-radius: .65rem; background: #f0bf73; padding: .9rem 1.2rem; box-shadow: 0 .6rem 2rem #e9b96c2d; transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease; }
+.action:hover { background: #ffd08a; transform: translateY(-2px); box-shadow: 0 .8rem 2.3rem #e9b96c45; }
+.action:active { transform: translateY(0); }
+.home a:focus-visible, .cluster button:focus-visible { outline: 2px solid #ffd08a; outline-offset: 3px; }
+.hero { position: relative; height: clamp(34rem, 63vh, 43rem); isolation: isolate; }
+.globePanel { position: absolute; inset: 0; overflow: hidden; padding: 0; border: 1px solid #dceaca30; border-radius: 1.4rem; background: radial-gradient(circle at 48% 42%, #264039, #142825 42%, #0a171a 80%); box-shadow: 0 2rem 5rem #0007, inset 0 0 5rem #d6d59c0d; }
+.globePanel::after { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: linear-gradient(90deg,#07111299,transparent 27%,transparent 69%,#07111280),linear-gradient(0deg,#071012cc,transparent 27%,transparent 71%,#07101299); }
+.globePanel :global(.world-map) { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 100%; margin: 0; border: 0; background: transparent; }
+.globePanel :global(.globe-rotation-controls) { position: absolute; z-index: 4; right: 1.5rem; bottom: 1.25rem; display: grid; justify-items: end; gap: .4rem; }
+.globeHeading { position: absolute; z-index: 2; top: 1.8rem; left: 2rem; pointer-events: none; }
+.globeHeading h2 { color: #f4f2eb; margin: 0; font-size: 1.2rem; }
+.globeHeading p { color: #cbd6cb; margin: .4rem 0 0; font-size: .82rem; }
+.globeFooter { position: absolute; z-index: 2; bottom: 1.5rem; left: 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; font-size: .8rem; }
+.globeFooter a { color: #dce6d9; text-decoration: none; }
+.globeFooter a:hover { color: #f5c87d; }
+.globeFooter strong { color: #fff; font-variant-numeric: tabular-nums; }
+.globeFooter > span { color: #a5b3a7; }
+.heroAside { position: absolute; z-index: 3; top: 1.7rem; right: 1.7rem; width: min(22rem, 31%); display: grid; gap: 1.2rem; }
+.brief { padding: 1.55rem; border: 1px solid #f0f1dc33; border-radius: 1rem; background: linear-gradient(150deg,#2a3731ee,#15211fee); box-shadow: 0 1.4rem 3.5rem #0007; backdrop-filter: blur(20px); }
+.eyebrow { color: #f3c981; font: 700 .67rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.brief h2 { color: #f4f1e7; margin: 1rem 0 .75rem; font-size: clamp(1.3rem,1.8vw,1.65rem); letter-spacing: -.04em; line-height: 1.2; text-wrap: balance; }
+.brief p { color: #c5d0c4; margin: 0 0 1rem; font-size: .82rem; line-height: 1.6; }
+.brief a { color: #f2c981; text-decoration: none; font-size: .81rem; font-weight: 700; }
+.attention { display: flex; gap: 1rem; padding: .2rem .35rem; color: #f4f1e7; text-decoration: none; }
+.attention > strong { color: #f5e6c9; font-size: 2.5rem; line-height: 1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+.attention > span { display: grid; gap: .2rem; }
+.attention b { font-size: .82rem; }
+.attention small { color: #c2cdc1; font-size: .72rem; line-height: 1.5; }
+.attention em { color: #f2c981; font-size: .73rem; font-style: normal; font-weight: 700; }
+.insights { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 2rem; margin: 2.2rem 0; }
+.insights .chart { min-width: 0; border: 0; border-top: 1px solid #e8ecdb30; background: transparent; padding: 1.1rem 0 0; }
+.panelTitle h2 { letter-spacing: -.02em; }
+.barRow { grid-template-columns: minmax(5rem,1fr) minmax(3rem,1.4fr) 2rem; min-height: 2.1rem; color: #dae3d9; }
+.barRow > strong { text-align: right; font-variant-numeric: tabular-nums; }
+.barTrack { border-radius: 1rem; background: #acbdad2b; height: .35rem; }
+.barTrack span { border-radius: inherit; background: #efbf78; }
+.statusRow { display: grid; gap: .25rem; }
+.statusRow > * { display: flex; justify-content: space-between; gap: 1rem; padding: .6rem .1rem; border: 0; border-bottom: 1px solid #e8ecdb1c; }
+.statusRow strong { color: #f3cd8e; font-size: 1rem; }
+.recent { border: 0; border-top: 1px solid #e8ecdb30; background: transparent; padding: 1rem 0 0; margin-top: 1.5rem; }
+.recent a { text-decoration: none; }
+.recent a:hover { color: #f3c981; }
+.notice { border-radius: 1rem; background: #17231fe6; }
+.mapEmpty { position: absolute; inset: 0; display: grid; place-items: center; border: 0; }
+.cluster { position: absolute; z-index: 4; left: 2rem; bottom: 4.5rem; width: min(22rem,75%); max-height: 15rem; overflow: auto; border-radius: .85rem; background: #101c1bf5; box-shadow: 0 1rem 2.5rem #0008; }
+@media (max-width: 68rem) { .heroAside { width: min(19rem,35%); } .insights { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 52rem) { .intro { display: block; } .actions { margin-top: 1.2rem; } .hero { height: auto; } .globePanel { position: relative; height: 32rem; } .heroAside { position: relative; top: auto; right: auto; width: 100%; padding-top: 1rem; grid-template-columns: 1fr; } .insights { margin-top: 2rem; } }
+@media (max-width: 40rem) { .intro { display: block; } .intro h1 { font-size: 2.7rem; } .actions { margin-top: 1.2rem; justify-content: space-between; } .action { margin-top: 0; } .globePanel { height: 29rem; } .globeHeading { top: 1.1rem; left: 1.2rem; } .globeFooter { left: 1.2rem; right: 1rem; bottom: 1.1rem; gap: .4rem; font-size: .7rem; } .heroAside { grid-template-columns: 1fr; } .insights { grid-template-columns: 1fr; gap: 1.4rem; } }

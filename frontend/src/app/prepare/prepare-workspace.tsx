@@ -31,10 +31,13 @@ export function PrepareWorkspace() {
     <div className={styles.meta}><span>READ-ONLY PIPELINE VIEW</span><Link href="/documents">Sources</Link><Link href="/sense/event-types">Event taxonomy</Link><Link href="/sense/actors">Actors</Link></div>
     <p className={styles.note}>Phase 5 stage counts cover retained records returned by the current Phase 5 API. Earlier event failures before a record is prepared are outside these counts.</p>
     <div className={styles.flow} aria-label="Pipeline progression">{stages.map((stage, index) => <section className={styles.stage} key={stage.id}>
-      <span className={styles.index}>{String(index + 1).padStart(2, "0")} / 06</span><h2>{stage.label}</h2><p>{stage.description}</p>
-      {availability[index].kind === "loading" ? <p role="status">Loading…</p> : availability[index].kind === "error" ? <p className={styles.error}>Count unavailable</p> : <div className={styles.count}><strong>{stage.total}</strong><span>{stage.scope}</span></div>}
-      {availability[index].kind === "ready" && <p className={styles.attention}>Attention: {stage.attention} {stage.attentionScope}</p>}
-      {availability[index].kind === "ready" && stage.note && <p className={styles.note}>{stage.note}</p>}
+      <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
+      <div className={styles.stageBody}><h2>{stage.label}</h2><p>{stage.description}</p></div>
+      <div className={styles.stageMetrics}>
+        {availability[index].kind === "loading" ? <p role="status">Loading…</p> : availability[index].kind === "error" ? <p className={styles.error}>Count unavailable</p> : <div className={styles.count}><strong>{stage.total}</strong><span>{stage.scope}</span></div>}
+        {availability[index].kind === "ready" && <p className={styles.attention}>Attention: {stage.attention} {stage.attentionScope}</p>}
+        {availability[index].kind === "ready" && stage.note && <p className={styles.note}>{stage.note}</p>}
+      </div>
       <Link href={stage.href}>Inspect {stage.label.toLowerCase()} →</Link>
     </section>)}</div>
     <section className={styles.attentionPanel}><h2>Attention and next steps</h2>

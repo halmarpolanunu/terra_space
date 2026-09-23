@@ -10,6 +10,21 @@ status: active
 
 ## Latest update
 
+**2026-09-24 cinematic UI refinement in progress:** after reviewing the first pull request, the
+owner said its buttons, text, and repeated boxes felt too rigid. The owner approved a more
+cinematic Atlas-first visual example. The open `codex/guided-command-center` branch now uses a
+compact top navigation on Home, Explore, and Prepare. Home places the real interactive globe in
+a large first-screen canvas with one context overlay and linked totals; Explore gives its map a
+full-width canvas; Prepare's six stages are a connected progression rather than equal cards.
+The older routes retain their existing navigation, and no database or n8n data changed. A live
+browser check with 109 current Phase 5 records showed the real globe and 31 mapped records.
+The three focused workspace test files passed 10/10, and the changed components passed ESLint
+and a final production build. Live browser review confirmed the globe and stage counts; a narrow
+viewport check confirmed the Home headline, actions, globe, and context panel stack without
+horizontal clipping. Project Knowledge validation passed with 0 errors and 0 warnings. The
+refinement is ready for owner review in pull request #2; the next product decision is whether
+this visual language should be carried into the older screens and Settings.
+
 **2026-09-23 guided command center live-data review:** the
 owner chose native execution. The `codex/guided-command-center` branch now has four primary
 destinations (Home, Explore, Prepare, Settings), a shared Phase 5 view model, a globe-led Home

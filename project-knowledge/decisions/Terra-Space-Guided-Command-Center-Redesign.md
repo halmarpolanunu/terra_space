@@ -105,6 +105,20 @@ Charts use real data and explicit labels. Hover, focus, selected, loading, empty
 must be designed together. Keyboard users can navigate every essential interaction. Text remains
 readable at the project's established 90–150% browser zoom checks.
 
+### Cinematic visual amendment — 2026-09-24
+
+After reviewing the first implementation, the owner found its buttons, text, and repeated square
+panels too rigid. The owner approved a more cinematic Atlas-first example. Home now gives the real
+globe most of the first viewport, with a short headline, small linked totals, and one restrained
+context overlay. Explore gives the map a full-width canvas before the timeline and event list.
+Prepare presents its six stages as a connected progression instead of six equal cards. These
+three destinations use a compact top navigation; earlier routes keep their existing shell.
+Warm amber remains an accent, while softer shapes, clearer type hierarchy, and fewer visible
+borders replace the repeated command-deck boxes. Motion and lighting support the globe without
+hiding evidence, labels, controls, or focus states. The existing globe, compass mark, and page
+backgrounds remain the source assets. The approved visual example was illustrative; it was not
+permission to replace real local data with sample text or a generated globe.
+
 ## Delivery order and verification
 
 1. Inspect the running app against current local Supabase data, capturing each major screen and
