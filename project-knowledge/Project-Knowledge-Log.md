@@ -8,6 +8,23 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-23 — Guided command center implementation checkpoint
+
+- Added the four-part navigation and the new Home, Explore, and Prepare routes on
+  `codex/guided-command-center`. Home and Explore use the current Phase 5 read API; earlier routes
+  remain available separately. Prepare reads sources, candidate reviews, and Phase 5 records
+  without adding pipeline edits or execution controls.
+- A pure view model keeps `FINAL`, `NOT_FINAL`, and pending qualification separate; unknown dates
+  are excluded from dated charts; only resolved Event Geography creates map pins. Chart and
+  summary links open their filtered records, and event detail shows the exact evidence quote.
+- Verification: 237/237 frontend tests, lint, and production build passed. Browser QA with a
+  temporary read-only fixture checked populated Home, Explore, Prepare, presentation mode, and
+  narrow-screen navigation. Browser QA caught and fixed a menu overlay and evidence panel header
+  overlap. The fixture was kept outside tracked product files.
+- Real-data visual QA remains open: Docker was unavailable, the app's normal backend did not run,
+  and the generated offline map package is absent in this worktree. The live Phase 5 API response,
+  globe rendering, and 90–150% zoom acceptance still need a pass on the owner's running setup.
+
 ## 2026-09-23 — Guided command center design approved and planned
 
 - The owner approved the written redesign direction. Its decision status is now active.

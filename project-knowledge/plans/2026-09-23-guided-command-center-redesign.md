@@ -3,7 +3,7 @@ type: Plan
 title: Guided Command Center Redesign Implementation Plan
 description: Testable release plan for the four-part navigation, Phase 5 Home and Explore views, Prepare observability, and presentation state.
 tags: [project-knowledge, plan, ui, ux, phase-5]
-status: planned
+status: in-progress
 ---
 
 # Guided Command Center Redesign Implementation Plan

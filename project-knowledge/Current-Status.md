@@ -10,6 +10,19 @@ status: active
 
 ## Latest update
 
+**2026-09-23 guided command center implemented locally; real-data verification pending:** the
+owner chose native execution. The `codex/guided-command-center` branch now has four primary
+destinations (Home, Explore, Prepare, Settings), a shared Phase 5 view model, a globe-led Home
+with linked charts, filtered map/timeline/list and evidence detail in Explore, a read-only six-stage
+Prepare view, and a presentation URL state. Existing routes remain reachable with clear earlier
+labels. Frontend verification passed: 237 tests, lint, and production build. Browser checks with
+a temporary fixture covered populated and failure states; no fixture data was added to the app.
+Docker was unavailable and `data/maps/world-low-detail.pmtiles` is absent in this worktree, so
+the real local Supabase records and rendered globe could not be reviewed. Next: start the normal
+local services, build or provide the offline map package, then review the new screens with actual
+Phase 5 data and the planned 90–150% browser zoom checks. No n8n workflow or database content was
+changed by this redesign.
+
 **2026-09-23 redesign plan ready for owner review:** the owner approved the written guided command
 center design. A six-task [implementation plan](plans/2026-09-23-guided-command-center-redesign.md)
 now covers a verified read-only baseline, shared Phase 5 data model, four-part navigation, new
