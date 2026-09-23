@@ -23,7 +23,8 @@ status: active
   no horizontal clipping. The first 16:9 capture showed too little of the globe above the fold;
   a tighter Home header improved its placement, and a final 16:9 capture showed the map. Direct
   browser page zoom remains untested because the in-app browser ignored its zoom shortcuts. The
-  older Event Review route still uses the retired candidate table and remains a separate repair.
+  older Event Review route was also updated to read the current split Phase 2/3 tables; the live
+  screen showed source 1 of 50 with its issue and candidates.
 
 ## 2026-09-23 — Guided command center implementation checkpoint
 

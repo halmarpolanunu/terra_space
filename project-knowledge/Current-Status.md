@@ -25,15 +25,15 @@ and presentation mode retained the data labels. Live review also found a narrow-
 panel overlap and a Prepare API tied to an old table. Both were fixed. Prepare now reads 50 current
 source reviews and 109 candidates; 10 candidates need review. Among 109 retained Phase 5 records,
 10 Phase 4 results need review and 56 are safely incomplete. Prepare's Phase 5 counts still exclude
-failures before a prepared record exists. The older Event Review route still uses its retired
-candidate table and can fail; it needs a separate current-schema migration. Frontend verification:
+failures before a prepared record exists. The older Event Review route now reads the current split
+Phase 2/3 tables as well; a live check showed 50 source reviews. Frontend verification:
 243 tests, lint, and production build passed; the backend compiled and the new read endpoint
 returned 50 reviews. An isolated Chrome renderer checked effective 90%, 100%, 110%, 125%, and
 150% layout widths without horizontal clipping. A 16:9 capture prompted a smaller Home header so
 the globe is visible sooner; a follow-up 16:9 capture confirmed the layout and map render. Direct
 page-zoom controls in the in-app browser did not respond, so exact Chrome/Edge page-zoom behavior
 remains an optional manual check. No n8n workflow or database content was changed by this redesign.
-Next: review the branch for integration and push; repair the older Event Review route separately.
+Next: choose whether to merge locally, push a review branch, or keep the worktree for further review.
 
 **2026-09-23 redesign plan ready for owner review:** the owner approved the written guided command
 center design. A six-task [implementation plan](plans/2026-09-23-guided-command-center-redesign.md)

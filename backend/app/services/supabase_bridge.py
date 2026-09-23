@@ -55,9 +55,44 @@ def get_bridge_source(engine: Engine, source_id: str) -> BridgeSourceRead | None
 
 
 def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewRead]:
-    """The latest Phase 2 result for every source that has one, newest first."""
+    """Read candidate reviews from the current split Phase 2/3 tables when present."""
 
     with engine.connect() as conn:
+        current_schema = conn.execute(text(
+            "select to_regclass('terra_space.terra_space_phase2_main_issues') is not null"
+        )).scalar()
+        if current_schema:
+            rows = conn.execute(text("""
+                select m.phase1_source_id, s.title as source_title,
+                       m.status as issue_status, m.issue_title, m.issue_description,
+                       m.evidence_quote as issue_evidence_quote,
+                       coalesce(c.detection_status, 'NOT_RUN') as event_detection_status,
+                       coalesce(c.candidates, '[]'::jsonb) as candidates,
+                       coalesce(c.processed_at, m.processed_at) as processed_at
+                from terra_space.terra_space_phase2_main_issues m
+                join terra_space.terra_space_phase1_sources s on s.id = m.phase1_source_id
+                left join terra_space.terra_space_phase3_event_candidates c
+                  on c.phase1_source_id = m.phase1_source_id
+                order by m.processed_at desc
+            """)).mappings()
+            return [BridgeCandidateReviewRead(
+                phase1_source_id=str(row["phase1_source_id"]),
+                source_title=row["source_title"],
+                main_issue_status=("FAILED" if row["issue_status"] == "FAILED" else
+                                   "MAIN_ISSUE_FOUND" if row["issue_title"] else "NO_MAIN_ISSUE"),
+                main_issue=({"label": row["issue_title"], "summary": row["issue_description"],
+                             "evidence_quote": row["issue_evidence_quote"]}
+                            if row["issue_title"] else None),
+                event_detection_status=row["event_detection_status"],
+                event_candidates=[{
+                    "working_title": candidate.get("title"),
+                    "phenomenon": candidate.get("description"),
+                    "evidence_quote": candidate.get("evidence_quote"),
+                } for candidate in row["candidates"]],
+                processed_at=row["processed_at"],
+            ) for row in rows]
+
+        # Older isolated bridge tests and archived installations retain the combined table.
         rows = conn.execute(
             text(
                 """
