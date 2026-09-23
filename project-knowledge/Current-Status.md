@@ -10,6 +10,12 @@ status: active
 
 ## Latest update
 
+**2026-09-23 redesign plan ready for owner review:** the owner approved the written guided command
+center design. A six-task [implementation plan](plans/2026-09-23-guided-command-center-redesign.md)
+now covers a verified read-only baseline, shared Phase 5 data model, four-part navigation, new
+Home/Explore/Prepare routes, presentation state, and real-data visual QA. Existing routes remain
+available. Next: owner reviews the plan and chooses an execution approach before product UI work.
+
 **2026-09-23 UI and UX redesign draft ready for review:** the owner chose equal emphasis between
 daily clarity and portfolio presentation, approved a guided command center, four main destinations
 (Home, Explore, Prepare, Settings), reuse of the current brand, backgrounds, and globe, and Phase 5

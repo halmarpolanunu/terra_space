@@ -3,7 +3,7 @@ type: Decision
 title: Terra Space Guided Command Center Redesign
 description: Draft UI and UX direction for a clear daily workspace with compelling interactive views built from trusted local data and existing Terra Space assets.
 tags: [project-knowledge, decision, design, ui, ux]
-status: draft
+status: active
 ---
 
 # Context
@@ -137,7 +137,7 @@ number of purposeful charts makes the first screen useful and presentable.
 
 # Consequences
 
-This draft revisits the older [Visual Design Direction](Visual-Design-Direction.md), [Amber Glass
+This decision revisits the older [Visual Design Direction](Visual-Design-Direction.md), [Amber Glass
 Background and Browser Zoom](Amber-Glass-Background-and-Browser-Zoom.md), and [Terra Insight and
 Terra Sense Product Organization](Terra-Insight-and-Terra-Sense-Product-Organization.md) decisions
 at the navigation and screen-composition level. Their local-first, evidence, accessibility, and

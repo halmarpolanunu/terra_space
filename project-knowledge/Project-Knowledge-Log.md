@@ -8,6 +8,13 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-23 — Guided command center design approved and planned
+
+- The owner approved the written redesign direction. Its decision status is now active.
+- Added the [implementation plan](plans/2026-09-23-guided-command-center-redesign.md) with six
+  independently reviewable tasks and explicit checks for unknown values, map pins, final status,
+  API errors, and filter continuity. Product UI code has not changed yet.
+
 ## 2026-09-23 — Guided command center redesign draft
 
 - The owner selected equal weight for daily usability and portfolio presentation, then approved
