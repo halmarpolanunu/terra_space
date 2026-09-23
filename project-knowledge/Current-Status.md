@@ -10,6 +10,14 @@ status: active
 
 ## Latest update
 
+**2026-09-23 UI and UX redesign draft ready for review:** the owner chose equal emphasis between
+daily clarity and portfolio presentation, approved a guided command center, four main destinations
+(Home, Explore, Prepare, Settings), reuse of the current brand, backgrounds, and globe, and Phase 5
+as the primary event set. The written [redesign draft](decisions/Terra-Space-Guided-Command-Center-Redesign.md)
+records the proposed screen behavior, data boundaries, assets, and verification. The live app was
+not running during the code and asset audit. Next: owner review of the written design, then a
+separate implementation plan before UI changes.
+
 **2026-09-22 Portable n8n setup package completed:** the repository now carries a
 credential-free export of all seven current Terra Space workflows under
 tools/n8n/portable/workflows. The package includes a checked import command for a Docker n8n

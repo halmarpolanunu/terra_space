@@ -23,6 +23,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 ## Planning and decisions
 
+- [Terra Space Guided Command Center Redesign](decisions/Terra-Space-Guided-Command-Center-Redesign.md) — draft UI and UX redesign for review before implementation planning
 - [Phase 5 Event Generation and Qualification](decisions/Phase-5-Conservative-Event-Drafts.md) — approved lean one-workflow direction for visible events, classification, timeline/map enrichment, duplicate recommendation, and qualification
 - [Phase 5A Prepare Event Records Implementation Plan](plans/2026-09-10-phase-5a-prepare-event-records.md) — test-first plan for the deterministic first stage of the single Phase 5 workflow
 - [Phase 4 Event Fact Extraction](decisions/Phase-4-Event-Fact-Extraction.md) — approved minimal design for enriching retained Phase 3 candidates before taxonomy, normalization, deduplication, and final events

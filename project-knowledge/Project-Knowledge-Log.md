@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-23 — Guided command center redesign draft
+
+- The owner selected equal weight for daily usability and portfolio presentation, then approved
+  a guided command center with Home, Explore, Prepare, and Settings. Phase 5 is the primary event
+  set; earlier events remain separately labeled.
+- Added the [draft design](decisions/Terra-Space-Guided-Command-Center-Redesign.md) after reviewing
+  the existing frontend, brand kit, six backgrounds, globe, and relevant authority decisions.
+- No product UI code or data was changed. The draft awaits owner review before implementation
+  planning.
+
 ## 2026-09-22 — Portable n8n workflow setup package
 
 - Added a credential-free export of the seven current workflows in the Terra_Space n8n folder
