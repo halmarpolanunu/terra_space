@@ -6,18 +6,18 @@ import { Navigation } from "@/components/navigation";
 import { WorkspaceAmbiance } from "@/components/workspace-ambiance";
 import { getWorkspaceBackground } from "@/lib/workspace-backgrounds";
 
-type AppShellProps = { currentPath: string; children: ReactNode };
+type AppShellProps = { currentPath: string; children: ReactNode; presentation?: boolean };
 type WorkspaceShellStyle = CSSProperties & {
   "--workspace-background-image": string;
 };
 
-export function AppShell({ currentPath, children }: AppShellProps) {
+export function AppShell({ currentPath, children, presentation = false }: AppShellProps) {
   const style: WorkspaceShellStyle = {
     "--workspace-background-image": `url("${getWorkspaceBackground(currentPath)}")`,
   };
 
   return (
-    <div className="app-shell" data-route={currentPath} style={style}>
+    <div className="app-shell" data-route={currentPath} data-presentation={presentation || undefined} style={style}>
       <WorkspaceAmbiance />
       <a className="skip-link" href="#main-content">
         Skip to content

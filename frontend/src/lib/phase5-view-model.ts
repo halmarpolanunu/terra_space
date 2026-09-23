@@ -1,13 +1,16 @@
 import type { Phase5Event } from "@/lib/bridge-api";
 import type { EventRead, LocationRead } from "@/lib/events-api";
 
-export type Phase5Filters = { q: string; status: "all" | "FINAL" | "NOT_FINAL"; type: string };
+export type Phase5Filters = { q: string; status: "all" | "FINAL" | "NOT_FINAL"; type: string; month?: string; date?: "unknown"; location?: "mapped" };
 
 export function filterPhase5Events(events: Phase5Event[], filters: Phase5Filters): Phase5Event[] {
   const query = filters.q.trim().toLocaleLowerCase();
   return events.filter((event) =>
     (filters.status === "all" || event.qualification.status === filters.status) &&
-    (!filters.type || event.classification.event_type_name === filters.type) &&
+    (!filters.type || (event.classification.event_type_name || "Unclassified") === filters.type) &&
+    (!filters.month || event.timeline.event_date?.slice(0, 7) === filters.month) &&
+    (!filters.date || (filters.date === "unknown" && !event.timeline.event_date)) &&
+    (!filters.location || (filters.location === "mapped" && phase5MapEvents([event])[0].locations.length > 0)) &&
     (!query || `${event.title} ${event.description} ${event.evidence_quote}`.toLocaleLowerCase().includes(query))
   );
 }

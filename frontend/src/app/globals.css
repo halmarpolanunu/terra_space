@@ -56,6 +56,9 @@ body {
 }
 
 .app-shell { display: grid; min-height: 100vh; grid-template-columns: 16rem minmax(0, 1fr); }
+.app-shell[data-presentation="true"] { grid-template-columns: minmax(0, 1fr); }
+.app-shell[data-presentation="true"] .sidebar { display: none; }
+.app-shell[data-presentation="true"] .top-status-bar { padding-inline: clamp(1.5rem, 4vw, 3rem); }
 .sidebar { padding: 1.5rem 1rem; background: var(--panel); border-right: 1px solid var(--border); }
 .brand {
   display: flex;
@@ -2050,4 +2053,26 @@ body {
     transition-duration: 0.01ms !important;
   }
   .sense-flow-connection { transform: none; }
+}
+
+/* Guided navigation keeps the four destinations visible and reveals only the current family. */
+.sidebar .nav-list { display: grid; gap: .3rem; }
+.sidebar .nav-sublist { display: none; padding: .25rem 0 .55rem 1.2rem; }
+.sidebar .nav-primary[aria-current="page"] + .nav-sublist,
+.sidebar .nav-primary[data-active-parent="true"] + .nav-sublist { display: grid; }
+.sidebar .nav-secondary { display: block; min-height: 0; padding: .45rem .65rem; font-size: .72rem; line-height: 1.35; }
+.sidebar .nav-primary[data-active-parent="true"] { border-left-color: var(--accent); background: var(--accent-wash); color: var(--text); }
+.app-shell[data-presentation="true"] .main-content { grid-column: 1; }
+@media (max-width: 48rem) {
+  .sidebar .nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .25rem; }
+  .sidebar .nav-primary { display: flex; justify-content: center; min-height: 2.5rem; padding: .45rem .2rem; font-size: .68rem; }
+  .sidebar .nav-primary .nav-index { display: none; }
+  .sidebar .nav-list > li { min-width: 0; }
+  .sidebar .nav-sublist { position: absolute; left: 1rem; right: 1rem; margin-top: .25rem; background: #0b1013; border: 1px solid var(--border-bright); z-index: 3; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sidebar .nav-primary[aria-current="page"] + .nav-sublist,
+  .sidebar .nav-primary[data-active-parent="true"] + .nav-sublist { display: grid; }
+  .sidebar { padding: .5rem 1rem; }
+  .sidebar:has(.nav-primary[aria-current="page"] + .nav-sublist),
+  .sidebar:has(.nav-primary[data-active-parent="true"] + .nav-sublist) { padding-bottom: 6rem; }
+  .sidebar-label { display: none; }
 }

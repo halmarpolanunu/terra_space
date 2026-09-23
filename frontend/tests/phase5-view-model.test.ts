@@ -24,4 +24,14 @@ describe("Phase 5 view model", () => {
     expect(filterPhase5Events(events, { q: "", status: "NOT_FINAL", type: "" })).toEqual([notFinal]);
     expect(events).toHaveLength(3);
   });
+  it("opens the unclassified chart segment through its Explore filter", () => {
+    const unclassified = { ...pending, classification: { ...pending.classification, event_type_name: null } };
+    expect(filterPhase5Events([base, unclassified], { q: "", status: "all", type: "Unclassified" })).toEqual([unclassified]);
+  });
+  it("filters a chart month, unknown dates, and mapped event locations", () => {
+    const events = [base, notFinal, pending];
+    expect(filterPhase5Events(events, { q: "", status: "all", type: "", month: "2026-09" })).toEqual([base, notFinal]);
+    expect(filterPhase5Events(events, { q: "", status: "all", type: "", date: "unknown" })).toEqual([pending]);
+    expect(filterPhase5Events(events, { q: "", status: "all", type: "", location: "mapped" })).toEqual([base]);
+  });
 });
