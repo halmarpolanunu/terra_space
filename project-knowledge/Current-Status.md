@@ -15,10 +15,14 @@ owner chose native execution. The `codex/guided-command-center` branch now has f
 destinations (Home, Explore, Prepare, Settings), a shared Phase 5 view model, a globe-led Home
 with linked charts, filtered map/timeline/list and evidence detail in Explore, a read-only six-stage
 Prepare view, and a presentation URL state. Existing routes remain reachable with clear earlier
-labels. Frontend verification passed: 237 tests, lint, and production build. Browser checks with
+labels. A final review fixed shared map markers, rapid search input, pending qualification links,
+date and geography interpretation, and explicit Prepare count scopes. Frontend verification
+passed: 243 tests, lint, and production build. Browser checks with
 a temporary fixture covered populated and failure states; no fixture data was added to the app.
 Docker was unavailable and `data/maps/world-low-detail.pmtiles` is absent in this worktree, so
-the real local Supabase records and rendered globe could not be reviewed. Next: start the normal
+the real local Supabase records and rendered globe could not be reviewed. Prepare Phase 5 counts
+cover only records returned by the current read API; failures before a prepared record exists
+are outside those counts. Next: start the normal
 local services, build or provide the offline map package, then review the new screens with actual
 Phase 5 data and the planned 90–150% browser zoom checks. No n8n workflow or database content was
 changed by this redesign.

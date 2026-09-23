@@ -37,5 +37,10 @@
 .notice { border: 1px solid var(--border-bright); background: var(--work-surface); padding: 2rem; }
 .notice button, .notice a { color: var(--accent); }
 .mapEmpty { min-height: 32rem; display: grid; place-items: center; border: 1px dashed var(--border-bright); color: var(--text-muted); }
+.cluster { border: 1px solid var(--accent); background: #0b1518; padding: .8rem; margin-top: .7rem; }
+.cluster > div { display: flex; justify-content: space-between; gap: 1rem; color: var(--accent); }
+.cluster button { border: 0; background: transparent; color: var(--accent); cursor: pointer; }
+.cluster ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+.cluster a { color: var(--text); }
 @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); } .metrics { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 650px) { .intro { display: block; } .action { display: inline-block; margin-top: 1rem; } .rail, .metrics { grid-template-columns: 1fr; } }

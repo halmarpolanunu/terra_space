@@ -34,4 +34,13 @@ describe("Phase 5 view model", () => {
     expect(filterPhase5Events(events, { q: "", status: "all", type: "", date: "unknown" })).toEqual([pending]);
     expect(filterPhase5Events(events, { q: "", status: "all", type: "", location: "mapped" })).toEqual([base]);
   });
+  it("keeps malformed dates unknown and uses the canonical geography name", () => {
+    const malformed = { ...base, id: "bad-date", timeline: { ...base.timeline, event_date: "not-a-date" }, event_geographies: [{ resolution_status: "RESOLVED", latitude: 1, longitude: 2, canonical_geography_name: "Jakarta" }] };
+    expect(summarizePhase5Events([malformed])).toMatchObject({ undated: 1, byMonth: [] });
+    expect(filterPhase5Events([malformed], { q: "", status: "all", type: "", date: "unknown" })).toEqual([malformed]);
+    expect(phase5MapEvents([malformed])[0].locations[0].city_regency).toBe("Jakarta");
+  });
+  it("filters pending qualification separately", () => {
+    expect(filterPhase5Events([base, pending], { q: "", status: "PENDING", type: "" })).toEqual([pending]);
+  });
 });

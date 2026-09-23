@@ -16,6 +16,11 @@
 .heading span { font: .65rem var(--font-mono); color: var(--accent); letter-spacing: .1em; }
 .heading h2 { font-size: 1.3rem; color: #f1eee7; margin: .35rem 0 1rem; }
 .mapEmpty { min-height: 29rem; display: grid; place-items: center; border: 1px dashed var(--border-bright); text-align: center; color: var(--text-muted); }
+.cluster { border: 1px solid var(--accent); background: #0b1518; padding: .8rem; margin-top: .7rem; }
+.cluster > div { display: flex; justify-content: space-between; gap: 1rem; color: var(--accent); }
+.cluster button { border: 0; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
+.cluster > div button { color: var(--accent); }
+.cluster ul { margin: .5rem 0 0; padding-left: 1.2rem; }
 .caption { font-size: .72rem; color: var(--text-muted); }
 .timeline ol, .list ul { padding: 0; margin: 0; list-style: none; max-height: 36rem; overflow: auto; }
 .timeline li, .list li { padding: .75rem 0; border-top: 1px solid var(--border); display: grid; gap: .35rem; }

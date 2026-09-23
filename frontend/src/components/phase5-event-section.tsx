@@ -42,7 +42,7 @@ export function Phase5EventSection({ events, showMap = true }: { events: Phase5E
       {events.length === 0 ? <p>No retained Phase 5 records yet.</p> : <ul>
         {events.map((event) => <li key={event.id}>
           <button className="event-list-title" onClick={() => setSelectedId(event.id)} type="button">{event.title}</button>
-          <p>{event.qualification.status === "FINAL" ? "Final" : "Not Final"} · {event.classification.status === "CLASSIFIED" ? event.classification.event_type_name : "Unclassified"}</p>
+          <p>{event.qualification.status === "FINAL" ? "Final" : event.qualification.status === "NOT_FINAL" ? "Not Final" : "Pending"} · {event.classification.status === "CLASSIFIED" ? event.classification.event_type_name : "Unclassified"}</p>
           {event.timeline.event_date ? <p>Event date: {event.timeline.event_date}</p> : event.timeline.reference_date ? <p>Publication date reference: {event.timeline.reference_date}</p> : <p>Event date unknown</p>}
           {event.qualification.reason_codes.length > 0 && <p>Qualification reasons: {event.qualification.reason_codes.join(", ")}</p>}
           {event.event_geographies.length === 0 && <p>Event geography: {event.event_geography_status ?? "not resolved"}</p>}

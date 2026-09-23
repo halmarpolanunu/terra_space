@@ -9,7 +9,7 @@ describe("pipeline stage summary", () => {
     const events = [{ id: "e1", phase4_status: "INCOMPLETE", classification: { status: "UNCLASSIFIED" }, qualification: { status: "NOT_FINAL" } }] as Phase5Event[];
     const stages = summarizePipelineStages(sources, [review, review], events);
     expect(stages.map((stage) => stage.id)).toEqual(["sources", "issues", "candidates", "facts", "generation", "qualification"]);
-    expect(stages[2]).toMatchObject({ total: 1, scope: "candidate records" });
+    expect(stages[2]).toMatchObject({ total: 1, scope: "candidate records", attentionScope: "source reviews" });
     expect(stages[3].attention).toBe(1);
     expect(stages[5].attention).toBe(1);
   });

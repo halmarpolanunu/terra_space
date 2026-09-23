@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Phase5Event } from "@/lib/bridge-api";
 
 const { listPhase5Events, params } = vi.hoisted(() => ({ listPhase5Events: vi.fn<() => Promise<Phase5Event[]>>(), params: new URLSearchParams() }));
 vi.mock("@/lib/bridge-api", () => ({ listPhase5Events }));
-vi.mock("@/app/dashboard/event-globe", () => ({ EventGlobe: () => <div role="region" aria-label="Event globe" /> }));
+vi.mock("@/app/dashboard/event-globe", () => ({ EventGlobe: ({ events, onSelectCluster }: { events: { id: string; title: string }[]; onSelectCluster?: (events: { id: string; title: string }[], label: string) => void }) => <div role="region" aria-label="Event globe"><button type="button" onClick={() => onSelectCluster?.(events, "Shared place")}>Shared marker</button></div> }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => params }));
 
 import { HomeWorkspace } from "@/app/home/home-workspace";
@@ -41,5 +41,15 @@ describe("HomeWorkspace", () => {
     const links = screen.getAllByRole("link");
     expect(links.some((link) => link.getAttribute("href") === "/explore?status=FINAL")).toBe(true);
     expect(links.some((link) => link.getAttribute("href") === "/explore?type=Conflict")).toBe(true);
+  });
+  it("lets a shared map marker reveal each event and links pending records", async () => {
+    const base = { id: "one", title: "First", qualification: { status: null, reason_codes: [] }, classification: { event_type_name: "Conflict" }, timeline: { event_date: null }, event_geographies: [{ resolution_status: "RESOLVED", latitude: 1, longitude: 2 }], actor_geographies: [], created_at: "2026-09-01", updated_at: "2026-09-01" } as unknown as Phase5Event;
+    listPhase5Events.mockResolvedValue([base, { ...base, id: "two", title: "Second" }]);
+    render(<HomeWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Shared marker" }));
+    const chooser = screen.getByRole("region", { name: "Events at Shared place" });
+    expect(within(chooser).getByRole("link", { name: "First" })).toHaveAttribute("href", "/explore?event=one");
+    expect(within(chooser).getByRole("link", { name: "Second" })).toHaveAttribute("href", "/explore?event=two");
+    expect(screen.getAllByRole("link").some((link) => link.getAttribute("href") === "/explore?status=PENDING")).toBe(true);
   });
 });

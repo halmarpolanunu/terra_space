@@ -10,6 +10,11 @@ status: active
 
 ## 2026-09-23 — Guided command center implementation checkpoint
 
+- Final review repairs: shared map markers now reveal their events; Explore search keeps rapid
+  typing before updating its URL; pending qualification is navigable; malformed dates stay in
+  the unknown-date group; Phase 5C place names are read correctly. Prepare labels the unit of
+  each attention count and explains the current API's pre-preparation gap. Final checks passed:
+  243 frontend tests, lint, and production build.
 - Added the four-part navigation and the new Home, Explore, and Prepare routes on
   `codex/guided-command-center`. Home and Explore use the current Phase 5 read API; earlier routes
   remain available separately. Prepare reads sources, candidate reviews, and Phase 5 records

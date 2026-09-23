@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { EventGlobe } from "@/app/dashboard/event-globe";
 import { listPhase5Events, type Phase5Event } from "@/lib/bridge-api";
 import { phase5MapEvents, summarizePhase5Events } from "@/lib/phase5-view-model";
+import type { EventRead } from "@/lib/events-api";
 import styles from "./home.module.css";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; events: Phase5Event[] };
@@ -14,6 +15,7 @@ type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; events: 
 export function HomeWorkspace() {
   const presentation = useSearchParams().get("present") === "1";
   const [state, setState] = useState<State>({ kind: "loading" });
+  const [cluster, setCluster] = useState<{ label: string; events: EventRead[] } | null>(null);
   const load = useCallback(() => {
     setState({ kind: "loading" });
     void listPhase5Events().then((events) => setState({ kind: "ready", events })).catch(() => setState({ kind: "error" }));
@@ -45,7 +47,8 @@ export function HomeWorkspace() {
           <div className={styles.grid}>
             <section className={styles.globePanel} aria-label="Phase 5 event globe">
               <div className={styles.panelTitle}><div><span>01 / GEOGRAPHY</span><h2>Events in place</h2></div><span>{summary?.mapped} mapped</span></div>
-              {mapped.some((event) => event.locations.length > 0) ? <EventGlobe events={mapped} onSelect={(event) => { window.location.href = `/explore?event=${encodeURIComponent(event.id)}`; }} /> : <div className={styles.mapEmpty}>No resolved Event Geography locations yet.</div>}
+              {mapped.some((event) => event.locations.length > 0) ? <EventGlobe events={mapped} onSelect={(event) => { window.location.href = `/explore?event=${encodeURIComponent(event.id)}`; }} onSelectCluster={(events, label) => setCluster({ events, label })} /> : <div className={styles.mapEmpty}>No resolved Event Geography locations yet.</div>}
+              {cluster && <div className={styles.cluster} role="region" aria-label={`Events at ${cluster.label}`}><div><strong>{cluster.label}</strong><button type="button" onClick={() => setCluster(null)} aria-label="Close shared marker">×</button></div><ul>{cluster.events.map((event) => <li key={event.id}><Link href={`/explore?event=${encodeURIComponent(event.id)}`}>{event.title}</Link></li>)}</ul></div>}
               <p className={styles.caption}>Only resolved Event Geography is pinned. {summary && summary.total - summary.mapped} records have no resolved event location.</p>
             </section>
             <div className={styles.rail}>
@@ -57,7 +60,7 @@ export function HomeWorkspace() {
                 <p className={styles.caption}><Link href="/explore?date=unknown">{summary?.undated} event dates unknown</Link> · publication dates excluded from chart</p>
               </section>
               <section className={styles.chart} aria-label="Qualification status"><div className={styles.panelTitle}><div><span>04 / CONFIDENCE</span><h2>Qualification</h2></div></div>
-                <div className={styles.statusRow}><Link href="/explore?status=FINAL">Final <strong>{summary?.final}</strong></Link><Link href="/explore?status=NOT_FINAL">Not Final <strong>{summary?.notFinal}</strong></Link><span>Pending <strong>{summary?.unqualified}</strong></span></div>
+                <div className={styles.statusRow}><Link href="/explore?status=FINAL">Final <strong>{summary?.final}</strong></Link><Link href="/explore?status=NOT_FINAL">Not Final <strong>{summary?.notFinal}</strong></Link><Link href="/explore?status=PENDING">Pending <strong>{summary?.unqualified}</strong></Link></div>
               </section>
             </div>
           </div>

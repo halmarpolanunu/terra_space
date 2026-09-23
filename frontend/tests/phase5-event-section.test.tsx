@@ -6,8 +6,15 @@ vi.mock("@/app/dashboard/event-globe", () => ({
 }));
 
 import { Phase5EventSection } from "@/components/phase5-event-section";
+import type { Phase5Event } from "@/lib/bridge-api";
 
 describe("Phase5EventSection", () => {
+  it("calls a null qualification pending instead of Not Final", () => {
+    const event = { id: "pending", title: "Pending record", qualification: { status: null, reason_codes: [] }, classification: { status: null, event_type_name: null }, timeline: { event_date: null, reference_date: null }, event_geographies: [], event_geography_status: null, actor_geographies: [] } as unknown as Phase5Event;
+    render(<Phase5EventSection events={[event]} showMap={false} />);
+    expect(screen.getByText(/Pending · Unclassified/)).toBeVisible();
+    expect(screen.queryByText(/Not Final · Unclassified/)).not.toBeInTheDocument();
+  });
   it("labels a visible not-final unclassified record without inventing a date or map point", () => {
     render(<Phase5EventSection events={[{
       id: "phase5-1", phase1_source_id: "source-1", title: "Retained event", description: "Original description", evidence_quote: "Exact evidence",
