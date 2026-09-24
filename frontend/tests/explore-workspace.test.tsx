@@ -1,17 +1,19 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import type { Phase5Event } from "@/lib/bridge-api";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { BridgeCandidateReview, Phase5Event } from "@/lib/bridge-api";
 
-const mocks = vi.hoisted(() => ({ list: vi.fn<() => Promise<Phase5Event[]>>(), push: vi.fn(), search: new URLSearchParams() }));
-vi.mock("@/lib/bridge-api", () => ({ listPhase5Events: mocks.list, getBridgeSource: vi.fn() }));
+const mocks = vi.hoisted(() => ({ list: vi.fn<() => Promise<Phase5Event[]>>(), reviews: vi.fn<() => Promise<BridgeCandidateReview[]>>(), push: vi.fn(), search: new URLSearchParams() }));
+vi.mock("@/lib/bridge-api", () => ({ listPhase5Events: mocks.list, listBridgeCandidateReviews: mocks.reviews, getBridgeSource: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useSearchParams: () => mocks.search }));
 vi.mock("@/app/dashboard/event-globe", () => ({ EventGlobe: ({ events, onSelectCluster }: { events: { id: string; title: string }[]; onSelectCluster?: (events: { id: string; title: string }[], label: string) => void }) => <div role="region" aria-label="Event globe"><button type="button" onClick={() => onSelectCluster?.(events, "Shared place")}>Shared marker</button></div> }));
 
 import { ExploreWorkspace } from "@/app/explore/explore-workspace";
 
-const event = { id: "e1", title: "First signal", description: "Description", evidence_quote: "Exact quote", qualification: { status: "NOT_FINAL", reason_codes: ["REVIEW_NEEDED"] }, classification: { event_type_name: "Conflict" }, timeline: { event_date: null, reference_date: "2026-09-01", limitations: [] }, event_geographies: [], actor_geographies: [] } as unknown as Phase5Event;
+const event = { id: "e1", phase1_source_id: "source-one", title: "First signal", description: "Description", evidence_quote: "Exact quote", qualification: { status: "NOT_FINAL", reason_codes: ["REVIEW_NEEDED"] }, classification: { event_type_name: "Conflict" }, timeline: { event_date: null, reference_date: "2026-09-01", limitations: [] }, event_geographies: [], actor_geographies: [] } as unknown as Phase5Event;
+const review = { phase1_source_id: "source-one", source_title: "Source article", main_issue_status: "MAIN_ISSUE_FOUND", main_issue: { label: "Main concern", summary: "Issue summary", evidence_quote: "Grounded issue quote" }, processed_at: "2026-09-01" } as BridgeCandidateReview;
 
 describe("ExploreWorkspace", () => {
+  beforeEach(() => { mocks.reviews.mockResolvedValue([review]); mocks.search = new URLSearchParams(); mocks.push.mockClear(); });
   it("shows the current set, unknown date, evidence, and earlier route", async () => {
     mocks.list.mockResolvedValue([event]);
     render(<ExploreWorkspace />);

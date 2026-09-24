@@ -24,6 +24,10 @@ completed visual usability test.
 
 # Decision
 
+**Direction update (2026-09-24):** [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md)
+supersedes this decision's event-led entry to Home and Explore. The four destinations and
+cinematic visual direction remain in effect.
+
 ## Intended outcome and boundaries
 
 Terra Space remains one local-first product with two understandable jobs: explore trusted events

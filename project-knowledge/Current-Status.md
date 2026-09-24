@@ -10,6 +10,18 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Main Issue-led direction:** the owner approved changing the North Star so current
+Phase 2 Main Issues lead Home and Explore, with their linked Phase 5 events and source evidence
+following each Issue. A read-only live API audit found 50 Main Issues and 109 Phase 5 events;
+all 109 events currently match one of the 50 Issues through the Phase 1 source ID. Home now
+offers a selected Issue with a filtered globe and explicitly corpus-wide charts. Explore starts
+with a searchable Issue list, source quote, and Issue-filtered event map, timeline, and index;
+its all-Issues view is labeled separately. Earlier Issues and Events remain linked separately.
+The new [decision](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) supersedes the event-led
+entry of the guided command center. Local production build, focused tests, and live browser
+selection checks passed. Next: owner reviews the new Issue-led composition in the open pull
+request, then decide whether to refine the visual hierarchy and content wording.
+
 **2026-09-24 Explore visual pass:** the owner asked for a more engaging Explore screen after
 reviewing Home. Explore now provides quick Place, Time, and Records jump links; a clearer filter
 row; a map canvas with live mapped and unresolved counts; a vertical dated-event timeline with

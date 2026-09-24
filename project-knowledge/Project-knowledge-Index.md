@@ -23,7 +23,8 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 ## Planning and decisions
 
-- [Terra Space Guided Command Center Redesign](decisions/Terra-Space-Guided-Command-Center-Redesign.md) — approved UI and UX direction using Phase 5 as the primary event set
+- [Phase 2 Main Issue Led Terra Insight](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) — current direction for Issue-led Home and Explore, with linked Phase 5 events and evidence.
+- [Terra Space Guided Command Center Redesign](decisions/Terra-Space-Guided-Command-Center-Redesign.md) — four-part navigation and cinematic UI direction; its event-led entry is superseded by the Main Issue decision
 - [Guided Command Center Redesign Implementation Plan](plans/2026-09-23-guided-command-center-redesign.md) — reviewable steps for navigation, Home, Explore, Prepare, and presentation state
 - [Phase 5 Event Generation and Qualification](decisions/Phase-5-Conservative-Event-Drafts.md) — approved lean one-workflow direction for visible events, classification, timeline/map enrichment, duplicate recommendation, and qualification
 - [Phase 5A Prepare Event Records Implementation Plan](plans/2026-09-10-phase-5a-prepare-event-records.md) — test-first plan for the deterministic first stage of the single Phase 5 workflow

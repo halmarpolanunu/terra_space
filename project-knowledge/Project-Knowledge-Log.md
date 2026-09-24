@@ -8,6 +8,15 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Phase 2 Main Issue leads Terra Insight
+
+- The owner approved a North Star change: current Phase 2 Main Issues now lead Home and Explore;
+  Phase 5 events, geography, timeline, qualification, and evidence follow each Issue by source ID.
+  The [decision](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) supersedes the event-led entry
+  in the guided command center design while retaining its navigation and visual direction.
+- A read-only local API audit found 50 Main Issues and 109 linked Phase 5 events. The current
+  dataset had no unmatched Phase 5 events. The UI change involved no database or n8n writes.
+
 ## 2026-09-24 — Explore visual pass
 
 - The owner asked for a more engaging Explore screen. The filtered Phase 5 investigation view

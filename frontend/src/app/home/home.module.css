@@ -172,3 +172,22 @@
 @media (max-width: 80rem) { .insights { grid-template-columns: repeat(2, minmax(0, 1fr)); } .qualificationChart { grid-column: 1 / -1; } .recent ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } .recent li:first-child { grid-column: span 2; } }
 @media (max-width: 52rem) { .insights { grid-template-columns: 1fr; } .qualificationChart { grid-column: auto; } .recent ul { grid-template-columns: 1fr; } .recent li:first-child { grid-column: auto; } .signalCard { min-height: 8rem; } }
 @media (max-width: 30rem) { .qualificationBody { grid-template-columns: 1fr; } .donut { width: 9rem; } .typeRow { grid-template-columns: 1.2rem minmax(6rem, 1.4fr) minmax(2rem, .6fr) 1.5rem; gap: .35rem; } }
+
+/* Main Issues lead the story; the globe responds to the selected source. */
+.issueSelector { margin: 0 0 1rem; }
+.issueSelectorHeading { display: flex; align-items: baseline; gap: 1rem; margin-bottom: .75rem; font: .69rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: #ddc698; }
+.issueSelectorHeading strong { color: #aebeb2; font-weight: 500; }
+.issueSelectorHeading a { margin-left: auto; color: #f3c981; text-decoration: none; }
+.issueCards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; }
+.issueCards button { min-width: 0; min-height: 6.4rem; padding: .7rem .45rem .7rem 0; border: 0; border-top: 1px solid #e8ecdb42; border-radius: 0; background: transparent; color: #eceee4; text-align: left; cursor: pointer; transition: transform 180ms ease, border-color 180ms ease, color 180ms ease; }
+.issueCards button:hover, .issueCards button:focus-visible { border-color: #f0c780; color: #fff6e7; transform: translateY(-2px); }
+.issueCards button[data-selected="true"] { border-color: #f2c780; color: #f8e6c5; }
+.issueCards button span { display: block; margin-bottom: .6rem; color: #f0c780; font: .62rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.issueCards button strong { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; font-size: .79rem; line-height: 1.35; font-weight: 600; }
+.issueSource { border-top: 1px solid #e8ecdb29; padding-top: .65rem; font-size: .72rem !important; }
+.corpusLabel { display: flex; align-items: baseline; flex-wrap: wrap; gap: .7rem; margin: 2rem 0 -1rem; }
+.corpusLabel span { color: #f3c981; font: .67rem var(--font-mono); letter-spacing: .1em; }
+.corpusLabel p { margin: 0; color: #becbbd; font-size: .78rem; }
+@media (max-width: 68rem) { .issueCards { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 40rem) { .issueCards { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: .35rem; } .issueCards button { flex: 0 0 min(74vw,16rem); scroll-snap-align: start; } .issueSelectorHeading { flex-wrap: wrap; } }
+@media (prefers-reduced-motion: reduce) { .issueCards button { transition: none; } }

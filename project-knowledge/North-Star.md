@@ -13,8 +13,8 @@ status: active
 Build Terra Space as a local-first intelligence workspace for one user. Terra Space has two major
 workspaces: **Terra Sense**, where the user prepares trusted data from source documents through
 normalization, local AI processing, duplicate checks, and human review; and **Terra Insight**, where
-the user explores and analyses approved events through dashboard, map, timeline, list, and future
-analysis views. The MVP lets the user manually add documents, process selected documents in batches
+the user starts with a source-grounded Phase 2 Main Issue and traces its linked Phase 5 events,
+places, timeline, qualification, and evidence. The MVP lets the user manually add documents, process selected documents in batches
 through a local LM Studio LLM endpoint, review extracted events, prevent accidental duplicate
 event counting, approve valid events, and explore approved events.
 
@@ -37,6 +37,8 @@ The MVP succeeds when:
 - Events can have multiple locations, actors, and source documents.
 - The system can flag possible duplicate events without merging them automatically.
 - Approved events appear in Events and Dashboard views.
+- The current Home and Explore views start with Phase 2 Main Issues, then reveal their linked
+  Phase 5 events and source evidence; each Issue remains attached to its source article.
 - Dashboard supports summary, map, timeline, event list, event detail, and filters.
 - Terra Sense makes the document-to-approved-event workflow understandable, while Terra Insight
   keeps analysis focused on approved, traceable data.
