@@ -416,6 +416,21 @@ describe("offline world map configuration", () => {
     );
   });
 
+  it("supports multiple selected Issue pin IDs and an Issue-specific cluster label", async () => {
+    map.setProjection.mockImplementation(() => undefined);
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+    const cluster = { coordinates: [2, 1] as [number, number], count: 2, eventIds: ["a:one", "b:one"], locationLabel: "Shared place", ariaLabel: "2 Issue locations at Shared place" };
+    render(<WorldMap selectedPinIds={["a:one", "a:two"]} clusters={[cluster]} />);
+    expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: EVENT_PIN_LAYER_ID, paint: expect.objectContaining({
+      "circle-radius": ["case", ["in", ["get", "eventId"], ["literal", ["a:one", "a:two"]]], 7.5, 6],
+    }) }));
+    expect(markerInstances[0].element).toHaveAttribute("aria-label", "2 Issue locations at Shared place");
+  });
+
   it("reports globe, flat fallback, and unavailable projection modes without recreating the map", async () => {
     const firstCallback = vi.fn();
     const secondCallback = vi.fn();
