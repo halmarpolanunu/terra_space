@@ -1,56 +1,77 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BridgeCandidateReview, Phase5Event } from "@/lib/bridge-api";
+import type { IssueAtlasPlace } from "@/lib/issue-atlas-model";
 
-const { listPhase5Events, listBridgeCandidateReviews, params } = vi.hoisted(() => ({ listPhase5Events: vi.fn<() => Promise<Phase5Event[]>>(), listBridgeCandidateReviews: vi.fn<() => Promise<BridgeCandidateReview[]>>(), params: new URLSearchParams() }));
+const { listPhase5Events, listBridgeCandidateReviews, params } = vi.hoisted(() => ({
+  listPhase5Events: vi.fn<() => Promise<Phase5Event[]>>(),
+  listBridgeCandidateReviews: vi.fn<() => Promise<BridgeCandidateReview[]>>(),
+  params: new URLSearchParams(),
+}));
 vi.mock("@/lib/bridge-api", () => ({ listPhase5Events, listBridgeCandidateReviews }));
-vi.mock("@/app/dashboard/event-globe", () => ({ EventGlobe: ({ events, onSelectCluster }: { events: { id: string; title: string }[]; onSelectCluster?: (events: { id: string; title: string }[], label: string) => void }) => <div role="region" aria-label="Event globe"><button type="button" onClick={() => onSelectCluster?.(events, "Shared place")}>Shared marker</button></div> }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => params }));
+vi.mock("@/app/home/issue-globe", () => ({ IssueGlobe: ({ places, onSelectIssue, onSelectSharedPlace }: {
+  places: IssueAtlasPlace[]; onSelectIssue: (id: string) => void; onSelectSharedPlace: (label: string, places: IssueAtlasPlace[]) => void;
+}) => <div role="img" aria-label="Issue globe">
+  {places.map((place) => <button key={place.id} type="button" onClick={() => onSelectIssue(place.issueSourceId)}>Point {place.issueLabel} {place.placeLabel}</button>)}
+  {places.length > 1 && <button type="button" onClick={() => onSelectSharedPlace("Shared place", places)}>Shared Issue place</button>}
+</div> }));
 
 import { HomeWorkspace } from "@/app/home/home-workspace";
 
-describe("HomeWorkspace", () => {
-  const review = { phase1_source_id: "source-one", source_title: "Source article", main_issue_status: "MAIN_ISSUE_FOUND", main_issue: { label: "Main concern", summary: "A concise issue summary", evidence_quote: "Grounded issue quote" }, processed_at: "2026-09-01" } as BridgeCandidateReview;
-  beforeEach(() => { listPhase5Events.mockReset(); listBridgeCandidateReviews.mockReset(); listBridgeCandidateReviews.mockResolvedValue([review]); params.delete("present"); });
-  it("distinguishes API failure from an empty result and offers retry", async () => {
+function review(id: string): BridgeCandidateReview {
+  return { phase1_source_id: id, source_title: `Article ${id}`, main_issue_status: "MAIN_ISSUE_FOUND", main_issue: { label: `Issue ${id}`, summary: `Summary ${id}`, evidence_quote: `Quote ${id}` }, processed_at: "2026-09-01" } as BridgeCandidateReview;
+}
+function event(id: string, source: string, type: string | null, mapped = true): Phase5Event {
+  return { id, phase1_source_id: source, title: `Event ${id}`, classification: { event_type_name: type }, qualification: { status: "FINAL", reason_codes: [] }, timeline: { event_date: null },
+    event_geographies: mapped ? [{ geographic_reference_id: `place-${source}`, canonical_name: "Shared place", country_iso3: "ARG", latitude: 1, longitude: 2, resolution_status: "RESOLVED" }] : [], actor_geographies: [], created_at: "2026-09-01" } as Phase5Event;
+}
+
+describe("HomeWorkspace Issue Atlas", () => {
+  beforeEach(() => { listPhase5Events.mockReset(); listBridgeCandidateReviews.mockReset(); params.delete("present"); });
+
+  it("shows all Issue places, selects an Issue from a point, and keeps event detail in Explore", async () => {
+    listBridgeCandidateReviews.mockResolvedValue([review("a"), review("b")]);
+    listPhase5Events.mockResolvedValue([event("a1", "a", "Diplomacy"), event("b1", "b", null)]);
+    render(<HomeWorkspace />);
+    expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Point Issue a/i })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Point Issue b/i }));
+    expect(screen.getByRole("heading", { name: "Issue b" })).toBeVisible();
+    expect(screen.getByRole("link", { name: /Explore this issue/i })).toHaveAttribute("href", "/explore?issue=b");
+    fireEvent.click(screen.getByRole("button", { name: "Shared Issue place" }));
+    const chooser = screen.getByRole("region", { name: /Issues at Shared place/i });
+    fireEvent.click(within(chooser).getByRole("button", { name: "Issue a" }));
+    expect(screen.getByRole("heading", { name: "Issue a" })).toBeVisible();
+    expect(screen.getAllByRole("link").every((link) => !link.getAttribute("href")?.includes("&event="))).toBe(true);
+    expect(screen.getByRole("link", { name: /Diplomacy.*1/i })).toHaveAttribute("href", "/explore?scope=all&type=Diplomacy");
+    expect(screen.getByRole("link", { name: /Explore mapped events/i })).toHaveAttribute("href", "/explore?scope=all&location=mapped");
+    expect(screen.getByText(/Unclassified/)).toBeVisible();
+  });
+
+  it("lets users find an Issue outside the recent rail and keeps unmapped Issues selectable", async () => {
+    listBridgeCandidateReviews.mockResolvedValue(["a", "b", "c", "d", "e", "f"].map(review));
+    listPhase5Events.mockResolvedValue([event("a1", "a", "Diplomacy")]);
+    render(<HomeWorkspace />);
+    expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
+    fireEvent.change(screen.getByRole("searchbox", { name: /Find an issue/i }), { target: { value: "Issue f" } });
+    fireEvent.click(screen.getByRole("button", { name: /Issue f/i }));
+    expect(screen.getByRole("heading", { name: "Issue f" })).toBeVisible();
+    expect(screen.getByText(/No resolved related locations for this Issue/i)).toBeVisible();
+  });
+
+  it("separates load errors, empty Issues, and presentation mode", async () => {
+    listBridgeCandidateReviews.mockResolvedValue([]);
     listPhase5Events.mockRejectedValueOnce(new Error("offline"));
-    render(<HomeWorkspace />);
-    expect(await screen.findByText(/could not load Main Issues or linked events/i)).toBeVisible();
-    expect(screen.getByRole("button", { name: /retry/i })).toBeVisible();
-    expect(screen.queryByText("0 events")).not.toBeInTheDocument();
-  });
-  it("shows an honest empty state", async () => {
-    listPhase5Events.mockResolvedValue([]); listBridgeCandidateReviews.mockResolvedValue([]);
-    render(<HomeWorkspace />);
-    await waitFor(() => expect(screen.getByText(/No Phase 2 Main Issues yet/i)).toBeVisible());
-    expect(screen.getByText("Phase 2 Main Issues")).toBeVisible();
-  });
-  it("keeps the data scope and an exit in presentation mode", async () => {
+    const { unmount } = render(<HomeWorkspace />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Could not load Main Issues/i);
+    expect(screen.getByRole("button", { name: /Retry/i })).toBeVisible();
+    unmount();
+    listPhase5Events.mockResolvedValue([]);
     params.set("present", "1");
-    listPhase5Events.mockResolvedValue([]); listBridgeCandidateReviews.mockResolvedValue([]);
     render(<HomeWorkspace />);
     expect(await screen.findByText(/No Phase 2 Main Issues yet/i)).toBeVisible();
     expect(screen.getByRole("link", { name: "Exit presentation" })).toHaveAttribute("href", "/home");
-    expect(document.querySelector(".app-shell")).toHaveAttribute("data-presentation", "true");
-    expect(screen.getByText("Phase 2 Main Issues")).toBeVisible();
-  });
-  it("links real qualification and type counts to their Explore records", async () => {
-    const event = { id: "one", phase1_source_id: "source-one", title: "Signal", description: "Description", evidence_quote: "Quote", qualification: { status: "FINAL", reason_codes: [] }, classification: { event_type_name: "Conflict" }, timeline: { event_date: "2026-09-01" }, event_geographies: [{ resolution_status: "RESOLVED", latitude: 1, longitude: 2 }], actor_geographies: [], created_at: "2026-09-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" } as unknown as Phase5Event;
-    listPhase5Events.mockResolvedValue([event]);
-    render(<HomeWorkspace />);
-    expect(await screen.findByRole("region", { name: "Selected Main Issue event globe" })).toBeVisible();
-    const links = screen.getAllByRole("link");
-    expect(links.some((link) => link.getAttribute("href") === "/explore?issue=source-one&status=FINAL")).toBe(true);
-    expect(links.some((link) => link.getAttribute("href") === "/explore?scope=all&type=Conflict")).toBe(true);
-  });
-  it("lets a shared map marker reveal each event and links pending records", async () => {
-    const base = { id: "one", phase1_source_id: "source-one", title: "First", qualification: { status: null, reason_codes: [] }, classification: { event_type_name: "Conflict" }, timeline: { event_date: null }, event_geographies: [{ resolution_status: "RESOLVED", latitude: 1, longitude: 2 }], actor_geographies: [], created_at: "2026-09-01", updated_at: "2026-09-01" } as unknown as Phase5Event;
-    listPhase5Events.mockResolvedValue([base, { ...base, id: "two", title: "Second" }]);
-    render(<HomeWorkspace />);
-    fireEvent.click(await screen.findByRole("button", { name: "Shared marker" }));
-    const chooser = screen.getByRole("region", { name: "Events at Shared place" });
-    expect(within(chooser).getByRole("link", { name: "First" })).toHaveAttribute("href", "/explore?issue=source-one&event=one");
-    expect(within(chooser).getByRole("link", { name: "Second" })).toHaveAttribute("href", "/explore?issue=source-one&event=two");
-    expect(screen.getAllByRole("link").some((link) => link.getAttribute("href") === "/explore?scope=all&status=PENDING")).toBe(true);
+    await waitFor(() => expect(document.querySelector(".app-shell")).toHaveAttribute("data-presentation", "true"));
   });
 });
