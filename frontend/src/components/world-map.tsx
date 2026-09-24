@@ -359,8 +359,11 @@ export const worldMapStyle: StyleSpecification = {
 };
 
 type WorldMapProps = {
+  autoRotate?: boolean;
   clusters?: EventPinCluster[];
+  focusCoordinates?: [number, number];
   geojson?: EventPinFeatureCollection;
+  initialZoom?: number;
   onClusterSelect?: (cluster: EventPinCluster) => void;
   onFeatureSelect?: (eventId: string) => void;
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
@@ -392,8 +395,11 @@ function syncClusterMarkers(
 }
 
 export function WorldMap({
+  autoRotate = true,
   clusters = EMPTY_CLUSTERS,
+  focusCoordinates,
   geojson = EMPTY_EVENT_PINS,
+  initialZoom = 2.2,
   onClusterSelect,
   onFeatureSelect,
   onProjectionModeChange,
@@ -418,15 +424,18 @@ export function WorldMap({
   const selectionRef = useRef(onFeatureSelect);
   const mapLoaded = useRef(false);
   const pinPulseExpanded = useRef(false);
-  const rotationEnabledRef = useRef(true);
+  const rotationEnabledRef = useRef(autoRotate);
   const rotationSpeedRef = useRef(4);
   const rotationDirectionRef = useRef<1 | -1>(1);
   const [unavailable, setUnavailable] = useState(false);
   const [flatFallback, setFlatFallback] = useState(false);
-  const [rotationPlaying, setRotationPlaying] = useState(true);
+  const [rotationPlaying, setRotationPlaying] = useState(autoRotate);
   const [rotationSpeed, setRotationSpeed] = useState(4);
   const [rotationDirection, setRotationDirection] = useState<1 | -1>(1);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const initialViewRef = useRef({ center: focusCoordinates ?? ([0, 20] as [number, number]), zoom: initialZoom });
+  const focusLongitude = focusCoordinates?.[0];
+  const focusLatitude = focusCoordinates?.[1];
   const [reduceMotionAtMount] = useState(
     () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
   );
@@ -463,8 +472,8 @@ export function WorldMap({
     const map = new maplibregl.Map({
       container: container.current,
       style: worldMapStyle,
-      center: [0, 20],
-      zoom: 2.2,
+      center: initialViewRef.current.center,
+      zoom: initialViewRef.current.zoom,
       attributionControl: false,
     });
     mapRef.current = map;
@@ -631,6 +640,11 @@ export function WorldMap({
       map.remove();
     };
   }, []);
+
+  useEffect(() => {
+    if (focusLongitude === undefined || focusLatitude === undefined || !mapRef.current || !mapLoaded.current) return;
+    mapRef.current.easeTo({ center: [focusLongitude, focusLatitude], duration: reduceMotionAtMount ? 0 : 850 });
+  }, [focusLongitude, focusLatitude, reduceMotionAtMount]);
 
   useEffect(() => {
     pinsRef.current = geojson;

@@ -20,6 +20,23 @@ Issue-first data relationship and Explore behavior. The four destinations from t
 
 # Decision
 
+## 2026-09-24 visual amendment: Cinematic Field Notes (Option B)
+
+After reviewing the first implementation, the owner chose the second visual mockup and approved
+replacing existing decorative assets to approach its cinematic composition. The Home globe and
+selected-Issue narrative now share one continuous scene with an atmospheric gradient, rather
+than two bordered panels. The selected Issue opens the globe focused on its first resolved
+related place; Home rotation starts paused so its highlighted location stays visible, and the
+user can resume rotation with the existing control. This changes presentation only: every globe
+point still represents an Issue and a unique verified related place, never an event pin.
+
+The recent-Issue selector is an asymmetric filmstrip with the selected Issue prominent. Its
+new imagery is decorative illustration and is disclosed as such; it is not source evidence.
+Across all issues uses staggered figures and a subtle horizon, while the full linked-event type
+distribution remains visible and interactive. The live data, source attribution, search,
+shared-place chooser, Explore links, and narrow-screen access remain required. The mockup's
+invented visual details and numbers are not product data.
+
 ## Screen structure and visual language
 
 - Keep Home, Explore, Prepare, and Settings as the four clear destinations.

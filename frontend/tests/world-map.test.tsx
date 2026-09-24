@@ -88,6 +88,15 @@ describe("offline world map configuration", () => {
     );
   });
 
+  it("can open the Home globe on the selected Issue without starting rotation", () => {
+    render(<WorldMap focusCoordinates={[58.5, 51.2]} initialZoom={2.7} autoRotate={false} />);
+
+    expect(maplibregl.Map).toHaveBeenLastCalledWith(
+      expect.objectContaining({ center: [58.5, 51.2], zoom: 2.7 }),
+    );
+    expect(screen.getByRole("button", { name: "Resume globe rotation" })).toBeVisible();
+  });
+
   it("uses only a local PMTiles source", () => {
     expect(WORLD_PMTILES_URL).toBe("/api/backend/api/maps/world.pmtiles");
     expect(JSON.stringify(worldMapStyle)).not.toMatch(/https?:\/\//);

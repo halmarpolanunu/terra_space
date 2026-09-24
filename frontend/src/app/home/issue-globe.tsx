@@ -40,10 +40,13 @@ export function IssueGlobe({ places, selectedIssueSourceId, onSelectIssue, onSel
   const { pins, clusters } = buildIssueGlobeData(places);
   const byId = new Map(places.map((place) => [place.id, place]));
   const selectedPinIds = places.filter((place) => place.issueSourceId === selectedIssueSourceId).map((place) => place.id);
+  const focusPlace = places.find((place) => place.issueSourceId === selectedIssueSourceId);
+  const focusCoordinates: [number, number] | undefined = focusPlace ? [focusPlace.longitude, focusPlace.latitude] : undefined;
   const displayedClusters = clusters.map((cluster) => ({ ...cluster, selected: cluster.eventIds.some((id) => selectedPinIds.includes(id)) }));
 
   return <>
     <WorldMap geojson={pins} clusters={displayedClusters} selectedPinIds={selectedPinIds}
+      focusCoordinates={focusCoordinates} initialZoom={2.7} autoRotate={false}
       onFeatureSelect={(markerId) => {
         const place = byId.get(markerId);
         if (place) onSelectIssue(place.issueSourceId);

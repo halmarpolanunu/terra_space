@@ -10,6 +10,17 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Cinematic Field Notes Home refinement implemented locally:** after comparing
+the live Home with two generated directions, the owner selected Option B and approved replacing
+decorative assets. The Home hero now overlays its source-grounded Issue narrative on a larger,
+brighter live globe. The globe starts focused on the selected Issue's resolved related place
+and keeps rotation paused until the user resumes it. Recent Issues form an asymmetric visual
+filmstrip using clearly disclosed illustrative artwork. Across all issues uses staggered
+figures, a curved horizon, and the full linked-event type list. Issue-level marker rules,
+search, chooser, Explore links, and live metric calculations remain. The local Docker frontend
+was rebuilt for review at `http://localhost:3000/home`. The next step is owner review of this
+visual pass in the existing pull request; no n8n workflow or database content was changed.
+
 **2026-09-24 Atlas Stage Home implemented and ready for owner review:** the approved
 [design](decisions/Atlas-Stage-Issue-Level-Home-Design.md) is implemented through the
 [completed plan](plans/2026-09-24-atlas-stage-issue-home.md). Home now presents one

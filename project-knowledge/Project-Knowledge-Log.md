@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Cinematic Field Notes Home visual amendment
+
+- The owner approved Option B after comparing it with the rigid first Home implementation.
+  The [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) now records the
+  continuous globe scene, focused selected-Issue location, asymmetric story filmstrip, and
+  staggered statistics. Decorative story artwork is disclosed as illustration, not evidence.
+- Local Docker frontend review showed the live 50 Main Issues, 19 mapped countries, and 109
+  linked Phase 5 events with the selected Issue's map location visible. No database or n8n
+  content changed.
+
 ## 2026-09-24 — Atlas Stage Home implemented
 
 - Home now uses a pure Issue-place model, with one marker per source-grounded Main Issue and
