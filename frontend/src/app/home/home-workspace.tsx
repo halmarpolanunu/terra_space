@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
@@ -8,6 +8,7 @@ import { IssueGlobe } from "@/app/home/issue-globe";
 import { listBridgeCandidateReviews, listPhase5Events, type BridgeCandidateReview, type Phase5Event } from "@/lib/bridge-api";
 import { buildMainIssueStories } from "@/lib/main-issue-view-model";
 import { buildIssueAtlas, type IssueAtlasPlace } from "@/lib/issue-atlas-model";
+import { useAppearanceSettings } from "@/lib/appearance-settings";
 import styles from "./home.module.css";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; events: Phase5Event[]; reviews: BridgeCandidateReview[] };
@@ -15,10 +16,13 @@ const spectrumColors = ["#d8b577", "#b7a17d", "#968d79", "#7c8578", "#6c7d76", "
 
 export function HomeWorkspace() {
   const presentation = useSearchParams().get("present") === "1";
+  const { motionEnabled } = useAppearanceSettings();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [issueQuery, setIssueQuery] = useState("");
   const [sharedPlace, setSharedPlace] = useState<{ label: string; places: IssueAtlasPlace[] } | null>(null);
+  const selectorRef = useRef<HTMLElement>(null);
+  const acrossRef = useRef<HTMLElement>(null);
 
   const request = useCallback(() => {
     void Promise.all([listPhase5Events(), listBridgeCandidateReviews()])
@@ -27,6 +31,23 @@ export function HomeWorkspace() {
   }, []);
   const load = useCallback(() => { setState({ kind: "loading" }); request(); }, [request]);
   useEffect(request, [request]);
+  useEffect(() => {
+    if (state.kind !== "ready") return;
+    const sections = [selectorRef.current, acrossRef.current].filter((section): section is HTMLElement => Boolean(section));
+    if (typeof IntersectionObserver === "undefined") {
+      sections.forEach((section) => { section.dataset.visible = "true"; });
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        (entry.target as HTMLElement).dataset.visible = "true";
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [state.kind]);
 
   const stories = useMemo(() => state.kind === "ready" ? buildMainIssueStories(state.reviews, state.events) : [], [state]);
   const atlas = useMemo(() => state.kind === "ready" ? buildIssueAtlas(stories, state.events) : null, [stories, state]);
@@ -46,7 +67,7 @@ export function HomeWorkspace() {
   }
 
   return <AppShell currentPath="/home" presentation={presentation}>
-    <div className={styles.home}>
+    <div className={styles.home} data-motion={motionEnabled ? "on" : "off"}>
       <div className={styles.actions}>{presentation ? <Link href="/home">Exit presentation</Link> : <Link href="/home?present=1">Presentation view ↗</Link>}</div>
       {state.kind === "loading" && <p className={styles.notice} role="status">Loading Main Issues and related places…</p>}
       {state.kind === "error" && <div className={styles.notice} role="alert"><p>Could not load Main Issues and linked events.</p><button type="button" onClick={load}>Retry</button></div>}
@@ -64,7 +85,7 @@ export function HomeWorkspace() {
           </div>
           <div className={styles.issueNarrative}>
             <div className={styles.storyTop}><span>Phase 2 / Main Issue</span><span>{atlas?.metrics.issueCount} issues in view</span></div>
-            <div className={styles.storyBody}>
+            <div className={styles.storyBody} key={selectedIssue.sourceId}>
               <h1>{selectedIssue.label}</h1>
               <p className={styles.storySummary}>{selectedIssue.summary || "No summary retained for this Issue."}</p>
               <p className={styles.storySource}>Source: {selectedIssue.sourceTitle}</p>
@@ -77,16 +98,16 @@ export function HomeWorkspace() {
           <p className={styles.globeCaption}>All Main Issues <span>·</span> Selected Issue highlighted <span>·</span> Verified related event locations</p>
         </section>
 
-        <section className={styles.issueSelector} aria-label="Choose a Main Issue">
+        <section ref={selectorRef} className={styles.issueSelector} aria-label="Choose a Main Issue">
           <div className={styles.selectorHeading}><div><span>02 / THE STORIES</span><h2>Choose a question to follow.</h2></div><Link href="/explore?scope=all">Browse in Explore ↗</Link></div>
-          <div className={styles.selectorRail}>{featuredIssues.map((issue, index) => <button type="button" key={issue.sourceId} className={styles.storyTile} data-selected={issue.sourceId === selectedIssue.sourceId} onClick={() => selectIssue(issue.sourceId)}><span className={styles.storyArt} data-art={index} aria-hidden="true" /><span className={styles.tileCopy}><small>{String(index + 1).padStart(2, "0")}{index === 0 ? " / SELECTED" : ""}</small><span>{issue.label}</span>{index === 0 && <span className={styles.tileHint}>Follow this Issue <span aria-hidden="true">↗</span></span>}</span></button>)}</div>
+          <div className={styles.selectorRail}>{featuredIssues.map((issue, index) => <button type="button" key={issue.sourceId} className={styles.storyTile} data-selected={issue.sourceId === selectedIssue.sourceId} style={{ animationDelay: `${index * 65}ms` }} onClick={() => selectIssue(issue.sourceId)}><span className={styles.storyArt} data-art={index} aria-hidden="true" /><span className={styles.tileCopy}><small>{String(index + 1).padStart(2, "0")}{index === 0 ? " / SELECTED" : ""}</small><span>{issue.label}</span>{index === 0 && <span className={styles.tileHint}>Follow this Issue <span aria-hidden="true">↗</span></span>}</span></button>)}</div>
           <div className={styles.issueSearch}><label htmlFor="home-issue-search">Find an issue</label><input id="home-issue-search" type="search" value={issueQuery} onChange={(event) => setIssueQuery(event.target.value)} placeholder="Search all Main Issues" />
             {issueQuery.trim() && <div className={styles.searchResults} role="group" aria-label="Matching Main Issues">{matchingIssues.length ? matchingIssues.map((issue) => <button key={issue.sourceId} type="button" onClick={() => { selectIssue(issue.sourceId); setIssueQuery(""); }}>{issue.label}<small>{issue.sourceTitle}</small></button>) : <p>No Main Issues match this search.</p>}</div>}
           </div>
           <p className={styles.artNote}>Story artwork is illustrative. Open an Issue for source evidence.</p>
         </section>
 
-        <section className={styles.across} aria-label="Across all issues">
+        <section ref={acrossRef} className={styles.across} aria-label="Across all issues">
           <div className={styles.acrossTop}>
             <div className={styles.acrossHeading}><span>03 / ACROSS ALL ISSUES</span><h2>The wider picture.</h2><p>A quick reading of the current Issue landscape.</p></div>
             <div className={styles.metricRow}>
@@ -103,7 +124,7 @@ export function HomeWorkspace() {
                   {index === 0 && item.count / atlas.metrics.eventCount >= .25 ? <span>{item.label} {item.count}</span> : null}
                 </Link>)}
               </div>
-              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
+              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label} style={{ animationDelay: `${180 + index * 45}ms` }}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
             </> : <p className={styles.spectrumEmpty}>No linked Phase 5 events yet.</p>}
           </div>
           <p className={styles.dataNote}>Counts include retained Final, Not Final, and pending records linked to current Main Issues. {atlas?.metrics.unlinkedEventCount ? `${atlas.metrics.unlinkedEventCount} unlinked Phase 5 ${atlas.metrics.unlinkedEventCount === 1 ? "record is" : "records are"} excluded.` : ""}</p>

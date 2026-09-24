@@ -20,6 +20,15 @@ Issue-first data relationship and Explore behavior. The four destinations from t
 
 # Decision
 
+## 2026-09-24 visual amendment: Premium Home motion
+
+Home uses restrained, layered motion to guide attention: the globe and Issue narrative enter
+first, the Issue filmstrip appears in sequence, and the event spectrum reveals when it reaches
+the viewport. Choosing another Issue briefly refreshes its narrative. Hover and press feedback
+is short and subtle. Animation changes presentation only; it never changes data, Issue selection,
+or navigation. The device's appearance motion switch and the system's reduced-motion preference
+disable these effects, leaving all content and controls immediately available.
+
 ## 2026-09-24 visual amendment: Editorial Spectrum
 
 The owner approved an image wireframe for a lighter **Across all issues** section. The heading

@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Premium motion for Home
+
+- The [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) now records
+  restrained staged entrances, on-view spectrum reveal, Issue narrative transitions, and motion
+  opt-outs. The change affects presentation only; source data and navigation rules are intact.
+- Browser review confirmed the animations and Issue selection on the live Home, and a narrow
+  viewport had no horizontal overflow. No database or n8n content changed.
+- Verification passed: 247 frontend tests, lint, production build, and Project Knowledge
+  validation with no errors or warnings.
+
 ## 2026-09-24 — Editorial Spectrum for Across all issues
 
 - The owner approved a visual wireframe that simplifies the lower Home section. The

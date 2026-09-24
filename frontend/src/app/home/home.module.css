@@ -63,6 +63,8 @@
 .storyArt[data-art="3"] { background-position: center, 75% 50%; }
 .storyArt[data-art="4"] { background-position: center, 100% 50%; }
 .storyTile[data-selected="true"] .storyArt { height: 100%; opacity: 1; }
+.storyTile .storyArt { transition: opacity 420ms var(--motion-ease), transform 600ms var(--motion-ease); }
+.storyTile:hover .storyArt, .storyTile:focus-visible .storyArt { opacity: 1; transform: scale(1.055); }
 .tileCopy { display: flex; flex-direction: column; min-width: 0; gap: .3rem; padding: .5rem .7rem .65rem; }
 .storyTile[data-selected="true"] .tileCopy { justify-content: center; padding: 1rem 1.2rem; }
 .tileCopy small { color: #e9c181; font: .59rem var(--font-mono); letter-spacing: .12em; }
@@ -103,6 +105,7 @@
 .spectrumBar { display: flex; gap: 2px; height: clamp(3rem, 4vw, 4.2rem); margin-top: 1.6rem; overflow: hidden; background: #2d3833; }
 .spectrumBar a { display: flex; flex-basis: 0; align-items: center; min-width: 3px; overflow: hidden; color: #17201e; text-decoration: none; transition: filter 200ms ease; }
 .spectrumBar a:hover { filter: brightness(1.22); }
+.spectrumBar a:focus-visible { filter: brightness(1.28); }
 .spectrumBar a:first-child span { overflow: hidden; padding: 0 1.2rem; font: 700 clamp(.7rem, 1vw, 1rem) var(--font-sans); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .spectrumLegend { column-count: 2; column-gap: clamp(2rem, 5vw, 5rem); list-style: none; margin: 1.65rem 0 0; padding: 0; }
 .spectrumLegend li { break-inside: avoid; }
@@ -113,6 +116,33 @@
 .spectrumLegend strong { margin-left: auto; color: #f1d4a1; font: 600 .85rem var(--font-mono); font-variant-numeric: tabular-nums; }
 .spectrumEmpty { margin: 1.4rem 0 0; color: #b8c5b8; }
 .dataNote { max-width: 70rem; margin: 2rem 0 0; color: #9fac9f; font-size: .72rem; line-height: 1.5; }
+
+/* Quiet choreography: the Issue leads, then the filmstrip and data arrive on view. */
+.home[data-motion="on"] .atlasStage::after { animation: atlasGlow 11s ease-in-out 1.2s infinite alternate; }
+.home[data-motion="on"] .globePanel { animation: atlasGlobeIn 1100ms var(--motion-ease) both; }
+.home[data-motion="on"] .storyTop { animation: atlasRise 560ms var(--motion-ease) 100ms both; }
+.home[data-motion="on"] .storyBody { animation: atlasRise 700ms var(--motion-ease) 180ms both; }
+.home[data-motion="on"] .storyLocation, .home[data-motion="on"] .globeCaption { animation: atlasFadeIn 650ms var(--motion-ease) 530ms both; }
+.home[data-motion="on"] .issueSelector[data-visible="true"] .selectorHeading { animation: atlasRise 560ms var(--motion-ease) both; }
+.home[data-motion="on"] .issueSelector[data-visible="true"] .storyTile { animation-name: atlasTileIn; animation-duration: 580ms; animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
+.home[data-motion="on"] .across[data-visible="true"] .acrossHeading { animation: atlasRise 600ms var(--motion-ease) both; }
+.home[data-motion="on"] .across[data-visible="true"] .metric:first-child { animation: atlasRise 640ms var(--motion-ease) 90ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .metric:nth-child(2) { animation: atlasRise 640ms var(--motion-ease) 170ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .spectrumHeading { animation: atlasRise 650ms var(--motion-ease) 120ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .spectrumBar { animation: atlasSpectrumIn 850ms var(--motion-ease) 210ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .spectrumLegend li { animation-name: atlasRise; animation-duration: 500ms; animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
+.home[data-motion="on"] .spectrumLegend a { transition: color var(--motion-quick) var(--motion-ease), transform var(--motion-quick) var(--motion-ease); }
+.home[data-motion="on"] .spectrumLegend a:hover, .home[data-motion="on"] .spectrumLegend a:focus-visible { transform: translateX(4px); }
+.home[data-motion="on"] .primaryAction:active, .home[data-motion="on"] .storyTile:active { transform: translateY(0) scale(.985); }
+@keyframes atlasRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes atlasFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes atlasTileIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes atlasGlobeIn { from { opacity: .35; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
+@keyframes atlasSpectrumIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes atlasGlow { from { opacity: .18; } to { opacity: .47; } }
+
+.home[data-motion="off"] *, .home[data-motion="off"] *::before, .home[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+.home[data-motion="off"] .primaryAction:hover, .home[data-motion="off"] .storyTile:hover, .home[data-motion="off"] .metric:hover strong, .home[data-motion="off"] .storyTile:hover .storyArt, .home[data-motion="off"] .spectrumLegend a:hover { transform: none; }
 
 @media (max-width: 74rem) {
   .acrossTop { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
@@ -171,6 +201,5 @@
   .spectrumLegend a { font-size: .78rem; min-height: 2.35rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .primaryAction, .storyTile, .metric strong, .spectrumBar a { transition: none; }
-  .primaryAction:hover, .storyTile:hover, a.metric:hover strong { transform: none; }
+  .primaryAction:hover, .storyTile:hover, a.metric:hover strong, .storyTile:hover .storyArt, .spectrumLegend a:hover { transform: none; }
 }

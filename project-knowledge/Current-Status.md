@@ -10,6 +10,15 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Home motion refinement:** the owner requested a more premium animated feel after
+approving the Editorial Spectrum. Home now stages the globe and Issue narrative, reveals the
+story filmstrip and event spectrum as they enter view, and gives Issue selection and interactive
+elements restrained feedback. These effects follow the appearance motion switch and system
+reduced-motion preference. Live browser review confirmed Issue selection, the spectrum reveal,
+and no horizontal overflow at a narrow viewport. All counts and Explore links stay unchanged.
+All 247 frontend tests, lint, production build, and Project Knowledge validation passed.
+Next: owner reviews the motion in the existing pull request.
+
 **2026-09-24 Editorial Spectrum Home refinement:** the owner approved the visual wireframe
 for **Across all issues**. Home now gives the 50 Main Issues and 19 countries more breathing
 room, then shows 109 linked Phase 5 events as one full-width, proportional event-type spectrum.
