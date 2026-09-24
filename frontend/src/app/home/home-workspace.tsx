@@ -19,13 +19,13 @@ export function HomeWorkspace() {
   const [issueQuery, setIssueQuery] = useState("");
   const [sharedPlace, setSharedPlace] = useState<{ label: string; places: IssueAtlasPlace[] } | null>(null);
 
-  const load = useCallback(() => {
-    setState({ kind: "loading" });
+  const request = useCallback(() => {
     void Promise.all([listPhase5Events(), listBridgeCandidateReviews()])
       .then(([events, reviews]) => setState({ kind: "ready", events, reviews }))
       .catch(() => setState({ kind: "error" }));
   }, []);
-  useEffect(load, [load]);
+  const load = useCallback(() => { setState({ kind: "loading" }); request(); }, [request]);
+  useEffect(request, [request]);
 
   const stories = useMemo(() => state.kind === "ready" ? buildMainIssueStories(state.reviews, state.events) : [], [state]);
   const atlas = useMemo(() => state.kind === "ready" ? buildIssueAtlas(stories, state.events) : null, [stories, state]);
@@ -43,7 +43,7 @@ export function HomeWorkspace() {
   }
 
   return <AppShell currentPath="/home" presentation={presentation}>
-    <main className={styles.home}>
+    <div className={styles.home}>
       <header className={styles.intro}>
         <div><p className={styles.scope}>Terra Space <span>/</span> Phase 2 Main Issues</p><h1>Read the world<br /><em>through the issue.</em></h1>
           <p>One source-grounded question opens the map. Follow its related places, then examine the events and evidence in Explore.</p></div>
@@ -98,6 +98,6 @@ export function HomeWorkspace() {
           <p className={styles.dataNote}>Countries count unique ISO3 codes from resolved Event Geography with valid coordinates. Actor locations are excluded. {atlas?.metrics.unmappedIssueCount ? `${atlas.metrics.unmappedIssueCount} ${atlas.metrics.unmappedIssueCount === 1 ? "Issue has" : "Issues have"} no resolved related location. ` : ""}{atlas?.metrics.unlinkedEventCount ? `${atlas.metrics.unlinkedEventCount} unlinked Phase 5 ${atlas.metrics.unlinkedEventCount === 1 ? "record is" : "records are"} excluded.` : ""}</p>
         </section>
       </>)}
-    </main>
+    </div>
   </AppShell>;
 }

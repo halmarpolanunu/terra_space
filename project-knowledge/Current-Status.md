@@ -10,6 +10,20 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Atlas Stage Home implemented and ready for owner review:** the approved
+[design](decisions/Atlas-Stage-Issue-Level-Home-Design.md) is implemented through the
+[completed plan](plans/2026-09-24-atlas-stage-issue-home.md). Home now presents one
+source-grounded Main Issue beside the real globe. All Issues' unique related locations appear
+together; selecting a point or shared-location choice changes the Issue, while event details
+remain in Explore. The lower section shows the three approved measures. The live local dataset
+showed 50 Main Issues, 27 Issue-place markers, 19 countries, and 109 linked events; 29 Issues
+have no resolved location and remain searchable. The shared-place chooser and an Unclassified
+link to 53 Explore records worked in the browser. All 246 frontend tests, ESLint, production
+build, and Project Knowledge validation passed. Desktop and mobile captures were inspected;
+effective 90–150% viewport widths had no page overflow. Direct browser zoom was not tested.
+No n8n workflow was run or database write issued. Next: owner reviews the Home result in the
+open pull request before further visual changes.
+
 **2026-09-24 Atlas Stage implementation plan ready for review:** the owner approved the written
 [Home design](decisions/Atlas-Stage-Issue-Level-Home-Design.md). The
 [implementation plan](plans/2026-09-24-atlas-stage-issue-home.md) now has four testable tasks:

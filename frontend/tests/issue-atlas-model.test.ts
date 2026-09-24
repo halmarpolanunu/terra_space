@@ -12,6 +12,14 @@ function story(sourceId: string, events: Phase5Event[]): MainIssueStory {
 }
 
 describe("buildIssueAtlas", () => {
+  it("keeps one marker per source and place when a review appears twice", () => {
+    const place = { geographic_reference_id: "ref-a", canonical_name: "City", country_iso3: "ARG", latitude: -34, longitude: -58, resolution_status: "RESOLVED" };
+    const linked = event("event-a", "source-a", "Diplomacy", [place]);
+    const result = buildIssueAtlas([story("source-a", [linked]), story("source-a", [linked])], [linked]);
+    expect(result.places).toHaveLength(1);
+    expect(result.metrics).toMatchObject({ issueCount: 1, eventCount: 1, countryCount: 1 });
+  });
+
   it("collapses repeated event places within an Issue while preserving every Issue and unique place", () => {
     const shared = { geographic_reference_id: "place-1", canonical_geography_name: "Buenos Aires", country_iso3: "arg", latitude: -34.6, longitude: -58.4, resolution_status: "RESOLVED" };
     const second = { geographic_reference_id: "place-2", canonical_geography_name: "Montevideo", country_iso3: "URY", latitude: -34.9, longitude: -56.2, resolution_status: "RESOLVED" };

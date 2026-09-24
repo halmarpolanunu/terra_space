@@ -44,10 +44,11 @@ function resolvedPlace(place: Record<string, unknown>) {
 export function buildIssueAtlas(stories: MainIssueStory[], allEvents: Phase5Event[]): { places: IssueAtlasPlace[]; metrics: IssueAtlasMetrics } {
   const places: IssueAtlasPlace[] = [];
   const linkedById = new Map<string, Phase5Event>();
-  let unmappedIssueCount = 0;
+  const seenBySource = new Map<string, Set<string>>();
 
   for (const story of stories) {
-    const seenPlaces = new Set<string>();
+    const seenPlaces = seenBySource.get(story.sourceId) ?? new Set<string>();
+    seenBySource.set(story.sourceId, seenPlaces);
     for (const event of story.events) {
       linkedById.set(event.id, event);
       for (const raw of event.event_geographies) {
@@ -65,7 +66,6 @@ export function buildIssueAtlas(stories: MainIssueStory[], allEvents: Phase5Even
         });
       }
     }
-    if (seenPlaces.size === 0) unmappedIssueCount++;
   }
 
   const byType = new Map<string, number>();
@@ -74,11 +74,11 @@ export function buildIssueAtlas(stories: MainIssueStory[], allEvents: Phase5Even
     byType.set(label, (byType.get(label) ?? 0) + 1);
   }
   const metrics: IssueAtlasMetrics = {
-    issueCount: new Set(stories.map((story) => story.sourceId)).size,
+    issueCount: seenBySource.size,
     countryCount: new Set(places.map((place) => place.countryIso3).filter((code): code is string => code !== null)).size,
     eventCount: linkedById.size,
     byType: [...byType].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
-    unmappedIssueCount,
+    unmappedIssueCount: [...seenBySource.values()].filter((seenPlaces) => seenPlaces.size === 0).length,
     unlinkedEventCount: new Set(allEvents.filter((event) => !linkedById.has(event.id)).map((event) => event.id)).size,
   };
   return { places, metrics };

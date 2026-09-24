@@ -177,11 +177,25 @@ function selectedPaintValue(
 }
 
 function haloRadius(selectedEventId: string | readonly string[] | undefined, expanded = false): NumericPaintValue {
+  if (Array.isArray(selectedEventId)) return selectedPaintValue(selectedEventId, expanded ? 23 : 20, 9);
   return selectedPaintValue(selectedEventId, expanded ? 18 : 15, expanded ? 15 : 11);
 }
 
 function haloOpacity(selectedEventId: string | readonly string[] | undefined, expanded = false): NumericPaintValue {
+  if (Array.isArray(selectedEventId)) return selectedPaintValue(selectedEventId, expanded ? 0.27 : 0.55, 0.08);
   return selectedPaintValue(selectedEventId, expanded ? 0.22 : 0.48, expanded ? 0.12 : 0.34);
+}
+
+function pinRadius(selection: string | readonly string[] | undefined): NumericPaintValue {
+  return Array.isArray(selection) ? selectedPaintValue(selection, 9, 4.5) : selectedPaintValue(selection, 7.5, 6);
+}
+
+function pinOpacity(selection: string | readonly string[] | undefined): NumericPaintValue {
+  return Array.isArray(selection) ? selectedPaintValue(selection, 1, 0.48) : selectedPaintValue(selection, 1, selection ? 0.78 : 1);
+}
+
+function pinStrokeWidth(selection: string | readonly string[] | undefined): NumericPaintValue {
+  return Array.isArray(selection) ? selectedPaintValue(selection, 2.5, 0.8) : selectedPaintValue(selection, 2, 1);
 }
 
 function wrapLongitude(lng: number): number {
@@ -213,9 +227,9 @@ function applySelectedPinPaint(
 ) {
   map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-radius", haloRadius(selectedEventId, haloExpanded));
   map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-opacity", haloOpacity(selectedEventId, haloExpanded));
-  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-radius", selectedPaintValue(selectedEventId, 7.5, 6));
-  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-opacity", selectedPaintValue(selectedEventId, 1, selectedEventId ? 0.78 : 1));
-  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-stroke-width", selectedPaintValue(selectedEventId, 2, 1));
+  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-radius", pinRadius(selectedEventId));
+  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-opacity", pinOpacity(selectedEventId));
+  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-stroke-width", pinStrokeWidth(selectedEventId));
 }
 
 function arcOpacity(selectedRelationshipId: string | undefined): NumericPaintValue {
@@ -524,14 +538,10 @@ export function WorldMap({
         source: EVENT_PIN_SOURCE_ID,
         paint: {
           "circle-color": EXCEPTION_PIN_COLOR_EXPRESSION,
-          "circle-radius": selectedPaintValue(selectedEventRef.current, 7.5, 6),
+          "circle-radius": pinRadius(selectedEventRef.current),
           "circle-stroke-color": EXCEPTION_PIN_STROKE_COLOR_EXPRESSION,
-          "circle-stroke-width": selectedPaintValue(selectedEventRef.current, 2, 1),
-          "circle-opacity": selectedPaintValue(
-            selectedEventRef.current,
-            1,
-            selectedEventRef.current ? 0.78 : 1,
-          ),
+          "circle-stroke-width": pinStrokeWidth(selectedEventRef.current),
+          "circle-opacity": pinOpacity(selectedEventRef.current),
         },
       });
       map.on("click", EVENT_PIN_LAYER_ID, handlePinClick);

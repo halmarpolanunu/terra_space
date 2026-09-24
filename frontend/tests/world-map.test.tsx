@@ -426,7 +426,8 @@ describe("offline world map configuration", () => {
     const cluster = { coordinates: [2, 1] as [number, number], count: 2, eventIds: ["a:one", "b:one"], locationLabel: "Shared place", ariaLabel: "2 Issue locations at Shared place" };
     render(<WorldMap selectedPinIds={["a:one", "a:two"]} clusters={[cluster]} />);
     expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: EVENT_PIN_LAYER_ID, paint: expect.objectContaining({
-      "circle-radius": ["case", ["in", ["get", "eventId"], ["literal", ["a:one", "a:two"]]], 7.5, 6],
+      "circle-radius": ["case", ["in", ["get", "eventId"], ["literal", ["a:one", "a:two"]]], 9, 4.5],
+      "circle-opacity": ["case", ["in", ["get", "eventId"], ["literal", ["a:one", "a:two"]]], 1, 0.48],
     }) }));
     expect(markerInstances[0].element).toHaveAttribute("aria-label", "2 Issue locations at Shared place");
   });

@@ -8,6 +8,21 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Atlas Stage Home implemented
+
+- Home now uses a pure Issue-place model, with one marker per source-grounded Main Issue and
+  unique resolved Event Geography place. Multiple Issues sharing coordinates open a chooser;
+  Issues without a resolved place stay searchable. Event-level map and evidence remain in Explore.
+- The live local Home showed 50 Issues, 27 Issue-place markers, 19 unique mapped countries,
+  and 109 linked retained events. Its Unclassified link opened 53 filtered Explore records.
+- The cinematic Home uses the existing globe, wordmark, compass, amber palette, and local
+  background. A live mobile capture caught a conflicting old globe positioning rule; removing
+  that rule restored the map and caption within the 390-pixel viewport.
+- Verification: 246 frontend tests across 46 files, lint, production build, and Project
+  Knowledge validation passed. Desktop and mobile browser captures were inspected. Effective
+  viewport widths corresponding to 90–150% zoom had no horizontal overflow; actual browser
+  zoom remains unverified. No n8n workflow or database write was issued for this UI change.
+
 ## 2026-09-24 — Atlas Stage specification approved and planned
 
 - The owner approved the written [Atlas Stage Home design](decisions/Atlas-Stage-Issue-Level-Home-Design.md).
