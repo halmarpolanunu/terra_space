@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Explore visual pass
+
+- The owner asked for a more engaging Explore screen. The filtered Phase 5 investigation view
+  now has direct Place, Time, and Records navigation, a map with explicit location coverage,
+  a dated timeline with expandable unknown-date records, and a richer event index. The source
+  evidence drawer uses a clearer reading hierarchy without changing its data.
+- Live browser review with 109 local records confirmed 31 mapped and 78 unresolved locations,
+  an expandable group of 78 unknown event dates, a Not Final filter with 10 records, and an
+  event opening its retained evidence. Desktop and narrow-screen layouts had no page-level
+  horizontal overflow. The four focused Explore tests, component ESLint, and production build
+  passed. No pipeline or database content changed.
+
 ## 2026-09-24 — Home insight visual pass
 
 - The owner asked for more engaging visuals in the lower Home section. The event-type ranking,

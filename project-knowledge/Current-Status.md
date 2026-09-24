@@ -10,6 +10,16 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Explore visual pass:** the owner asked for a more engaging Explore screen after
+reviewing Home. Explore now provides quick Place, Time, and Records jump links; a clearer filter
+row; a map canvas with live mapped and unresolved counts; a vertical dated-event timeline with
+expandable unknown dates; and an editorial event index showing type, qualification, and date
+state. The evidence drawer has a clearer reading hierarchy. All views retain the same Phase 5
+filters and underlying records. Live browser review with 109 events confirmed the map and
+evidence drawer, mobile stacking, unknown-date disclosure, and a Not Final filter showing 10
+records. No database or n8n content changed. The next step is owner review of Explore in pull
+request #2, then deciding whether to extend the visual language to older screens and Settings.
+
 **2026-09-24 Home insight visual pass:** the owner found the lower Home charts and latest-event
 list too plain after the cinematic first-screen change. Home now presents the most common event
 types as a compact ranked chart with the remaining types in an expandable list, dated events as
