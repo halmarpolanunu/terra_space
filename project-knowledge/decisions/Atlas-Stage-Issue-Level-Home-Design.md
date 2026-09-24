@@ -3,7 +3,7 @@ type: Decision
 title: Atlas Stage Issue-Level Home Design
 description: Approved wireframe direction and reviewable visual specification for a cinematic, Issue-led Terra Space Home.
 tags: [project-knowledge, decision, design, home, issues]
-status: draft
+status: active
 ---
 
 # Context
@@ -11,7 +11,7 @@ status: draft
 The owner chose the **Atlas Stage** wireframe for a full Home/dashboard overhaul. Home must give
 Phase 2 Main Issues equal weight as a useful daily entry point and a compelling portfolio view.
 The owner approved a cinematic presentation, reuse of current Terra Space assets, and an
-Issue-level globe. The written specification awaits owner review before implementation.
+Issue-level globe. The owner approved this written specification before implementation planning.
 
 This design refines [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md).
 It replaces that decision's selected-Issue-only Home globe presentation while keeping its

@@ -8,7 +8,7 @@ status: active
 
 # Decisions
 
-- [Atlas Stage Issue-Level Home Design](Atlas-Stage-Issue-Level-Home-Design.md) - Draft specification for the owner-approved cinematic Home wireframe and all-Issue globe behavior; awaiting written-spec review.
+- [Atlas Stage Issue-Level Home Design](Atlas-Stage-Issue-Level-Home-Design.md) - Approved specification for the cinematic Home wireframe and all-Issue globe behavior.
 - [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md) - Current Phase 2 Main Issues lead Home and Explore; linked Phase 5 events and evidence follow each Issue.
 - [Terra Space Guided Command Center Redesign](Terra-Space-Guided-Command-Center-Redesign.md) - Approved navigation and visual direction; its event-led entry is superseded by the Main Issue decision.
 - [Phase 5D Deterministic Duplicate Recommendations](Phase-5D-Deterministic-Duplicate-Recommendations.md) - Strict, model-free pair comparison for explainable possible-duplicate recommendations without merging.

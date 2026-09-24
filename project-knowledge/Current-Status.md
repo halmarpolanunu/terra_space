@@ -10,6 +10,14 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Atlas Stage implementation plan ready for review:** the owner approved the written
+[Home design](decisions/Atlas-Stage-Issue-Level-Home-Design.md). The
+[implementation plan](plans/2026-09-24-atlas-stage-issue-home.md) now has four testable tasks:
+derive Issue-place data and the three measures, adapt the existing globe for Issue selection,
+replace Home content and interactions, then complete cinematic styling and live browser checks.
+The design decision is active. Product UI code has not changed in this planning step. Next:
+owner reviews the plan before native implementation begins.
+
 **2026-09-24 Atlas Stage Home specification awaiting review:** the owner chose the Atlas Stage
 wireframe for a cinematic, easy-to-use Home and approved all-Issue globe behavior. Each point
 represents one Main Issue and one unique resolved location from its linked Phase 5 Event

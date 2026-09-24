@@ -8,6 +8,14 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Atlas Stage specification approved and planned
+
+- The owner approved the written [Atlas Stage Home design](decisions/Atlas-Stage-Issue-Level-Home-Design.md).
+  It is now an active decision.
+- A four-task [implementation plan](plans/2026-09-24-atlas-stage-issue-home.md) covers the pure
+  Issue-place model, globe behavior, Home interaction and measures, and visual/live-data checks.
+  The plan awaits owner review; no UI or pipeline content changed during this planning step.
+
 ## 2026-09-24 — Atlas Stage Home design drafted
 
 - The owner selected the Atlas Stage wireframe and approved a cinematic Home whose globe shows
