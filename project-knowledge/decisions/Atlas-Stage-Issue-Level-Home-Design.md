@@ -20,6 +20,15 @@ Issue-first data relationship and Explore behavior. The four destinations from t
 
 # Decision
 
+## 2026-09-24 visual amendment: Editorial Spectrum
+
+The owner approved an image wireframe for a lighter **Across all issues** section. The heading
+and two leading measures (Main Issues and countries) sit above one full-width distribution of
+linked Phase 5 events. The event total titles a proportional stacked spectrum; a linked legend
+keeps every event type, count, and Explore filter visible. Country coverage and unmapped-Issue
+notes sit beside the country measure, while the illustration disclosure stays near the story
+artwork. All figures remain calculated from live Issue-linked data under the rules below.
+
 ## 2026-09-24 visual amendment: Cinematic Field Notes (Option B)
 
 After reviewing the first implementation, the owner chose the second visual mockup and approved

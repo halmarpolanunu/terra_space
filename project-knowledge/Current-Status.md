@@ -10,6 +10,16 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Editorial Spectrum Home refinement:** the owner approved the visual wireframe
+for **Across all issues**. Home now gives the 50 Main Issues and 19 countries more breathing
+room, then shows 109 linked Phase 5 events as one full-width, proportional event-type spectrum.
+All ten types remain visible in a linked legend; selecting one opens its Explore filter. Country
+coverage and the 29 Issues without a resolved related location are explained beside the country
+measure. The artwork disclosure moved beside the illustrative Issue stories. Desktop and narrow
+screen browser views were inspected, and the Unclassified link opened the 53 matching Explore
+records. No database or n8n content changed. Next: owner review in the existing pull request.
+All 247 frontend tests, lint, production build, and Project Knowledge validation passed.
+
 **2026-09-24 Cinematic Field Notes Home refinement implemented locally:** after comparing
 the live Home with two generated directions, the owner selected Option B and approved replacing
 decorative assets. The Home hero now overlays its source-grounded Issue narrative on a larger,

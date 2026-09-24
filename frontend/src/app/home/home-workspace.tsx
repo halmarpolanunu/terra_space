@@ -11,6 +11,7 @@ import { buildIssueAtlas, type IssueAtlasPlace } from "@/lib/issue-atlas-model";
 import styles from "./home.module.css";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; events: Phase5Event[]; reviews: BridgeCandidateReview[] };
+const spectrumColors = ["#d8b577", "#b7a17d", "#968d79", "#7c8578", "#6c7d76", "#5b6e68", "#4d605b", "#40554f", "#384c47", "#30433f"];
 
 export function HomeWorkspace() {
   const presentation = useSearchParams().get("present") === "1";
@@ -38,7 +39,6 @@ export function HomeWorkspace() {
     ? stories.filter((issue) => `${issue.label} ${issue.sourceTitle}`.toLocaleLowerCase().includes(issueQuery.trim().toLocaleLowerCase()))
     : [];
   const exploreHref = selectedIssue ? `/explore?issue=${encodeURIComponent(selectedIssue.sourceId)}` : "/explore";
-  const maxTypeCount = Math.max(1, ...(atlas?.metrics.byType.map((item) => item.count) ?? []));
 
   function selectIssue(sourceId: string) {
     setSelectedIssueId(sourceId);
@@ -83,19 +83,30 @@ export function HomeWorkspace() {
           <div className={styles.issueSearch}><label htmlFor="home-issue-search">Find an issue</label><input id="home-issue-search" type="search" value={issueQuery} onChange={(event) => setIssueQuery(event.target.value)} placeholder="Search all Main Issues" />
             {issueQuery.trim() && <div className={styles.searchResults} role="group" aria-label="Matching Main Issues">{matchingIssues.length ? matchingIssues.map((issue) => <button key={issue.sourceId} type="button" onClick={() => { selectIssue(issue.sourceId); setIssueQuery(""); }}>{issue.label}<small>{issue.sourceTitle}</small></button>) : <p>No Main Issues match this search.</p>}</div>}
           </div>
+          <p className={styles.artNote}>Story artwork is illustrative. Open an Issue for source evidence.</p>
         </section>
 
         <section className={styles.across} aria-label="Across all issues">
-          <div className={styles.acrossLayout}>
-            <div className={styles.acrossHeading}><span>03 / ACROSS ALL ISSUES</span><h2>The wider picture.</h2><p>Current source-grounded Main Issues and their linked retained Phase 5 events. Final, Not Final, and pending outcomes are included.</p></div>
+          <div className={styles.acrossTop}>
+            <div className={styles.acrossHeading}><span>03 / ACROSS ALL ISSUES</span><h2>The wider picture.</h2><p>A quick reading of the current Issue landscape.</p></div>
             <div className={styles.metricRow}>
-              <Link className={styles.metric} href="/explore?scope=all"><strong>{atlas?.metrics.issueCount}</strong><span>Main Issues</span></Link>
-              <Link className={styles.metric} href="/explore?scope=all&location=mapped" aria-label={`Explore mapped events in ${atlas?.metrics.countryCount} countries`}><strong>{atlas?.metrics.countryCount}</strong><span>Countries with verified<br />related event locations</span></Link>
-              <div className={styles.metric}><strong>{atlas?.metrics.eventCount}</strong><span>Linked Phase 5 events</span></div>
+              <Link className={styles.metric} href="/explore?scope=all"><strong>{atlas?.metrics.issueCount}</strong><span>Main Issues</span><small>Browse all Issues ↗</small></Link>
+              <Link className={styles.metric} href="/explore?scope=all&location=mapped" aria-label={`Explore mapped events in ${atlas?.metrics.countryCount} countries`}><strong>{atlas?.metrics.countryCount}</strong><span>Countries</span><small>Verified related event locations</small></Link>
+              <p className={styles.countryNote}>Verified Event Geography only; actor locations excluded. {atlas?.metrics.unmappedIssueCount ? `${atlas.metrics.unmappedIssueCount} ${atlas.metrics.unmappedIssueCount === 1 ? "Issue has" : "Issues have"} no resolved related location.` : ""}</p>
             </div>
-            <div className={styles.typeMetric}><h3>Event type distribution</h3><div className={styles.typeList}>{atlas?.metrics.byType.map((item) => <Link key={item.label} href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span>{item.label}</span><span className={styles.typeTrack}><span style={{ width: `${100 * item.count / maxTypeCount}%` }} /></span><strong>{item.count}</strong></Link>)}</div></div>
           </div>
-          <p className={styles.dataNote}>Country count uses unique verified Event Geography locations, not actor locations. {atlas?.metrics.unmappedIssueCount ? `${atlas.metrics.unmappedIssueCount} ${atlas.metrics.unmappedIssueCount === 1 ? "Issue has" : "Issues have"} no resolved related location. ` : ""}{atlas?.metrics.unlinkedEventCount ? `${atlas.metrics.unlinkedEventCount} unlinked Phase 5 ${atlas.metrics.unlinkedEventCount === 1 ? "record is" : "records are"} excluded. ` : ""}Story artwork is illustrative; open an Issue for source evidence.</p>
+          <div className={styles.spectrum}>
+            <div className={styles.spectrumHeading}><Link href="/explore?scope=all" aria-label={`Explore all ${atlas?.metrics.eventCount} linked Phase 5 events`}><strong>{atlas?.metrics.eventCount}</strong><span>linked Phase 5 events</span></Link><p>Distribution by event type · Select a type to explore its records</p></div>
+            {atlas?.metrics.byType.length ? <>
+              <div className={styles.spectrumBar} role="group" aria-label="Linked events by event type">
+                {atlas.metrics.byType.map((item, index) => <Link key={item.label} href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`Open event type ${item.label}`} title={`${item.label}: ${item.count}`} style={{ flexGrow: item.count, backgroundColor: spectrumColors[index % spectrumColors.length] }}>
+                  {index === 0 && item.count / atlas.metrics.eventCount >= .25 ? <span>{item.label} {item.count}</span> : null}
+                </Link>)}
+              </div>
+              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
+            </> : <p className={styles.spectrumEmpty}>No linked Phase 5 events yet.</p>}
+          </div>
+          <p className={styles.dataNote}>Counts include retained Final, Not Final, and pending records linked to current Main Issues. {atlas?.metrics.unlinkedEventCount ? `${atlas.metrics.unlinkedEventCount} unlinked Phase 5 ${atlas.metrics.unlinkedEventCount === 1 ? "record is" : "records are"} excluded.` : ""}</p>
         </section>
       </>)}
     </div>

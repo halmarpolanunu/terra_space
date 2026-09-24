@@ -79,31 +79,43 @@
 .searchResults button:hover { background: #e8c58923; }
 .searchResults small { color: #aeb9a8; }
 .searchResults p { padding: .5rem; color: #bec8b9; font-size: .8rem; }
+.artNote { margin: .55rem 0 0; color: #89978f; font-size: .67rem; line-height: 1.4; }
 
-/* Staggered figures sit above a low luminous horizon, with every type visible. */
-.across { position: relative; isolation: isolate; margin: 0 -1.25rem; padding: 3.6rem clamp(1.25rem, 3.5vw, 4rem) 2.8rem; overflow: hidden; background: radial-gradient(ellipse 72% 42% at 52% 100%, #2a3026 0%, #111a18 55%, #0a1012 100%); }
-.across::before { content: ""; position: absolute; z-index: -1; top: 0; left: -8%; width: 116%; height: 9rem; border-top: 1px solid #d7b8775c; border-radius: 50% 50% 0 0 / 30% 30% 0 0; box-shadow: 0 -1rem 3rem #b7964c1a; pointer-events: none; }
-.acrossLayout { display: grid; grid-template-columns: minmax(12rem, .85fr) minmax(21rem, 1.45fr) minmax(17rem, 1.1fr); align-items: start; gap: clamp(1.25rem, 3vw, 3rem); }
-.acrossHeading p { max-width: 25rem; margin: .75rem 0 0; color: #b6c1b6; font-size: .78rem; line-height: 1.55; }
-.metricRow { display: flex; align-items: start; justify-content: space-between; gap: clamp(.7rem, 1.5vw, 1.7rem); }
-.metric { display: flex; flex: 1 1 0; flex-direction: column; min-width: 0; color: #f5ebd9; text-decoration: none; }
-.metric:nth-child(2) { padding-top: 1.1rem; }
-.metric:nth-child(3) { padding-top: .4rem; }
-.metric strong { display: block; color: #f6d79e; font: 400 clamp(3.2rem, 5.3vw, 6rem)/.9 var(--font-serif); letter-spacing: -.07em; font-variant-numeric: tabular-nums; transition: color 200ms ease, transform 200ms ease; }
-.metric span { margin-top: .35rem; color: #e9e8dc; font: .77rem/1.35 var(--font-sans); }
-a.metric:hover strong { color: #fff1d2; transform: translateY(-3px); }
-.typeMetric h3 { margin: .05rem 0 .65rem; color: #f0ce92; font: 500 .79rem var(--font-sans); }
-.typeList { display: grid; gap: .2rem; }
-.typeList a { display: grid; grid-template-columns: minmax(7rem, 1.3fr) minmax(3rem, 1fr) 1.4rem; align-items: center; gap: .6rem; min-height: 1.6rem; color: #dce2d7; text-decoration: none; font-size: .67rem; line-height: 1.25; }
-.typeList a:hover { color: #f6d69e; }
-.typeTrack { height: 3px; background: #b2b8a72c; }
-.typeTrack span { display: block; height: 100%; background: linear-gradient(90deg, #94724a, #f4d093); }
-.typeList strong { text-align: right; color: #f2dab1; font-variant-numeric: tabular-nums; }
-.dataNote { max-width: 70rem; margin: 2rem 0 0; color: #9fac9f; font-size: .68rem; line-height: 1.5; }
+/* Editorial spectrum: two entry metrics above one event-type story. */
+.across { position: relative; isolation: isolate; margin: 0 -1.25rem; padding: clamp(2.6rem, 3.6vw, 4rem) clamp(1.25rem, 3.5vw, 4rem) 2.8rem; overflow: hidden; background: radial-gradient(ellipse 76% 55% at 52% 100%, #252c25 0%, #111a18 58%, #0a1012 100%); }
+.acrossTop { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; gap: clamp(2rem, 4vw, 5rem); }
+.acrossHeading h2 { max-width: 14ch; font-size: clamp(2.5rem, 3.7vw, 4.2rem); }
+.acrossHeading p { max-width: 29rem; margin: .95rem 0 0; color: #b6c1b6; font-size: .9rem; line-height: 1.55; }
+.metricRow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 0 clamp(1.5rem, 4vw, 4rem); }
+.metric { display: flex; flex-direction: column; min-width: 0; color: #f5ebd9; text-decoration: none; }
+.metric strong { display: block; color: #f6d79e; font: 400 clamp(4.8rem, 7.2vw, 8rem)/.9 var(--font-serif); letter-spacing: -.075em; font-variant-numeric: tabular-nums; transition: color 200ms ease, transform 200ms ease; }
+.metric span { margin-top: .35rem; color: #f0ede3; font: 600 .75rem var(--font-mono); letter-spacing: .11em; text-transform: uppercase; }
+.metric small { margin-top: .65rem; color: #d5bd8f; font-size: .8rem; line-height: 1.35; }
+.metric:hover strong { color: #fff1d2; transform: translateY(-3px); }
+.countryNote { grid-column: 2; max-width: 17rem; margin: .45rem 0 0; color: #a9b6a9; font-size: .72rem; line-height: 1.5; }
+.spectrum { position: relative; margin-top: clamp(2.3rem, 4vw, 4rem); padding-top: 2.4rem; }
+.spectrum::before { content: ""; position: absolute; z-index: -1; top: 0; left: -10%; width: 120%; height: 7rem; border-top: 1px solid #d7b87759; border-radius: 50% 50% 0 0 / 25% 25% 0 0; box-shadow: 0 -1rem 3rem #b7964c18; pointer-events: none; }
+.spectrumHeading a { display: flex; align-items: baseline; gap: clamp(1rem, 2vw, 2.2rem); width: fit-content; color: #f6f0e5; text-decoration: none; }
+.spectrumHeading strong { color: #f6d79e; font: 400 clamp(4.9rem, 7.5vw, 8.2rem)/.88 var(--font-serif); letter-spacing: -.075em; font-variant-numeric: tabular-nums; }
+.spectrumHeading span { font: 400 clamp(1.5rem, 2.8vw, 3rem)/1.1 var(--font-serif); letter-spacing: -.035em; }
+.spectrumHeading a:hover strong, .spectrumHeading a:hover span { color: #fff0cf; }
+.spectrumHeading p { margin: .2rem 0 0 clamp(0rem, 13vw, 14rem); color: #bbc6bb; font-size: .85rem; line-height: 1.5; }
+.spectrumBar { display: flex; gap: 2px; height: clamp(3rem, 4vw, 4.2rem); margin-top: 1.6rem; overflow: hidden; background: #2d3833; }
+.spectrumBar a { display: flex; flex-basis: 0; align-items: center; min-width: 3px; overflow: hidden; color: #17201e; text-decoration: none; transition: filter 200ms ease; }
+.spectrumBar a:hover { filter: brightness(1.22); }
+.spectrumBar a:first-child span { overflow: hidden; padding: 0 1.2rem; font: 700 clamp(.7rem, 1vw, 1rem) var(--font-sans); text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.spectrumLegend { column-count: 2; column-gap: clamp(2rem, 5vw, 5rem); list-style: none; margin: 1.65rem 0 0; padding: 0; }
+.spectrumLegend li { break-inside: avoid; }
+.spectrumLegend a { display: flex; align-items: center; gap: .8rem; min-height: 2.5rem; color: #dce4da; font-size: .88rem; line-height: 1.3; text-decoration: none; }
+.spectrumLegend a:hover { color: #f9d99e; }
+.legendDot { flex: 0 0 .75rem; width: .75rem; height: .75rem; border-radius: 50%; }
+.spectrumLegend a > span:nth-child(2) { min-width: 0; }
+.spectrumLegend strong { margin-left: auto; color: #f1d4a1; font: 600 .85rem var(--font-mono); font-variant-numeric: tabular-nums; }
+.spectrumEmpty { margin: 1.4rem 0 0; color: #b8c5b8; }
+.dataNote { max-width: 70rem; margin: 2rem 0 0; color: #9fac9f; font-size: .72rem; line-height: 1.5; }
 
 @media (max-width: 74rem) {
-  .acrossLayout { grid-template-columns: minmax(12rem, .8fr) minmax(19rem, 1.2fr); }
-  .typeMetric { grid-column: 2; }
+  .acrossTop { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
   .storyBody h1 { font-size: clamp(2.7rem, 4.8vw, 4.6rem); }
 }
 @media (max-width: 57rem) {
@@ -120,9 +132,9 @@ a.metric:hover strong { color: #fff1d2; transform: translateY(-3px); }
   .selectorRail { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: .5rem; }
   .storyTile { flex: 0 0 12rem; scroll-snap-align: start; }
   .storyTile[data-selected="true"] { flex-basis: 23rem; }
-  .acrossLayout { grid-template-columns: 1fr; }
+  .acrossTop { grid-template-columns: 1fr; gap: 1.5rem; }
   .metricRow { max-width: 42rem; }
-  .typeMetric { grid-column: auto; max-width: 36rem; }
+  .spectrumHeading p { margin-left: 0; }
 }
 @media (max-width: 38rem) {
   .atlasStage { min-height: 43rem; }
@@ -144,12 +156,21 @@ a.metric:hover strong { color: #fff1d2; transform: translateY(-3px); }
   .issueSearch label { display: none; }
   .issueSearch input { width: 100%; }
   .across { margin-inline: -1rem; padding: 3rem 1.25rem 2.5rem; }
-  .metricRow { gap: .5rem; }
-  .metric strong { font-size: clamp(2.75rem, 12vw, 4.2rem); }
-  .metric span { font-size: .67rem; }
-  .typeList a { font-size: .68rem; }
+  .metricRow { gap: 0 1rem; }
+  .metric strong { font-size: clamp(4rem, 18vw, 5.4rem); }
+  .metric span { font-size: .65rem; }
+  .metric small { font-size: .7rem; }
+  .countryNote { font-size: .65rem; }
+  .spectrum { margin-top: 2.8rem; }
+  .spectrumHeading a { display: block; }
+  .spectrumHeading strong { display: block; font-size: 5rem; }
+  .spectrumHeading span { font-size: 1.7rem; }
+  .spectrumHeading p { margin-top: .5rem; font-size: .75rem; }
+  .spectrumBar a:first-child span { display: none; }
+  .spectrumLegend { column-count: 1; margin-top: 1rem; }
+  .spectrumLegend a { font-size: .78rem; min-height: 2.35rem; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .primaryAction, .storyTile, .metric strong { transition: none; }
+  .primaryAction, .storyTile, .metric strong, .spectrumBar a { transition: none; }
   .primaryAction:hover, .storyTile:hover, a.metric:hover strong { transform: none; }
 }

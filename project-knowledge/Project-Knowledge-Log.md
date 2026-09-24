@@ -8,6 +8,17 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Editorial Spectrum for Across all issues
+
+- The owner approved a visual wireframe that simplifies the lower Home section. The
+  [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) records two leading
+  measures above a full-width linked-event type spectrum and an interactive legend.
+- Live browser review showed 50 Main Issues, 19 countries, 109 linked Phase 5 events, and an
+  Unclassified legend link that opens 53 filtered Explore records. The narrow layout was also
+  inspected. No database or n8n content changed.
+- Verification: 247 frontend tests, lint, production build, and Project Knowledge validation
+  passed without errors or warnings.
+
 ## 2026-09-24 — Cinematic Field Notes Home visual amendment
 
 - The owner approved Option B after comparing it with the rigid first Home implementation.

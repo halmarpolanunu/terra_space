@@ -47,6 +47,10 @@ describe("HomeWorkspace Issue Atlas", () => {
     expect(screen.getByRole("link", { name: /Diplomacy.*1/i })).toHaveAttribute("href", "/explore?scope=all&type=Diplomacy");
     expect(screen.getByRole("link", { name: /Explore mapped events/i })).toHaveAttribute("href", "/explore?scope=all&location=mapped");
     expect(screen.getByText(/Unclassified/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Explore all 2 linked Phase 5 events" })).toHaveAttribute("href", "/explore?scope=all");
+    const spectrum = screen.getByRole("group", { name: "Linked events by event type" });
+    expect(within(spectrum).getAllByRole("link")).toHaveLength(2);
+    expect(within(spectrum).getByRole("link", { name: "Open event type Diplomacy" })).toHaveAttribute("href", "/explore?scope=all&type=Diplomacy");
   });
 
   it("lets users find an Issue outside the recent rail and keeps unmapped Issues selectable", async () => {
