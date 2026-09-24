@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Atlas Stage Home design drafted
+
+- The owner selected the Atlas Stage wireframe and approved a cinematic Home whose globe shows
+  all Main Issues through their unique resolved related places, with the selected Issue
+  highlighted. Home points select Issues; Explore retains event-level investigation.
+- The [draft design specification](decisions/Atlas-Stage-Issue-Level-Home-Design.md) defines
+  the open **Across all issues** measures, live-data rules, shared-location chooser, missing
+  geography behavior, accessibility, and responsive checks. It awaits the owner's review
+  before an implementation plan or UI changes.
+
 ## 2026-09-24 — Phase 2 Main Issue leads Terra Insight
 
 - The owner approved a North Star change: current Phase 2 Main Issues now lead Home and Explore;

@@ -10,6 +10,17 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Atlas Stage Home specification awaiting review:** the owner chose the Atlas Stage
+wireframe for a cinematic, easy-to-use Home and approved all-Issue globe behavior. Each point
+represents one Main Issue and one unique resolved location from its linked Phase 5 Event
+Geography; all Issues appear, the selected Issue is highlighted, and a point selects an Issue.
+Event-level exploration stays in Explore. The lower section covers total Main Issues, unique
+countries from resolved Event Geography, and linked events by type. The
+[draft specification](decisions/Atlas-Stage-Issue-Level-Home-Design.md) records the visual,
+data, interaction, responsive, and verification details. This was design work only; Home code,
+database content, and n8n workflows did not change. Next: owner reviews the written specification,
+then an implementation plan can be prepared before UI changes.
+
 **2026-09-24 Main Issue-led direction:** the owner approved changing the North Star so current
 Phase 2 Main Issues lead Home and Explore, with their linked Phase 5 events and source evidence
 following each Issue. A read-only live API audit found 50 Main Issues and 109 Phase 5 events;

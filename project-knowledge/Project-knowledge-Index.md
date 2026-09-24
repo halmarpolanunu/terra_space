@@ -23,6 +23,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 ## Planning and decisions
 
+- [Atlas Stage Issue-Level Home Design](decisions/Atlas-Stage-Issue-Level-Home-Design.md) — draft written specification for the approved cinematic Home composition and Issue-level globe; awaiting owner review.
 - [Phase 2 Main Issue Led Terra Insight](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) — current direction for Issue-led Home and Explore, with linked Phase 5 events and evidence.
 - [Terra Space Guided Command Center Redesign](decisions/Terra-Space-Guided-Command-Center-Redesign.md) — four-part navigation and cinematic UI direction; its event-led entry is superseded by the Main Issue decision
 - [Guided Command Center Redesign Implementation Plan](plans/2026-09-23-guided-command-center-redesign.md) — reviewable steps for navigation, Home, Explore, Prepare, and presentation state
