@@ -10,6 +10,16 @@ status: active
 
 ## Latest update
 
+**2026-09-24 Home insight visual pass:** the owner found the lower Home charts and latest-event
+list too plain after the cinematic first-screen change. Home now presents the most common event
+types as a compact ranked chart with the remaining types in an expandable list, dated events as
+monthly columns, and qualification as a proportion chart with linked counts. Unknown event dates
+remain separate and publication dates are explicitly excluded. Recent signals are linked event
+cards with type and status, including a featured first card. This pass uses the existing Phase 5
+data and visual assets; it changes no database or n8n content. The next review is the owner's
+assessment of the full Home composition in pull request #2, followed by deciding whether to
+extend this visual language to older screens and Settings.
+
 **2026-09-24 cinematic UI refinement in progress:** after reviewing the first pull request, the
 owner said its buttons, text, and repeated boxes felt too rigid. The owner approved a more
 cinematic Atlas-first visual example. The open `codex/guided-command-center` branch now uses a

@@ -8,6 +8,20 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-24 — Home insight visual pass
+
+- The owner asked for more engaging visuals in the lower Home section. The event-type ranking,
+  monthly chart, qualification proportion, and recent-event cards now have distinct visual
+  roles and direct links to the underlying filtered Phase 5 records.
+- The design keeps the five less common types accessible in an expandable list and separates
+  78 unknown event dates from the 31 dated records. The visible status chart reflects 99 Final,
+  10 Not Final, and zero Pending records in the local read-only data. No pipeline or database
+  content changed.
+- The five focused Home tests, component ESLint, and production build passed. Live desktop and
+  mobile browser review showed the new layout without horizontal clipping; the expandable
+  category list and unknown-date link worked, with Explore showing 78 of 109 records. Project
+  Knowledge validation passed with zero errors and warnings.
+
 ## 2026-09-24 — Owner-approved cinematic visual refinement
 
 - The owner preferred the cinematic Atlas-first example after finding the first implementation's
