@@ -65,4 +65,12 @@ describe("ExploreWorkspace", () => {
     expect(mocks.push).toHaveBeenCalledWith("/explore?country=ARG");
     expect(screen.getByRole("link", { name: /Main concern.*2 linked events/i })).toHaveAttribute("href", "/explore?issue=source-one");
   });
+  it("does not repeat identical Issue summary and evidence text", async () => {
+    mocks.search = new URLSearchParams("issue=source-one");
+    mocks.reviews.mockResolvedValue([{ ...review, main_issue: { ...review.main_issue!, evidence_quote: "Issue summary" } }]);
+    mocks.list.mockResolvedValue([event]);
+    render(<ExploreWorkspace />);
+    await screen.findByRole("region", { name: "Selected Main Issue context" });
+    expect(screen.getAllByText("Issue summary")).toHaveLength(1);
+  });
 });

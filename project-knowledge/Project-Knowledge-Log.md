@@ -14,8 +14,10 @@ status: active
   The implementation makes country-level distinct Main Issue counts the default overview and
   opens each Issue into all its verified related places, linked events, timeline, and evidence.
   Country-lens statistics include all events linked to the selected Issues.
-- All 250 frontend tests, lint, and the production build passed. The frontend container was
-  rebuilt. Local Supabase was stopped, so a live-data browser review remains. No database or
+- All 251 frontend tests, lint, and the production build passed. After
+  Supabase started, the browser showed 50 Issues, 19 countries, and 109 linked events; Germany
+  narrowed to 2 Issues and 6 events, and one Issue opened its source and event evidence.
+  The identical summary/evidence repetition seen in that review was removed. No database or
   n8n data was changed.
 
 ## 2026-09-25 — Explore wireframes created

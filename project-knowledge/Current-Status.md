@@ -10,15 +10,18 @@ status: active
 
 ## Latest update
 
-**2026-09-25 Two-layer Explore implementation ready for live visual review:** the owner approved
+**2026-09-25 Two-layer Explore reviewed with live data:** the owner approved
 proceeding from the [Explore wireframes](decisions/Explore-Two-Layer-Map-Guided-Analysis.md).
 Explore now starts with a country map counting distinct Phase 2 Main Issues from verified linked
 Event Geography, a synchronized country and Issue list, and supporting statistics for the selected
 Issue set. Opening an Issue shows all its linked event places, timeline, records, and source
 evidence, including locations outside the entry country. Unlocated Issues remain accessible.
-The local frontend container was rebuilt. All 250 frontend tests, lint, and the production build
-passed. Local Supabase is currently stopped, so live-data browser review remains the next check;
-no database or n8n data was changed.
+The local frontend container was rebuilt. After the owner started Supabase, the browser showed
+50 Issues, 19 countries, and 109 linked events. Choosing Germany showed 2 related Issues and
+6 linked events; opening one Issue showed its 5 events, source article, and event evidence.
+An identical summary and evidence quote is now shown once for readability. The next step is
+owner visual review. All 251 frontend tests, lint, production build, and Project Knowledge
+validation passed. No database or n8n data was changed.
 
 **2026-09-25 Explore wireframes ready for joint review:** two illustrative frames now accompany
 the [draft Explore brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md): a country-led
