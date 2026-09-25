@@ -8,6 +8,7 @@ status: active
 
 # Decisions
 
+- [Explore Two-Layer Map-Guided Analysis](Explore-Two-Layer-Map-Guided-Analysis.md) - Draft two-layer Explore brief for geographic patterns across Issues and full single-Issue investigation.
 - [Atlas Stage Issue-Level Home Design](Atlas-Stage-Issue-Level-Home-Design.md) - Approved specification for the cinematic Home wireframe and all-Issue globe behavior.
 - [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md) - Current Phase 2 Main Issues lead Home and Explore; linked Phase 5 events and evidence follow each Issue.
 - [Terra Space Guided Command Center Redesign](Terra-Space-Guided-Command-Center-Redesign.md) - Approved navigation and visual direction; its event-led entry is superseded by the Main Issue decision.

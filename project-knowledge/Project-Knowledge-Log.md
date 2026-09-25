@@ -8,6 +8,14 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Explore aims and two-layer journey drafted
+
+- The owner selected map-guided exploration: geographic patterns across all current Main
+  Issues, then full statistics and evidence for one Issue. The [draft design
+  brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) records count scopes, the country
+  lens, unlocated Issues, and the all-places single-Issue rule for owner review before a wireframe.
+- No product UI, database, or n8n workflow changed in this design step.
+
 ## 2026-09-24 — Premium motion for Home
 
 - The [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) now records

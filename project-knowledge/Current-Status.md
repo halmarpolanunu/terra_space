@@ -10,6 +10,15 @@ status: active
 
 ## Latest update
 
+**2026-09-25 Explore aims drafted for owner review:** the owner chose a two-layer Explore:
+an all-Issues helicopter view for patterns and a full single-Issue statistical drill-down.
+Place leads both layers. The overview country map counts distinct Issues with verified related
+event locations; selecting a country updates the Issue list and statistics for those Issues
+and all their linked events. Opening one Issue reveals all its places and events, including
+those outside the entry country. The [draft brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md)
+records scopes, missing-data rules, interactions, and review checks. Next: owner reviews the
+brief, then two-layer wireframes can be prepared. No UI code or pipeline data changed.
+
 **2026-09-24 Home motion refinement:** the owner requested a more premium animated feel after
 approving the Editorial Spectrum. Home now stages the globe and Issue narrative, reveals the
 story filmstrip and event spectrum as they enter view, and gives Issue selection and interactive
