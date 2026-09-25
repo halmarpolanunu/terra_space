@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useAppearanceSettings } from "@/lib/appearance-settings";
 import { AppShell } from "@/components/app-shell";
 import { EventGlobe } from "@/components/event-globe";
 import { ExploreCountryMap } from "@/app/explore/explore-country-map";
@@ -17,6 +19,8 @@ import styles from "./explore.module.css";
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; events: Phase5Event[]; reviews: BridgeCandidateReview[] };
 
 export function ExploreWorkspace() {
+  const { motionEnabled } = useAppearanceSettings();
+  const reduceMotion = useReducedMotion();
   const router = useRouter();
   const searchParams = useSearchParams();
   const search = searchParams.toString();
@@ -108,7 +112,7 @@ export function ExploreWorkspace() {
     setIssueSource(null); setIssueSourceError(null);
     void getBridgeSource(sourceId).then(setIssueSource).catch(() => setIssueSourceError(sourceId));
   }
-  return <AppShell currentPath="/explore"><div className={`${styles.explore} ${selectedIssue ? styles.issueView : ""}`}>
+  return <AppShell currentPath="/explore"><div className={`${styles.explore} ${selectedIssue ? styles.issueView : ""}`} data-motion={motionEnabled && !reduceMotion ? "on" : "off"}>
     {!selectedIssue && <header className={styles.header}><div><p className="eyebrow">Terra Space / Explore / All Issues</p><h1>Where do the issues connect?</h1><p>Find geographic patterns across Main Issues, then open one to examine the full story.</p></div></header>}
     <p className={styles.scope}>{selectedIssue ? <><Link href="/explore">All Issues</Link>{selectedCountry && <><span>›</span><Link href={countryHref}>{selectedCountry.name}</Link></>}<span>›</span><span>One Main Issue</span></> : <><span>Current Phase 2 Main Issues</span><span>· {state.kind === "ready" ? `${stories.length} issues / ${linkedEvents.length} linked Phase 5 events` : "Read-only pipeline output"}</span></>}</p>
     {state.kind === "loading" && <p role="status">Loading Main Issues and linked events…</p>}

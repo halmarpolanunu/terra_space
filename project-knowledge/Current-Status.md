@@ -10,6 +10,14 @@ status: active
 
 ## Latest update
 
+**2026-09-25 Explore visual polish:** the owner accepted the two-layer structure but found the
+interface too plain. Explore now presents the maps as the visual stage, with softer atmospheric
+depth, warmer editorial typography, lighter Issue context, refined statistics, search controls,
+and record rows. The layout and all data scopes stay the same. Motion follows the appearance
+switch and system reduced-motion preference. Live browser checks covered the All Issues and
+single-Issue views at desktop and 610px widths. All 171 frontend tests, lint, and production
+build passed. Next: owner reviews the visual result; no database or n8n changes were made.
+
 **2026-09-25 Earlier Insight UI retired and Issue globe moved upward:** the owner asked to
 remove the earlier Issues and Events links and approved retiring the old Issues, Events, and
 Dashboard screens while preserving all data and processing. Home and Explore are now the

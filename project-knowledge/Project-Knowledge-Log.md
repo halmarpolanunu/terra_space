@@ -8,6 +8,15 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Explore visual polish
+
+- The owner kept the approved two-layer Explore structure and requested a more premium finish.
+  The visual pass gives the maps a unified atmospheric stage, lightens the single-Issue reading
+  column, and refines type, statistics, controls, and evidence rows. Counts, links, and data
+  definitions remain unchanged. Motion follows appearance and reduced-motion preferences.
+- All 171 frontend tests, lint, and the production build passed; desktop and narrow browser
+  views were inspected. No database or n8n content changed.
+
 ## 2026-09-25 — Retire earlier Insight screens
 
 - The owner approved removing the old Issues, Events, and Dashboard UI and updating the

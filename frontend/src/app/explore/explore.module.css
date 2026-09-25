@@ -201,3 +201,133 @@
 @media (prefers-reduced-motion: reduce) { .countryRail a, .countryIssueList a { transition: none; } }
 @media (max-width: 56rem) { .issueLayout { grid-template-columns: 1fr; } .issueRail { display: flex; overflow-x: auto; overflow-y: hidden; max-height: none; padding-bottom: .4rem; } .issueRail a { flex: 0 0 min(50vw,16rem); } .issueFocus { min-height: 0; } }
 @media (max-width: 40rem) { .issueBrowserHeading { display: block; } .issueBrowserHeading label { margin-top: 1rem; } .issueBrowserHeading input { min-width: 0; width: 100%; } .issueRail a { flex-basis: min(72vw,16rem); } .issueFocus { padding: 1rem; } }
+
+/* Observatory finish: the geography is the stage; analysis reads like a field journal. */
+.explore {
+  --explore-gold: #ebc994;
+  --explore-cream: #f4efe4;
+  --explore-muted: #aebbb2;
+  --explore-line: rgba(223, 206, 168, .2);
+  --explore-ease: cubic-bezier(.22, 1, .36, 1);
+}
+.explore .scope {
+  margin-bottom: .9rem;
+  padding-bottom: .8rem;
+  border-image: linear-gradient(90deg, rgba(232, 196, 130, .46), rgba(232, 196, 130, .08) 56%, transparent) 1;
+  color: var(--explore-gold);
+  font-size: .65rem;
+  letter-spacing: .14em;
+}
+.explore .scope a { color: inherit; text-decoration: none; transition: color 350ms var(--explore-ease); }
+.explore .scope a:hover { color: #fff4db; }
+.issueStage, .overviewStage { gap: clamp(1.1rem, 2.6vw, 2.8rem); }
+.issueStage { row-gap: 1.5rem; }
+.explore .map, .explore .countryMap {
+  isolation: isolate;
+  border: 1px solid rgba(235, 201, 148, .17);
+  border-radius: clamp(1.4rem, 2.4vw, 2.1rem);
+  background:
+    radial-gradient(ellipse at 53% 45%, rgba(72, 112, 103, .29), transparent 59%),
+    radial-gradient(ellipse at 51% 88%, rgba(196, 142, 72, .14), transparent 54%),
+    linear-gradient(145deg, #182725 0%, #101b1b 45%, #0b1215 100%);
+  box-shadow: inset 0 1px rgba(255, 240, 202, .09), inset 0 0 0 7px rgba(255, 255, 255, .012), 0 28px 70px rgba(0, 0, 0, .24);
+}
+.explore .map { padding: clamp(1.25rem, 2.5vw, 2.25rem); }
+.explore .map::before, .explore .countryMap::after {
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 5%, rgba(255, 223, 165, .42) 43%, rgba(255, 223, 165, .06) 78%, transparent);
+  content: "";
+}
+.explore .mapHeader { align-items: start; }
+.explore .heading > span, .explore .countryMapHead > span, .explore .countryLens > span, .explore .issueIntro > div > span, .explore .issueProfile > span, .explore .patternHeading > span {
+  color: var(--explore-gold);
+  font-size: .62rem;
+  letter-spacing: .17em;
+}
+.explore .map .heading h2, .explore .countryMapHead h2 {
+  margin: .7rem 0 .35rem;
+  color: var(--explore-cream);
+  font: 400 clamp(2.35rem, 3.65vw, 4rem)/.98 var(--font-serif);
+  letter-spacing: -.058em;
+}
+.explore .mapIssueLabel {
+  max-width: 33rem;
+  margin: .7rem 0 0;
+  color: #d6c9ae;
+  font: 400 clamp(.85rem, 1.06vw, 1rem)/1.4 var(--font-sans);
+}
+.explore .mapTelemetry { gap: 1.1rem; }
+.explore .mapTelemetry > div { min-width: 4.7rem; padding-left: .9rem; border-left-color: var(--explore-line); }
+.explore .mapTelemetry strong { color: #f5dfb4; font: 400 1.9rem/.95 var(--font-serif); }
+.explore .mapTelemetry span { max-width: 5rem; color: var(--explore-muted); font-size: .64rem; line-height: 1.35; }
+.explore .map :global(.world-map), .explore .countryMap :global(.world-map) {
+  border: 0;
+  background: radial-gradient(circle at 50% 47%, rgba(71, 112, 109, .14), transparent 64%);
+  box-shadow: inset 0 0 60px rgba(7, 16, 18, .16);
+}
+.explore .map :global(.world-map) { margin-top: .65rem; border-radius: 1.1rem; }
+.explore .caption { margin-top: 1rem; padding-top: .8rem; border-top: 1px solid rgba(230, 212, 171, .13); color: #acb9ad; font-size: .68rem; line-height: 1.55; }
+.explore .entryCountry { border-color: rgba(235, 201, 148, .26); background: rgba(235, 201, 148, .07); color: #efd4a8; }
+.explore .issueIntro {
+  padding: .55rem .15rem .35rem clamp(1rem, 1.5vw, 1.4rem);
+  border: 0;
+  border-left: 1px solid rgba(235, 201, 148, .44);
+  border-radius: 0;
+  background: transparent;
+}
+.explore .issueIntro h2 { max-width: 17ch; margin: .8rem 0 1.1rem; color: #f5f0e5; font-size: clamp(2rem, 2.55vw, 3.2rem); line-height: 1.035; letter-spacing: -.055em; }
+.explore .issueIntro p { color: #c9d1c8; font-size: .82rem; line-height: 1.72; }
+.explore .sourceLink { gap: .75rem; margin-top: .3rem; padding-top: 1rem; border-top-color: var(--explore-line); line-height: 1.5; }
+.explore .sourceLink > span { color: #aebbb0; overflow-wrap: anywhere; }
+.explore .sourceLink button {
+  padding: .7rem 1.05rem;
+  border-color: rgba(235, 201, 148, .48);
+  border-radius: 999px;
+  background: rgba(235, 201, 148, .08);
+  color: #f1d5a4;
+  transition: background 420ms var(--explore-ease), transform 420ms var(--explore-ease), border-color 420ms var(--explore-ease);
+}
+.explore .sourceLink button:hover { transform: translateY(-2px); border-color: #f0cb8d; background: rgba(235, 201, 148, .18); }
+.explore .issueProfile, .explore .countryLens {
+  border: 1px solid rgba(224, 205, 165, .16);
+  border-radius: 1.55rem;
+  background: radial-gradient(circle at 88% 0, rgba(215, 177, 108, .1), transparent 54%), linear-gradient(155deg, #1b2824e8, #111c1ae8);
+  box-shadow: inset 0 1px rgba(255, 246, 213, .07), 0 24px 55px rgba(0, 0, 0, .17);
+}
+.explore .profileTotal { margin-top: .85rem; color: #f3d7a8; font-size: clamp(4.5rem, 6.5vw, 7rem); letter-spacing: -.075em; }
+.explore .issueProfile dl { border-top-color: var(--explore-line); }
+.explore .issueProfile dl > div { padding: .85rem 0; border-bottom-color: rgba(223, 206, 168, .11); }
+.explore .profileAction { display: inline-flex; margin-top: 1.25rem; padding-bottom: .35rem; border-bottom: 1px solid rgba(235, 201, 148, .48); transition: color 350ms var(--explore-ease), transform 350ms var(--explore-ease); }
+.explore .profileAction:hover { transform: translateX(3px); color: #ffdfaa; text-decoration: none; }
+.explore .countryIssueList a { transition: color 450ms var(--explore-ease), padding-left 450ms var(--explore-ease), background 450ms var(--explore-ease); }
+.explore .countryIssueList a:hover { background: rgba(235, 201, 148, .045); }
+.explore .filters { gap: clamp(.75rem, 1.6vw, 1.4rem); padding: .5rem 0 .65rem; }
+.explore .filters input, .explore .filters select, .explore .issueSearch input {
+  border-color: rgba(229, 211, 175, .17);
+  border-radius: .9rem;
+  background: rgba(17, 29, 27, .84);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .025);
+  transition: border-color 350ms var(--explore-ease), background 350ms var(--explore-ease), box-shadow 350ms var(--explore-ease);
+}
+.explore .filters input:hover, .explore .filters select:hover, .explore .issueSearch input:hover { border-color: rgba(235, 201, 148, .55); background: #1b2a27; }
+.explore .viewNav { gap: 1.3rem; margin-top: .4rem; }
+.explore .viewNav a { padding-top: .9rem; border-top-color: var(--explore-line); transition: border-color 350ms var(--explore-ease), color 350ms var(--explore-ease); }
+.explore .timeline, .explore .list { padding-top: 1.5rem; border-top-color: rgba(235, 201, 148, .36); }
+.explore .sectionHeader { min-height: 6.5rem; }
+.explore .list li button { padding: 1rem .6rem 1.05rem; border-radius: .65rem; transition: background 400ms var(--explore-ease), transform 400ms var(--explore-ease); }
+.explore .list li button:hover, .explore .list li button[data-selected="true"] { background: rgba(235, 201, 148, .075); }
+.explore .recordContent strong { font-weight: 540; letter-spacing: -.015em; }
+.explore .detail { border-left-color: rgba(235, 201, 148, .3); background: linear-gradient(160deg, rgba(25, 39, 35, .98), rgba(12, 21, 21, .98)); }
+.explore .detail h2 { font-family: var(--font-serif); font-size: clamp(2rem, 3vw, 3rem); font-weight: 400; }
+.explore[data-motion="on"] .issueStage .map, .explore[data-motion="on"] .overviewStage .countryMap { animation: exploreStageIn 850ms var(--explore-ease) both; }
+.explore[data-motion="on"] .issueNarrative, .explore[data-motion="on"] .countryLens { animation: exploreStageIn 720ms var(--explore-ease) 100ms both; }
+.explore[data-motion="on"] .issueProfile, .explore[data-motion="on"] .patternBand { animation: exploreStageIn 720ms var(--explore-ease) 180ms both; }
+@keyframes exploreStageIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+.explore[data-motion="off"] *, .explore[data-motion="off"] *::before, .explore[data-motion="off"] *::after { animation: none !important; transition: none !important; }
+@media (max-width: 50rem) { .explore .issueIntro { padding: .4rem .2rem .4rem 1rem; } .explore .issueIntro h2 { max-width: 21ch; } }
+@media (max-width: 40rem) { .explore .map { padding: 1.2rem; } .explore .mapTelemetry { margin-top: 1.1rem; } .explore .map .heading h2, .explore .countryMapHead h2 { font-size: clamp(2.25rem, 9vw, 3.1rem); } .explore .map :global(.world-map) { border-radius: .8rem; } .explore .viewNav { gap: .5rem; } }
+@media (prefers-reduced-motion: reduce) { .explore *, .explore *::before, .explore *::after { animation: none !important; transition: none !important; } }
