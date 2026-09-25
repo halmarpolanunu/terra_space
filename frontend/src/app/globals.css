@@ -684,6 +684,7 @@ body {
 .top-status-bar,
 .sidebar,
 .main-content { position: relative; }
+.main-content:has([role="dialog"][aria-modal="true"]) { z-index: 50; }
 .skip-link {
   position: fixed;
   z-index: 100;

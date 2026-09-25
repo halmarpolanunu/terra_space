@@ -31,10 +31,14 @@ one Issue and trace its statistics to events and evidence.
    with a verified related event location there. Supporting statistics update to those Issues
    and **all their linked events**, with an explicit label such as “Issues related to Germany.”
    They must never be described as only “events in Germany.”
-3. **One Issue: drill-down.** Selecting an Issue opens its full story: all its verified related
-   places and all its linked events, including events outside the country that led to it.
-   Highlight the entry country as context, and provide a clear route back to that country lens
-   and the full overview. The place view leads; a concise statistical profile sits beside it.
+3. **One Issue: drill-down.** Selecting an Issue opens a large centered, scrollable subwindow
+   over the dimmed overview. It reveals the full story: all its verified related places and all
+   its linked events, including events outside the country that led to it. The title and short
+   source-grounded story lead, with compact figures for linked events, Phase 5 qualification
+   (Final, Not Final, Pending), and distinct countries with verified related locations beside it.
+   A compact map with a location list follows, then a scannable event list, timeline, and evidence.
+   The entry country remains context; closing the subwindow returns to that country lens or the
+   full overview at the same scroll position.
 4. **Evidence.** Event type, qualification, date state, timeline, and event records are
    interactive routes to the underlying event and source evidence, without losing the current
    Issue context.
@@ -69,9 +73,11 @@ one Issue and trace its statistics to events and evidence.
 - The overview map, country list, and Issue list stay synchronized. A selected country has a
   plainly stated count and an obvious clear-selection action. A user can search for an Issue
   without first finding it on the map.
-- The Issue drill-down uses a readable geographic stage, a compact statistics profile, and
-  direct routes to event records and evidence. It should feel visually connected to Home's
-  cinematic style while keeping labels, controls, and missing-data notes easy to read.
+- The Issue drill-down uses warm, softly rounded glass surfaces over the visible overview,
+  direct routes to event records and evidence, and a flat map linked to the location list.
+  It should feel visually connected to Home's cinematic style while keeping labels, controls,
+  and missing-data notes easy to read. On narrow screens, the same subwindow nearly fills the
+  viewport and stacks the story, figures, map, locations, and records in that order.
 - On narrow screens, preserve the same order of understanding: scope, place, Issue choice,
   statistics, then evidence. Map interaction must have an equivalent list path. Motion must
   honor the appearance motion switch and reduced-motion preference.
@@ -82,10 +88,13 @@ one Issue and trace its statistics to events and evidence.
 
 ![Single-Issue drill-down with all event places and statistics](../assets/explore-single-issue-wireframe.png)
 
+![Approved centered Issue subwindow wireframe](../assets/explore-issue-subwindow-wireframe.svg)
+
 These are layout and interaction studies. Their country counts, Issue names, event counts,
 and map shapes are illustrative, not product data or a final map projection. The first frame
-shows a selected country; clearing it restores the full all-Issues overview. The second shows
-all places for one Issue after opening it from that country lens.
+shows a selected country; clearing it restores the full all-Issues overview. The earlier second
+frame records the original full-page drill-down; the third, approved after owner review,
+supersedes its composition with a centered subwindow and story-first hierarchy.
 
 ## Implementation checks
 

@@ -10,6 +10,17 @@ status: active
 
 ## Latest update
 
+**2026-09-25 Explore Issue subwindow:** the owner approved a wireframe and visual mockup modeled
+on a warm, rounded glass dashboard. Selecting a Main Issue now keeps the All Issues country
+overview dimmed behind a centered scrollable window. The Issue story and linked event,
+qualification, and verified-country figures lead; a compact flat map and synchronized location
+list follow; related events, timeline, source, and evidence remain available below. The URL
+retains country and Issue selection, and closing returns to the country lens without resetting
+page scroll. Live-data browser review covered desktop, 610px, and 375px widths, selecting a
+location, and closing with Escape. All 172 frontend tests, lint, the production build, and
+Project Knowledge validation passed. The [Explore decision](decisions/Explore-Two-Layer-Map-Guided-Analysis.md)
+records the approved refinement. Next: owner reviews the live UI. No database or n8n content changed.
+
 **2026-09-25 Explore visual polish:** the owner accepted the two-layer structure but found the
 interface too plain. Explore now presents the maps as the visual stage, with softer atmospheric
 depth, warmer editorial typography, lighter Issue context, refined statistics, search controls,

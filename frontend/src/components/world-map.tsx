@@ -364,6 +364,7 @@ type WorldMapProps = {
   focusCoordinates?: [number, number];
   geojson?: EventPinFeatureCollection;
   initialZoom?: number;
+  projectionMode?: "globe" | "flat";
   onClusterSelect?: (cluster: EventPinCluster) => void;
   onFeatureSelect?: (eventId: string) => void;
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
@@ -400,6 +401,7 @@ export function WorldMap({
   focusCoordinates,
   geojson = EMPTY_EVENT_PINS,
   initialZoom = 2.2,
+  projectionMode = "globe",
   onClusterSelect,
   onFeatureSelect,
   onProjectionModeChange,
@@ -516,8 +518,9 @@ export function WorldMap({
     updatePinOcclusionRef.current = updatePinOcclusion;
     const handleLoad = () => {
       try {
-        map.setProjection({ type: "globe" });
-        projectionModeChangeRef.current?.("globe");
+        if (projectionMode === "globe") map.setProjection({ type: "globe" });
+        else isGlobeModeRef.current = false;
+        projectionModeChangeRef.current?.(projectionMode);
       } catch {
         isGlobeModeRef.current = false;
         setFlatFallback(true);
@@ -639,7 +642,7 @@ export function WorldMap({
       mapRef.current = null;
       map.remove();
     };
-  }, []);
+  }, [projectionMode]);
 
   useEffect(() => {
     if (focusLongitude === undefined || focusLatitude === undefined || !mapRef.current || !mapLoaded.current) return;
@@ -687,7 +690,7 @@ export function WorldMap({
     <>
       {flatFallback && <p className="map-flat-fallback">Flat map fallback</p>}
       <div aria-label="Offline world map" className="world-map" ref={container} />
-      {!reduceMotionAtMount && (
+      {!reduceMotionAtMount && projectionMode === "globe" && (
         <div className="globe-rotation-controls">
           <div className="globe-rotation-controls__row">
             <button

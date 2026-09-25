@@ -74,4 +74,19 @@ describe("ExploreWorkspace", () => {
     await screen.findByRole("region", { name: "Selected Main Issue context" });
     expect(screen.getAllByText("Issue summary")).toHaveLength(1);
   });
+  it("opens one Issue above the country overview and closes back to the country lens", async () => {
+    mocks.search = new URLSearchParams("issue=source-one&country=ARG");
+    mocks.list.mockResolvedValue([{ ...event, event_geographies: [{ resolution_status: "RESOLVED", canonical_geography_name: "Buenos Aires", latitude: -34.6, longitude: -58.4, country_iso3: "ARG" }] } as Phase5Event]);
+    render(<ExploreWorkspace />);
+    const dialog = await screen.findByRole("dialog", { name: "Main Issue: Main concern" });
+    expect(document.querySelector('[aria-label="All Issues geographic overview"]')).toBeInTheDocument();
+    expect(within(dialog).getByRole("region", { name: "Selected Main Issue context" })).toBeVisible();
+    expect(within(dialog).getByLabelText("Issue at a glance")).toHaveTextContent("Related events1");
+    expect(within(dialog).getByLabelText("Issue at a glance")).toHaveTextContent("Countries1");
+    expect(within(dialog).getByRole("button", { name: /Buenos Aires/i })).toBeVisible();
+    expect(within(dialog).getByRole("region", { name: "Filtered event list" })).toBeVisible();
+    expect(document.body.style.overflow).toBe("hidden");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close Main Issue" }));
+    expect(mocks.push).toHaveBeenCalledWith("/explore?country=ARG", { scroll: false });
+  });
 });

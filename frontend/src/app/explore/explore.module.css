@@ -331,3 +331,71 @@
 @media (max-width: 50rem) { .explore .issueIntro { padding: .4rem .2rem .4rem 1rem; } .explore .issueIntro h2 { max-width: 21ch; } }
 @media (max-width: 40rem) { .explore .map { padding: 1.2rem; } .explore .mapTelemetry { margin-top: 1.1rem; } .explore .map .heading h2, .explore .countryMapHead h2 { font-size: clamp(2.25rem, 9vw, 3.1rem); } .explore .map :global(.world-map) { border-radius: .8rem; } .explore .viewNav { gap: .5rem; } }
 @media (prefers-reduced-motion: reduce) { .explore *, .explore *::before, .explore *::after { animation: none !important; transition: none !important; } }
+
+/* The Issue stays above its Explore context as a single, scrollable glass window. */
+.recordsArea { min-width: 0; }
+.issueBackdrop { position: fixed; z-index: 70; inset: 0; width: 100%; border: 0; background: rgba(5, 9, 9, .61); backdrop-filter: blur(5px) saturate(.75); cursor: default; }
+.issueDialog { position: fixed; z-index: 71; top: 7dvh; left: 50%; width: min(82vw, 81rem); height: 86dvh; overflow-x: hidden; overflow-y: auto; padding: clamp(1.25rem, 2.8vw, 3.1rem); border: 1px solid rgba(241, 208, 155, .45); border-radius: 2rem; outline: none; background: radial-gradient(ellipse at 78% 0, rgba(190, 145, 91, .16), transparent 43%), linear-gradient(145deg, #373b38 0%, #252f2d 51%, #1a2625 100%); box-shadow: inset 0 1px rgba(255, 244, 218, .27), inset 0 0 0 7px rgba(255, 255, 255, .012), 0 2rem 6rem rgba(0, 0, 0, .67); color: #f6f1e8; scrollbar-color: #b29263 #27312e; transform: translateX(-50%); }
+.issueDialog::before { position: sticky; z-index: 2; top: -3.1rem; display: block; height: 1px; margin: -1px 0 0; background: linear-gradient(90deg, transparent, rgba(255, 225, 176, .48), transparent); content: ""; pointer-events: none; }
+.issueClose { position: sticky; z-index: 5; top: 0; float: right; display: grid; width: 2.7rem; height: 2.7rem; place-items: center; margin: -.3rem -.3rem 0 .5rem; border: 1px solid rgba(246, 217, 171, .45); border-radius: 50%; background: rgba(41, 46, 43, .94); color: #f7e8cd; cursor: pointer; font-size: 1.45rem; line-height: 1; transition: background 250ms ease, transform 250ms ease; }
+.issueClose:hover { transform: rotate(90deg); background: rgba(190, 145, 91, .28); }
+.issueClose:focus-visible, .issueDialog button:focus-visible, .issueDialog a:focus-visible, .issueDialog summary:focus-visible { outline: 2px solid #f1c47c; outline-offset: 3px; }
+.issueTop { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(23rem, .95fr); gap: clamp(1.5rem, 4vw, 4.2rem); align-items: start; padding: .55rem 3.4rem 1.25rem 0; border-bottom: 1px solid rgba(240, 218, 180, .19); }
+.issueStory { min-width: 0; }
+.issueEyebrow, .issueSectionTitle span { color: #eac58a; font: .67rem var(--font-mono); letter-spacing: .14em; }
+.issueStory h2 { max-width: 18ch; margin: .5rem 0 .6rem; color: #fff9ee; font: 400 clamp(2.15rem, 3vw, 3.65rem)/1.02 var(--font-serif); letter-spacing: -.055em; text-wrap: balance; }
+.issueStory > p { max-width: 61ch; margin: 0; color: #e0e2d9; font-size: clamp(.88rem, 1vw, 1.05rem); line-height: 1.65; text-wrap: pretty; }
+.issueSummary[data-expanded="false"] { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.summaryToggle { margin-top: .35rem; padding: 0; border: 0; background: transparent; color: #f0cd96; cursor: pointer; font-size: .72rem; text-decoration: underline; text-underline-offset: .22rem; }
+.issueQuote { margin-top: 1rem; color: #f0d4a1; font-size: .76rem; }
+.issueQuote summary { width: max-content; cursor: pointer; }
+.issueQuote blockquote { max-width: 65ch; margin: .8rem 0; padding-left: .9rem; border-left: 2px solid #e8c486; color: #e5dfd2; line-height: 1.55; }
+.issueSourceAction { display: flex; flex-wrap: wrap; gap: .35rem 1.3rem; align-items: baseline; margin-top: .9rem; color: #bdc2b9; font-size: .7rem; }
+.issueSourceAction span { overflow-wrap: anywhere; }
+.issueSourceAction button { padding: 0 0 .2rem; border: 0; border-bottom: 1px solid rgba(239, 199, 137, .65); background: transparent; color: #f0cd96; cursor: pointer; font-size: .74rem; }
+.issueMetrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; align-self: start; padding-top: 1.6rem; }
+.issueMetrics > div { min-width: 0; min-height: 9.9rem; padding: 1rem .8rem; border: 1px solid rgba(246, 222, 181, .2); border-radius: 1.15rem; background: linear-gradient(145deg, rgba(235, 212, 177, .13), rgba(245, 218, 174, .035)); box-shadow: inset 0 1px rgba(255, 250, 230, .13), 0 .6rem 1.6rem rgba(12, 17, 16, .11); }
+.issueMetrics span { display: block; color: #d9d6cb; font-size: .7rem; font-weight: 600; }
+.issueMetrics strong { display: block; margin-top: .7rem; color: #ffe4b2; font: 400 clamp(2.8rem, 4vw, 4.8rem)/.95 var(--font-serif); font-variant-numeric: tabular-nums; letter-spacing: -.065em; }
+.issueMetrics small { display: block; margin-top: .35rem; color: #c8cdc4; font-size: .64rem; line-height: 1.35; }
+.qualificationMetric p { margin: .55rem 0 0; color: #e3e4db; font-size: .72rem; white-space: nowrap; }
+.qualificationMetric b { display: inline-block; min-width: 1.25rem; color: #f7d6a0; font-variant-numeric: tabular-nums; }
+.issueDialog .sourcePanel { max-height: 18rem; margin: 1rem 0; border: 1px solid rgba(235, 201, 148, .27); border-radius: 1rem; background: rgba(17, 30, 28, .69); }
+.issuePlacesSection { padding-top: 1rem; scroll-margin-top: 1rem; }
+.issueSectionTitle { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }
+.issueSectionTitle h3 { margin: .3rem 0 0; color: #f5f0e7; font: 400 clamp(1.45rem, 2vw, 2.3rem)/1.1 var(--font-serif); letter-spacing: -.045em; }
+.issueSectionTitle small { max-width: 16rem; color: #bbc5bb; font-size: .68rem; text-align: right; line-height: 1.45; }
+.issuePlacesGrid { display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(17rem, .82fr); gap: .9rem; }
+.issueMapFrame, .issueLocationList { min-width: 0; min-height: 20.5rem; overflow: hidden; border: 1px solid rgba(222, 209, 180, .22); border-radius: 1.3rem; background: linear-gradient(145deg, rgba(18, 35, 35, .92), rgba(32, 45, 42, .68)); box-shadow: inset 0 1px rgba(255, 255, 255, .1); }
+.issueMapFrame { position: relative; }
+.issueMapFrame :global(.world-map) { height: 20.5rem; min-height: 20.5rem; border: 0; border-radius: 1.3rem; }
+.issueMapFrame .mapEmpty { min-height: 20.5rem; margin: 0; border: 0; }
+.issueMapFrame .cluster { position: absolute; right: .6rem; bottom: .6rem; left: .6rem; max-height: 11rem; overflow-y: auto; margin: 0; }
+.issueLocationList { display: flex; flex-direction: column; padding: 1.1rem 1.3rem; }
+.issueLocationList h4 { margin: 0 0 .55rem; color: #f5efe4; font: 400 1.35rem var(--font-serif); }
+.issueLocationList ul { min-height: 0; overflow-y: auto; margin: 0; padding: 0; list-style: none; scrollbar-color: #ad8d5f #27312e; }
+.issueLocationList li + li { border-top: 1px solid rgba(229, 218, 194, .13); }
+.issueLocationList button { display: grid; grid-template-columns: 1.7rem minmax(0, 1fr) 1rem; gap: .7rem; align-items: center; width: 100%; padding: .75rem .2rem; border: 0; border-radius: .5rem; background: transparent; color: #f6f2e9; cursor: pointer; text-align: left; transition: background 220ms ease; }
+.issueLocationList button:hover, .issueLocationList button[data-selected="true"] { background: rgba(240, 202, 142, .1); }
+.issueLocationList button > span:last-child { color: #ecc588; }
+.issueLocationList strong, .issueLocationList small { display: block; }
+.issueLocationList strong { font-size: .87rem; font-weight: 580; line-height: 1.35; }
+.issueLocationList small { margin-top: .15rem; color: #bfc9be; font-size: .67rem; }
+.placeIndex { color: #e6c38b; font: .65rem var(--font-mono); }
+.issueLocationList > p { color: #c6cfc4; font-size: .8rem; line-height: 1.5; }
+.issueDialog .entryCountry { margin-top: .7rem; }
+.issueDialog .caption { margin: .6rem 0 0; padding: 0; border: 0; }
+.issueDialog .selectionScope { display: none; }
+.issueDialog .filters { margin: 1.25rem 0 .7rem; padding-top: 1.1rem; border-top: 1px solid rgba(238, 208, 162, .18); }
+.issueDialog .viewNav { display: none; }
+.issueDialog .grid { grid-template-columns: 1fr; gap: 1.2rem; }
+.issueDialog .list { order: -1; }
+.issueDialog .list ul { max-height: none; overflow: visible; }
+.issueDialog .timeline { margin-bottom: 1rem; }
+.issueDialog .detail { z-index: 90; }
+.explore[data-motion="on"] .issueDialog { animation: issueWindowIn 580ms cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes issueWindowIn { from { opacity: 0; transform: translate(-50%, 1rem) scale(.975); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@media (max-width: 72rem) { .issueDialog { width: min(93vw, 81rem); } .issueTop { grid-template-columns: 1fr; gap: .4rem; padding-right: 3.3rem; } .issueMetrics { max-width: 42rem; padding-top: .6rem; } }
+@media (max-width: 48rem) { .issueDialog { top: 1.5dvh; width: 97vw; height: 97dvh; padding: 1.2rem; border-radius: 1.35rem; } .issueTop { padding: .3rem 0 1.3rem; } .issueStory { padding-right: 2.3rem; } .issueMetrics { max-width: none; } .issueStory h2 { font-size: clamp(2rem, 8vw, 3.4rem); } .issuePlacesGrid { grid-template-columns: 1fr; } .issueMapFrame, .issueMapFrame :global(.world-map) { min-height: 18rem; height: 18rem; } .issueLocationList { min-height: 0; max-height: none; } .issueLocationList ul { overflow: visible; } .issueDialog .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; } .issueDialog .searchLabel { grid-column: 1 / -1; } .issueSectionTitle { display: block; } .issueSectionTitle small { display: block; margin-top: .5rem; text-align: left; } }
+@media (max-width: 29rem) { .issueMetrics { grid-template-columns: 1fr 1fr; } .issueMetrics > div { min-height: 0; } .issueMetrics > div:last-child { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .issueDialog, .issueClose, .issueLocationList button { animation: none !important; transition: none !important; } }

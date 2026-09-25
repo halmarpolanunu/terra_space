@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Explore Issue subwindow approved and implemented
+
+- The owner chose a centered, scrollable window above the dimmed Explore overview. The approved
+  [Explore design](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) now leads with the Issue
+  story and three compact figures, then a map with a location list, then event records and time.
+- The frontend implementation preserves the country lens, shareable Issue URL, all linked event
+  places, qualification labels, source evidence, and missing-data notes. No data or workflow
+  changes were made.
+- Browser review covered desktop, 610px, and 375px widths, location selection, and Escape back
+  to the country lens. All 172 frontend tests, lint, production build, and Project Knowledge
+  validation passed.
+
 ## 2026-09-25 — Explore visual polish
 
 - The owner kept the approved two-layer Explore structure and requested a more premium finish.

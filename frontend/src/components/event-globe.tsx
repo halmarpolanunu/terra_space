@@ -10,6 +10,11 @@ import { isExceptionEvent, type EventRead, type LocationRead } from "@/lib/event
 
 type EventGlobeProps = {
   events: EventRead[];
+  autoRotate?: boolean;
+  focusCoordinates?: [number, number];
+  initialZoom?: number;
+  projectionMode?: "globe" | "flat";
+  selectedPinIds?: string[];
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
   onSelect: (event: EventRead) => void;
   onSelectCluster?: (events: EventRead[], locationLabel: string) => void;
@@ -79,6 +84,11 @@ export function eventLocationsToClusters(events: EventRead[]): EventPinCluster[]
 
 export function EventGlobe({
   events,
+  autoRotate,
+  focusCoordinates,
+  initialZoom,
+  projectionMode,
+  selectedPinIds,
   onProjectionModeChange,
   onSelect,
   onSelectCluster,
@@ -88,8 +98,12 @@ export function EventGlobe({
 
   return (
     <WorldMap
+      autoRotate={autoRotate}
       clusters={clusters}
+      focusCoordinates={focusCoordinates}
       geojson={pins}
+      initialZoom={initialZoom}
+      projectionMode={projectionMode}
       onClusterSelect={(cluster) => {
         const clusterEvents = events.filter((event) => cluster.eventIds.includes(event.id));
         onSelectCluster?.(clusterEvents, cluster.locationLabel);
@@ -100,6 +114,7 @@ export function EventGlobe({
         if (event) onSelect(event);
       }}
       selectedEventId={selectedEventId}
+      selectedPinIds={selectedPinIds}
     />
   );
 }
