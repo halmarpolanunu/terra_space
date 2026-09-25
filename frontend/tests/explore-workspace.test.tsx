@@ -5,7 +5,7 @@ import type { BridgeCandidateReview, Phase5Event } from "@/lib/bridge-api";
 const mocks = vi.hoisted(() => ({ list: vi.fn<() => Promise<Phase5Event[]>>(), reviews: vi.fn<() => Promise<BridgeCandidateReview[]>>(), push: vi.fn(), search: new URLSearchParams() }));
 vi.mock("@/lib/bridge-api", () => ({ listPhase5Events: mocks.list, listBridgeCandidateReviews: mocks.reviews, getBridgeSource: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useSearchParams: () => mocks.search }));
-vi.mock("@/app/dashboard/event-globe", () => ({ EventGlobe: ({ events, onSelectCluster }: { events: { id: string; title: string }[]; onSelectCluster?: (events: { id: string; title: string }[], label: string) => void }) => <div role="region" aria-label="Event globe"><button type="button" onClick={() => onSelectCluster?.(events, "Shared place")}>Shared marker</button></div> }));
+vi.mock("@/components/event-globe", () => ({ EventGlobe: ({ events, onSelectCluster }: { events: { id: string; title: string }[]; onSelectCluster?: (events: { id: string; title: string }[], label: string) => void }) => <div role="region" aria-label="Event globe"><button type="button" onClick={() => onSelectCluster?.(events, "Shared place")}>Shared marker</button></div> }));
 vi.mock("@/app/explore/explore-country-map", () => ({ ExploreCountryMap: ({ countries, onSelectCountry }: { countries: { code: string; name: string; issueCount: number }[]; onSelectCountry: (code: string) => void }) => <div role="region" aria-label="Country map">{countries.map((country) => <button key={country.code} type="button" onClick={() => onSelectCountry(country.code)}>{country.name}: {country.issueCount} Issues</button>)}</div> }));
 
 import { ExploreWorkspace } from "@/app/explore/explore-workspace";
@@ -15,12 +15,13 @@ const review = { phase1_source_id: "source-one", source_title: "Source article",
 
 describe("ExploreWorkspace", () => {
   beforeEach(() => { mocks.reviews.mockResolvedValue([review]); mocks.search = new URLSearchParams(); mocks.push.mockClear(); });
-  it("shows the current set, unknown date, evidence, and earlier route", async () => {
+  it("shows the current set, unknown date, and evidence without earlier links", async () => {
     mocks.list.mockResolvedValue([event]);
     render(<ExploreWorkspace />);
     expect(await within(await screen.findByRole("region", { name: "Filtered event list" })).findByRole("button", { name: "First signal" })).toBeVisible();
     expect(screen.getByText(/Date unknown/i)).toBeVisible();
-    expect(screen.getAllByRole("link", { name: "Earlier events" })[0]).toHaveAttribute("href", "/events");
+    expect(screen.queryByRole("link", { name: "Earlier Issues" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Earlier events" })).not.toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("region", { name: "Filtered event list" })).getByRole("button", { name: "First signal" }));
     expect(screen.getByText("Exact quote")).toBeVisible();
     expect(screen.getByText("REVIEW_NEEDED")).toBeVisible();

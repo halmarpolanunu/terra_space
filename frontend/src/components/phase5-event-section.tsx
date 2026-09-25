@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Phase5Event } from "@/lib/bridge-api";
-import { EventGlobe } from "@/app/dashboard/event-globe";
+import { EventGlobe } from "@/components/event-globe";
 import type { EventRead, LocationRead } from "@/lib/events-api";
 
 function mapEvents(events: Phase5Event[]): EventRead[] {

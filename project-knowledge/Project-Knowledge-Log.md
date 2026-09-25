@@ -8,6 +8,18 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Retire earlier Insight screens
+
+- The owner approved removing the old Issues, Events, and Dashboard UI and updating the
+  [North Star](North-Star.md). The [decision](decisions/Retire-Earlier-Insight-Screens.md)
+  preserves existing data, APIs, and processing while making Home and Explore the official
+  Terra Insight path.
+- The single-Issue Explore map was moved directly below the breadcrumb. The Issue narrative
+  and profile now sit beside it on wide screens and follow it on narrow screens.
+- Live desktop and 610px browser views confirmed the tighter placement. The three retired
+  routes return 404; 171 remaining frontend tests, lint, production build, and Project
+  Knowledge validation passed.
+
 ## 2026-09-25 — Two-layer Explore implemented
 
 - The owner approved proceeding from the [Explore design](decisions/Explore-Two-Layer-Map-Guided-Analysis.md).

@@ -2,9 +2,7 @@ import Link from "next/link";
 
 const NAV = [
   { href: "/home", label: "Home", children: [] },
-  { href: "/explore", label: "Explore", children: [
-    { href: "/issues", label: "Issues" }, { href: "/events", label: "Earlier events" }, { href: "/dashboard", label: "Earlier dashboard" },
-  ] },
+  { href: "/explore", label: "Explore", children: [] },
   { href: "/prepare", label: "Prepare", children: [
     { href: "/documents", label: "Sources" }, { href: "/sense", label: "Pipeline overview" },
     { href: "/event-review", label: "Earlier Event Review" }, { href: "/sense/event-types", label: "Event taxonomy" },

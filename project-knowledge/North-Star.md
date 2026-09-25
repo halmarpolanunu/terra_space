@@ -16,7 +16,7 @@ normalization, local AI processing, duplicate checks, and human review; and **Te
 the user starts with a source-grounded Phase 2 Main Issue and traces its linked Phase 5 events,
 places, timeline, qualification, and evidence. The MVP lets the user manually add documents, process selected documents in batches
 through a local LM Studio LLM endpoint, review extracted events, prevent accidental duplicate
-event counting, approve valid events, and explore approved events.
+event counting, qualify valid events, and explore source-grounded Issues with their linked events.
 
 Terra Space must stand on its own. Terra Brief is not part of the MVP; later, Terra Brief may become a module inside Terra Space and use Terra Space's event database.
 
@@ -36,12 +36,13 @@ The MVP succeeds when:
 - The system can suggest new event types and actors without automatically making them authoritative.
 - Events can have multiple locations, actors, and source documents.
 - The system can flag possible duplicate events without merging them automatically.
-- Approved events appear in Events and Dashboard views.
+- Current Main Issues and their linked Phase 5 events appear in Home and Explore, including
+  retained Not Final records with their qualification clearly labeled.
 - The current Home and Explore views start with Phase 2 Main Issues, then reveal their linked
   Phase 5 events and source evidence; each Issue remains attached to its source article.
-- Dashboard supports summary, map, timeline, event list, event detail, and filters.
-- Terra Sense makes the document-to-approved-event workflow understandable, while Terra Insight
-  keeps analysis focused on approved, traceable data.
+- Explore supports the country overview, Issue map, timeline, event list, evidence detail, and filters.
+- Terra Sense makes the document-to-qualified-event workflow understandable, while Terra Insight
+  keeps analysis focused on traceable data with event qualification visible.
 - Claims, rumors, denials, and other uncertainty states remain visible through epistemic status.
 - AI does not invent dates, locations, actors, or other missing facts.
 - The app can still be opened when LM Studio is offline.
@@ -61,7 +62,7 @@ Inside MVP:
 - Owner-managed hierarchical Event Taxonomy with Domain, Category, Subcategory, and Event Type levels;
   only the Event Type leaf is assignable to an event.
 - Simple actor and location matching that can grow later.
-- Dashboard, Documents, Event Review, Events, and Settings navigation.
+- Home, Explore, Prepare, and Settings navigation, with Sources and Event Review under Prepare.
 
 Outside MVP:
 

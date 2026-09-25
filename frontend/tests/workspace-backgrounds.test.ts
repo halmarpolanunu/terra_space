@@ -7,10 +7,8 @@ describe("getWorkspaceBackground", () => {
     ["/home", "/backgrounds/dashboard.webp"],
     ["/explore", "/backgrounds/events.webp"],
     ["/prepare", "/backgrounds/sense.webp"],
-    ["/dashboard", "/backgrounds/dashboard.webp"],
     ["/documents", "/backgrounds/documents.webp"],
     ["/event-review", "/backgrounds/event-review.webp"],
-    ["/events", "/backgrounds/events.webp"],
     ["/settings", "/backgrounds/settings.webp"],
     ["/sense", "/backgrounds/sense.webp"],
     ["/sense/event-types", "/backgrounds/sense.webp"],
@@ -18,7 +16,7 @@ describe("getWorkspaceBackground", () => {
     expect(getWorkspaceBackground(route)).toBe(asset);
   });
 
-  it("uses the Dashboard family asset for an unknown shell route", () => {
+  it("uses the Home family asset for an unknown shell route", () => {
     expect(getWorkspaceBackground("/unknown")).toBe("/backgrounds/dashboard.webp");
   });
 });

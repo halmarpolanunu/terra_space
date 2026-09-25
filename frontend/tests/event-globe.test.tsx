@@ -55,7 +55,7 @@ import {
   countResolvedEventLocations,
   eventLocationsToClusters,
   eventLocationsToFeatureCollection,
-} from "@/app/dashboard/event-globe";
+} from "@/components/event-globe";
 import type { EventRead } from "@/lib/events-api";
 
 function makeEvent(overrides: Partial<EventRead> = {}): EventRead {

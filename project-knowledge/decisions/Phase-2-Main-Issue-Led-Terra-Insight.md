@@ -29,8 +29,9 @@ a permanent completeness guarantee.
   similar text or automatically merge Issues across articles.
 - Phase 5 `FINAL` and `NOT_FINAL` remain visibly distinct. Missing event dates and unresolved
   Event Geography remain visible as missing information.
-- The separate earlier Issues and Events routes remain available with clear labels. Data
-  corrections remain in the pipeline under [Pipeline-Only Data Correction](Pipeline-Only-Data-Correction.md).
+- The earlier Issues, Events, and Dashboard routes were subsequently removed by
+  [Retire Earlier Insight Screens](Retire-Earlier-Insight-Screens.md). Data corrections remain
+  in the pipeline under [Pipeline-Only Data Correction](Pipeline-Only-Data-Correction.md).
 
 # Alternatives considered
 

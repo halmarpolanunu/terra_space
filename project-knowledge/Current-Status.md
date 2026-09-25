@@ -10,6 +10,17 @@ status: active
 
 ## Latest update
 
+**2026-09-25 Earlier Insight UI retired and Issue globe moved upward:** the owner asked to
+remove the earlier Issues and Events links and approved retiring the old Issues, Events, and
+Dashboard screens while preserving all data and processing. Home and Explore are now the
+official Terra Insight entry points under the updated [North Star](North-Star.md) and
+[retirement decision](decisions/Retire-Earlier-Insight-Screens.md). Explore's single-Issue map
+now starts immediately below the scope breadcrumb, with the Issue narrative and profile beside
+it on wide screens and below it on narrow screens. Live browser review confirmed the map
+starts near the top at desktop and 610px widths. The three retired URLs return 404; all 171
+remaining frontend tests, lint, production build, and Project Knowledge validation passed.
+Next: owner visual review of the updated Explore page. No Supabase or n8n records were changed.
+
 **2026-09-25 Two-layer Explore reviewed with live data:** the owner approved
 proceeding from the [Explore wireframes](decisions/Explore-Two-Layer-Map-Guided-Analysis.md).
 Explore now starts with a country map counting distinct Phase 2 Main Issues from verified linked

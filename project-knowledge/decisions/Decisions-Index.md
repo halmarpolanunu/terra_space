@@ -8,6 +8,7 @@ status: active
 
 # Decisions
 
+- [Retire Earlier Insight Screens](Retire-Earlier-Insight-Screens.md) - Home and Explore replace the old Issues, Events, and Dashboard UI without changing data or processing.
 - [Explore Two-Layer Map-Guided Analysis](Explore-Two-Layer-Map-Guided-Analysis.md) - Approved two-layer Explore with geographic patterns across Issues and full single-Issue investigation.
 - [Atlas Stage Issue-Level Home Design](Atlas-Stage-Issue-Level-Home-Design.md) - Approved specification for the cinematic Home wireframe and all-Issue globe behavior.
 - [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md) - Current Phase 2 Main Issues lead Home and Explore; linked Phase 5 events and evidence follow each Issue.

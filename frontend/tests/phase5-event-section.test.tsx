@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/app/dashboard/event-globe", () => ({
+vi.mock("@/components/event-globe", () => ({
   EventGlobe: () => <div aria-label="Phase 5 map canvas" />,
 }));
 

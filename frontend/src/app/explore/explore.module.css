@@ -119,6 +119,12 @@
 .issueFocusFoot strong { color: #f3ca87; }
 .selectionScope { margin: 0 0 1rem; color: #ddcfb2; font: .7rem var(--font-mono); line-height: 1.5; }
 .overviewStage, .issueStage { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(19rem, .8fr); gap: clamp(1rem, 2.2vw, 2.5rem); align-items: start; margin: 1.3rem 0 2.5rem; }
+.issueView .scope { margin-top: .2rem; }
+.issueStage { grid-template-areas: "map narrative" "map profile"; row-gap: 1rem; margin-top: .75rem; }
+.issueStage .map { grid-area: map; }
+.issueNarrative { grid-area: narrative; min-width: 0; }
+.issueStage .issueProfile { grid-area: profile; position: static; }
+.issueStage .mapIssueLabel { max-width: 38rem; margin: .55rem 0 .35rem; color: #f3d49c; font-family: Georgia, serif; font-size: clamp(1rem, 1.5vw, 1.25rem); line-height: 1.25; }
 .countryMap, .countryLens, .issueProfile { min-width: 0; }
 .countryMap { position: relative; overflow: hidden; padding: clamp(1.2rem, 2vw, 2rem); border: 1px solid #d8c0903a; border-radius: 1.4rem; background: radial-gradient(ellipse at 50% 53%, #35514577, transparent 65%), linear-gradient(155deg, #172621, #101918 75%); box-shadow: 0 1.8rem 4rem #0005, inset 0 1px #ffffff0d; scroll-margin-top: 5.5rem; }
 .countryMap::before { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, #efcf8b09, transparent 35%, #d8e5d006); content: ""; }
@@ -166,11 +172,11 @@
 .patternColumns a:hover, .profileTypes a:hover { color: #f4ca88; }
 .patternColumns a strong, .profileTypes a strong { color: #f1cc8c; font-variant-numeric: tabular-nums; }
 .patternColumns small { display: block; margin-top: .7rem; color: #9eb2a2; font-size: .68rem; }
-.issueIntro { display: flex; justify-content: space-between; gap: 2rem; padding: clamp(1.3rem, 2.2vw, 2.3rem) .2rem 1.6rem; }
+.issueIntro { display: grid; gap: 1.15rem; padding: clamp(1.2rem, 1.8vw, 1.7rem); border: 1px solid #d8c0902e; border-radius: 1.3rem; background: linear-gradient(155deg, #172521d9, #111c1aef); }
 .issueIntro > div:first-child { max-width: 51rem; }
-.issueIntro h2 { max-width: 17ch; }
+.issueIntro h2 { max-width: 17ch; font-size: clamp(1.5rem, 2.2vw, 2.2rem); line-height: 1.08; }
 .issueIntro blockquote { max-width: 52rem; margin: 1.25rem 0 0; padding-left: 1rem; border-left: 2px solid #e8c486; color: #e9dfcb; font-family: Georgia, serif; font-size: clamp(.95rem, 1.2vw, 1.16rem); line-height: 1.45; }
-.sourceLink { display: grid; align-content: end; justify-items: end; gap: .6rem; max-width: 16rem; color: #aebeb0; font-size: .69rem; text-align: right; }
+.sourceLink { display: grid; align-content: end; justify-items: start; gap: .6rem; max-width: none; padding-top: .85rem; border-top: 1px solid #d8c09030; color: #aebeb0; font-size: .69rem; text-align: left; }
 .sourceLink button { padding: .65rem .8rem; border: 1px solid #e8c48679; border-radius: .45rem; background: #e8c4861a; color: #f3d39c; cursor: pointer; }
 .sourceLink button:hover { background: #e8c48630; }
 .sourcePanel { max-height: 20rem; overflow-y: auto; margin-bottom: 1.5rem; padding: 1.2rem; border-left: 2px solid #e8c486; background: #1b2924; }
@@ -178,8 +184,7 @@
 .sourcePanel h3 { margin: 0; color: #f1e5cc; }
 .sourcePanel button { border: 0; background: transparent; color: #e8c486; cursor: pointer; }
 .sourcePanel p { white-space: pre-wrap; color: #d8e0d4; font-size: .78rem; line-height: 1.55; }
-.issueStage .map { grid-column: auto; }
-.issueStage .map :global(.world-map) { min-height: clamp(27rem, 54vh, 39rem); }
+.issueStage .map :global(.world-map) { min-height: clamp(27rem, 54vh, 39rem); margin-top: .3rem; }
 .entryCountry { position: relative; z-index: 1; display: inline-block; margin: .8rem 0 0; padding: .35rem .65rem; border: 1px solid #e8c48677; border-radius: 999px; color: #f3d39c; font: .66rem var(--font-mono); }
 .issueProfile { position: sticky; top: 5.4rem; }
 .profileTotal { display: block; margin-top: 1.1rem; color: #f6d69c; font-family: Georgia, serif; font-size: clamp(4rem, 6vw, 7rem); font-weight: 400; line-height: 1; }
@@ -191,8 +196,8 @@
 .profileAction { display: inline-block; margin-top: 1.3rem; color: #f2cb8d; font-size: .79rem; text-decoration: none; }
 .profileAction:hover { text-decoration: underline; }
 @media (max-width: 64rem) { .overviewStage, .issueStage { grid-template-columns: minmax(0, 1.5fr) minmax(17rem, .8fr); } }
-@media (max-width: 50rem) { .overviewStage, .issueStage { grid-template-columns: 1fr; } .countryLens, .issueProfile { position: static; } .countryIssueList { max-height: 26rem; } }
-@media (max-width: 40rem) { .countryMap :global(.world-map) { min-height: 24rem; } .patternColumns { grid-template-columns: 1fr; } .patternTotals { gap: .6rem; } .patternTotals strong { font-size: 2.7rem; } .issueIntro { display: block; } .sourceLink { justify-items: start; max-width: none; margin-top: 1.2rem; text-align: left; } }
+@media (max-width: 50rem) { .overviewStage, .issueStage { grid-template-columns: 1fr; } .issueStage { grid-template-areas: "map" "narrative" "profile"; } .countryLens, .issueProfile { position: static; } .countryIssueList { max-height: 26rem; } }
+@media (max-width: 40rem) { .countryMap :global(.world-map) { min-height: 24rem; } .patternColumns { grid-template-columns: 1fr; } .patternTotals { gap: .6rem; } .patternTotals strong { font-size: 2.7rem; } }
 @media (prefers-reduced-motion: reduce) { .countryRail a, .countryIssueList a { transition: none; } }
 @media (max-width: 56rem) { .issueLayout { grid-template-columns: 1fr; } .issueRail { display: flex; overflow-x: auto; overflow-y: hidden; max-height: none; padding-bottom: .4rem; } .issueRail a { flex: 0 0 min(50vw,16rem); } .issueFocus { min-height: 0; } }
 @media (max-width: 40rem) { .issueBrowserHeading { display: block; } .issueBrowserHeading label { margin-top: 1rem; } .issueBrowserHeading input { min-width: 0; width: 100%; } .issueRail a { flex-basis: min(72vw,16rem); } .issueFocus { padding: 1rem; } }

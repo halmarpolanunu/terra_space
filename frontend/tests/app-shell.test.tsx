@@ -36,8 +36,8 @@ describe("AppShell", () => {
 
   it("keeps only the local-workspace readout above every page", () => {
     render(
-      <AppShell currentPath="/dashboard">
-        <h1>Dashboard</h1>
+      <AppShell currentPath="/home">
+        <h1>Home</h1>
       </AppShell>,
     );
 
@@ -49,9 +49,9 @@ describe("AppShell", () => {
       "href",
       "/home",
     );
-    expect(screen.getByRole("main")).toHaveAttribute("data-route", "/dashboard");
+    expect(screen.getByRole("main")).toHaveAttribute("data-route", "/home");
     const shell = document.querySelector(".app-shell");
-    expect(shell).toHaveAttribute("data-route", "/dashboard");
+    expect(shell).toHaveAttribute("data-route", "/home");
     expect(shell?.getAttribute("style")).toContain(
       '--workspace-background-image: url("/backgrounds/dashboard.webp")',
     );
