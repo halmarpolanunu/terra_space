@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({ list: vi.fn<() => Promise<Phase5Event[]>>(), r
 vi.mock("@/lib/bridge-api", () => ({ listPhase5Events: mocks.list, listBridgeCandidateReviews: mocks.reviews, getBridgeSource: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push }), useSearchParams: () => mocks.search }));
 vi.mock("@/app/dashboard/event-globe", () => ({ EventGlobe: ({ events, onSelectCluster }: { events: { id: string; title: string }[]; onSelectCluster?: (events: { id: string; title: string }[], label: string) => void }) => <div role="region" aria-label="Event globe"><button type="button" onClick={() => onSelectCluster?.(events, "Shared place")}>Shared marker</button></div> }));
+vi.mock("@/app/explore/explore-country-map", () => ({ ExploreCountryMap: ({ countries, onSelectCountry }: { countries: { code: string; name: string; issueCount: number }[]; onSelectCountry: (code: string) => void }) => <div role="region" aria-label="Country map">{countries.map((country) => <button key={country.code} type="button" onClick={() => onSelectCountry(country.code)}>{country.name}: {country.issueCount} Issues</button>)}</div> }));
 
 import { ExploreWorkspace } from "@/app/explore/explore-workspace";
 
@@ -44,12 +45,24 @@ describe("ExploreWorkspace", () => {
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/explore?q=First"));
   });
   it("opens co-located events through a shared map marker", async () => {
-    mocks.search = new URLSearchParams();
+    mocks.search = new URLSearchParams("issue=source-one");
     const mapped = { ...event, event_geographies: [{ resolution_status: "RESOLVED", latitude: 1, longitude: 2 }] } as Phase5Event;
     mocks.list.mockResolvedValue([mapped, { ...mapped, id: "e2", title: "Second signal", evidence_quote: "Second quote" }]);
     render(<ExploreWorkspace />);
     fireEvent.click(await screen.findByRole("button", { name: "Shared marker" }));
     fireEvent.click(within(screen.getByRole("region", { name: "Events at Shared place" })).getByRole("button", { name: "Second signal" }));
     expect(screen.getByText("Second quote")).toBeVisible();
+  });
+  it("opens a country lens and keeps all linked events for its Issues", async () => {
+    const arg = { resolution_status: "RESOLVED", latitude: -34.6, longitude: -58.4, country_iso3: "ARG" };
+    const ury = { resolution_status: "RESOLVED", latitude: -34.9, longitude: -56.2, country_iso3: "URY" };
+    mocks.list.mockResolvedValue([
+      { ...event, event_geographies: [arg] },
+      { ...event, id: "e2", title: "Outside selected country", event_geographies: [ury] },
+    ]);
+    render(<ExploreWorkspace />);
+    fireEvent.click(await screen.findByRole("button", { name: "Argentina: 1 Issues" }));
+    expect(mocks.push).toHaveBeenCalledWith("/explore?country=ARG");
+    expect(screen.getByRole("link", { name: /Main concern.*2 linked events/i })).toHaveAttribute("href", "/explore?issue=source-one");
   });
 });

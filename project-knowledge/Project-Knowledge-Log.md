@@ -8,6 +8,16 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Two-layer Explore implemented
+
+- The owner approved proceeding from the [Explore design](decisions/Explore-Two-Layer-Map-Guided-Analysis.md).
+  The implementation makes country-level distinct Main Issue counts the default overview and
+  opens each Issue into all its verified related places, linked events, timeline, and evidence.
+  Country-lens statistics include all events linked to the selected Issues.
+- All 250 frontend tests, lint, and the production build passed. The frontend container was
+  rebuilt. Local Supabase was stopped, so a live-data browser review remains. No database or
+  n8n data was changed.
+
 ## 2026-09-25 — Explore wireframes created
 
 - Added two illustrative images to the [Explore design brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md)

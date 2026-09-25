@@ -118,5 +118,81 @@
 .issueFocusFoot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .8rem; border-top: 1px solid #e8ecdb27; padding-top: .8rem; color: #b8c7bb; font-size: .7rem; }
 .issueFocusFoot strong { color: #f3ca87; }
 .selectionScope { margin: 0 0 1rem; color: #ddcfb2; font: .7rem var(--font-mono); line-height: 1.5; }
+.overviewStage, .issueStage { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(19rem, .8fr); gap: clamp(1rem, 2.2vw, 2.5rem); align-items: start; margin: 1.3rem 0 2.5rem; }
+.countryMap, .countryLens, .issueProfile { min-width: 0; }
+.countryMap { position: relative; overflow: hidden; padding: clamp(1.2rem, 2vw, 2rem); border: 1px solid #d8c0903a; border-radius: 1.4rem; background: radial-gradient(ellipse at 50% 53%, #35514577, transparent 65%), linear-gradient(155deg, #172621, #101918 75%); box-shadow: 0 1.8rem 4rem #0005, inset 0 1px #ffffff0d; scroll-margin-top: 5.5rem; }
+.countryMap::before { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, #efcf8b09, transparent 35%, #d8e5d006); content: ""; }
+.countryMapHead { position: relative; z-index: 1; max-width: 36rem; }
+.countryMapHead > span, .countryLens > span, .issueIntro > div > span, .issueProfile > span, .patternHeading > span { color: #e8bc7a; font: .68rem var(--font-mono); letter-spacing: .13em; }
+.countryMapHead h2, .countryLens h2, .issueIntro h2, .patternHeading h2 { margin: .55rem 0 .45rem; color: #f7f1e6; font-family: Georgia, serif; font-size: clamp(2.2rem, 3vw, 3.5rem); font-weight: 400; line-height: 1.03; letter-spacing: -.045em; text-wrap: balance; }
+.countryMapHead p, .countryLens > p, .issueIntro p, .patternHeading p { max-width: 42rem; margin: 0; color: #c5cfc4; font-size: .84rem; line-height: 1.6; }
+.countryMap :global(.world-map) { position: relative; min-height: clamp(25rem, 51vh, 38rem); margin: 1.2rem 0 .8rem; overflow: hidden; border-radius: 50% 50% 12% 12% / 22% 22% 12% 12%; }
+.countryRail { position: relative; display: flex; gap: .45rem; overflow-x: auto; padding: .5rem 0 .8rem; scrollbar-color: #9c7b4d #15221e; }
+.countryRail a { display: flex; flex: none; gap: .65rem; align-items: center; padding: .52rem .72rem; border: 1px solid #d9c79643; border-radius: 999px; background: #0f1b19c7; color: #e8e8dc; font-size: .73rem; text-decoration: none; transition: background 180ms ease, border-color 180ms ease, transform 180ms ease; }
+.countryRail a:hover, .countryRail a[data-selected="true"] { border-color: #e8c486; background: #9b73472b; transform: translateY(-2px); }
+.countryRail strong { color: #f1cb87; font-variant-numeric: tabular-nums; }
+.countryLens, .issueProfile { padding: clamp(1.25rem, 2vw, 2rem); border: 1px solid #e6d0a52c; border-radius: 1.3rem; background: linear-gradient(155deg, #233129dd, #151f1cf0 70%); box-shadow: 0 1.5rem 3rem #0004; }
+.countryLens h2 { font-size: clamp(1.9rem, 2.5vw, 2.8rem); }
+.countryLens .lensCount { display: flex; gap: .65rem; align-items: baseline; margin: 1.35rem 0 0; color: #f2e5c8; }
+.lensCount strong { color: #f5d59c; font-family: Georgia, serif; font-size: 3.7rem; font-weight: 400; line-height: 1; }
+.clearCountry { display: inline-block; margin: .9rem 0; color: #f3d39d; font-size: .76rem; text-underline-offset: .25rem; }
+.issueSearch { display: grid; gap: .5rem; margin: 1.35rem 0 .8rem; padding-top: 1.1rem; border-top: 1px solid #d8c09037; color: #d4c7ad; font: .68rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.issueSearch input { width: 100%; padding: .8rem .9rem; border: 1px solid #d8c09063; border-radius: .65rem; outline: none; background: #0d1b19; color: #f2eee5; font: .84rem var(--font-sans); letter-spacing: 0; text-transform: none; }
+.issueSearch input:focus-visible { border-color: #f0c987; box-shadow: 0 0 0 3px #e8bd7b2b; }
+.countryIssueList { display: grid; max-height: 33rem; overflow-y: auto; scrollbar-color: #96784c #19251f; }
+.countryIssueList a { position: relative; display: grid; gap: .3rem; padding: .9rem 1.5rem .95rem .1rem; border-bottom: 1px solid #dce8d42c; color: #f5f0e5; text-decoration: none; transition: color 180ms ease, padding-left 180ms ease; }
+.countryIssueList a:hover { padding-left: .35rem; color: #f4ce91; }
+.countryIssueList strong { font-family: Georgia, serif; font-size: 1.05rem; font-weight: 400; line-height: 1.25; }
+.countryIssueList small { color: #aebfb0; font-size: .68rem; line-height: 1.35; }
+.countryIssueList a > span { position: absolute; top: 1rem; right: .15rem; color: #e9c489; }
+.countryIssueList > p { color: #becabe; font-size: .8rem; }
+.unlocatedIssues { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #dce8d42c; color: #d3ded2; font-size: .77rem; }
+.unlocatedIssues summary { cursor: pointer; }
+.unlocatedIssues > div { display: grid; gap: .5rem; max-height: 13rem; overflow-y: auto; padding: .8rem .2rem; }
+.unlocatedIssues a { color: #f0cc90; line-height: 1.4; }
+.patternBand { margin: 2rem 0 3rem; padding: clamp(1.25rem, 2.5vw, 2.5rem); border-top: 1px solid #e8c4866b; border-bottom: 1px solid #e8c48640; background: linear-gradient(90deg, #e8c4860a, transparent 42%); }
+.patternHeading { display: flex; flex-wrap: wrap; column-gap: 2rem; align-items: end; }
+.patternHeading > span { flex-basis: 100%; }
+.patternHeading h2 { font-size: clamp(1.8rem, 2.5vw, 2.75rem); }
+.patternHeading p { margin-bottom: .3rem; }
+.patternTotals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0 2rem; }
+.patternTotals p { display: grid; align-content: start; gap: .1rem; margin: 0; padding-top: .5rem; border-top: 1px solid #e8c48655; }
+.patternTotals strong { color: #f6d69c; font-family: Georgia, serif; font-size: clamp(2.8rem, 4.7vw, 5.8rem); font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
+.patternTotals span { max-width: 15rem; color: #c9d3c7; font-size: .76rem; line-height: 1.4; }
+.patternColumns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 2vw, 2.5rem); }
+.patternColumns > div { border-top: 1px solid #e8c4863b; padding-top: .6rem; }
+.patternColumns h3, .issueProfile h3 { margin: .3rem 0 .75rem; color: #f2e7d3; font-size: .86rem; }
+.patternColumns a, .profileTypes a { display: flex; justify-content: space-between; gap: .8rem; padding: .45rem 0; border-bottom: 1px solid #dce8d422; color: #dce4d8; font-size: .75rem; line-height: 1.35; text-decoration: none; }
+.patternColumns a:hover, .profileTypes a:hover { color: #f4ca88; }
+.patternColumns a strong, .profileTypes a strong { color: #f1cc8c; font-variant-numeric: tabular-nums; }
+.patternColumns small { display: block; margin-top: .7rem; color: #9eb2a2; font-size: .68rem; }
+.issueIntro { display: flex; justify-content: space-between; gap: 2rem; padding: clamp(1.3rem, 2.2vw, 2.3rem) .2rem 1.6rem; }
+.issueIntro > div:first-child { max-width: 51rem; }
+.issueIntro h2 { max-width: 17ch; }
+.issueIntro blockquote { max-width: 52rem; margin: 1.25rem 0 0; padding-left: 1rem; border-left: 2px solid #e8c486; color: #e9dfcb; font-family: Georgia, serif; font-size: clamp(.95rem, 1.2vw, 1.16rem); line-height: 1.45; }
+.sourceLink { display: grid; align-content: end; justify-items: end; gap: .6rem; max-width: 16rem; color: #aebeb0; font-size: .69rem; text-align: right; }
+.sourceLink button { padding: .65rem .8rem; border: 1px solid #e8c48679; border-radius: .45rem; background: #e8c4861a; color: #f3d39c; cursor: pointer; }
+.sourceLink button:hover { background: #e8c48630; }
+.sourcePanel { max-height: 20rem; overflow-y: auto; margin-bottom: 1.5rem; padding: 1.2rem; border-left: 2px solid #e8c486; background: #1b2924; }
+.sourcePanel > div { display: flex; justify-content: space-between; gap: 1rem; }
+.sourcePanel h3 { margin: 0; color: #f1e5cc; }
+.sourcePanel button { border: 0; background: transparent; color: #e8c486; cursor: pointer; }
+.sourcePanel p { white-space: pre-wrap; color: #d8e0d4; font-size: .78rem; line-height: 1.55; }
+.issueStage .map { grid-column: auto; }
+.issueStage .map :global(.world-map) { min-height: clamp(27rem, 54vh, 39rem); }
+.entryCountry { position: relative; z-index: 1; display: inline-block; margin: .8rem 0 0; padding: .35rem .65rem; border: 1px solid #e8c48677; border-radius: 999px; color: #f3d39c; font: .66rem var(--font-mono); }
+.issueProfile { position: sticky; top: 5.4rem; }
+.profileTotal { display: block; margin-top: 1.1rem; color: #f6d69c; font-family: Georgia, serif; font-size: clamp(4rem, 6vw, 7rem); font-weight: 400; line-height: 1; }
+.issueProfile > p { margin: .1rem 0 1.4rem; color: #d6dfd2; font-size: .84rem; }
+.issueProfile dl { margin: 0 0 1.7rem; border-top: 1px solid #e8c48649; }
+.issueProfile dl > div { display: flex; justify-content: space-between; gap: .6rem; padding: .75rem 0; border-bottom: 1px solid #e8c4862e; font-size: .72rem; }
+.issueProfile dt { color: #aebdaf; }.issueProfile dd { max-width: 13rem; margin: 0; color: #e9e8da; text-align: right; }
+.profileTypes { max-height: 18rem; overflow-y: auto; }
+.profileAction { display: inline-block; margin-top: 1.3rem; color: #f2cb8d; font-size: .79rem; text-decoration: none; }
+.profileAction:hover { text-decoration: underline; }
+@media (max-width: 64rem) { .overviewStage, .issueStage { grid-template-columns: minmax(0, 1.5fr) minmax(17rem, .8fr); } }
+@media (max-width: 50rem) { .overviewStage, .issueStage { grid-template-columns: 1fr; } .countryLens, .issueProfile { position: static; } .countryIssueList { max-height: 26rem; } }
+@media (max-width: 40rem) { .countryMap :global(.world-map) { min-height: 24rem; } .patternColumns { grid-template-columns: 1fr; } .patternTotals { gap: .6rem; } .patternTotals strong { font-size: 2.7rem; } .issueIntro { display: block; } .sourceLink { justify-items: start; max-width: none; margin-top: 1.2rem; text-align: left; } }
+@media (prefers-reduced-motion: reduce) { .countryRail a, .countryIssueList a { transition: none; } }
 @media (max-width: 56rem) { .issueLayout { grid-template-columns: 1fr; } .issueRail { display: flex; overflow-x: auto; overflow-y: hidden; max-height: none; padding-bottom: .4rem; } .issueRail a { flex: 0 0 min(50vw,16rem); } .issueFocus { min-height: 0; } }
 @media (max-width: 40rem) { .issueBrowserHeading { display: block; } .issueBrowserHeading label { margin-top: 1rem; } .issueBrowserHeading input { min-width: 0; width: 100%; } .issueRail a { flex-basis: min(72vw,16rem); } .issueFocus { padding: 1rem; } }

@@ -1,9 +1,9 @@
 ---
 type: Decision
 title: Explore Two-Layer Map-Guided Analysis
-description: Draft design brief for an Issue-first Explore with an all-Issues geographic overview and a full single-Issue investigation.
+description: Approved Issue-first Explore with an all-Issues geographic overview and a full single-Issue investigation.
 tags: [project-knowledge, decision, design, explore, issues]
-status: draft
+status: active
 ---
 
 # Context
@@ -14,9 +14,8 @@ landscape. The current Explore has an Issue browser, event map, timeline, index,
 detail, but its equal-weight sections do not yet express the desired two-layer journey.
 
 This brief refines [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md)
-without changing its source-linked data relationship. The owner agreed on the aims and
-map-guided approach in conversation. The owner chose to review the written brief together with
-the wireframes.
+without changing its source-linked data relationship. The owner reviewed the two wireframes,
+found the direction mostly right, and approved implementation.
 
 # Decision
 
@@ -88,7 +87,7 @@ and map shapes are illustrative, not product data or a final map projection. The
 shows a selected country; clearing it restores the full all-Issues overview. The second shows
 all places for one Issue after opening it from that country lens.
 
-## Review checks before implementation
+## Implementation checks
 
 - A country containing several linked events for one Issue counts that Issue once.
 - A multi-country Issue appears in each relevant country but opens with every related place
@@ -118,8 +117,9 @@ every event in a selected Issue happened in that country.
 
 # Consequences
 
-The next step is owner review of this brief and its two wireframes together. Implementation
-planning comes after the design is approved. This decision does not authorize database,
+The two-layer Explore UI now implements this path with a country overview, country lens,
+single-Issue stage, event timeline, event index, and source evidence. The next step is visual
+review with live data when local Supabase is running. This decision does not authorize database,
 pipeline, or n8n changes.
 
 # Navigation
