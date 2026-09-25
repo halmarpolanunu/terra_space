@@ -15,7 +15,8 @@ detail, but its equal-weight sections do not yet express the desired two-layer j
 
 This brief refines [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md)
 without changing its source-linked data relationship. The owner agreed on the aims and
-map-guided approach in conversation; this written brief awaits review before wireframing.
+map-guided approach in conversation. The owner chose to review the written brief together with
+the wireframes.
 
 # Decision
 
@@ -76,6 +77,17 @@ one Issue and trace its statistics to events and evidence.
   statistics, then evidence. Map interaction must have an equivalent list path. Motion must
   honor the appearance motion switch and reduced-motion preference.
 
+## Wireframes for joint review
+
+![All Issues geographic overview with a country lens](../assets/explore-all-issues-wireframe.png)
+
+![Single-Issue drill-down with all event places and statistics](../assets/explore-single-issue-wireframe.png)
+
+These are layout and interaction studies. Their country counts, Issue names, event counts,
+and map shapes are illustrative, not product data or a final map projection. The first frame
+shows a selected country; clearing it restores the full all-Issues overview. The second shows
+all places for one Issue after opening it from that country lens.
+
 ## Review checks before implementation
 
 - A country containing several linked events for one Issue counts that Issue once.
@@ -106,9 +118,9 @@ every event in a selected Issue happened in that country.
 
 # Consequences
 
-The next step is owner review of this brief, followed by an All Issues and single-Issue
-wireframe. Implementation planning comes after the wireframe is approved. This decision does
-not authorize database, pipeline, or n8n changes.
+The next step is owner review of this brief and its two wireframes together. Implementation
+planning comes after the design is approved. This decision does not authorize database,
+pipeline, or n8n changes.
 
 # Navigation
 

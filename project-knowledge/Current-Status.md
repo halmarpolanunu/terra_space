@@ -10,6 +10,13 @@ status: active
 
 ## Latest update
 
+**2026-09-25 Explore wireframes ready for joint review:** two illustrative frames now accompany
+the [draft Explore brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md): a country-led
+all-Issues overview and a full single-Issue drill-down. They show the agreed map-guided path,
+statistics scope, missing-data notes, and route to event evidence. The owner chose to review
+the brief after seeing the wireframes. Next: review both together and refine before an
+implementation plan. No product UI, database, or n8n workflow changed.
+
 **2026-09-25 Explore aims drafted for owner review:** the owner chose a two-layer Explore:
 an all-Issues helicopter view for patterns and a full single-Issue statistical drill-down.
 Place leads both layers. The overview country map counts distinct Issues with verified related

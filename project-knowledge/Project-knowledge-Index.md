@@ -23,7 +23,7 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 ## Planning and decisions
 
-- [Explore Two-Layer Map-Guided Analysis](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) — draft Explore aims and map-guided journey, awaiting owner review before wireframing.
+- [Explore Two-Layer Map-Guided Analysis](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) — draft Explore aims and two wireframes, awaiting joint owner review.
 - [Atlas Stage Issue-Level Home Design](decisions/Atlas-Stage-Issue-Level-Home-Design.md) — approved cinematic Home composition and Issue-level globe specification.
 - [Atlas Stage Issue-Level Home Implementation Plan](plans/2026-09-24-atlas-stage-issue-home.md) — completed steps and verification for Issue-place data, globe selection, Home composition, and live visual checks.
 - [Phase 2 Main Issue Led Terra Insight](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) — current direction for Issue-led Home and Explore, with linked Phase 5 events and evidence.

@@ -8,6 +8,14 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Explore wireframes created
+
+- Added two illustrative images to the [Explore design brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md)
+  so the owner can review the two-layer aims and visual structure together. The country lens
+  narrows Issues and their supporting statistics; opening an Issue reveals its full geography
+  and event evidence. Placeholder counts and map shapes are explicitly disclosed.
+- No product UI, database, or n8n workflow changed.
+
 ## 2026-09-25 — Explore aims and two-layer journey drafted
 
 - The owner selected map-guided exploration: geographic patterns across all current Main

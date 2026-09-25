@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Explore wireframe, all Issues geographic overview with Germany selected as a country lens">
+<defs>
+  <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0c1719"/><stop offset=".58" stop-color="#071013"/><stop offset="1" stop-color="#17201c"/></linearGradient>
+  <radialGradient id="halo"><stop stop-color="#cfa66b" stop-opacity=".24"/><stop offset="1" stop-color="#cfa66b" stop-opacity="0"/></radialGradient>
+  <linearGradient id="sea" x2="1" y2="1"><stop stop-color="#182828"/><stop offset="1" stop-color="#0c181b"/></linearGradient>
+  <filter id="blur"><feGaussianBlur stdDeviation="36"/></filter>
+  <filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="24" flood-color="#000" flood-opacity=".45"/></filter>
+  <pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M72 0H0V72" fill="none" stroke="#688077" stroke-opacity=".12" stroke-width="1"/></pattern>
+</defs>
+<rect width="1600" height="1000" fill="url(#bg)"/>
+<circle cx="690" cy="482" r="455" fill="url(#halo)" filter="url(#blur)"/>
+<g font-family="Arial, sans-serif">
+  <path d="M0 83H1600" stroke="#bda87e" stroke-opacity=".25"/>
+  <circle cx="69" cy="42" r="7" fill="#e5c085"/><circle cx="69" cy="42" r="15" fill="none" stroke="#bda87e" stroke-opacity=".6"/>
+  <text x="95" y="48" fill="#f2e8d5" font-size="15" font-weight="700" letter-spacing="3">TERRA SPACE</text>
+  <text x="671" y="49" fill="#b6c2bb" font-size="15">Home</text><text x="760" y="49" fill="#f5d9a7" font-size="15" font-weight="700">Explore</text><text x="866" y="49" fill="#b6c2bb" font-size="15">Prepare</text><text x="972" y="49" fill="#b6c2bb" font-size="15">Settings</text>
+  <path d="M760 82H818" stroke="#edcb8b" stroke-width="2"/>
+  <text x="1398" y="48" fill="#86958e" font-size="11" letter-spacing="2">WIREFRAME / 01</text>
+  <text x="80" y="128" fill="#d9b981" font-size="12" font-weight="700" letter-spacing="3">EXPLORE  /  ALL ISSUES</text>
+  <text x="80" y="198" fill="#fff7e9" font-size="57" font-family="Georgia,serif">Where do the issues connect?</text>
+  <text x="82" y="232" fill="#b7c1b8" font-size="16">See geographic patterns first, then follow a country into its Main Issues and evidence.</text>
+  <text x="1152" y="130" fill="#9eafa5" font-size="12" letter-spacing="2">CURRENT SCOPE</text>
+  <text x="1152" y="173" fill="#f8d9a2" font-size="38" font-family="Georgia,serif">All Main Issues</text>
+  <text x="1152" y="206" fill="#a9b8ac" font-size="14">Choose a country or search an Issue</text>
+
+  <rect x="80" y="270" width="1010" height="492" rx="22" fill="url(#sea)" stroke="#718279" stroke-opacity=".28"/>
+  <rect x="80" y="270" width="1010" height="492" rx="22" fill="url(#grid)" opacity=".72"/>
+  <path d="M80 516H1090M585 270V762" stroke="#a7bdab" stroke-opacity=".11"/>
+  <path d="M165 362l76-42 55 6 24 31 53-2 30 34-21 34-48 14-26 39-42-9-13-25-54 6-33-34-36-8z M323 471l50 4 34 31 13 46 33 34-6 49-31 56-28 24-26-36-5-44-23-26 2-61-25-39z M508 356l48-20 39 16 26-18 44 17 3 32-40 16-45-11-45 12-34-22z M549 431l77-6 42 29 20 58-26 49-20 76-45 54-42-25-4-60-22-56 5-59z M666 337l94-39 91 14 71-8 80 31 41 55-20 43-48 6-31 38-77-20-65 18-43-28-65 10-37-49z M893 631l70-18 45 30-11 42-54 15-63-27z" fill="#253431" stroke="#718a7b" stroke-opacity=".62" stroke-width="2"/>
+  <path d="M222 367l102 26m228-13 71 17m51-16 205 7m-268 119 170 25m-428 103 54 38" stroke="#a9c5ab" stroke-opacity=".12" stroke-width="2" fill="none"/>
+  <text x="111" y="307" fill="#b9c8bd" font-size="11" letter-spacing="2">VERIFIED RELATED EVENT LOCATIONS</text>
+  <text x="111" y="734" fill="#a8b8ac" font-size="13">Circle size = distinct Main Issues per country  ·  Actor locations excluded</text>
+  <circle cx="309" cy="402" r="20" fill="#e4bd83" opacity=".25"/><circle cx="309" cy="402" r="14" fill="#e4bd83"/><text x="301" y="408" fill="#1b2522" font-size="15" font-weight="700">3</text>
+  <circle cx="410" cy="650" r="17" fill="#a4ae93" opacity=".35"/><circle cx="410" cy="650" r="10" fill="#b6c09e"/>
+  <circle cx="617" cy="380" r="40" fill="#f6ce8c" opacity=".13"/><circle cx="617" cy="380" r="25" fill="#f2ca89"/><text x="608" y="389" fill="#1b2522" font-size="24" font-weight="700">4</text>
+  <circle cx="680" cy="433" r="15" fill="#d2bb8c"/><text x="675" y="438" fill="#17221f" font-size="12" font-weight="700">2</text>
+  <circle cx="820" cy="376" r="25" fill="#aaac8b" opacity=".28"/><circle cx="820" cy="376" r="17" fill="#c8bd91"/><text x="815" y="382" fill="#16211d" font-size="15" font-weight="700">5</text>
+  <circle cx="953" cy="438" r="11" fill="#b1ad89"/>
+  <path d="M639 381H1077" stroke="#f4d49e" stroke-opacity=".55" stroke-dasharray="5 7"/>
+  <rect x="650" y="347" width="136" height="43" rx="21" fill="#e4be82"/>
+  <text x="670" y="374" fill="#17211e" font-size="14" font-weight="700">Germany · 4</text>
+
+  <rect x="1120" y="270" width="400" height="492" rx="22" fill="#15201e" stroke="#dfc18a" stroke-opacity=".32" filter="url(#shadow)"/>
+  <text x="1152" y="313" fill="#dcb983" font-size="11" font-weight="700" letter-spacing="2">COUNTRY LENS  /  SELECTED</text>
+  <text x="1152" y="363" fill="#fff4e4" font-size="35" font-family="Georgia,serif">Germany</text>
+  <text x="1152" y="395" fill="#f4d398" font-size="22" font-family="Georgia,serif">4 Main Issues</text>
+  <text x="1152" y="424" fill="#aebbb0" font-size="13">with verified related locations here</text>
+  <path d="M1152 448H1488" stroke="#b4bdab" stroke-opacity=".2"/>
+  <text x="1152" y="478" fill="#9fac9f" font-size="11" letter-spacing="1.5">ISSUES TO FOLLOW</text>
+  <text x="1152" y="511" fill="#f4d397" font-size="16">01  Main Issue from source A</text><text x="1477" y="511" fill="#e3be80" font-size="20">›</text>
+  <path d="M1152 527H1488" stroke="#b4bdab" stroke-opacity=".14"/>
+  <text x="1152" y="559" fill="#e9eee4" font-size="16">02  Main Issue from source B</text><text x="1477" y="559" fill="#e3be80" font-size="20">›</text>
+  <path d="M1152 575H1488" stroke="#b4bdab" stroke-opacity=".14"/>
+  <text x="1152" y="607" fill="#e9eee4" font-size="16">03  Main Issue from source C</text><text x="1477" y="607" fill="#e3be80" font-size="20">›</text>
+  <path d="M1152 623H1488" stroke="#b4bdab" stroke-opacity=".14"/>
+  <text x="1152" y="657" fill="#d7e0d2" font-size="13">Search all Issues  ↗</text>
+  <rect x="1152" y="684" width="335" height="47" rx="23" fill="#b89b69" stroke="#e7c88f"/>
+  <text x="1172" y="714" fill="#111b18" font-size="14" font-weight="700">Open Issue 01</text><text x="1457" y="713" fill="#111b18" font-size="22">→</text>
+
+  <text x="80" y="809" fill="#dcb983" font-size="11" font-weight="700" letter-spacing="2">SUPPORTING PATTERNS</text>
+  <text x="80" y="846" fill="#f7efe0" font-size="26" font-family="Georgia,serif">For Issues related to Germany</text>
+  <text x="648" y="843" fill="#b5c2b5" font-size="13">Stats include all events linked to these Issues, wherever those events occurred.</text>
+  <path d="M80 870H1520" stroke="#d0bd96" stroke-opacity=".32"/>
+  <text x="80" y="904" fill="#f1d5a4" font-size="15">Event types</text><path d="M80 923H413" stroke="#907758" stroke-width="11"/><path d="M80 923H275" stroke="#dfbf86" stroke-width="11"/>
+  <text x="570" y="904" fill="#f1d5a4" font-size="15">Time coverage</text><path d="M570 923H903" stroke="#5a6a61" stroke-width="11"/><path d="M570 923H695" stroke="#dfbf86" stroke-width="11"/>
+  <text x="1060" y="904" fill="#f1d5a4" font-size="15">Qualification</text><path d="M1060 923H1393" stroke="#5a6a61" stroke-width="11"/><path d="M1060 923H1265" stroke="#dfbf86" stroke-width="11"/>
+  <text x="80" y="969" fill="#889a8c" font-size="12">ILLUSTRATIVE WIREFRAME  ·  numbers and Issue names are placeholders  ·  unlocated Issues remain in the searchable list</text>
+</g>
+</svg>
