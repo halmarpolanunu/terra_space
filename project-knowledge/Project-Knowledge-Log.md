@@ -8,6 +8,237 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-25 — Explore Issue subwindow approved and implemented
+
+- The owner chose a centered, scrollable window above the dimmed Explore overview. The approved
+  [Explore design](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) now leads with the Issue
+  story and three compact figures, then a map with a location list, then event records and time.
+- The frontend implementation preserves the country lens, shareable Issue URL, all linked event
+  places, qualification labels, source evidence, and missing-data notes. No data or workflow
+  changes were made.
+- Browser review covered desktop, 610px, and 375px widths, location selection, and Escape back
+  to the country lens. All 172 frontend tests, lint, production build, and Project Knowledge
+  validation passed.
+
+## 2026-09-25 — Explore visual polish
+
+- The owner kept the approved two-layer Explore structure and requested a more premium finish.
+  The visual pass gives the maps a unified atmospheric stage, lightens the single-Issue reading
+  column, and refines type, statistics, controls, and evidence rows. Counts, links, and data
+  definitions remain unchanged. Motion follows appearance and reduced-motion preferences.
+- All 171 frontend tests, lint, and the production build passed; desktop and narrow browser
+  views were inspected. No database or n8n content changed.
+
+## 2026-09-25 — Retire earlier Insight screens
+
+- The owner approved removing the old Issues, Events, and Dashboard UI and updating the
+  [North Star](North-Star.md). The [decision](decisions/Retire-Earlier-Insight-Screens.md)
+  preserves existing data, APIs, and processing while making Home and Explore the official
+  Terra Insight path.
+- The single-Issue Explore map was moved directly below the breadcrumb. The Issue narrative
+  and profile now sit beside it on wide screens and follow it on narrow screens.
+- Live desktop and 610px browser views confirmed the tighter placement. The three retired
+  routes return 404; 171 remaining frontend tests, lint, production build, and Project
+  Knowledge validation passed.
+
+## 2026-09-25 — Two-layer Explore implemented
+
+- The owner approved proceeding from the [Explore design](decisions/Explore-Two-Layer-Map-Guided-Analysis.md).
+  The implementation makes country-level distinct Main Issue counts the default overview and
+  opens each Issue into all its verified related places, linked events, timeline, and evidence.
+  Country-lens statistics include all events linked to the selected Issues.
+- All 251 frontend tests, lint, and the production build passed. After
+  Supabase started, the browser showed 50 Issues, 19 countries, and 109 linked events; Germany
+  narrowed to 2 Issues and 6 events, and one Issue opened its source and event evidence.
+  The identical summary/evidence repetition seen in that review was removed. No database or
+  n8n data was changed.
+
+## 2026-09-25 — Explore wireframes created
+
+- Added two illustrative images to the [Explore design brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md)
+  so the owner can review the two-layer aims and visual structure together. The country lens
+  narrows Issues and their supporting statistics; opening an Issue reveals its full geography
+  and event evidence. Placeholder counts and map shapes are explicitly disclosed.
+- No product UI, database, or n8n workflow changed.
+
+## 2026-09-25 — Explore aims and two-layer journey drafted
+
+- The owner selected map-guided exploration: geographic patterns across all current Main
+  Issues, then full statistics and evidence for one Issue. The [draft design
+  brief](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) records count scopes, the country
+  lens, unlocated Issues, and the all-places single-Issue rule for owner review before a wireframe.
+- No product UI, database, or n8n workflow changed in this design step.
+
+## 2026-09-24 — Premium motion for Home
+
+- The [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) now records
+  restrained staged entrances, on-view spectrum reveal, Issue narrative transitions, and motion
+  opt-outs. The change affects presentation only; source data and navigation rules are intact.
+- Browser review confirmed the animations and Issue selection on the live Home, and a narrow
+  viewport had no horizontal overflow. No database or n8n content changed.
+- Verification passed: 247 frontend tests, lint, production build, and Project Knowledge
+  validation with no errors or warnings.
+
+## 2026-09-24 — Editorial Spectrum for Across all issues
+
+- The owner approved a visual wireframe that simplifies the lower Home section. The
+  [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) records two leading
+  measures above a full-width linked-event type spectrum and an interactive legend.
+- Live browser review showed 50 Main Issues, 19 countries, 109 linked Phase 5 events, and an
+  Unclassified legend link that opens 53 filtered Explore records. The narrow layout was also
+  inspected. No database or n8n content changed.
+- Verification: 247 frontend tests, lint, production build, and Project Knowledge validation
+  passed without errors or warnings.
+
+## 2026-09-24 — Cinematic Field Notes Home visual amendment
+
+- The owner approved Option B after comparing it with the rigid first Home implementation.
+  The [Atlas Stage decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md) now records the
+  continuous globe scene, focused selected-Issue location, asymmetric story filmstrip, and
+  staggered statistics. Decorative story artwork is disclosed as illustration, not evidence.
+- Local Docker frontend review showed the live 50 Main Issues, 19 mapped countries, and 109
+  linked Phase 5 events with the selected Issue's map location visible. No database or n8n
+  content changed.
+
+## 2026-09-24 — Atlas Stage Home implemented
+
+- Home now uses a pure Issue-place model, with one marker per source-grounded Main Issue and
+  unique resolved Event Geography place. Multiple Issues sharing coordinates open a chooser;
+  Issues without a resolved place stay searchable. Event-level map and evidence remain in Explore.
+- The live local Home showed 50 Issues, 27 Issue-place markers, 19 unique mapped countries,
+  and 109 linked retained events. Its Unclassified link opened 53 filtered Explore records.
+- The cinematic Home uses the existing globe, wordmark, compass, amber palette, and local
+  background. A live mobile capture caught a conflicting old globe positioning rule; removing
+  that rule restored the map and caption within the 390-pixel viewport.
+- Verification: 246 frontend tests across 46 files, lint, production build, and Project
+  Knowledge validation passed. Desktop and mobile browser captures were inspected. Effective
+  viewport widths corresponding to 90–150% zoom had no horizontal overflow; actual browser
+  zoom remains unverified. No n8n workflow or database write was issued for this UI change.
+
+## 2026-09-24 — Atlas Stage specification approved and planned
+
+- The owner approved the written [Atlas Stage Home design](decisions/Atlas-Stage-Issue-Level-Home-Design.md).
+  It is now an active decision.
+- A four-task [implementation plan](plans/2026-09-24-atlas-stage-issue-home.md) covers the pure
+  Issue-place model, globe behavior, Home interaction and measures, and visual/live-data checks.
+  The plan awaits owner review; no UI or pipeline content changed during this planning step.
+
+## 2026-09-24 — Atlas Stage Home design drafted
+
+- The owner selected the Atlas Stage wireframe and approved a cinematic Home whose globe shows
+  all Main Issues through their unique resolved related places, with the selected Issue
+  highlighted. Home points select Issues; Explore retains event-level investigation.
+- The [draft design specification](decisions/Atlas-Stage-Issue-Level-Home-Design.md) defines
+  the open **Across all issues** measures, live-data rules, shared-location chooser, missing
+  geography behavior, accessibility, and responsive checks. It awaits the owner's review
+  before an implementation plan or UI changes.
+
+## 2026-09-24 — Phase 2 Main Issue leads Terra Insight
+
+- The owner approved a North Star change: current Phase 2 Main Issues now lead Home and Explore;
+  Phase 5 events, geography, timeline, qualification, and evidence follow each Issue by source ID.
+  The [decision](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) supersedes the event-led entry
+  in the guided command center design while retaining its navigation and visual direction.
+- A read-only local API audit found 50 Main Issues and 109 linked Phase 5 events. The current
+  dataset had no unmatched Phase 5 events. The UI change involved no database or n8n writes.
+
+## 2026-09-24 — Explore visual pass
+
+- The owner asked for a more engaging Explore screen. The filtered Phase 5 investigation view
+  now has direct Place, Time, and Records navigation, a map with explicit location coverage,
+  a dated timeline with expandable unknown-date records, and a richer event index. The source
+  evidence drawer uses a clearer reading hierarchy without changing its data.
+- Live browser review with 109 local records confirmed 31 mapped and 78 unresolved locations,
+  an expandable group of 78 unknown event dates, a Not Final filter with 10 records, and an
+  event opening its retained evidence. Desktop and narrow-screen layouts had no page-level
+  horizontal overflow. The four focused Explore tests, component ESLint, and production build
+  passed. No pipeline or database content changed.
+
+## 2026-09-24 — Home insight visual pass
+
+- The owner asked for more engaging visuals in the lower Home section. The event-type ranking,
+  monthly chart, qualification proportion, and recent-event cards now have distinct visual
+  roles and direct links to the underlying filtered Phase 5 records.
+- The design keeps the five less common types accessible in an expandable list and separates
+  78 unknown event dates from the 31 dated records. The visible status chart reflects 99 Final,
+  10 Not Final, and zero Pending records in the local read-only data. No pipeline or database
+  content changed.
+- The five focused Home tests, component ESLint, and production build passed. Live desktop and
+  mobile browser review showed the new layout without horizontal clipping; the expandable
+  category list and unknown-date link worked, with Explore showing 78 of 109 records. Project
+  Knowledge validation passed with zero errors and warnings.
+
+## 2026-09-24 — Owner-approved cinematic visual refinement
+
+- The owner preferred the cinematic Atlas-first example after finding the first implementation's
+  buttons, typography, and repeated square panels too rigid. The guided command center decision
+  now records that visual amendment.
+- Home now puts the existing globe and live Phase 5 totals in the first-screen composition.
+  Explore has a full-width map canvas, and Prepare's stages read as a connected sequence.
+  A compact top navigation joins the three new destinations while earlier screens keep their
+  previous shell. Browser review with the live local API showed 109 events and 31 mapped records.
+- The focused Home, Explore, and Prepare tests passed 10/10. The changed components passed
+  ESLint and the final production build passed. A live browser check confirmed the globe, linked
+  totals, and pipeline counts; a narrow viewport showed Home stacking without horizontal
+  clipping. Project Knowledge validation passed with 0 errors and 0 warnings.
+
+## 2026-09-23 — Guided command center live-data check
+
+- Started the owner's local Supabase and Terra Space containers, reusing copies of the existing
+  local connection file and offline map package in this worktree. The read-only UI showed 109
+  Phase 5 records, including 31 mapped records; the globe, clustered marker selection, evidence
+  detail, and presentation state rendered with live data.
+- Fixed a narrow-screen evidence-panel stacking issue. Added a current Phase 2/3 read endpoint
+  for Prepare because its former candidate-review API queried a retired table. Live Prepare now
+  shows 50 source reviews, 109 candidates, 10 candidates needing review, and 109 Phase 5 records.
+  Phase 4 distinguishes 10 requiring review from 56 safe but incomplete results.
+- Frontend tests passed 243/243, lint and production build passed, backend compiled, and the new
+  read endpoint returned 50 reviews. Isolated Chrome captures at effective 90–150% widths showed
+  no horizontal clipping. The first 16:9 capture showed too little of the globe above the fold;
+  a tighter Home header improved its placement, and a final 16:9 capture showed the map. Direct
+  browser page zoom remains untested because the in-app browser ignored its zoom shortcuts. The
+  older Event Review route was also updated to read the current split Phase 2/3 tables; the live
+  screen showed source 1 of 50 with its issue and candidates.
+
+## 2026-09-23 — Guided command center implementation checkpoint
+
+- Final review repairs: shared map markers now reveal their events; Explore search keeps rapid
+  typing before updating its URL; pending qualification is navigable; malformed dates stay in
+  the unknown-date group; Phase 5C place names are read correctly. Prepare labels the unit of
+  each attention count and explains the current API's pre-preparation gap. Final checks passed:
+  243 frontend tests, lint, and production build.
+- Added the four-part navigation and the new Home, Explore, and Prepare routes on
+  `codex/guided-command-center`. Home and Explore use the current Phase 5 read API; earlier routes
+  remain available separately. Prepare reads sources, candidate reviews, and Phase 5 records
+  without adding pipeline edits or execution controls.
+- A pure view model keeps `FINAL`, `NOT_FINAL`, and pending qualification separate; unknown dates
+  are excluded from dated charts; only resolved Event Geography creates map pins. Chart and
+  summary links open their filtered records, and event detail shows the exact evidence quote.
+- Verification: 237/237 frontend tests, lint, and production build passed. Browser QA with a
+  temporary read-only fixture checked populated Home, Explore, Prepare, presentation mode, and
+  narrow-screen navigation. Browser QA caught and fixed a menu overlay and evidence panel header
+  overlap. The fixture was kept outside tracked product files.
+- Real-data visual QA remains open: Docker was unavailable, the app's normal backend did not run,
+  and the generated offline map package is absent in this worktree. The live Phase 5 API response,
+  globe rendering, and 90–150% zoom acceptance still need a pass on the owner's running setup.
+
+## 2026-09-23 — Guided command center design approved and planned
+
+- The owner approved the written redesign direction. Its decision status is now active.
+- Added the [implementation plan](plans/2026-09-23-guided-command-center-redesign.md) with six
+  independently reviewable tasks and explicit checks for unknown values, map pins, final status,
+  API errors, and filter continuity. Product UI code has not changed yet.
+
+## 2026-09-23 — Guided command center redesign draft
+
+- The owner selected equal weight for daily usability and portfolio presentation, then approved
+  a guided command center with Home, Explore, Prepare, and Settings. Phase 5 is the primary event
+  set; earlier events remain separately labeled.
+- Added the [draft design](decisions/Terra-Space-Guided-Command-Center-Redesign.md) after reviewing
+  the existing frontend, brand kit, six backgrounds, globe, and relevant authority decisions.
+- No product UI code or data was changed. The draft awaits owner review before implementation
+  planning.
+
 ## 2026-09-22 — Portable n8n workflow setup package
 
 - Added a credential-free export of the seven current workflows in the Terra_Space n8n folder

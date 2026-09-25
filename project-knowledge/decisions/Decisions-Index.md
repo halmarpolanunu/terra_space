@@ -8,6 +8,11 @@ status: active
 
 # Decisions
 
+- [Retire Earlier Insight Screens](Retire-Earlier-Insight-Screens.md) - Home and Explore replace the old Issues, Events, and Dashboard UI without changing data or processing.
+- [Explore Two-Layer Map-Guided Analysis](Explore-Two-Layer-Map-Guided-Analysis.md) - Approved two-layer Explore with geographic patterns across Issues and full single-Issue investigation.
+- [Atlas Stage Issue-Level Home Design](Atlas-Stage-Issue-Level-Home-Design.md) - Approved specification for the cinematic Home wireframe and all-Issue globe behavior.
+- [Phase 2 Main Issue Led Terra Insight](Phase-2-Main-Issue-Led-Terra-Insight.md) - Current Phase 2 Main Issues lead Home and Explore; linked Phase 5 events and evidence follow each Issue.
+- [Terra Space Guided Command Center Redesign](Terra-Space-Guided-Command-Center-Redesign.md) - Approved navigation and visual direction; its event-led entry is superseded by the Main Issue decision.
 - [Phase 5D Deterministic Duplicate Recommendations](Phase-5D-Deterministic-Duplicate-Recommendations.md) - Strict, model-free pair comparison for explainable possible-duplicate recommendations without merging.
 - [Phase 5C Timeline and Geography](Phase-5C-Timeline-and-Geography.md) - Uses honest timeline references, approved offline coordinates, separate Event Geography and Actor Network outputs, and database-reviewed suggestions without turning AI proposals into facts.
 - [Phase 5B Event Type Classification](Phase-5B-Event-Type-Classification.md) - Uses a bounded local classifier plus independent safeguard, up to two corrective retries, visible Unclassified results, and optional database-reviewed proposals without automatic taxonomy expansion.

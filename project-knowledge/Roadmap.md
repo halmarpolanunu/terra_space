@@ -54,6 +54,13 @@ Use this file for long-term planning by phase or milestone. Dates are optional. 
 
 ## Product Organization
 
+- [ ] **Guided command center redesign** - Home, Explore, Prepare, and Settings now form the
+  primary navigation. Phase 5 Home charts, linked Explore views, read-only pipeline Prepare,
+  and presentation mode are implemented on `codex/guided-command-center`. Real-data browser and
+  zoom acceptance is pending because local Docker and the generated map package were unavailable.
+  See the [redesign decision](decisions/Terra-Space-Guided-Command-Center-Redesign.md) and
+  [implementation plan](plans/2026-09-23-guided-command-center-redesign.md). Status: in-progress.
+
 - [x] **Organize the product around Terra Insight and Terra Sense** - navigation is grouped into
   Terra Insight (Dashboard, Events), Terra Sense (Overview, Sources, Event Review, Event Taxonomy),
   and Settings (Local AI). Terra Sense has a read-only pipeline overview at `/sense`. See the

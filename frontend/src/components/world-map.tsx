@@ -60,6 +60,8 @@ export type EventPinCluster = {
   count: number;
   eventIds: string[];
   locationLabel: string;
+  ariaLabel?: string;
+  selected?: boolean;
 };
 
 export type RelationshipArcInput = {
@@ -163,20 +165,37 @@ export type MapProjectionMode = "globe" | "flat" | "unavailable";
 type NumericPaintValue = number | ExpressionSpecification;
 
 function selectedPaintValue(
-  selectedEventId: string | undefined,
+  selectedEventId: string | readonly string[] | undefined,
   selectedValue: number,
   restingValue: number,
 ): NumericPaintValue {
-  if (!selectedEventId) return restingValue;
-  return ["case", ["==", ["get", "eventId"], selectedEventId], selectedValue, restingValue];
+  if (!selectedEventId || (Array.isArray(selectedEventId) && selectedEventId.length === 0)) return restingValue;
+  const selected: ExpressionSpecification = typeof selectedEventId !== "string"
+    ? ["in", ["get", "eventId"], ["literal", selectedEventId]]
+    : ["==", ["get", "eventId"], selectedEventId];
+  return ["case", selected, selectedValue, restingValue];
 }
 
-function haloRadius(selectedEventId: string | undefined, expanded = false): NumericPaintValue {
+function haloRadius(selectedEventId: string | readonly string[] | undefined, expanded = false): NumericPaintValue {
+  if (Array.isArray(selectedEventId)) return selectedPaintValue(selectedEventId, expanded ? 23 : 20, 9);
   return selectedPaintValue(selectedEventId, expanded ? 18 : 15, expanded ? 15 : 11);
 }
 
-function haloOpacity(selectedEventId: string | undefined, expanded = false): NumericPaintValue {
+function haloOpacity(selectedEventId: string | readonly string[] | undefined, expanded = false): NumericPaintValue {
+  if (Array.isArray(selectedEventId)) return selectedPaintValue(selectedEventId, expanded ? 0.27 : 0.55, 0.08);
   return selectedPaintValue(selectedEventId, expanded ? 0.22 : 0.48, expanded ? 0.12 : 0.34);
+}
+
+function pinRadius(selection: string | readonly string[] | undefined): NumericPaintValue {
+  return Array.isArray(selection) ? selectedPaintValue(selection, 9, 4.5) : selectedPaintValue(selection, 7.5, 6);
+}
+
+function pinOpacity(selection: string | readonly string[] | undefined): NumericPaintValue {
+  return Array.isArray(selection) ? selectedPaintValue(selection, 1, 0.48) : selectedPaintValue(selection, 1, selection ? 0.78 : 1);
+}
+
+function pinStrokeWidth(selection: string | readonly string[] | undefined): NumericPaintValue {
+  return Array.isArray(selection) ? selectedPaintValue(selection, 2.5, 0.8) : selectedPaintValue(selection, 2, 1);
 }
 
 function wrapLongitude(lng: number): number {
@@ -203,14 +222,14 @@ export function isBehindGlobe(center: LngLat, point: LngLat): boolean {
 
 function applySelectedPinPaint(
   map: maplibregl.Map,
-  selectedEventId: string | undefined,
+  selectedEventId: string | readonly string[] | undefined,
   haloExpanded = false,
 ) {
   map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-radius", haloRadius(selectedEventId, haloExpanded));
   map.setPaintProperty(EVENT_PIN_HALO_LAYER_ID, "circle-opacity", haloOpacity(selectedEventId, haloExpanded));
-  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-radius", selectedPaintValue(selectedEventId, 7.5, 6));
-  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-opacity", selectedPaintValue(selectedEventId, 1, selectedEventId ? 0.78 : 1));
-  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-stroke-width", selectedPaintValue(selectedEventId, 2, 1));
+  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-radius", pinRadius(selectedEventId));
+  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-opacity", pinOpacity(selectedEventId));
+  map.setPaintProperty(EVENT_PIN_LAYER_ID, "circle-stroke-width", pinStrokeWidth(selectedEventId));
 }
 
 function arcOpacity(selectedRelationshipId: string | undefined): NumericPaintValue {
@@ -340,13 +359,18 @@ export const worldMapStyle: StyleSpecification = {
 };
 
 type WorldMapProps = {
+  autoRotate?: boolean;
   clusters?: EventPinCluster[];
+  focusCoordinates?: [number, number];
   geojson?: EventPinFeatureCollection;
+  initialZoom?: number;
+  projectionMode?: "globe" | "flat";
   onClusterSelect?: (cluster: EventPinCluster) => void;
   onFeatureSelect?: (eventId: string) => void;
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
   relationshipArcs?: RelationshipArcFeatureCollection;
   selectedEventId?: string;
+  selectedPinIds?: string[];
   selectedRelationshipId?: string;
 };
 
@@ -360,9 +384,9 @@ function syncClusterMarkers(
   clusterMarkersRef.current = clusters.map((cluster) => {
     const el = document.createElement("button");
     el.type = "button";
-    el.className = "event-pin-cluster";
+    el.className = cluster.selected ? "event-pin-cluster event-pin-cluster-selected" : "event-pin-cluster";
     el.textContent = String(cluster.count);
-    el.setAttribute("aria-label", `${cluster.count} events at ${cluster.locationLabel}`);
+    el.setAttribute("aria-label", cluster.ariaLabel ?? `${cluster.count} events at ${cluster.locationLabel}`);
     el.addEventListener("click", (event) => {
       event.stopPropagation();
       clusterSelectionRef.current?.(cluster);
@@ -372,13 +396,18 @@ function syncClusterMarkers(
 }
 
 export function WorldMap({
+  autoRotate = true,
   clusters = EMPTY_CLUSTERS,
+  focusCoordinates,
   geojson = EMPTY_EVENT_PINS,
+  initialZoom = 2.2,
+  projectionMode = "globe",
   onClusterSelect,
   onFeatureSelect,
   onProjectionModeChange,
   relationshipArcs = EMPTY_RELATIONSHIP_ARCS,
   selectedEventId,
+  selectedPinIds,
   selectedRelationshipId,
 }: WorldMapProps) {
   const container = useRef<HTMLDivElement>(null);
@@ -390,22 +419,25 @@ export function WorldMap({
   const isGlobeModeRef = useRef(true);
   const updatePinOcclusionRef = useRef<() => void>(() => {});
   const projectionModeChangeRef = useRef(onProjectionModeChange);
-  const selectedEventRef = useRef(selectedEventId);
+  const selectedEventRef = useRef<string | readonly string[] | undefined>(selectedPinIds?.length ? selectedPinIds : selectedEventId);
   const relationshipArcsRef = useRef(relationshipArcs);
   const selectedRelationshipRef = useRef(selectedRelationshipId);
   const relationshipArcsActiveRef = useRef(false);
   const selectionRef = useRef(onFeatureSelect);
   const mapLoaded = useRef(false);
   const pinPulseExpanded = useRef(false);
-  const rotationEnabledRef = useRef(true);
+  const rotationEnabledRef = useRef(autoRotate);
   const rotationSpeedRef = useRef(4);
   const rotationDirectionRef = useRef<1 | -1>(1);
   const [unavailable, setUnavailable] = useState(false);
   const [flatFallback, setFlatFallback] = useState(false);
-  const [rotationPlaying, setRotationPlaying] = useState(true);
+  const [rotationPlaying, setRotationPlaying] = useState(autoRotate);
   const [rotationSpeed, setRotationSpeed] = useState(4);
   const [rotationDirection, setRotationDirection] = useState<1 | -1>(1);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const initialViewRef = useRef({ center: focusCoordinates ?? ([0, 20] as [number, number]), zoom: initialZoom });
+  const focusLongitude = focusCoordinates?.[0];
+  const focusLatitude = focusCoordinates?.[1];
   const [reduceMotionAtMount] = useState(
     () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
   );
@@ -442,8 +474,8 @@ export function WorldMap({
     const map = new maplibregl.Map({
       container: container.current,
       style: worldMapStyle,
-      center: [0, 20],
-      zoom: 2.2,
+      center: initialViewRef.current.center,
+      zoom: initialViewRef.current.zoom,
       attributionControl: false,
     });
     mapRef.current = map;
@@ -486,8 +518,9 @@ export function WorldMap({
     updatePinOcclusionRef.current = updatePinOcclusion;
     const handleLoad = () => {
       try {
-        map.setProjection({ type: "globe" });
-        projectionModeChangeRef.current?.("globe");
+        if (projectionMode === "globe") map.setProjection({ type: "globe" });
+        else isGlobeModeRef.current = false;
+        projectionModeChangeRef.current?.(projectionMode);
       } catch {
         isGlobeModeRef.current = false;
         setFlatFallback(true);
@@ -517,14 +550,10 @@ export function WorldMap({
         source: EVENT_PIN_SOURCE_ID,
         paint: {
           "circle-color": EXCEPTION_PIN_COLOR_EXPRESSION,
-          "circle-radius": selectedPaintValue(selectedEventRef.current, 7.5, 6),
+          "circle-radius": pinRadius(selectedEventRef.current),
           "circle-stroke-color": EXCEPTION_PIN_STROKE_COLOR_EXPRESSION,
-          "circle-stroke-width": selectedPaintValue(selectedEventRef.current, 2, 1),
-          "circle-opacity": selectedPaintValue(
-            selectedEventRef.current,
-            1,
-            selectedEventRef.current ? 0.78 : 1,
-          ),
+          "circle-stroke-width": pinStrokeWidth(selectedEventRef.current),
+          "circle-opacity": pinOpacity(selectedEventRef.current),
         },
       });
       map.on("click", EVENT_PIN_LAYER_ID, handlePinClick);
@@ -613,14 +642,20 @@ export function WorldMap({
       mapRef.current = null;
       map.remove();
     };
-  }, []);
+  }, [projectionMode]);
+
+  useEffect(() => {
+    if (focusLongitude === undefined || focusLatitude === undefined || !mapRef.current || !mapLoaded.current) return;
+    mapRef.current.easeTo({ center: [focusLongitude, focusLatitude], duration: reduceMotionAtMount ? 0 : 850 });
+  }, [focusLongitude, focusLatitude, reduceMotionAtMount]);
 
   useEffect(() => {
     pinsRef.current = geojson;
     clustersRef.current = clusters;
     clusterSelectionRef.current = onClusterSelect;
     projectionModeChangeRef.current = onProjectionModeChange;
-    selectedEventRef.current = selectedEventId;
+    const selection = selectedPinIds?.length ? selectedPinIds : selectedEventId;
+    selectedEventRef.current = selection;
     relationshipArcsRef.current = relationshipArcs;
     selectedRelationshipRef.current = selectedRelationshipId;
     selectionRef.current = onFeatureSelect;
@@ -633,7 +668,7 @@ export function WorldMap({
       selectedRelationshipId,
       relationshipArcsActiveRef.current,
     );
-    applySelectedPinPaint(mapRef.current, selectedEventId, pinPulseExpanded.current);
+    applySelectedPinPaint(mapRef.current, selection, pinPulseExpanded.current);
     syncClusterMarkers(mapRef.current, clusters, clusterMarkersRef, clusterSelectionRef);
     updatePinOcclusionRef.current();
   }, [
@@ -644,6 +679,7 @@ export function WorldMap({
     onProjectionModeChange,
     relationshipArcs,
     selectedEventId,
+    selectedPinIds,
     selectedRelationshipId,
   ]);
 
@@ -654,7 +690,7 @@ export function WorldMap({
     <>
       {flatFallback && <p className="map-flat-fallback">Flat map fallback</p>}
       <div aria-label="Offline world map" className="world-map" ref={container} />
-      {!reduceMotionAtMount && (
+      {!reduceMotionAtMount && projectionMode === "globe" && (
         <div className="globe-rotation-controls">
           <div className="globe-rotation-controls__row">
             <button
