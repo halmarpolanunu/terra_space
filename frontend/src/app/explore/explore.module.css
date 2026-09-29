@@ -133,10 +133,12 @@
 .countryMapHead h2, .countryLens h2, .issueIntro h2, .patternHeading h2 { margin: .55rem 0 .45rem; color: #f7f1e6; font-family: Georgia, serif; font-size: clamp(2.2rem, 3vw, 3.5rem); font-weight: 400; line-height: 1.03; letter-spacing: -.045em; text-wrap: balance; }
 .countryMapHead p, .countryLens > p, .issueIntro p, .patternHeading p { max-width: 42rem; margin: 0; color: #c5cfc4; font-size: .84rem; line-height: 1.6; }
 .countryMap :global(.world-map) { position: relative; min-height: clamp(25rem, 51vh, 38rem); margin: 1.2rem 0 .8rem; overflow: hidden; border-radius: 50% 50% 12% 12% / 22% 22% 12% 12%; }
-.countryRail { position: relative; display: flex; gap: .45rem; overflow-x: auto; padding: .5rem 0 .8rem; scrollbar-color: #9c7b4d #15221e; }
-.countryRail a { display: flex; flex: none; gap: .65rem; align-items: center; padding: .52rem .72rem; border: 1px solid #d9c79643; border-radius: 999px; background: #0f1b19c7; color: #e8e8dc; font-size: .73rem; text-decoration: none; transition: background 180ms ease, border-color 180ms ease, transform 180ms ease; }
-.countryRail a:hover, .countryRail a[data-selected="true"] { border-color: #e8c486; background: #9b73472b; transform: translateY(-2px); }
-.countryRail strong { color: #f1cb87; font-variant-numeric: tabular-nums; }
+.countryPicker { position: relative; z-index: 1; display: flex; width: min(100%, 27rem); align-items: center; gap: 1rem; margin: .3rem 0 .25rem; color: #dec89e; font: .66rem var(--font-mono); letter-spacing: .07em; text-transform: uppercase; }
+.countryPicker span { flex: none; }
+.countryPicker select { min-width: 0; flex: 1; appearance: none; padding: .7rem 2.1rem .7rem .95rem; border: 1px solid #d9c79666; border-radius: .8rem; background: #12211f; color: #f3ecde; font: .78rem var(--font-sans); letter-spacing: 0; text-transform: none; cursor: pointer; }
+.countryPicker select:hover { border-color: #e8c486; background: #1c2c28; }
+.countryPicker select:focus-visible { outline: 2px solid #f0c987; outline-offset: 3px; }
+.countryPicker::after { position: absolute; right: .9rem; color: #e8c486; font-size: .8rem; pointer-events: none; content: "⌄"; }
 .countryLens, .issueProfile { padding: clamp(1.25rem, 2vw, 2rem); border: 1px solid #e6d0a52c; border-radius: 1.3rem; background: linear-gradient(155deg, #233129dd, #151f1cf0 70%); box-shadow: 0 1.5rem 3rem #0004; }
 .countryLens h2 { font-size: clamp(1.9rem, 2.5vw, 2.8rem); }
 .countryLens .lensCount { display: flex; gap: .65rem; align-items: baseline; margin: 1.35rem 0 0; color: #f2e5c8; }
@@ -197,8 +199,8 @@
 .profileAction:hover { text-decoration: underline; }
 @media (max-width: 64rem) { .overviewStage, .issueStage { grid-template-columns: minmax(0, 1.5fr) minmax(17rem, .8fr); } }
 @media (max-width: 50rem) { .overviewStage, .issueStage { grid-template-columns: 1fr; } .issueStage { grid-template-areas: "map" "narrative" "profile"; } .countryLens, .issueProfile { position: static; } .countryIssueList { max-height: 26rem; } }
-@media (max-width: 40rem) { .countryMap :global(.world-map) { min-height: 24rem; } .patternColumns { grid-template-columns: 1fr; } .patternTotals { gap: .6rem; } .patternTotals strong { font-size: 2.7rem; } }
-@media (prefers-reduced-motion: reduce) { .countryRail a, .countryIssueList a { transition: none; } }
+@media (max-width: 40rem) { .countryMap :global(.world-map) { min-height: 24rem; } .countryPicker { display: grid; gap: .45rem; } .countryPicker select { width: 100%; } .countryPicker::after { bottom: .72rem; } .patternColumns { grid-template-columns: 1fr; } .patternTotals { gap: .6rem; } .patternTotals strong { font-size: 2.7rem; } }
+@media (prefers-reduced-motion: reduce) { .countryIssueList a { transition: none; } }
 @media (max-width: 56rem) { .issueLayout { grid-template-columns: 1fr; } .issueRail { display: flex; overflow-x: auto; overflow-y: hidden; max-height: none; padding-bottom: .4rem; } .issueRail a { flex: 0 0 min(50vw,16rem); } .issueFocus { min-height: 0; } }
 @media (max-width: 40rem) { .issueBrowserHeading { display: block; } .issueBrowserHeading label { margin-top: 1rem; } .issueBrowserHeading input { min-width: 0; width: 100%; } .issueRail a { flex-basis: min(72vw,16rem); } .issueFocus { padding: 1rem; } }
 
