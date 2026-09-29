@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { getDocument, type Document } from "@/lib/documents-api";
 
-type DocumentSourceWorkspaceProps = { documentId: string; backToEvents: string };
+type DocumentSourceWorkspaceProps = { documentId: string };
 
-export function DocumentSourceWorkspace({ documentId, backToEvents }: DocumentSourceWorkspaceProps) {
+export function DocumentSourceWorkspace({ documentId }: DocumentSourceWorkspaceProps) {
   const [document, setDocument] = useState<Document>();
   const [error, setError] = useState<string>();
 
@@ -21,7 +21,7 @@ export function DocumentSourceWorkspace({ documentId, backToEvents }: DocumentSo
   }, [documentId]);
 
   return <AppShell currentPath="/documents"><section className="document-source-page" aria-labelledby="source-document-title">
-    <Link className="btn" href={backToEvents}>Back to Events</Link>
+    <Link className="btn" href="/documents">Back to Sources</Link>
     {error ? <><h1 id="source-document-title">Source document</h1><p className="document-error">{error}</p></> : document ? <>
       <p className="eyebrow">Read-only source</p><h1 id="source-document-title">{document.title}</h1>
       <p className="document-meta">Publication date: {document.publication_date}</p>

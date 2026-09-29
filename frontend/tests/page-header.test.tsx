@@ -7,25 +7,25 @@ describe("PageHeader", () => {
   it("renders the shared eyebrow, title, description, and optional action pattern", () => {
     render(
       <PageHeader
-        action={<a href="/events">Open events</a>}
+        action={<a href="/explore">Open Explore</a>}
         description="One filtered view across the local intelligence workspace."
         eyebrow="Approved intelligence"
-        title="Dashboard"
-        titleId="dashboard-title"
+        title="Explore"
+        titleId="explore-title"
       />,
     );
 
     expect(screen.getByText("Approved intelligence")).toHaveClass("eyebrow");
-    expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toHaveAttribute(
+    expect(screen.getByRole("heading", { level: 1, name: "Explore" })).toHaveAttribute(
       "id",
-      "dashboard-title",
+      "explore-title",
     );
     expect(
       screen.getByText("One filtered view across the local intelligence workspace."),
     ).toHaveClass("page-header-description");
-    expect(screen.getByRole("link", { name: "Open events" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open Explore" })).toHaveAttribute(
       "href",
-      "/events",
+      "/explore",
     );
   });
 

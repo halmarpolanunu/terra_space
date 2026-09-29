@@ -23,6 +23,13 @@ This file is the main entry point for humans and AI agents. Start here, then fol
 
 ## Planning and decisions
 
+- [Explore Two-Layer Map-Guided Analysis](decisions/Explore-Two-Layer-Map-Guided-Analysis.md) — approved Explore aims and two wireframes, now implemented.
+- [Retire Earlier Insight Screens](decisions/Retire-Earlier-Insight-Screens.md) — Home and Explore replace the old Issues, Events, and Dashboard UI.
+- [Atlas Stage Issue-Level Home Design](decisions/Atlas-Stage-Issue-Level-Home-Design.md) — approved cinematic Home composition and Issue-level globe specification.
+- [Atlas Stage Issue-Level Home Implementation Plan](plans/2026-09-24-atlas-stage-issue-home.md) — completed steps and verification for Issue-place data, globe selection, Home composition, and live visual checks.
+- [Phase 2 Main Issue Led Terra Insight](decisions/Phase-2-Main-Issue-Led-Terra-Insight.md) — current direction for Issue-led Home and Explore, with linked Phase 5 events and evidence.
+- [Terra Space Guided Command Center Redesign](decisions/Terra-Space-Guided-Command-Center-Redesign.md) — four-part navigation and cinematic UI direction; its event-led entry is superseded by the Main Issue decision
+- [Guided Command Center Redesign Implementation Plan](plans/2026-09-23-guided-command-center-redesign.md) — reviewable steps for navigation, Home, Explore, Prepare, and presentation state
 - [Phase 5 Event Generation and Qualification](decisions/Phase-5-Conservative-Event-Drafts.md) — approved lean one-workflow direction for visible events, classification, timeline/map enrichment, duplicate recommendation, and qualification
 - [Phase 5A Prepare Event Records Implementation Plan](plans/2026-09-10-phase-5a-prepare-event-records.md) — test-first plan for the deterministic first stage of the single Phase 5 workflow
 - [Phase 4 Event Fact Extraction](decisions/Phase-4-Event-Fact-Extraction.md) — approved minimal design for enriching retained Phase 3 candidates before taxonomy, normalization, deduplication, and final events

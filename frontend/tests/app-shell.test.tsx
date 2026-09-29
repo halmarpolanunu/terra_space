@@ -24,8 +24,8 @@ describe("AppShell", () => {
       </AppShell>,
     );
 
-    expect(screen.getByText("Terra Insight")).toBeVisible();
-    expect(screen.getByText("Terra Sense")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Explore" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Prepare" })).toBeVisible();
     expect(screen.getByText("Settings")).toBeVisible();
     expect(screen.getByRole("link", { current: "page" })).toHaveAttribute(
       "href",
@@ -36,8 +36,8 @@ describe("AppShell", () => {
 
   it("keeps only the local-workspace readout above every page", () => {
     render(
-      <AppShell currentPath="/dashboard">
-        <h1>Dashboard</h1>
+      <AppShell currentPath="/home">
+        <h1>Home</h1>
       </AppShell>,
     );
 
@@ -47,11 +47,11 @@ describe("AppShell", () => {
     expect(within(statusBar).queryByText("Offline", { exact: true })).not.toBeInTheDocument();
     expect(within(statusBar).getByRole("link", { name: "Terra Space home" })).toHaveAttribute(
       "href",
-      "/dashboard",
+      "/home",
     );
-    expect(screen.getByRole("main")).toHaveAttribute("data-route", "/dashboard");
+    expect(screen.getByRole("main")).toHaveAttribute("data-route", "/home");
     const shell = document.querySelector(".app-shell");
-    expect(shell).toHaveAttribute("data-route", "/dashboard");
+    expect(shell).toHaveAttribute("data-route", "/home");
     expect(shell?.getAttribute("style")).toContain(
       '--workspace-background-image: url("/backgrounds/dashboard.webp")',
     );

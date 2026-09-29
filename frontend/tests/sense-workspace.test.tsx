@@ -147,8 +147,8 @@ describe("Terra Sense Overview", () => {
     expect(flow.getByRole("heading", { name: "Terra Insight" })).toBeVisible();
     expect(flow.getByRole("link", { name: /open sources/i })).toHaveAttribute("href", "/documents");
     expect(flow.getByRole("link", { name: /open event review/i })).toHaveAttribute("href", "/event-review");
-    expect(flow.getByRole("link", { name: /open terra insight/i })).toHaveAttribute("href", "/dashboard");
-    expect(flow.getByText(/only published events enter terra insight/i)).toBeVisible();
+    expect(flow.getByRole("link", { name: /open terra insight/i })).toHaveAttribute("href", "/home");
+    expect(flow.getByText(/home and explore lead with current main issues/i)).toBeVisible();
   });
 
   it("shows an empty local queue when every count is zero", async () => {

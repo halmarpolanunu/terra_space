@@ -80,11 +80,27 @@ class BridgeCandidateReviewRead(BaseModel):
 
     phase1_source_id: str
     source_title: str
+    source_domain: str = ""
     main_issue_status: MainIssueStatus
     main_issue: BridgeMainIssue | None
     event_detection_status: EventDetectionStatus
     event_candidates: list[BridgeCandidate] = Field(default_factory=list)
     processed_at: datetime
+
+
+class PipelineCandidateRead(BaseModel):
+    title: str
+    status: str
+
+
+class PipelineReviewRead(BaseModel):
+    """Current Phase 2 issue and Phase 3 candidate state for one source."""
+
+    phase1_source_id: str
+    source_title: str
+    main_issue_status: str
+    event_detection_status: str
+    event_candidates: list[PipelineCandidateRead] = Field(default_factory=list)
 
 
 class Phase5ClassificationRead(BaseModel):

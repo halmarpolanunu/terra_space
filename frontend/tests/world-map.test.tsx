@@ -88,6 +88,15 @@ describe("offline world map configuration", () => {
     );
   });
 
+  it("can open the Home globe on the selected Issue without starting rotation", () => {
+    render(<WorldMap focusCoordinates={[58.5, 51.2]} initialZoom={2.7} autoRotate={false} />);
+
+    expect(maplibregl.Map).toHaveBeenLastCalledWith(
+      expect.objectContaining({ center: [58.5, 51.2], zoom: 2.7 }),
+    );
+    expect(screen.getByRole("button", { name: "Resume globe rotation" })).toBeVisible();
+  });
+
   it("uses only a local PMTiles source", () => {
     expect(WORLD_PMTILES_URL).toBe("/api/backend/api/maps/world.pmtiles");
     expect(JSON.stringify(worldMapStyle)).not.toMatch(/https?:\/\//);
@@ -253,6 +262,41 @@ describe("offline world map configuration", () => {
     vi.useRealTimers();
   });
 
+  it("waits two seconds after interaction or a popup closes before resuming the Home globe", () => {
+    vi.useFakeTimers();
+    map.jumpTo.mockClear();
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+
+    const { rerender } = render(<WorldMap rotationResumeDelayMs={2000} />);
+    vi.advanceTimersByTime(500);
+    expect(map.jumpTo).toHaveBeenCalled();
+    map.jumpTo.mockClear();
+
+    fireEvent.pointerDown(screen.getByLabelText("Offline world map"));
+    vi.advanceTimersByTime(3000);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    fireEvent.pointerUp(window);
+    vi.advanceTimersByTime(1900);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(150);
+    expect(map.jumpTo).toHaveBeenCalled();
+
+    rerender(<WorldMap rotationResumeDelayMs={2000} rotationSuspended />);
+    map.jumpTo.mockClear();
+    vi.advanceTimersByTime(3000);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    rerender(<WorldMap rotationResumeDelayMs={2000} />);
+    vi.advanceTimersByTime(1900);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(150);
+    expect(map.jumpTo).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
   it("keeps auto-rotation disabled when reduced motion is requested", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
@@ -335,14 +379,15 @@ describe("offline world map configuration", () => {
       return map;
     });
 
-    render(<WorldMap />);
+    render(<WorldMap rotationResumeDelayMs={0} />);
     fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
     fireEvent.change(screen.getByLabelText("Rotation speed"), { target: { value: "8" } });
+    expect(screen.getByText("8.0°/s")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
 
     vi.advanceTimersByTime(1000);
     // 8 deg/s for ~1s of simulated frames.
     expect(mapCenter.lng).toBeCloseTo(8, 0);
-    expect(screen.getByText("8.0°/s")).toBeVisible();
 
     vi.useRealTimers();
   });
@@ -356,14 +401,15 @@ describe("offline world map configuration", () => {
       return map;
     });
 
-    render(<WorldMap />);
+    render(<WorldMap rotationResumeDelayMs={0} />);
     fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
     fireEvent.click(screen.getByRole("button", { name: "Rotating eastward. Switch to westward." }));
+    expect(screen.getByRole("button", { name: "Rotating westward. Switch to eastward." })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
 
     vi.advanceTimersByTime(1000);
     // Default speed 4 deg/s, reversed to westward (negative longitude direction).
     expect(mapCenter.lng).toBeCloseTo(-4, 0);
-    expect(screen.getByRole("button", { name: "Rotating westward. Switch to eastward." })).toBeVisible();
 
     vi.useRealTimers();
   });
@@ -414,6 +460,22 @@ describe("offline world map configuration", () => {
       "circle-radius",
       ["case", ["==", ["get", "eventId"], "event-2"], 15, 11],
     );
+  });
+
+  it("supports multiple selected Issue pin IDs and an Issue-specific cluster label", async () => {
+    map.setProjection.mockImplementation(() => undefined);
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+    const cluster = { coordinates: [2, 1] as [number, number], count: 2, eventIds: ["a:one", "b:one"], locationLabel: "Shared place", ariaLabel: "2 Issue locations at Shared place" };
+    render(<WorldMap selectedPinIds={["a:one", "a:two"]} clusters={[cluster]} />);
+    expect(map.addLayer).toHaveBeenCalledWith(expect.objectContaining({ id: EVENT_PIN_LAYER_ID, paint: expect.objectContaining({
+      "circle-radius": ["case", ["in", ["get", "eventId"], ["literal", ["a:one", "a:two"]]], 9, 4.5],
+      "circle-opacity": ["case", ["in", ["get", "eventId"], ["literal", ["a:one", "a:two"]]], 1, 0.48],
+    }) }));
+    expect(markerInstances[0].element).toHaveAttribute("aria-label", "2 Issue locations at Shared place");
   });
 
   it("reports globe, flat fallback, and unavailable projection modes without recreating the map", async () => {
@@ -508,7 +570,7 @@ describe("offline world map configuration", () => {
 
     expect(clearInterval).toHaveBeenCalledTimes(1);
     expect(cancelAnimationFrame).toHaveBeenCalled();
-    expect(map.off).toHaveBeenCalledTimes(11);
+    expect(map.off).toHaveBeenCalledTimes(10);
     expect(map.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("load", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("move", expect.any(Function));

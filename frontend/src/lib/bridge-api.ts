@@ -60,11 +60,20 @@ export type BridgeCandidate = {
 export type BridgeCandidateReview = {
   phase1_source_id: string;
   source_title: string;
+  source_domain: string;
   main_issue_status: "MAIN_ISSUE_FOUND" | "NO_MAIN_ISSUE" | "FAILED";
   main_issue: BridgeMainIssue | null;
   event_detection_status: "EVENT_CANDIDATES_FOUND" | "NO_EVENT_CANDIDATE" | "NOT_RUN" | "FAILED";
   event_candidates: BridgeCandidate[];
   processed_at: string;
+};
+
+export type PipelineReview = {
+  phase1_source_id: string;
+  source_title: string;
+  main_issue_status: string;
+  event_detection_status: string;
+  event_candidates: { title: string; status: string }[];
 };
 
 export type Phase5Event = {
@@ -111,6 +120,11 @@ export async function getBridgeSource(sourceId: string): Promise<BridgeSource> {
 export async function listBridgeCandidateReviews(): Promise<BridgeCandidateReview[]> {
   const response = await fetch(`${API_ROOT}/event-candidates`);
   return parseOrThrow<BridgeCandidateReview[]>(response);
+}
+
+export async function listPipelineReviews(): Promise<PipelineReview[]> {
+  const response = await fetch(`${API_ROOT}/pipeline-reviews`);
+  return parseOrThrow<PipelineReview[]>(response);
 }
 
 export async function listPhase5Events(): Promise<Phase5Event[]> {

@@ -88,9 +88,8 @@ export function PipelineSummary({ counts }: PipelineSummaryProps) {
         <li>
           <article>
             <h2>Terra Insight</h2>
-            <p>{summary.publishedEvents} published event{summary.publishedEvents === 1 ? "" : "s"} available for analysis.</p>
-            <p>Only published events enter Terra Insight.</p>
-            <Link href="/dashboard">Open Terra Insight</Link>
+            <p>Home and Explore lead with current Main Issues and show their linked Phase 5 events.</p>
+            <Link href="/home">Open Terra Insight</Link>
           </article>
         </li>
       </ol>

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Explore — Main Issue subwindow wireframe</title>
+  <desc id="desc">A dimmed Explore overview behind a large centered glass window. The window begins with an Issue story and compact figures, then a map beside a location list, followed by a scannable event list.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#111818"/><stop offset="1" stop-color="#1b211f"/></linearGradient>
+    <linearGradient id="glass" x2="1" y2="1"><stop stop-color="#454441" stop-opacity=".94"/><stop offset=".5" stop-color="#323835" stop-opacity=".96"/><stop offset="1" stop-color="#222b29" stop-opacity=".97"/></linearGradient>
+    <linearGradient id="pane" x2="1" y2="1"><stop stop-color="#89847a" stop-opacity=".22"/><stop offset="1" stop-color="#9a8357" stop-opacity=".08"/></linearGradient>
+    <linearGradient id="map" x2="0" y2="1"><stop stop-color="#303f40"/><stop offset="1" stop-color="#1b292c"/></linearGradient>
+    <radialGradient id="warm"><stop stop-color="#eabf79" stop-opacity=".2"/><stop offset="1" stop-color="#eabf79" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="24"/><feOffset dy="18"/><feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="25"/></filter>
+    <clipPath id="windowClip"><rect x="112" y="64" width="1216" height="774" rx="31"/></clipPath>
+    <clipPath id="mapClip"><rect x="161" y="428" width="619" height="239" rx="19"/></clipPath>
+  </defs>
+  <rect width="1440" height="900" fill="url(#bg)"/>
+  <circle cx="1227" cy="419" r="370" fill="url(#warm)"/>
+  <!-- The dimmed Explore overview remains in place. -->
+  <g opacity=".45">
+    <rect x="0" y="0" width="1440" height="77" fill="#1e2423"/>
+    <text x="42" y="47" fill="#f2e6cc" font-family="Arial,sans-serif" font-size="20" font-weight="700" letter-spacing="3">TERRA SPACE</text>
+    <text x="591" y="47" fill="#e4e7e0" font-family="Arial,sans-serif" font-size="18">Home</text>
+    <text x="678" y="47" fill="#efc682" font-family="Arial,sans-serif" font-size="18">Explore</text>
+    <text x="780" y="47" fill="#e4e7e0" font-family="Arial,sans-serif" font-size="18">Prepare</text>
+    <text x="887" y="47" fill="#e4e7e0" font-family="Arial,sans-serif" font-size="18">Settings</text>
+    <text x="62" y="154" fill="#edc17a" font-family="Arial,sans-serif" font-size="14" letter-spacing="3">ALL ISSUES / PLACE</text>
+    <text x="62" y="213" fill="#f7f2e9" font-family="Georgia,serif" font-size="50">Explore the patterns.</text>
+    <rect x="62" y="253" width="849" height="531" rx="25" fill="#314143"/>
+    <path d="M135 420c160-142 250-73 394-140 92-39 212-13 322 42M140 587c146-75 294-11 429-85 103-55 220 6 272 101" fill="none" stroke="#7d8c82" stroke-width="2" opacity=".55"/>
+    <circle cx="420" cy="482" r="10" fill="#d4a966"/><circle cx="632" cy="361" r="8" fill="#d4a966"/><circle cx="748" cy="555" r="7" fill="#d4a966"/>
+    <rect x="937" y="253" width="440" height="531" rx="25" fill="#343b38"/>
+    <text x="969" y="310" fill="#e7e9e1" font-family="Arial,sans-serif" font-size="19">Countries &amp; Issues</text>
+    <path d="M968 351h376M968 416h376M968 481h376M968 546h376" stroke="#829083" opacity=".45"/>
+  </g>
+  <rect width="1440" height="900" fill="#050908" opacity=".67"/>
+  <!-- Large centered subwindow. -->
+  <rect x="112" y="64" width="1216" height="774" rx="31" fill="url(#glass)" stroke="#b4a27f" stroke-opacity=".52" filter="url(#shadow)"/>
+  <g clip-path="url(#windowClip)">
+    <ellipse cx="1080" cy="133" rx="400" ry="170" fill="#e5ac62" opacity=".055" filter="url(#soft)"/>
+    <path d="M113 405h1215" stroke="#ddc8a2" stroke-opacity=".19"/>
+    <rect x="112" y="804" width="1216" height="34" fill="#2b3431" opacity=".86"/>
+    <rect x="637" y="817" width="166" height="5" rx="2.5" fill="#b6ad9b" opacity=".55"/>
+  </g>
+  <text x="161" y="112" fill="#e8bd79" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">MAIN ISSUE / PHASE 2</text>
+  <text x="161" y="175" fill="#fff8ee" font-family="Georgia,serif" font-size="45">Judul Main Issue</text>
+  <text x="163" y="218" fill="#dfddd5" font-family="Arial,sans-serif" font-size="17">Ringkasan singkat dari sumber, dua hingga tiga kalimat.</text>
+  <text x="163" y="245" fill="#dfddd5" font-family="Arial,sans-serif" font-size="17">Fokus pada cerita utama sebelum rincian data.</text>
+  <text x="163" y="293" fill="#eac18a" font-family="Arial,sans-serif" font-size="13">Lihat artikel sumber  ↗</text>
+  <rect x="1256" y="86" width="43" height="43" rx="21" fill="#746d5c" fill-opacity=".25" stroke="#d8c6a6" stroke-opacity=".48"/>
+  <path d="M1270 100l16 16m0-16l-16 16" stroke="#f5ebdc" stroke-width="2"/>
+  <!-- Compact figures beside the story, with placeholders rather than invented values. -->
+  <g font-family="Arial,sans-serif">
+    <rect x="831" y="147" width="143" height="183" rx="20" fill="url(#pane)" stroke="#e7d7ba" stroke-opacity=".23"/>
+    <text x="850" y="186" fill="#d4cbbb" font-size="12" letter-spacing="1">EVENT TERKAIT</text>
+    <text x="850" y="270" fill="#ffe4ad" font-family="Georgia,serif" font-size="70">—</text>
+    <rect x="986" y="147" width="145" height="183" rx="20" fill="url(#pane)" stroke="#e7d7ba" stroke-opacity=".23"/>
+    <text x="1005" y="186" fill="#d4cbbb" font-size="12" letter-spacing="1">VERIFIKASI</text>
+    <text x="1005" y="220" fill="#ffe4ad" font-size="16">Final  —</text>
+    <text x="1005" y="250" fill="#d9d9d2" font-size="14">Not Final  —</text>
+    <text x="1005" y="280" fill="#d9d9d2" font-size="14">Pending  —</text>
+    <rect x="1143" y="147" width="139" height="183" rx="20" fill="url(#pane)" stroke="#e7d7ba" stroke-opacity=".23"/>
+    <text x="1162" y="186" fill="#d4cbbb" font-size="12" letter-spacing="1">NEGARA</text>
+    <text x="1162" y="270" fill="#ffe4ad" font-family="Georgia,serif" font-size="70">—</text>
+  </g>
+  <text x="161" y="379" fill="#ebc58b" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">01 / LOKASI TERKAIT</text>
+  <text x="1044" y="379" fill="#babdb5" font-family="Arial,sans-serif" font-size="12">Lokasi dari event terkait yang terverifikasi</text>
+  <!-- Smaller map with a location list to its right. -->
+  <rect x="161" y="428" width="619" height="239" rx="19" fill="url(#map)" stroke="#9eb6ad" stroke-opacity=".32"/>
+  <g clip-path="url(#mapClip)">
+    <path d="M185 472c65 7 135-20 198-8s83 24 145-16 115-10 193-3M187 561c89-37 176-13 248-3 91 13 148-38 329-20M262 438c-2 79 35 158 32 236M409 426c-19 90-1 174 13 247M585 426c-24 95-8 176 1 248" fill="none" stroke="#a5c3bb" stroke-opacity=".16" stroke-width="1.4"/>
+    <path d="M257 518l83-48 72 17 46-26 59 22 40-9 88 51-19 44-68-3-44 41-52-25-75 17-31-36-68 8z" fill="#829c8f" opacity=".29" stroke="#c7d2b3" stroke-opacity=".4"/>
+    <circle cx="401" cy="510" r="24" fill="#e6ad65" opacity=".18"/><circle cx="401" cy="510" r="6" fill="#f4c879"/>
+    <circle cx="522" cy="555" r="17" fill="#e6ad65" opacity=".13"/><circle cx="522" cy="555" r="5" fill="#e8bc79"/>
+    <circle cx="336" cy="566" r="17" fill="#e6ad65" opacity=".13"/><circle cx="336" cy="566" r="5" fill="#e8bc79"/>
+    <text x="184" y="640" fill="#e5e6db" font-family="Arial,sans-serif" font-size="12">Peta interaktif • pilih titik atau lokasi</text>
+  </g>
+  <rect x="798" y="428" width="484" height="239" rx="19" fill="#69716a" fill-opacity=".15" stroke="#d2d1bc" stroke-opacity=".18"/>
+  <text x="822" y="463" fill="#d9d2c3" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="1.5">DAFTAR LOKASI</text>
+  <g font-family="Arial,sans-serif" font-size="16" fill="#f5f0e6">
+    <circle cx="833" cy="501" r="5" fill="#f0c47e"/><text x="853" y="507">Lokasi terkait 01</text><text x="1238" y="507" text-anchor="end" fill="#edc786">↗</text>
+    <path d="M823 523h434" stroke="#d7d4c4" stroke-opacity=".14"/>
+    <circle cx="833" cy="549" r="5" fill="#c5aa80"/><text x="853" y="555">Lokasi terkait 02</text><text x="1238" y="555" text-anchor="end" fill="#edc786">↗</text>
+    <path d="M823 571h434" stroke="#d7d4c4" stroke-opacity=".14"/>
+    <circle cx="833" cy="597" r="5" fill="#c5aa80"/><text x="853" y="603">Lokasi terkait 03</text><text x="1238" y="603" text-anchor="end" fill="#edc786">↗</text>
+  </g>
+  <text x="161" y="720" fill="#ebc58b" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="3">02 / EVENT TERKAIT</text>
+  <text x="1147" y="720" fill="#d8c5a5" font-family="Arial,sans-serif" font-size="13">Lihat semua ↓</text>
+  <rect x="161" y="741" width="1121" height="45" rx="13" fill="#d5d4bf" fill-opacity=".09"/>
+  <circle cx="183" cy="764" r="4" fill="#e9be7d"/>
+  <text x="201" y="769" fill="#f3f1e7" font-family="Arial,sans-serif" font-size="15">Judul event terkait • ringkasan satu baris</text>
+  <text x="1094" y="769" fill="#c8c5b9" font-family="Arial,sans-serif" font-size="12">Tanggal / tidak diketahui</text>
+  <rect x="1215" y="751" width="49" height="24" rx="12" fill="#b99c69" fill-opacity=".3"/>
+  <text x="1240" y="767" text-anchor="middle" fill="#ffe2ab" font-family="Arial,sans-serif" font-size="11">Status</text>
+  <text x="1140" y="862" fill="#aea89a" font-family="Arial,sans-serif" font-size="12">WIREFRAME / komposisi, bukan data asli</text>
+</svg>

@@ -47,7 +47,7 @@ def test_get_bridge_source_returns_the_matching_row(bridge_db, bridge_read_only_
 
 
 def test_list_bridge_candidate_reviews_parses_pipeline_json(bridge_db, bridge_read_only_engine) -> None:
-    source_id = insert_source(bridge_db, title="Source with candidates")
+    source_id = insert_source(bridge_db, title="Source with candidates", source_domain="AP News")
     insert_candidate_result(bridge_db, source_id)
 
     reviews = list_bridge_candidate_reviews(bridge_read_only_engine)
@@ -56,6 +56,7 @@ def test_list_bridge_candidate_reviews_parses_pipeline_json(bridge_db, bridge_re
     review = reviews[0]
     assert review.phase1_source_id == source_id
     assert review.source_title == "Source with candidates"
+    assert review.source_domain == "AP News"
     assert review.main_issue_status == "MAIN_ISSUE_FOUND"
     assert review.main_issue.label == "Test main issue"
     assert len(review.event_candidates) == 1
