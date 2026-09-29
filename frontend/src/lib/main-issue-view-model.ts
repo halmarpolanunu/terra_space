@@ -3,6 +3,7 @@ import type { BridgeCandidateReview, Phase5Event } from "@/lib/bridge-api";
 export type MainIssueStory = {
   sourceId: string;
   sourceTitle: string;
+  sourceName?: string;
   label: string;
   summary: string;
   evidenceQuote: string;
@@ -23,6 +24,7 @@ export function buildMainIssueStories(reviews: BridgeCandidateReview[], events: 
     .map((review) => ({
       sourceId: review.phase1_source_id,
       sourceTitle: review.source_title,
+      sourceName: review.source_domain?.trim() ?? "",
       label: review.main_issue!.label!,
       summary: review.main_issue?.summary ?? "",
       evidenceQuote: review.main_issue?.evidence_quote ?? "",

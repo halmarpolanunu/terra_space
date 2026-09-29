@@ -63,7 +63,7 @@ def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewR
         )).scalar()
         if current_schema:
             rows = conn.execute(text("""
-                select m.phase1_source_id, s.title as source_title,
+                select m.phase1_source_id, s.title as source_title, s.source_domain,
                        m.status as issue_status, m.issue_title, m.issue_description,
                        m.evidence_quote as issue_evidence_quote,
                        coalesce(c.detection_status, 'NOT_RUN') as event_detection_status,
@@ -78,6 +78,7 @@ def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewR
             return [BridgeCandidateReviewRead(
                 phase1_source_id=str(row["phase1_source_id"]),
                 source_title=row["source_title"],
+                source_domain=row["source_domain"],
                 main_issue_status=("FAILED" if row["issue_status"] == "FAILED" else
                                    "MAIN_ISSUE_FOUND" if row["issue_title"] else "NO_MAIN_ISSUE"),
                 main_issue=({"label": row["issue_title"], "summary": row["issue_description"],
@@ -97,7 +98,7 @@ def list_bridge_candidate_reviews(engine: Engine) -> list[BridgeCandidateReviewR
             text(
                 """
                 select
-                    c.phase1_source_id, s.title as source_title, c.main_issue_status,
+                    c.phase1_source_id, s.title as source_title, s.source_domain, c.main_issue_status,
                     c.main_issue, c.event_detection_status, c.event_candidates, c.processed_at
                 from terra_space.terra_space_phase2_event_candidates c
                 join terra_space.terra_space_phase1_sources s on s.id = c.phase1_source_id

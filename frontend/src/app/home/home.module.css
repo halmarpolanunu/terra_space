@@ -30,9 +30,6 @@
 .primaryAction { display: inline-flex; align-items: center; justify-content: space-between; gap: 2.3rem; min-width: 13rem; margin-top: 1.35rem; padding: .82rem 1.25rem; border: 1px solid #f4d4959c; border-radius: 3rem; background: linear-gradient(115deg, #b59a65a6, #514631bc 70%, #322c21ab); box-shadow: 0 .4rem 2rem #d9ae5d35, inset 0 1px #ffebc46e; color: #fff8e9; font: 600 .83rem var(--font-sans); text-decoration: none; transition: transform 240ms ease, box-shadow 240ms ease, background 240ms ease; }
 .primaryAction:hover { transform: translateY(-2px); box-shadow: 0 .7rem 2.5rem #d9ae5d63, inset 0 1px #ffebc4ae; background: linear-gradient(115deg, #ceb177bc, #66583fda); }
 .primaryAction span { font-size: 1.1rem; }
-.storyLocation { max-width: 29rem; margin: 1.2rem 0 0; color: #afbdad; font-size: .73rem; line-height: 1.5; }
-.globeCaption { position: absolute; z-index: 2; right: 3%; bottom: .9rem; margin: 0; color: #c4c8ba; font: .61rem var(--font-mono); letter-spacing: .04em; text-shadow: 0 1px 8px #000; }
-.globeCaption span { color: #e1ba78; padding: 0 .4rem; }
 .actions { position: absolute; z-index: 3; top: 1.5rem; right: 3%; }
 .actions a { color: #f5d397; font-size: .74rem; text-decoration: none; border-bottom: 1px solid #e9c58680; padding-bottom: .25rem; }
 .actions a:hover { color: #fff0cf; }
@@ -85,7 +82,6 @@
 .home[data-motion="on"] .globePanel { animation: atlasGlobeIn 1100ms var(--motion-ease) both; }
 .home[data-motion="on"] .storyTop { animation: atlasRise 560ms var(--motion-ease) 100ms both; }
 .home[data-motion="on"] .storyBody { animation: atlasRise 700ms var(--motion-ease) 180ms both; }
-.home[data-motion="on"] .storyLocation, .home[data-motion="on"] .globeCaption { animation: atlasFadeIn 650ms var(--motion-ease) 530ms both; }
 .home[data-motion="on"] .across[data-visible="true"] .acrossHeading { animation: atlasRise 4400ms var(--motion-ease) both; }
 .home[data-motion="on"] .across[data-visible="true"] .metric:first-child { animation: atlasRise 4800ms var(--motion-ease) 720ms both; }
 .home[data-motion="on"] .across[data-visible="true"] .metric:nth-child(2) { animation: atlasRise 4800ms var(--motion-ease) 1280ms both; }
@@ -96,7 +92,6 @@
 .home[data-motion="on"] .spectrumLegend a:hover, .home[data-motion="on"] .spectrumLegend a:focus-visible { transform: translateX(4px); }
 .home[data-motion="on"] .primaryAction:active { transform: translateY(0) scale(.985); }
 @keyframes atlasRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes atlasFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes atlasGlobeIn { from { opacity: .35; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
 @keyframes atlasSpectrumIn { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes atlasGlow { from { opacity: .18; } to { opacity: .47; } }
@@ -116,9 +111,7 @@
   .storyTop { margin-top: auto; }
   .storyBody { margin: .5rem 0 0; padding: .5rem 0 0; }
   .storyBody h1 { max-width: 15ch; font-size: clamp(3rem, 6.5vw, 4.5rem); }
-  .storyLocation { margin-bottom: 1.2rem; }
   .globePanel :global(.issue-place-list) { right: 9%; bottom: 12rem; }
-  .globeCaption { left: 1.5rem; right: 1.5rem; font-size: .55rem; }
   .acrossTop { grid-template-columns: 1fr; gap: 1.5rem; }
   .metricRow { max-width: 42rem; }
   .spectrumHeading p { margin-left: 0; }
@@ -132,7 +125,6 @@
   .globePanel :global(.issue-place-list) { top: 4rem; right: 21%; bottom: auto; max-width: 54%; }
   .globePanel :global(.globe-rotation-controls) { top: 4rem; right: 21%; }
   .actions { top: .8rem; right: 1.3rem; }
-  .globeCaption { bottom: .6rem; }
   .across { margin-inline: -1rem; padding: 3rem 1.25rem 2.5rem; }
   .metricRow { gap: 0 1rem; }
   .metric strong { font-size: clamp(4rem, 18vw, 5.4rem); }

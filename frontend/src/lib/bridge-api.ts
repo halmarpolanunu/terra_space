@@ -60,6 +60,7 @@ export type BridgeCandidate = {
 export type BridgeCandidateReview = {
   phase1_source_id: string;
   source_title: string;
+  source_domain: string;
   main_issue_status: "MAIN_ISSUE_FOUND" | "NO_MAIN_ISSUE" | "FAILED";
   main_issue: BridgeMainIssue | null;
   event_detection_status: "EVENT_CANDIDATES_FOUND" | "NO_EVENT_CANDIDATE" | "NOT_RUN" | "FAILED";

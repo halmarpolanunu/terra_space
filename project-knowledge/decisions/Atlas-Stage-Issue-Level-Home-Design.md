@@ -112,7 +112,8 @@ The mockup's invented visual details and numbers are not product data.
 - Explain the map as **verified related locations from linked events**. A marker is a place
   associated with an Issue through a resolved event location; it is not a directly geocoded
   Phase 2 Issue or a claim that the Issue itself occurred at that point. An Issue without a
-  resolved place remains in Explore, with an honest no-location message when selected.
+  resolved place remains in Explore; Home omits the no-location footer message and map legend.
+  The selected Issue's source line names its publisher from Phase 1 source metadata.
 - Marker labels, selection, chooser, and Explore action work by keyboard and assistive
   technology. Motion respects reduced-motion settings; selection and data remain clear without
   animation. Provide legible loading, error, and empty states.

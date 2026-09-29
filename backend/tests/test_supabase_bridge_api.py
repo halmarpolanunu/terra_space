@@ -86,7 +86,7 @@ def test_source_detail_route_404_for_unknown_id(tmp_path: Path, bridge_db) -> No
 
 
 def test_event_candidates_route_returns_pipeline_output(tmp_path: Path, bridge_db) -> None:
-    source_id = insert_source(bridge_db, title="Candidate source")
+    source_id = insert_source(bridge_db, title="Candidate source", source_domain="AP News")
     insert_candidate_result(bridge_db, source_id)
     client = _configured_client(tmp_path)
 
@@ -95,6 +95,7 @@ def test_event_candidates_route_returns_pipeline_output(tmp_path: Path, bridge_d
     assert response.status_code == 200
     [review] = response.json()
     assert review["phase1_source_id"] == source_id
+    assert review["source_domain"] == "AP News"
     assert review["event_candidates"][0]["working_title"] == "Test candidate"
 
 

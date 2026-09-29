@@ -20,7 +20,7 @@ vi.mock("@/app/home/issue-globe", () => ({ IssueGlobe: ({ places, onSelectIssue,
 import { HomeWorkspace } from "@/app/home/home-workspace";
 
 function review(id: string): BridgeCandidateReview {
-  return { phase1_source_id: id, source_title: `Article ${id}`, main_issue_status: "MAIN_ISSUE_FOUND", main_issue: { label: `Issue ${id}`, summary: `Summary ${id}`, evidence_quote: `Quote ${id}` }, processed_at: "2026-09-01" } as BridgeCandidateReview;
+  return { phase1_source_id: id, source_title: `Article ${id}`, source_domain: "AP News", main_issue_status: "MAIN_ISSUE_FOUND", main_issue: { label: `Issue ${id}`, summary: `Summary ${id}`, evidence_quote: `Quote ${id}` }, processed_at: "2026-09-01" } as BridgeCandidateReview;
 }
 function event(id: string, source: string, type: string | null, mapped = true): Phase5Event {
   return { id, phase1_source_id: source, title: `Event ${id}`, classification: { event_type_name: type }, qualification: { status: "FINAL", reason_codes: [] }, timeline: { event_date: null },
@@ -37,6 +37,9 @@ describe("HomeWorkspace Issue Atlas", () => {
     expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Choose a Main Issue" })).not.toBeInTheDocument();
     expect(screen.getByText("Selected Issue")).toBeVisible();
+    expect(screen.getByText("Source: AP News")).toBeVisible();
+    expect(screen.queryByText(/resolved related locations for this Issue/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/All Main Issues.*Selected Issue highlighted/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Presentation view/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Point Issue a/i })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Point Issue b/i }));
@@ -62,7 +65,7 @@ describe("HomeWorkspace Issue Atlas", () => {
     render(<HomeWorkspace />);
     expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Issue a" })).toBeVisible();
-    expect(screen.getByText(/No resolved related locations for this Issue/i)).toBeVisible();
+    expect(screen.queryByText(/No resolved related locations for this Issue/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Explore this issue/i })).toHaveAttribute("href", "/explore?issue=a");
     expect(screen.getByRole("link", { name: /Browse all Issues/i })).toHaveAttribute("href", "/explore?scope=all");
     expect(screen.queryByRole("searchbox", { name: /Find an issue/i })).not.toBeInTheDocument();

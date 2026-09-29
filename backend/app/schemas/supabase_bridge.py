@@ -80,6 +80,7 @@ class BridgeCandidateReviewRead(BaseModel):
 
     phase1_source_id: str
     source_title: str
+    source_domain: str = ""
     main_issue_status: MainIssueStatus
     main_issue: BridgeMainIssue | None
     event_detection_status: EventDetectionStatus

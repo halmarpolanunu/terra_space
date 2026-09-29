@@ -50,7 +50,6 @@ export function HomeWorkspace() {
   const stories = useMemo(() => state.kind === "ready" ? buildMainIssueStories(state.reviews, state.events) : [], [state]);
   const atlas = useMemo(() => state.kind === "ready" ? buildIssueAtlas(stories, state.events) : null, [stories, state]);
   const selectedIssue = stories.find((issue) => issue.sourceId === selectedIssueId) ?? stories[0];
-  const selectedPlaces = atlas?.places.filter((place) => place.issueSourceId === selectedIssue?.sourceId) ?? [];
   const exploreHref = selectedIssue ? `/explore?issue=${encodeURIComponent(selectedIssue.sourceId)}` : "/explore";
 
   function selectIssue(sourceId: string) {
@@ -81,14 +80,10 @@ export function HomeWorkspace() {
             <div className={styles.storyBody} key={selectedIssue.sourceId}>
               <h1>{selectedIssue.label}</h1>
               <p className={styles.storySummary}>{selectedIssue.summary || "No summary retained for this Issue."}</p>
-              <p className={styles.storySource}>Source: {selectedIssue.sourceTitle}</p>
+              <p className={styles.storySource}>Source: {selectedIssue.sourceName || "Not specified"}</p>
               <Link className={styles.primaryAction} href={exploreHref}>Explore this issue <span aria-hidden="true">→</span></Link>
             </div>
-            <p className={styles.storyLocation}>{selectedPlaces.length > 0
-              ? `${selectedPlaces.length} resolved related ${selectedPlaces.length === 1 ? "location" : "locations"} from linked events`
-              : "No resolved related locations for this Issue. It remains available in Explore."}</p>
           </div>
-          <p className={styles.globeCaption}>All Main Issues <span>·</span> Selected Issue highlighted <span>·</span> Verified related event locations</p>
         </section>
 
         <section ref={acrossRef} className={styles.across} aria-label="Across all issues">
