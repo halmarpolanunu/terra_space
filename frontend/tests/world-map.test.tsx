@@ -262,6 +262,41 @@ describe("offline world map configuration", () => {
     vi.useRealTimers();
   });
 
+  it("waits two seconds after interaction or a popup closes before resuming the Home globe", () => {
+    vi.useFakeTimers();
+    map.jumpTo.mockClear();
+    map.on.mockImplementation((event: string, ...args: unknown[]) => {
+      const listener = args.at(-1);
+      if (event === "load" && typeof listener === "function") (listener as () => void)();
+      return map;
+    });
+
+    const { rerender } = render(<WorldMap rotationResumeDelayMs={2000} />);
+    vi.advanceTimersByTime(500);
+    expect(map.jumpTo).toHaveBeenCalled();
+    map.jumpTo.mockClear();
+
+    fireEvent.pointerDown(screen.getByLabelText("Offline world map"));
+    vi.advanceTimersByTime(3000);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    fireEvent.pointerUp(window);
+    vi.advanceTimersByTime(1900);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(150);
+    expect(map.jumpTo).toHaveBeenCalled();
+
+    rerender(<WorldMap rotationResumeDelayMs={2000} rotationSuspended />);
+    map.jumpTo.mockClear();
+    vi.advanceTimersByTime(3000);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    rerender(<WorldMap rotationResumeDelayMs={2000} />);
+    vi.advanceTimersByTime(1900);
+    expect(map.jumpTo).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(150);
+    expect(map.jumpTo).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
   it("keeps auto-rotation disabled when reduced motion is requested", () => {
     vi.useFakeTimers();
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
@@ -344,14 +379,15 @@ describe("offline world map configuration", () => {
       return map;
     });
 
-    render(<WorldMap />);
+    render(<WorldMap rotationResumeDelayMs={0} />);
     fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
     fireEvent.change(screen.getByLabelText("Rotation speed"), { target: { value: "8" } });
+    expect(screen.getByText("8.0°/s")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
 
     vi.advanceTimersByTime(1000);
     // 8 deg/s for ~1s of simulated frames.
     expect(mapCenter.lng).toBeCloseTo(8, 0);
-    expect(screen.getByText("8.0°/s")).toBeVisible();
 
     vi.useRealTimers();
   });
@@ -365,14 +401,15 @@ describe("offline world map configuration", () => {
       return map;
     });
 
-    render(<WorldMap />);
+    render(<WorldMap rotationResumeDelayMs={0} />);
     fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
     fireEvent.click(screen.getByRole("button", { name: "Rotating eastward. Switch to westward." }));
+    expect(screen.getByRole("button", { name: "Rotating westward. Switch to eastward." })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Rotation settings" }));
 
     vi.advanceTimersByTime(1000);
     // Default speed 4 deg/s, reversed to westward (negative longitude direction).
     expect(mapCenter.lng).toBeCloseTo(-4, 0);
-    expect(screen.getByRole("button", { name: "Rotating westward. Switch to eastward." })).toBeVisible();
 
     vi.useRealTimers();
   });
@@ -533,7 +570,7 @@ describe("offline world map configuration", () => {
 
     expect(clearInterval).toHaveBeenCalledTimes(1);
     expect(cancelAnimationFrame).toHaveBeenCalled();
-    expect(map.off).toHaveBeenCalledTimes(11);
+    expect(map.off).toHaveBeenCalledTimes(10);
     expect(map.off).toHaveBeenCalledWith("error", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("load", expect.any(Function));
     expect(map.off).toHaveBeenCalledWith("move", expect.any(Function));

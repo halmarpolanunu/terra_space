@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { WorldMap, type EventPinCluster, type EventPinFeatureCollection } from "@/components/world-map";
 import type { IssueAtlasPlace } from "@/lib/issue-atlas-model";
 
@@ -8,6 +9,8 @@ type Props = {
   selectedIssueSourceId: string;
   onSelectIssue: (sourceId: string) => void;
   onSelectSharedPlace: (placeLabel: string, candidates: IssueAtlasPlace[]) => void;
+  chooserOpen?: boolean;
+  autoRotate?: boolean;
 };
 
 export function buildIssueGlobeData(places: IssueAtlasPlace[]): { pins: EventPinFeatureCollection; clusters: EventPinCluster[] } {
@@ -36,7 +39,8 @@ export function buildIssueGlobeData(places: IssueAtlasPlace[]): { pins: EventPin
   return { pins: { type: "FeatureCollection", features: pins }, clusters };
 }
 
-export function IssueGlobe({ places, selectedIssueSourceId, onSelectIssue, onSelectSharedPlace }: Props) {
+export function IssueGlobe({ places, selectedIssueSourceId, onSelectIssue, onSelectSharedPlace, chooserOpen = false, autoRotate = true }: Props) {
+  const [locationListOpen, setLocationListOpen] = useState(false);
   const { pins, clusters } = buildIssueGlobeData(places);
   const byId = new Map(places.map((place) => [place.id, place]));
   const selectedPinIds = places.filter((place) => place.issueSourceId === selectedIssueSourceId).map((place) => place.id);
@@ -46,7 +50,8 @@ export function IssueGlobe({ places, selectedIssueSourceId, onSelectIssue, onSel
 
   return <>
     <WorldMap geojson={pins} clusters={displayedClusters} selectedPinIds={selectedPinIds}
-      focusCoordinates={focusCoordinates} initialZoom={2.7} autoRotate={false}
+      focusCoordinates={focusCoordinates} initialZoom={2.7} autoRotate={autoRotate}
+      rotationResumeDelayMs={2000} rotationSuspended={chooserOpen || locationListOpen}
       onFeatureSelect={(markerId) => {
         const place = byId.get(markerId);
         if (place) onSelectIssue(place.issueSourceId);
@@ -57,7 +62,7 @@ export function IssueGlobe({ places, selectedIssueSourceId, onSelectIssue, onSel
         if (issues.size === 1) onSelectIssue(candidates[0].issueSourceId);
         else if (candidates.length > 1) onSelectSharedPlace(cluster.locationLabel, candidates);
       }} />
-    <details className="issue-place-list"><summary>Browse mapped Issue locations ({places.length})</summary>
+    <details className="issue-place-list" onToggle={(event) => setLocationListOpen(event.currentTarget.open)}><summary>Browse mapped Issue locations ({places.length})</summary>
       <ul>{places.map((place) => <li key={place.id}><button type="button" onClick={() => onSelectIssue(place.issueSourceId)}>
         {place.issueLabel} · {place.placeLabel}
       </button></li>)}</ul>

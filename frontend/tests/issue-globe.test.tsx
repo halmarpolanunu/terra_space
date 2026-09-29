@@ -24,11 +24,18 @@ describe("IssueGlobe", () => {
     render(<IssueGlobe places={places} selectedIssueSourceId="a" onSelectIssue={onSelectIssue} onSelectSharedPlace={onSelectSharedPlace} />);
     const props = worldMapProps.mock.lastCall?.[0];
     expect(props.selectedPinIds).toEqual(["a:one", "a:two"]);
+    expect(props.autoRotate).toBe(true);
+    expect(props.rotationResumeDelayMs).toBe(2000);
     props.onClusterSelect(data.clusters[0]);
     expect(onSelectSharedPlace).toHaveBeenCalledWith("Shared place", [places[0], places[2]]);
     props.onFeatureSelect("a:two");
     expect(onSelectIssue).toHaveBeenCalledWith("a");
     fireEvent.click(screen.getByRole("button", { name: /Issue B.*Shared place/i }));
     expect(onSelectIssue).toHaveBeenCalledWith("b");
+  });
+
+  it("suspends rotation while the shared-Issue chooser is open", () => {
+    render(<IssueGlobe places={places} selectedIssueSourceId="a" onSelectIssue={vi.fn()} onSelectSharedPlace={vi.fn()} chooserOpen />);
+    expect(worldMapProps.mock.lastCall?.[0].rotationSuspended).toBe(true);
   });
 });

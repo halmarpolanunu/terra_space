@@ -365,6 +365,8 @@ type WorldMapProps = {
   geojson?: EventPinFeatureCollection;
   initialZoom?: number;
   projectionMode?: "globe" | "flat";
+  rotationResumeDelayMs?: number;
+  rotationSuspended?: boolean;
   onClusterSelect?: (cluster: EventPinCluster) => void;
   onFeatureSelect?: (eventId: string) => void;
   onProjectionModeChange?: (mode: MapProjectionMode) => void;
@@ -402,6 +404,8 @@ export function WorldMap({
   geojson = EMPTY_EVENT_PINS,
   initialZoom = 2.2,
   projectionMode = "globe",
+  rotationResumeDelayMs = 1200,
+  rotationSuspended = false,
   onClusterSelect,
   onFeatureSelect,
   onProjectionModeChange,
@@ -427,11 +431,14 @@ export function WorldMap({
   const mapLoaded = useRef(false);
   const pinPulseExpanded = useRef(false);
   const rotationEnabledRef = useRef(autoRotate);
+  const rotationSuspendedRef = useRef(rotationSuspended);
+  const lastInteractionAtRef = useRef(0);
   const rotationSpeedRef = useRef(4);
   const rotationDirectionRef = useRef<1 | -1>(1);
   const [unavailable, setUnavailable] = useState(false);
   const [flatFallback, setFlatFallback] = useState(false);
-  const [rotationPlaying, setRotationPlaying] = useState(autoRotate);
+  const [rotationOverride, setRotationOverride] = useState<boolean | null>(null);
+  const rotationPlaying = rotationOverride ?? autoRotate;
   const [rotationSpeed, setRotationSpeed] = useState(4);
   const [rotationDirection, setRotationDirection] = useState<1 | -1>(1);
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -442,9 +449,19 @@ export function WorldMap({
     () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
   );
 
+  useEffect(() => {
+    rotationEnabledRef.current = rotationPlaying;
+  }, [rotationPlaying]);
+
+  useEffect(() => {
+    const suspended = rotationSuspended || controlsOpen;
+    if (rotationSuspendedRef.current && !suspended) lastInteractionAtRef.current = Date.now();
+    rotationSuspendedRef.current = suspended;
+  }, [rotationSuspended, controlsOpen]);
+
   function toggleRotation() {
-    setRotationPlaying((current) => {
-      const next = !current;
+    setRotationOverride((current) => {
+      const next = !(current ?? autoRotate);
       rotationEnabledRef.current = next;
       return next;
     });
@@ -588,14 +605,23 @@ export function WorldMap({
     // Tracks genuine user input only (not MapLibre's "idle"/"move" events, which the
     // continuous pin-halo style transition and the rotation's own camera movement would
     // otherwise keep permanently "not idle", starving rotation of any chance to run).
-    const INTERACTION_COOLDOWN_MS = 1200;
-    let lastInteractionAt = 0;
-    const markInteraction = () => { lastInteractionAt = Date.now(); };
-    map.on("mousedown", markInteraction);
-    map.on("touchstart", markInteraction);
+    let pointerActive = false;
+    const markInteraction = () => { lastInteractionAtRef.current = Date.now(); };
+    const handlePointerDown = () => { pointerActive = true; markInteraction(); };
+    const handlePointerEnd = () => {
+      if (pointerActive) { pointerActive = false; markInteraction(); }
+    };
+    const mapElement = container.current;
+    mapElement.addEventListener("pointerdown", handlePointerDown, true);
+    mapElement.addEventListener("wheel", markInteraction, { passive: true });
+    mapElement.addEventListener("keydown", markInteraction);
+    mapElement.addEventListener("keyup", markInteraction);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
     map.on("dragstart", markInteraction);
+    map.on("dragend", markInteraction);
     map.on("zoomstart", markInteraction);
-    map.on("keydown", markInteraction);
+    map.on("zoomend", markInteraction);
 
     // Advances the camera a tiny amount every animation frame (rather than one large
     // eased step per second) so rotation reads as continuous motion instead of a
@@ -606,8 +632,8 @@ export function WorldMap({
       const now = Date.now();
       if (lastFrameAt !== undefined) {
         const elapsedSeconds = (now - lastFrameAt) / 1000;
-        const cooledDown = now - lastInteractionAt > INTERACTION_COOLDOWN_MS;
-        if (cooledDown && rotationEnabledRef.current && elapsedSeconds > 0) {
+        const cooledDown = now - lastInteractionAtRef.current > rotationResumeDelayMs;
+        if (cooledDown && !pointerActive && !rotationSuspendedRef.current && rotationEnabledRef.current && elapsedSeconds > 0) {
           const center = map.getCenter();
           const nextLng = wrapLongitude(
             center.lng + rotationDirectionRef.current * rotationSpeedRef.current * elapsedSeconds,
@@ -629,11 +655,16 @@ export function WorldMap({
       map.off("click", EVENT_PIN_LAYER_ID, handlePinClick);
       map.off("mouseenter", EVENT_PIN_LAYER_ID, handlePinMouseEnter);
       map.off("mouseleave", EVENT_PIN_LAYER_ID, handlePinMouseLeave);
-      map.off("mousedown", markInteraction);
-      map.off("touchstart", markInteraction);
+      mapElement.removeEventListener("pointerdown", handlePointerDown, true);
+      mapElement.removeEventListener("wheel", markInteraction);
+      mapElement.removeEventListener("keydown", markInteraction);
+      mapElement.removeEventListener("keyup", markInteraction);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
       map.off("dragstart", markInteraction);
+      map.off("dragend", markInteraction);
       map.off("zoomstart", markInteraction);
-      map.off("keydown", markInteraction);
+      map.off("zoomend", markInteraction);
       clusterMarkersRef.current.forEach((marker) => marker.remove());
       clusterMarkersRef.current = [];
       mapLoaded.current = false;
@@ -642,7 +673,7 @@ export function WorldMap({
       mapRef.current = null;
       map.remove();
     };
-  }, [projectionMode]);
+  }, [projectionMode, rotationResumeDelayMs]);
 
   useEffect(() => {
     if (focusLongitude === undefined || focusLatitude === undefined || !mapRef.current || !mapLoaded.current) return;

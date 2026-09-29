@@ -75,6 +75,7 @@ export function HomeWorkspace() {
         <section className={styles.atlasStage} aria-label="Main Issue Atlas Stage">
           <div className={styles.globePanel} aria-label="All Main Issues and their related locations">
             {atlas && atlas.places.length > 0 ? <IssueGlobe places={atlas.places} selectedIssueSourceId={selectedIssue.sourceId}
+              chooserOpen={Boolean(sharedPlace)} autoRotate={motionEnabled}
               onSelectIssue={selectIssue} onSelectSharedPlace={(label, places) => setSharedPlace({ label, places })} />
               : <p className={styles.mapEmpty}>No resolved Event Geography across the current Main Issues.</p>}
             {sharedPlace && <div className={styles.chooser} role="region" aria-label={`Issues at ${sharedPlace.label}`}>
