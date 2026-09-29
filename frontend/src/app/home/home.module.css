@@ -125,12 +125,12 @@
 .home[data-motion="on"] .storyLocation, .home[data-motion="on"] .globeCaption { animation: atlasFadeIn 650ms var(--motion-ease) 530ms both; }
 .home[data-motion="on"] .issueSelector[data-visible="true"] .selectorHeading { animation: atlasRise 560ms var(--motion-ease) both; }
 .home[data-motion="on"] .issueSelector[data-visible="true"] .storyTile { animation-name: atlasTileIn; animation-duration: 580ms; animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
-.home[data-motion="on"] .across[data-visible="true"] .acrossHeading { animation: atlasRise 600ms var(--motion-ease) both; }
-.home[data-motion="on"] .across[data-visible="true"] .metric:first-child { animation: atlasRise 640ms var(--motion-ease) 90ms both; }
-.home[data-motion="on"] .across[data-visible="true"] .metric:nth-child(2) { animation: atlasRise 640ms var(--motion-ease) 170ms both; }
-.home[data-motion="on"] .across[data-visible="true"] .spectrumHeading { animation: atlasRise 650ms var(--motion-ease) 120ms both; }
-.home[data-motion="on"] .across[data-visible="true"] .spectrumBar { animation: atlasSpectrumIn 850ms var(--motion-ease) 210ms both; }
-.home[data-motion="on"] .across[data-visible="true"] .spectrumLegend li { animation-name: atlasRise; animation-duration: 500ms; animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
+.home[data-motion="on"] .across[data-visible="true"] .acrossHeading { animation: atlasRise 1100ms var(--motion-ease) both; }
+.home[data-motion="on"] .across[data-visible="true"] .metric:first-child { animation: atlasRise 1200ms var(--motion-ease) 180ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .metric:nth-child(2) { animation: atlasRise 1200ms var(--motion-ease) 320ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .spectrumHeading { animation: atlasRise 1200ms var(--motion-ease) 250ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .spectrumBar { animation: atlasSpectrumIn 1450ms var(--motion-ease) 450ms both; }
+.home[data-motion="on"] .across[data-visible="true"] .spectrumLegend li { animation-name: atlasRise; animation-duration: 850ms; animation-timing-function: var(--motion-ease); animation-fill-mode: both; }
 .home[data-motion="on"] .spectrumLegend a { transition: color var(--motion-quick) var(--motion-ease), transform var(--motion-quick) var(--motion-ease); }
 .home[data-motion="on"] .spectrumLegend a:hover, .home[data-motion="on"] .spectrumLegend a:focus-visible { transform: translateX(4px); }
 .home[data-motion="on"] .primaryAction:active, .home[data-motion="on"] .storyTile:active { transform: translateY(0) scale(.985); }

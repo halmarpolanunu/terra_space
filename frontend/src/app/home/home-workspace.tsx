@@ -68,7 +68,7 @@ export function HomeWorkspace() {
 
   return <AppShell currentPath="/home" presentation={presentation}>
     <div className={styles.home} data-motion={motionEnabled ? "on" : "off"}>
-      <div className={styles.actions}>{presentation ? <Link href="/home">Exit presentation</Link> : <Link href="/home?present=1">Presentation view ↗</Link>}</div>
+      {presentation && <div className={styles.actions}><Link href="/home">Exit presentation</Link></div>}
       {state.kind === "loading" && <p className={styles.notice} role="status">Loading Main Issues and related places…</p>}
       {state.kind === "error" && <div className={styles.notice} role="alert"><p>Could not load Main Issues and linked events.</p><button type="button" onClick={load}>Retry</button></div>}
       {state.kind === "ready" && (stories.length === 0 ? <div className={styles.notice}><p>No Phase 2 Main Issues yet.</p><p>They will appear after the local pipeline has produced a source-grounded Main Issue.</p><Link href="/prepare">Inspect pipeline ↗</Link></div> : <>
@@ -124,7 +124,7 @@ export function HomeWorkspace() {
                   {index === 0 && item.count / atlas.metrics.eventCount >= .25 ? <span>{item.label} {item.count}</span> : null}
                 </Link>)}
               </div>
-              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label} style={{ animationDelay: `${180 + index * 45}ms` }}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
+              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label} style={{ animationDelay: `${430 + index * 80}ms` }}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
             </> : <p className={styles.spectrumEmpty}>No linked Phase 5 events yet.</p>}
           </div>
           <p className={styles.dataNote}>Counts include retained Final, Not Final, and pending records linked to current Main Issues. {atlas?.metrics.unlinkedEventCount ? `${atlas.metrics.unlinkedEventCount} unlinked Phase 5 ${atlas.metrics.unlinkedEventCount === 1 ? "record is" : "records are"} excluded.` : ""}</p>
