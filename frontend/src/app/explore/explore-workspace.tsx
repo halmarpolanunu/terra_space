@@ -65,7 +65,6 @@ export function ExploreWorkspace() {
   const stories = useMemo(() => state.kind === "ready" ? buildMainIssueStories(state.reviews, state.events) : [], [state]);
   const atlas = useMemo(() => state.kind === "ready" ? buildIssueAtlas(stories, state.events) : null, [stories, state]);
   const geography = useMemo(() => buildExploreCountries(stories, atlas?.places ?? []), [stories, atlas]);
-  const linkedEvents = useMemo(() => eventsForIssueSet(stories), [stories]);
   const issueParam = searchParams.get("issue");
   const eventParam = searchParams.get("event");
   const eventSourceId = state.kind === "ready" && eventParam ? state.events.find((event) => event.id === eventParam)?.phase1_source_id : undefined;
@@ -144,7 +143,6 @@ export function ExploreWorkspace() {
   }
   return <AppShell currentPath="/explore"><div className={`${styles.explore} ${selectedIssue ? styles.issueView : ""}`} data-motion={motionEnabled && !reduceMotion ? "on" : "off"}>
     <header className={styles.header}><div><p className="eyebrow">Terra Space / Explore / All Issues</p><h1>Where do the issues connect?</h1><p>Find geographic patterns across Main Issues, then open one to examine the full story.</p></div></header>
-    <p className={styles.scope}><span>Current Phase 2 Main Issues</span><span>· {state.kind === "ready" ? `${stories.length} issues / ${linkedEvents.length} linked Phase 5 events` : "Read-only pipeline output"}</span></p>
     {state.kind === "loading" && <p role="status">Loading Main Issues and linked events…</p>}
     {state.kind === "error" && <div role="alert" className={styles.notice}><p>Could not load Main Issues or linked events.</p><button onClick={load} type="button">Retry</button></div>}
     {state.kind === "ready" && <>
@@ -154,7 +152,6 @@ export function ExploreWorkspace() {
           <div id="explore-place" className={styles.countryMap}><div className={styles.countryMapHead}><span>01 / VERIFIED RELATED PLACES</span><h2>Place reveals the pattern.</h2><p>Each marker counts distinct Main Issues connected to that country through resolved Event Geography.</p></div>
             {geography.countries.length > 0 ? <ExploreCountryMap countries={geography.countries} selectedCode={selectedCountry?.code ?? null} onSelectCountry={(code) => { setIssueQuery(""); router.push(`/explore?country=${code}`); }} /> : <p className={styles.mapEmpty}>No verified related country yet. Every Main Issue remains searchable beside the map.</p>}
             {geography.countries.length > 0 && <label className={styles.countryPicker}><span>Choose a country</span><select value={selectedCountry?.code ?? ""} onChange={(event) => { setIssueQuery(""); router.push(event.target.value ? `/explore?country=${event.target.value}` : "/explore", { scroll: false }); }}><option value="">All countries · {geography.countries.length} mapped</option>{geography.countries.map((country) => <option key={country.code} value={country.code}>{country.name} · {country.issueCount} {country.issueCount === 1 ? "Issue" : "Issues"}</option>)}</select></label>}
-            <p className={styles.caption}>One Issue counts once per country. An Issue can count in more than one country. Markers sit at verified related locations; actor geography is excluded.</p>
           </div>
           <aside className={styles.countryLens} aria-label="Country lens and Main Issues"><span>{selectedCountry ? "COUNTRY LENS / SELECTED" : "ALL ISSUES / COUNTRY LENS"}</span><h2>{selectedCountry?.name ?? "Across all countries"}</h2><p className={styles.lensCount}><strong>{overviewStories.length}</strong> Main Issues</p><p>{selectedCountry ? "with verified related event locations here" : `${geography.countries.length} countries with verified related event locations`}</p>{selectedCountry && <Link className={styles.clearCountry} href="/explore">Clear country selection ×</Link>}
             <label className={styles.issueSearch}>Find a Main Issue<input type="search" value={issueQuery} onChange={(event) => setIssueQuery(event.target.value)} placeholder="Search Issue or source" /></label>
