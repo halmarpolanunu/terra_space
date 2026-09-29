@@ -8,6 +8,15 @@ status: active
 
 # Project Knowledge Log
 
+## 2026-09-29 — Home selector removed and motion retimed
+
+- The owner removed Home's separate recent-Issue filmstrip and search. The selected-Issue globe
+  now leads directly into **Across all issues**; full Issue browsing remains in Explore.
+- The overview entrance durations and staggered delays were multiplied by four. The Home globe
+  now rotates automatically when motion is enabled, pauses during interaction or open panels,
+  and resumes after two seconds without interaction. The [Home design decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md)
+  records these amendments. No data or workflow content changed.
+
 ## 2026-09-25 — Explore Issue subwindow approved and implemented
 
 - The owner chose a centered, scrollable window above the dimmed Explore overview. The approved

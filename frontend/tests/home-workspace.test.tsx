@@ -35,6 +35,7 @@ describe("HomeWorkspace Issue Atlas", () => {
     listPhase5Events.mockResolvedValue([event("a1", "a", "Diplomacy"), event("b1", "b", null)]);
     render(<HomeWorkspace />);
     expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Choose a Main Issue" })).not.toBeInTheDocument();
     expect(screen.getByText("Selected Issue")).toBeVisible();
     expect(screen.queryByRole("link", { name: /Presentation view/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Point Issue a/i })).toBeVisible();
@@ -55,15 +56,16 @@ describe("HomeWorkspace Issue Atlas", () => {
     expect(within(spectrum).getByRole("link", { name: "Open event type Diplomacy" })).toHaveAttribute("href", "/explore?scope=all&type=Diplomacy");
   });
 
-  it("lets users find an Issue outside the recent rail and keeps unmapped Issues selectable", async () => {
-    listBridgeCandidateReviews.mockResolvedValue(["a", "b", "c", "d", "e", "f"].map(review));
-    listPhase5Events.mockResolvedValue([event("a1", "a", "Diplomacy")]);
+  it("keeps an unmapped selected Issue available in Explore without the story rail", async () => {
+    listBridgeCandidateReviews.mockResolvedValue([review("a"), review("b")]);
+    listPhase5Events.mockResolvedValue([event("b1", "b", "Diplomacy")]);
     render(<HomeWorkspace />);
     expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
-    fireEvent.change(screen.getByRole("searchbox", { name: /Find an issue/i }), { target: { value: "Issue f" } });
-    fireEvent.click(screen.getByRole("button", { name: /Issue f/i }));
-    expect(screen.getByRole("heading", { name: "Issue f" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Issue a" })).toBeVisible();
     expect(screen.getByText(/No resolved related locations for this Issue/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /Explore this issue/i })).toHaveAttribute("href", "/explore?issue=a");
+    expect(screen.getByRole("link", { name: /Browse all Issues/i })).toHaveAttribute("href", "/explore?scope=all");
+    expect(screen.queryByRole("searchbox", { name: /Find an issue/i })).not.toBeInTheDocument();
   });
 
   it("separates load errors, empty Issues, and presentation mode", async () => {

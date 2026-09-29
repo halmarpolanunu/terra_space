@@ -20,10 +20,27 @@ Issue-first data relationship and Explore behavior. The four destinations from t
 
 # Decision
 
+## 2026-09-29 amendment: Focused Home and slower overview
+
+Home now moves directly from the selected-Issue globe stage to **Across all issues**. The owner
+removed the separate recent-Issue filmstrip, its search box, and its illustrative artwork.
+The globe markers and shared-place chooser still select an Issue; Explore provides the full
+Issue list and search. An Issue without a resolved place remains accessible in Explore. This
+amendment supersedes the selector and artwork requirements below.
+
+The Home globe rotates automatically when motion is enabled. Direct map interaction pauses it;
+an open chooser, location list, or globe settings panel also suspends it. Rotation resumes only
+after two seconds without interaction following panel closure. The system reduced-motion
+preference still prevents automatic rotation. This supersedes the paused-start direction below.
+
+The **Across all issues** entrance animation is four times slower than the previous version,
+including its staggered delays. Appearance and system reduced-motion settings continue to
+disable the animation.
+
 ## 2026-09-24 visual amendment: Premium Home motion
 
 Home uses restrained, layered motion to guide attention: the globe and Issue narrative enter
-first, the Issue filmstrip appears in sequence, and the event spectrum reveals when it reaches
+first, and the event spectrum reveals when it reaches
 the viewport. Choosing another Issue briefly refreshes its narrative. Hover and press feedback
 is short and subtle. Animation changes presentation only; it never changes data, Issue selection,
 or navigation. The device's appearance motion switch and the system's reduced-motion preference
@@ -35,8 +52,8 @@ The owner approved an image wireframe for a lighter **Across all issues** sectio
 and two leading measures (Main Issues and countries) sit above one full-width distribution of
 linked Phase 5 events. The event total titles a proportional stacked spectrum; a linked legend
 keeps every event type, count, and Explore filter visible. Country coverage and unmapped-Issue
-notes sit beside the country measure, while the illustration disclosure stays near the story
-artwork. All figures remain calculated from live Issue-linked data under the rules below.
+notes sit beside the country measure. All figures remain calculated from live Issue-linked data
+under the rules below.
 
 ## 2026-09-24 visual amendment: Cinematic Field Notes (Option B)
 
@@ -44,24 +61,22 @@ After reviewing the first implementation, the owner chose the second visual mock
 replacing existing decorative assets to approach its cinematic composition. The Home globe and
 selected-Issue narrative now share one continuous scene with an atmospheric gradient, rather
 than two bordered panels. The selected Issue opens the globe focused on its first resolved
-related place; Home rotation starts paused so its highlighted location stays visible, and the
-user can resume rotation with the existing control. This changes presentation only: every globe
+related place. This changes presentation only: every globe
 point still represents an Issue and a unique verified related place, never an event pin.
 
-The recent-Issue selector is an asymmetric filmstrip with the selected Issue prominent. Its
-new imagery is decorative illustration and is disclosed as such; it is not source evidence.
-Across all issues uses staggered figures and a subtle horizon, while the full linked-event type
-distribution remains visible and interactive. The live data, source attribution, search,
-shared-place chooser, Explore links, and narrow-screen access remain required. The mockup's
-invented visual details and numbers are not product data.
+The original asymmetric recent-Issue filmstrip and its decorative imagery were removed in the
+2026-09-29 amendment. Across all issues uses staggered figures and a subtle horizon, while the
+full linked-event type distribution remains visible and interactive. The live data, source
+attribution, shared-place chooser, Explore links, and narrow-screen access remain required.
+The mockup's invented visual details and numbers are not product data.
 
 ## Screen structure and visual language
 
 - Keep Home, Explore, Prepare, and Settings as the four clear destinations.
 - Make the existing interactive globe the main Home stage. Place one readable selected-Issue
   narrative beside or over it: Issue title, short source-grounded summary, source attribution,
-  and a clear **Explore this issue** action. Keep a compact recent-Issue selector and a way to
-  search or browse all Issues so the selected story can change without visiting Explore.
+  and a clear **Explore this issue** action. Globe markers can change the selected Issue;
+  Explore provides the complete Issue browse and search path.
 - Use the current wordmark, compass, amber-on-dark palette, restrained network background, and
   live globe. Larger editorial type, open spacing, soft light, and subtle transitions replace
   repeated square cards and rigid button rows. The globe and information must stay readable;
@@ -72,7 +87,7 @@ invented visual details and numbers are not product data.
 - Follow the stage with one clearly titled **Across all issues** section. Use an open editorial
   layout for the three approved measures below. Keep the denominator and missing-data scope
   visible in plain language.
-- On narrow screens, present the selected Issue and selector before the globe, then the measures.
+- On narrow screens, present the selected Issue and globe before the measures.
   Preserve a usable map viewport and controls rather than squeezing a desktop composition.
 
 ## Globe data and interaction
@@ -97,7 +112,7 @@ invented visual details and numbers are not product data.
 - Explain the map as **verified related locations from linked events**. A marker is a place
   associated with an Issue through a resolved event location; it is not a directly geocoded
   Phase 2 Issue or a claim that the Issue itself occurred at that point. An Issue without a
-  resolved place remains in the selector, with an honest no-location message when selected.
+  resolved place remains in Explore, with an honest no-location message when selected.
 - Marker labels, selection, chooser, and Explore action work by keyboard and assistive
   technology. Motion respects reduced-motion settings; selection and data remain clear without
   animation. Provide legible loading, error, and empty states.
@@ -127,7 +142,7 @@ shipped as data.
 
 ## States and presentation checks
 
-- Desktop: the selected Issue, globe, all-Issue markers, selector, and primary action should be
+- Desktop: the selected Issue, globe, all-Issue markers, and primary action should be
   understandable in a 16:9 capture without requiring the lower measures to share the hero area.
 - Mobile and browser zoom from 90% to 150%: no horizontal page overflow or hidden primary action.
 - Show source-grounded summary and location coverage separately. A loading or failed data request
@@ -153,8 +168,8 @@ box-heavy dashboard the owner wanted to change.
 
 # Consequences
 
-Home needs a derived Issue-place view and shared selection state for the globe, chooser, and
-Issue selector. Explore remains the place for event-level investigation. Existing Home event
+Home needs a derived Issue-place view and shared selection state for the globe and chooser.
+Explore remains the place for event-level investigation. Existing Home event
 pins and event-focused hero totals will be replaced when this design is implemented. No database
 or n8n change is part of this design.
 

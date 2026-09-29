@@ -19,9 +19,7 @@ export function HomeWorkspace() {
   const { motionEnabled } = useAppearanceSettings();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
-  const [issueQuery, setIssueQuery] = useState("");
   const [sharedPlace, setSharedPlace] = useState<{ label: string; places: IssueAtlasPlace[] } | null>(null);
-  const selectorRef = useRef<HTMLElement>(null);
   const acrossRef = useRef<HTMLElement>(null);
 
   const request = useCallback(() => {
@@ -33,7 +31,7 @@ export function HomeWorkspace() {
   useEffect(request, [request]);
   useEffect(() => {
     if (state.kind !== "ready") return;
-    const sections = [selectorRef.current, acrossRef.current].filter((section): section is HTMLElement => Boolean(section));
+    const sections = [acrossRef.current].filter((section): section is HTMLElement => Boolean(section));
     if (typeof IntersectionObserver === "undefined") {
       sections.forEach((section) => { section.dataset.visible = "true"; });
       return;
@@ -52,13 +50,7 @@ export function HomeWorkspace() {
   const stories = useMemo(() => state.kind === "ready" ? buildMainIssueStories(state.reviews, state.events) : [], [state]);
   const atlas = useMemo(() => state.kind === "ready" ? buildIssueAtlas(stories, state.events) : null, [stories, state]);
   const selectedIssue = stories.find((issue) => issue.sourceId === selectedIssueId) ?? stories[0];
-  const featuredIssues = selectedIssue
-    ? [selectedIssue, ...stories.filter((issue) => issue.sourceId !== selectedIssue.sourceId)].slice(0, 5)
-    : [];
   const selectedPlaces = atlas?.places.filter((place) => place.issueSourceId === selectedIssue?.sourceId) ?? [];
-  const matchingIssues = issueQuery.trim()
-    ? stories.filter((issue) => `${issue.label} ${issue.sourceTitle}`.toLocaleLowerCase().includes(issueQuery.trim().toLocaleLowerCase()))
-    : [];
   const exploreHref = selectedIssue ? `/explore?issue=${encodeURIComponent(selectedIssue.sourceId)}` : "/explore";
 
   function selectIssue(sourceId: string) {
@@ -99,18 +91,9 @@ export function HomeWorkspace() {
           <p className={styles.globeCaption}>All Main Issues <span>·</span> Selected Issue highlighted <span>·</span> Verified related event locations</p>
         </section>
 
-        <section ref={selectorRef} className={styles.issueSelector} aria-label="Choose a Main Issue">
-          <div className={styles.selectorHeading}><div><span>02 / THE STORIES</span><h2>Choose a question to follow.</h2></div><Link href="/explore?scope=all">Browse in Explore ↗</Link></div>
-          <div className={styles.selectorRail}>{featuredIssues.map((issue, index) => <button type="button" key={issue.sourceId} className={styles.storyTile} data-selected={issue.sourceId === selectedIssue.sourceId} style={{ animationDelay: `${index * 65}ms` }} onClick={() => selectIssue(issue.sourceId)}><span className={styles.storyArt} data-art={index} aria-hidden="true" /><span className={styles.tileCopy}><small>{String(index + 1).padStart(2, "0")}{index === 0 ? " / SELECTED" : ""}</small><span>{issue.label}</span>{index === 0 && <span className={styles.tileHint}>Follow this Issue <span aria-hidden="true">↗</span></span>}</span></button>)}</div>
-          <div className={styles.issueSearch}><label htmlFor="home-issue-search">Find an issue</label><input id="home-issue-search" type="search" value={issueQuery} onChange={(event) => setIssueQuery(event.target.value)} placeholder="Search all Main Issues" />
-            {issueQuery.trim() && <div className={styles.searchResults} role="group" aria-label="Matching Main Issues">{matchingIssues.length ? matchingIssues.map((issue) => <button key={issue.sourceId} type="button" onClick={() => { selectIssue(issue.sourceId); setIssueQuery(""); }}>{issue.label}<small>{issue.sourceTitle}</small></button>) : <p>No Main Issues match this search.</p>}</div>}
-          </div>
-          <p className={styles.artNote}>Story artwork is illustrative. Open an Issue for source evidence.</p>
-        </section>
-
         <section ref={acrossRef} className={styles.across} aria-label="Across all issues">
           <div className={styles.acrossTop}>
-            <div className={styles.acrossHeading}><span>03 / ACROSS ALL ISSUES</span><h2>The wider picture.</h2><p>A quick reading of the current Issue landscape.</p></div>
+            <div className={styles.acrossHeading}><span>02 / ACROSS ALL ISSUES</span><h2>The wider picture.</h2><p>A quick reading of the current Issue landscape.</p></div>
             <div className={styles.metricRow}>
               <Link className={styles.metric} href="/explore?scope=all"><strong>{atlas?.metrics.issueCount}</strong><span>Main Issues</span><small>Browse all Issues ↗</small></Link>
               <Link className={styles.metric} href="/explore?scope=all&location=mapped" aria-label={`Explore mapped events in ${atlas?.metrics.countryCount} countries`}><strong>{atlas?.metrics.countryCount}</strong><span>Countries</span><small>Verified related event locations</small></Link>
@@ -125,7 +108,7 @@ export function HomeWorkspace() {
                   {index === 0 && item.count / atlas.metrics.eventCount >= .25 ? <span>{item.label} {item.count}</span> : null}
                 </Link>)}
               </div>
-              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label} style={{ animationDelay: `${430 + index * 80}ms` }}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
+              <ul className={styles.spectrumLegend}>{atlas.metrics.byType.map((item, index) => <li key={item.label} style={{ animationDelay: `${1720 + index * 320}ms` }}><Link href={`/explore?scope=all&type=${encodeURIComponent(item.label)}`} aria-label={`${item.label} ${item.count}`}><span className={styles.legendDot} style={{ backgroundColor: spectrumColors[index % spectrumColors.length] }} aria-hidden="true" /><span>{item.label}</span><strong>{item.count}</strong></Link></li>)}</ul>
             </> : <p className={styles.spectrumEmpty}>No linked Phase 5 events yet.</p>}
           </div>
           <p className={styles.dataNote}>Counts include retained Final, Not Final, and pending records linked to current Main Issues. {atlas?.metrics.unlinkedEventCount ? `${atlas.metrics.unlinkedEventCount} unlinked Phase 5 ${atlas.metrics.unlinkedEventCount === 1 ? "record is" : "records are"} excluded.` : ""}</p>

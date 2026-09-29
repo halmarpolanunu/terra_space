@@ -10,6 +10,16 @@ status: active
 
 ## Latest update
 
+**2026-09-29 focused Home:** the owner removed the separate "Choose a question to follow"
+filmstrip and its search box. Home now moves from the selected-Issue globe straight to
+**Across all issues**, with Explore providing the complete Issue list. The overview entrance
+animation and staggered delays are four times slower. The Home globe also rotates automatically
+when motion is enabled, pauses for direct map interaction and open panels, and resumes two
+seconds after interaction ends and panels close. Targeted Home and globe tests, lint, the
+production build, and live browser checks passed. Next: owner reviews the updated Home in
+the existing pull request. No database or n8n content changed. The current direction is in
+the [Home design decision](decisions/Atlas-Stage-Issue-Level-Home-Design.md).
+
 **2026-09-25 Explore Issue subwindow:** the owner approved a wireframe and visual mockup modeled
 on a warm, rounded glass dashboard. Selecting a Main Issue now keeps the All Issues country
 overview dimmed behind a centered scrollable window. The Issue story and linked event,
