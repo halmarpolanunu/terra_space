@@ -23,7 +23,6 @@
 .issueNarrative a { pointer-events: auto; }
 .storyTop, .selectorHeading span, .acrossHeading > span { color: #dfba7d; font: 600 .67rem var(--font-mono); letter-spacing: .18em; text-transform: uppercase; }
 .storyTop { display: flex; align-items: center; gap: 1rem; }
-.storyTop span:last-child { color: #9ca99e; font-size: .57rem; letter-spacing: .1em; }
 .storyBody { margin: 1rem 0 auto; padding-top: clamp(.75rem, 2.2vw, 2rem); }
 .storyBody h1 { max-width: 12ch; margin: 0; color: #fff9ee; font: 400 clamp(2.9rem, 5vw, 5.8rem)/.94 var(--font-serif); letter-spacing: -.055em; text-wrap: balance; text-shadow: 0 .35rem 2.5rem #0008; }
 .storySummary { max-width: 33rem; margin: 1.1rem 0 0; color: #e2e5dc; font: clamp(.94rem, 1.15vw, 1.13rem)/1.5 var(--font-serif); text-wrap: pretty; }
@@ -172,7 +171,6 @@
   .issueNarrative { min-height: 43rem; width: 100%; padding-inline: 1.3rem; }
   .storyBody h1 { font-size: clamp(2.75rem, 11vw, 4rem); }
   .storySummary { font-size: .95rem; }
-  .storyTop span:last-child { display: none; }
   .globePanel :global(.issue-place-list) { top: 4rem; right: 21%; bottom: auto; max-width: 54%; }
   .globePanel :global(.globe-rotation-controls) { top: 4rem; right: 21%; }
   .actions { top: .8rem; right: 1.3rem; }

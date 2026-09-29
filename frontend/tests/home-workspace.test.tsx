@@ -35,6 +35,7 @@ describe("HomeWorkspace Issue Atlas", () => {
     listPhase5Events.mockResolvedValue([event("a1", "a", "Diplomacy"), event("b1", "b", null)]);
     render(<HomeWorkspace />);
     expect(await screen.findByRole("img", { name: "Issue globe" })).toBeVisible();
+    expect(screen.getByText("Selected Issue")).toBeVisible();
     expect(screen.queryByRole("link", { name: /Presentation view/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Point Issue a/i })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Point Issue b/i }));

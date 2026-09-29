@@ -84,7 +84,7 @@ export function HomeWorkspace() {
             </div>}
           </div>
           <div className={styles.issueNarrative}>
-            <div className={styles.storyTop}><span>Phase 2 / Main Issue</span><span>{atlas?.metrics.issueCount} issues in view</span></div>
+            <div className={styles.storyTop}><span>Selected Issue</span></div>
             <div className={styles.storyBody} key={selectedIssue.sourceId}>
               <h1>{selectedIssue.label}</h1>
               <p className={styles.storySummary}>{selectedIssue.summary || "No summary retained for this Issue."}</p>
